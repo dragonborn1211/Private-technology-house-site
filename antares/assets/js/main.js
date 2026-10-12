@@ -490,7 +490,7 @@
           .then(function () { btn.disabled = false; });
       } else if (CONFIG.email) {
         location.href = 'mailto:' + CONFIG.email + '?subject=' + encodeURIComponent('Night request — ' + p.night.slice(0, 80)) + '&body=' + encodeURIComponent(p.night + '\n\nReply to: ' + p.contact);
-        say('Opening your email…');
+        say('Opening your email… If nothing opens, write to ' + CONFIG.email + '.');
       } else if (CONFIG.whatsapp) {
         window.open('https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(p.night + ' — ' + p.contact), '_blank', 'noopener');
         say('Opening WhatsApp…');
