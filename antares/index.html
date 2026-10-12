@@ -1,0 +1,462 @@
+<!doctype html>
+<!--
+  Antares — observatory & guesthouse at 2,140 m.
+  useantares.com
+
+  Looking at the source at night? Press T on the page for tonight's sky.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Antares — Observatory &amp; Guesthouse at 2,140 m</title>
+<meta name="description" content="A private observatory with an eight-room guesthouse at 2,140 m. Dinner at dusk, an astronomer at your side and the Antares, our 600 mm telescope, under a Bortle 1 sky.">
+<meta name="theme-color" content="#FAF8F4">
+<link rel="canonical" href="https://useantares.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Antares">
+<meta property="og:url" content="https://useantares.com/">
+<meta property="og:title" content="Antares — Observatory &amp; Guesthouse">
+<meta property="og:description" content="Dark sky. Big glass. Stay for the stars, at 2,140 m.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 26' fill='none' stroke='%234F7184' stroke-width='1.4'%3E%3Cpath d='M13 2 23 13 13 24 3 13Z'/%3E%3Ccircle cx='13' cy='13' r='2.6' fill='%23C9785C' stroke='none'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&amp;family=Manrope:wght@400;500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="assets/css/main.css">
+<script>document.documentElement.classList.add('js')</script>
+<script src="assets/js/main.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="frost" aria-hidden="true"></div>
+<canvas class="sky-gl" aria-hidden="true" data-sky-gl></canvas>
+
+<!-- ═════ HEADER ═════ -->
+<header class="site-header" data-header>
+  <div class="wrap header-row">
+    <a class="logo" href="#top" aria-label="Antares — back to top">
+      <span class="logo-mark" aria-hidden="true"></span>
+      <span class="logo-name">Antares Observatory</span>
+      <span class="logo-short" aria-hidden="true">Antares</span>
+    </a>
+    <nav class="nav" aria-label="Main">
+      <a href="#nights">Nights</a>
+      <a href="#observatory">Observatory</a>
+      <a href="#grounds">Grounds</a>
+      <a href="#sky">Eye to star</a>
+      <a href="#your-night">Your night</a>
+      <a href="#rules">House rules</a>
+    </nav>
+    <div class="hctl">
+      <button class="tonight-toggle" type="button" aria-pressed="false" data-tonight-toggle title="Tonight: Moon, darkness and the best dates — key T">
+        <span class="bt-track" aria-hidden="true"><span class="bt-knob"></span></span>
+        <span class="bt-label mono">Tonight</span>
+      </button>
+      <button class="palette-btn" type="button" data-palette-open aria-haspopup="dialog" aria-label="Menu">
+        <svg class="menu-ico" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><path d="M2 7h16M2 13h10"/></svg>
+        <span class="pb-label mono">Menu</span>
+      </button>
+      <a class="pill" href="#book">Book a night</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ═════ 01 ARRIVAL ═════ -->
+<section id="top" class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-body">
+      <p class="eyebrow mono emerge">01 — 2,140 m above sea level</p>
+      <h1 class="h1 serif emerge d1">Dark sky.<br>Big glass.<br><em>Stay for the stars.</em></h1>
+      <p class="hero-lead emerge d2">A private observatory with an eight-room guesthouse above the clouds. Dinner at dusk, an astronomer at your side, and the Antares — our 600&nbsp;mm telescope — under the dome until the sky turns blue again.</p>
+      <div class="hero-cta emerge d3">
+        <a class="btn btn-solid" href="#nights">See the nights <span class="arrow">→</span></a>
+        <a class="btn btn-ghost" href="#book">Book a night</a>
+      </div>
+      <div class="scroll-hint emerge d4" aria-hidden="true">
+        <span class="mouse"><span class="sdot"></span></span>
+        <span class="mono">Scroll</span>
+      </div>
+    </div>
+
+    <!-- the night ahead: sky conditions and tonight's programme -->
+    <div class="hero-stage">
+      <div class="glass screen dash emerge d2" role="img" aria-label="Tonight at Antares: 4% cloud, 0.8 arcsecond seeing, sky darkest after midnight; targets Antares, M4, Saturn and the Lagoon Nebula">
+        <div class="win-bar">
+          <i></i><i></i><i></i>
+          <span class="url mono">useantares.com / tonight</span>
+          <span class="live mono"><span class="pulse dot"></span>live</span>
+        </div>
+        <div class="dash-body">
+          <div class="dash-rail"><b></b><i></i><i></i><i></i></div>
+          <div class="dash-main">
+            <div class="kpis">
+              <div class="kpi"><span class="mono">Cloud</span><b class="serif">4%</b><em class="mono">clearing</em></div>
+              <div class="kpi"><span class="mono">Seeing</span><b class="serif">0.8″</b><em class="mono">steady</em></div>
+              <div class="kpi"><span class="mono">Moon</span><b class="serif" data-moon-pct>12%</b><em class="mono" data-moon-trend>waxing</em></div>
+            </div>
+            <div class="chart-wrap">
+              <span class="chart-cap mono">Sky darkness · mag/arcsec²</span>
+              <svg class="chart" viewBox="0 0 440 90" width="100%" height="90" aria-hidden="true">
+                <defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9FD3E6" stop-opacity="0.35"/><stop offset="1" stop-color="#9FD3E6" stop-opacity="0"/></linearGradient></defs>
+                <path class="chart-area" d="M0 80 L40 62 L80 38 L120 23 L160 16 L200 13 L240 12 L280 14 L320 19 L360 33 L400 58 L440 80 L440 90 L0 90 Z" fill="url(#hg)"/>
+                <path class="chart-line" d="M0 80 L40 62 L80 38 L120 23 L160 16 L200 13 L240 12 L280 14 L320 19 L360 33 L400 58 L440 80" fill="none" stroke="#CFE3EC" stroke-width="1.5" pathLength="1"/>
+                <path d="M0 89.5 H440" stroke="rgba(255,255,255,0.12)"/>
+              </svg>
+              <div class="hours mono"><span>20:00</span><span>23:00</span><span>02:00</span><span>05:00</span></div>
+            </div>
+            <div class="funnel">
+              <div><span class="mono">Lagoon · 61°</span><i style="width:100%"></i></div>
+              <div><span class="mono">Saturn · 52°</span><i style="width:85%;opacity:.8"></i></div>
+              <div><span class="mono">Antares · 38°</span><i style="width:62%;opacity:.65"></i></div>
+              <div><span class="mono">M4 · 36°</span><i style="width:59%;opacity:.5"></i></div>
+            </div>
+          </div>
+        </div>
+        <div class="sweep"></div>
+      </div>
+      <div class="glass screen term mono emerge d4" aria-hidden="true">
+        <div class="win-bar"><i></i><i></i><i></i><span>tonight · programme</span></div>
+        <div class="term-body" data-term>
+          <div><span class="dim">›</span> <span data-type>sunset 20:41 · sky clearing</span></div>
+          <div class="row">  dinner   <span class="st" data-step>✓</span>   briefing <span class="st" data-step>✓</span></div>
+          <div class="row">  dome     <span class="st" data-step>✓</span>   focus    <span class="st" data-step>✓</span></div>
+          <div class="row" data-final>  <span class="ok">→ Antares rising</span> · 21:48<span class="pulse">▍</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ ABOVE US THIS SEASON ═════ -->
+<div class="marquee" aria-label="Above us this season">
+  <div class="marq-track mono">
+    <span>Antares</span><span>·</span><span>M4</span><span>·</span><span>Rho Ophiuchi</span><span>·</span><span>Saturn</span><span>·</span><span>Omega Centauri</span><span>·</span><span>Lagoon Nebula</span><span>·</span><span>Jupiter</span><span>·</span><span>Jewel Box</span><span>·</span><span>Milky Way core</span><span>·</span><span>Sombrero Galaxy</span><span>·</span><span>Carina Nebula</span><span>·</span><span>Alpha Centauri</span><span>·</span><span>Magellanic Clouds</span><span>·</span><span>Trifid Nebula</span><span>·</span><span>47 Tucanae</span><span>·</span><span>Butterfly Cluster</span><span>·</span>
+    <span aria-hidden="true">Antares</span><span aria-hidden="true">·</span><span aria-hidden="true">M4</span><span aria-hidden="true">·</span><span aria-hidden="true">Rho Ophiuchi</span><span aria-hidden="true">·</span><span aria-hidden="true">Saturn</span><span aria-hidden="true">·</span><span aria-hidden="true">Omega Centauri</span><span aria-hidden="true">·</span><span aria-hidden="true">Lagoon Nebula</span><span aria-hidden="true">·</span><span aria-hidden="true">Jupiter</span><span aria-hidden="true">·</span><span aria-hidden="true">Jewel Box</span><span aria-hidden="true">·</span><span aria-hidden="true">Milky Way core</span><span aria-hidden="true">·</span><span aria-hidden="true">Sombrero Galaxy</span><span aria-hidden="true">·</span><span aria-hidden="true">Carina Nebula</span><span aria-hidden="true">·</span><span aria-hidden="true">Alpha Centauri</span><span aria-hidden="true">·</span><span aria-hidden="true">Magellanic Clouds</span><span aria-hidden="true">·</span><span aria-hidden="true">Trifid Nebula</span><span aria-hidden="true">·</span><span aria-hidden="true">47 Tucanae</span><span aria-hidden="true">·</span><span aria-hidden="true">Butterfly Cluster</span><span aria-hidden="true">·</span>
+  </div>
+</div>
+
+<!-- ═════ NIGHTS ═════ -->
+<section id="nights" class="caps" aria-label="Nights and prices">
+  <div class="caps-row">
+    <a href="#book" class="glass cap reveal">
+      <span class="cap-top mono"><span>01</span><span class="price">from $320 / guest</span></span>
+      <span class="cap-title serif">Observing Night</span>
+      <span class="cap-text">Dinner, a guided session under the dome and a room until noon.</span>
+      <span class="cap-stack mono">dinner · dome · breakfast</span>
+    </a>
+    <a href="#book" class="glass cap reveal">
+      <span class="cap-top mono"><span>02</span><span class="price">from $890 / guest</span></span>
+      <span class="cap-title serif">Astrophotography</span>
+      <span class="cap-text">Two nights on the imaging pier, then an afternoon processing your frames with us.</span>
+      <span class="cap-stack mono">2 nights · pier · processing</span>
+    </a>
+    <a href="#book" class="glass cap reveal">
+      <span class="cap-top mono"><span>03</span><span class="price">from $1,150 / guest</span></span>
+      <span class="cap-title serif">Three-Night Retreat</span>
+      <span class="cap-text">Learn the sky by heart, from the naked eye to the big dome.</span>
+      <span class="cap-stack mono">3 nights · all meals · dome</span>
+    </a>
+    <a href="#book" class="glass cap reveal">
+      <span class="cap-top mono"><span>04</span><span class="price">from $540 / family</span></span>
+      <span class="cap-title serif">Family Night</span>
+      <span class="cap-text">An early session sized for ages 8 and up, with hot chocolate and a star map to take home.</span>
+      <span class="cap-stack mono">early dome · ages 8+ · star map</span>
+    </a>
+    <a href="#book" class="glass cap reveal">
+      <span class="cap-top mono"><span>05</span><span class="price">on request</span></span>
+      <span class="cap-title serif">Private Dome</span>
+      <span class="cap-text">The whole observatory for one party, for one night.</span>
+      <span class="cap-stack mono">up to 16 guests</span>
+    </a>
+  </div>
+</section>
+
+<!-- ═════ 02 THE OBSERVATORY ═════ -->
+<section id="observatory" class="house">
+  <div class="wrap house-row">
+    <div class="house-body reveal">
+      <p class="eyebrow mono">02 — The Observatory</p>
+      <h2 class="h2 serif">The Observatory</h2>
+      <p class="lead">Not a planetarium, and not a hotel with a telescope on the roof. A working observatory where guests stay the night: one dome, one big mirror, eight rooms and the darkest sky for 200&nbsp;km in any direction.</p>
+      <a class="link-line" href="#your-night">How a night goes <span class="arrow">→</span></a>
+    </div>
+    <ul class="glass disciplines reveal">
+      <li><span>The dome</span><span class="mono">6.5 m · rotating</span></li>
+      <li><span>The Antares telescope</span><span class="mono">600 mm · f/8</span></li>
+      <li><span>Guesthouse</span><span class="mono">8 rooms · 16 guests</span></li>
+      <li><span>Kitchen</span><span class="mono">dinner at dusk</span></li>
+      <li><span>Astronomer</span><span class="mono">on duty every night</span></li>
+      <li class="more"><a class="link-line bare" href="#nights">All nights and prices <span class="arrow">→</span></a></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═════ 03 THE GROUNDS ═════ -->
+<section id="grounds" class="objects">
+  <div class="wrap objects-row">
+    <div class="objects-info reveal">
+      <p class="eyebrow mono">03 — Around the dome</p>
+      <h2 class="h2 serif">The Grounds</h2>
+      <p class="lead">Four places you’ll know by heart before morning. Pick one to look inside.</p>
+      <div class="glass obj-card" aria-live="polite">
+        <span class="obj-meta mono"><span data-b="cur.n">01</span> — <span data-b="cur.cat">Dome / Main instrument</span></span>
+        <span class="obj-name serif" data-b="cur.name">The Antares</span>
+        <span class="obj-desc" data-b="cur.desc">Our 600 mm telescope under a 6.5 m dome. Saturn’s rings look as if they were drawn with a pen.</span>
+        <span class="obj-stack mono" data-b="cur.stack">600 mm · f/8 · Ritchey–Chrétien</span>
+        <a href="#book" class="link-line" data-obj-enter><span data-enter-label>Book the dome</span> <span class="arrow">→</span></a>
+      </div>
+    </div>
+    <div class="glass screen obj-preview reveal" aria-hidden="true">
+      <div class="win-bar"><i></i><i></i><i></i><span class="url mono" data-b="cur.url">useantares.com / telescope</span></div>
+      <div class="pv-stage">
+        <!-- 01 · the telescope: tonight through the eyepiece -->
+        <div class="pv pv-shop on" data-preview="0">
+          <div class="pv-nav"><b class="serif">Antares</b><i></i><i></i><i></i><em></em></div>
+          <div class="pv-banner"><span class="t serif">Tonight through the Antares</span><i></i><span class="cta mono">Book the dome</span></div>
+          <div class="pv-grid">
+            <div><span class="ev ev-saturn"></span><em class="mono">Saturn · 369×</em></div>
+            <div><span class="ev ev-cluster"></span><em class="mono">M4 · 155×</em></div>
+            <div><span class="ev ev-double"></span><em class="mono">α Centauri · 229×</em></div>
+            <div><span class="ev ev-moon"></span><em class="mono">Moon · 98×</em></div>
+            <div><span class="ev ev-nebula"></span><em class="mono">Lagoon · 98×</em></div>
+            <div><span class="ev ev-galaxy"></span><em class="mono">Sombrero · 229×</em></div>
+          </div>
+        </div>
+        <!-- 02 · the imaging pier: tonight's schedule -->
+        <div class="pv pv-crm" data-preview="1">
+          <div class="pv-side"><b></b><i></i><i></i><i></i><i></i></div>
+          <div class="pv-board">
+            <div class="pv-kpi">
+              <span><em class="mono">Exposure</em><b class="serif">6 h 40 m</b></span>
+              <span><em class="mono">Frames</em><b class="serif">80 × 300 s</b></span>
+              <span><em class="mono">Guiding</em><b class="serif">0.42″</b></span>
+            </div>
+            <div class="pv-cols">
+              <div><em class="mono">Pier 1 · ρ Oph</em><i></i><i></i><i></i></div>
+              <div><em class="mono">Pier 2 · M8</em><i></i><i></i></div>
+              <div><em class="mono">Pier 3 · free</em><i></i></div>
+              <div><em class="mono">Pier 4 · η Car</em><i></i><i></i><i></i></div>
+            </div>
+          </div>
+        </div>
+        <!-- 03 · the guesthouse: someone is always awake -->
+        <div class="pv pv-ai" data-preview="2">
+          <div class="pv-msg me"><p>Will it be clear on Saturday?</p></div>
+          <div class="pv-msg"><p>Clear after 22:00. The dome opens at 22:10.</p><span class="mono">the house · 18:04</span></div>
+          <div class="pv-msg me"><p>Can our nine-year-old come?</p></div>
+          <div class="pv-msg"><p>Of course. Family Night starts early, at 20:30.</p><span class="mono">the house · 18:05</span></div>
+          <div class="pv-msg me"><p>And if it’s cloudy?</p></div>
+          <div class="pv-msg typing"><b></b><b></b><b></b></div>
+          <div class="pv-input"><i></i><em></em></div>
+        </div>
+        <!-- 00 · tonight's sky: Scorpius, with Antares at its heart -->
+        <div class="pv pv-self" data-preview="3">
+          <svg class="pv-chart" viewBox="40 14 300 262" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <g class="ch-grid"><path d="M40 70H340M40 140H340M40 210H340M110 14V276M200 14V276M290 14V276"/></g>
+            <g class="ch-bg"><circle cx="62" cy="40" r=".7"/><circle cx="131" cy="31" r=".9"/><circle cx="168" cy="72" r=".6"/><circle cx="322" cy="58" r=".8"/><circle cx="141" cy="118" r=".7"/><circle cx="66" cy="150" r="1"/><circle cx="318" cy="182" r=".7"/><circle cx="252" cy="160" r=".9"/><circle cx="230" cy="232" r=".6"/><circle cx="292" cy="250" r=".8"/><circle cx="55" cy="262" r=".7"/><circle cx="160" cy="190" r=".6"/><circle cx="210" cy="40" r=".7"/><circle cx="330" cy="120" r=".6"/><circle cx="120" cy="80" r=".6"/></g>
+            <g class="ch-lines"><path d="M280.5 33.9 290.9 60.7 293.9 93.8 297.9 123.3M290.9 60.7 248.5 88.9 231.7 96.9 218.6 113.8 189.5 171.5 186 207.2 180.5 248.2 144.7 256.5 93.5 254.2 72.6 227 83 216.5 101 198.2 106.8 200.1"/></g>
+            <g class="ch-stars"><circle cx="280.5" cy="33.9" r="1.5"/><circle cx="290.9" cy="60.7" r="1.7"/><circle cx="293.9" cy="93.8" r="1.3"/><circle cx="297.9" cy="123.3" r="1"/><circle cx="248.5" cy="88.9" r="1.3"/><circle cx="218.6" cy="113.8" r="1.4"/><circle cx="189.5" cy="171.5" r="1.7"/><circle cx="186" cy="207.2" r="1.3"/><circle cx="180.5" cy="248.2" r="1"/><circle cx="144.7" cy="256.5" r="1.1"/><circle cx="93.5" cy="254.2" r="2"/><circle cx="72.6" cy="227" r="1.3"/><circle cx="83" cy="216.5" r="1.6"/><circle cx="101" cy="198.2" r="2.2"/><circle cx="106.8" cy="200.1" r="1.5"/></g>
+            <circle class="ch-m4" cx="252" cy="104" r="4"/>
+            <circle class="ch-glow" cx="231.7" cy="96.9" r="9"/>
+            <circle class="ch-antares" cx="231.7" cy="96.9" r="3"/>
+            <text class="ch-label" x="196" y="86">Antares</text>
+            <text class="ch-label dim" x="258" y="116">M4</text>
+            <text class="ch-label dim" x="112" y="182">Scorpius</text>
+          </svg>
+          <div class="pv-blocks mono"><span data-sky-moon>Moon · —</span><span>Antares · 550 ly</span><span data-sky-new>New moon · —</span><span>Bortle 1 · 21.9</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="thumbs reveal" role="group" aria-label="Places">
+      <button type="button" class="thumb" data-pick="obj:0" aria-pressed="true">
+        <span class="th-dots"><i></i><i></i><i></i></span>
+        <span class="th-ui th-shop"><i></i><i></i><i></i></span>
+        <span class="th-label mono">01 · Telescope</span>
+      </button>
+      <button type="button" class="thumb" data-pick="obj:1" aria-pressed="false">
+        <span class="th-dots"><i></i><i></i><i></i></span>
+        <span class="th-ui th-kanban"><span><i></i><i></i><i></i></span><span><i></i><i></i></span><span><i></i></span></span>
+        <span class="th-label mono">02 · Imaging pier</span>
+      </button>
+      <button type="button" class="thumb" data-pick="obj:2" aria-pressed="false">
+        <span class="th-dots"><i></i><i></i><i></i></span>
+        <span class="th-ui th-chat"><i></i><i></i><i></i></span>
+        <span class="th-label mono">03 · Guesthouse</span>
+      </button>
+      <button type="button" class="thumb" data-pick="obj:3" aria-pressed="false">
+        <span class="th-dots"><i></i><i></i><i></i></span>
+        <span class="th-ui th-self"><i></i><i></i><i></i><i></i><i></i></span>
+        <span class="th-label mono">00 · Tonight’s sky</span>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 04 EYE TO STAR ═════ -->
+<section id="sky" class="craft">
+  <div class="craft-visual" data-stack-area>
+    <div class="craft-shade"></div>
+    <div class="stack" aria-hidden="true">
+      <div class="stack-3d" data-stack>
+        <div class="plate" style="--i:0" data-plate="0">
+          <span class="pl-label mono">01 · Eye</span>
+          <div class="pl-eye"><b></b></div>
+        </div>
+        <div class="plate" style="--i:1" data-plate="1">
+          <span class="pl-label mono">02 · Eyepiece</span>
+          <div class="pl-api mono"><span>49 mm&nbsp;&nbsp;&nbsp;98×</span><span>31 mm&nbsp;&nbsp;155×</span><span>21 mm&nbsp;&nbsp;229×</span><span>13 mm&nbsp;&nbsp;369×</span></div>
+        </div>
+        <div class="plate" style="--i:2" data-plate="2">
+          <span class="pl-label mono">03 · Mirror</span>
+          <div class="pl-mirror"><b></b></div>
+        </div>
+        <div class="plate" style="--i:3" data-plate="3">
+          <span class="pl-label mono">04 · Dome</span>
+          <div class="pl-dome"><b></b><i></i></div>
+        </div>
+        <div class="plate" style="--i:4" data-plate="4">
+          <span class="pl-label mono">05 · Atmosphere</span>
+          <div class="pl-air"><svg viewBox="0 0 200 150" preserveAspectRatio="none"><path d="M0 22q25-12 50 0t50 0 50 0 50 0M0 52q25-9 50 0t50 0 50 0 50 0M0 82q25-14 50 0t50 0 50 0 50 0M0 112q25-8 50 0t50 0 50 0 50 0M0 142q25-11 50 0t50 0 50 0 50 0"/></svg></div>
+        </div>
+        <div class="plate" style="--i:5" data-plate="5">
+          <span class="pl-label mono">06 · Dust</span>
+          <div class="pl-dust"><i></i><i></i><i></i></div>
+        </div>
+        <div class="plate" style="--i:6" data-plate="6">
+          <span class="pl-label mono">07 · Antares</span>
+          <div class="pl-star"><b></b></div>
+        </div>
+      </div>
+    </div>
+    <div class="glass screen code mono">
+      <div class="code-file"><span data-b="layer.file">Layer 01 — the eye</span></div>
+      <pre data-code><code>pupil       7 mm, dark-adapted</code></pre>
+    </div>
+  </div>
+  <div class="craft-body">
+    <p class="eyebrow mono reveal">04 — Eye to star</p>
+    <h2 class="h2 serif reveal">Eye to star</h2>
+    <p class="lead reveal">The light you’ll see tonight left Antares about 550 years ago. These are the seven layers it crosses on the way to you. Pick one.</p>
+    <div class="layers reveal">
+      <div class="layer-list" role="group" aria-label="Layers between you and Antares">
+        <button type="button" data-pick="layer:0" aria-pressed="true">Eye</button>
+        <button type="button" data-pick="layer:1" aria-pressed="false">Eyepiece</button>
+        <button type="button" data-pick="layer:2" aria-pressed="false">Mirror</button>
+        <button type="button" data-pick="layer:3" aria-pressed="false">Dome</button>
+        <button type="button" data-pick="layer:4" aria-pressed="false">Atmosphere</button>
+        <button type="button" data-pick="layer:5" aria-pressed="false">Dust</button>
+        <button type="button" data-pick="layer:6" aria-pressed="false">Antares</button>
+      </div>
+      <div class="layer-detail" aria-live="polite">
+        <span class="mono layer-n"><span data-b="layer.n">01</span> / 07 — <span data-b="layer.name">Eye</span></span>
+        <p class="serif layer-title" data-b="layer.title">The last 24 millimetres.</p>
+        <p class="layer-desc" data-b="layer.desc">Give your eyes thirty minutes of darkness and they become a different instrument. That is why every light here turns red after sunset.</p>
+        <span class="mono layer-stack" data-b="layer.stack">dark adaptation · 30 min · red light only</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═════ 05 YOUR NIGHT ═════ -->
+<section id="your-night" class="process">
+  <div class="wrap">
+    <div class="process-head">
+      <div>
+        <p class="eyebrow mono reveal">05 — Your night</p>
+        <h2 class="h2 serif reveal">How a night goes</h2>
+      </div>
+      <p class="lead small reveal">Six steps from the car park to the last star. Each one leaves you something to keep.</p>
+    </div>
+    <ol class="steps">
+      <li class="glass reveal"><span class="step-n mono"><i></i>01</span><span class="serif">Arrival</span><span>Check in from 16:00. The road is paved all the way to the door.</span><span class="mono out">→ keys and a red torch</span></li>
+      <li class="glass reveal"><span class="step-n mono"><i></i>02</span><span class="serif">Dinner</span><span>Three courses on the terrace while the sun goes down.</span><span class="mono out">→ sunset at the table</span></li>
+      <li class="glass reveal"><span class="step-n mono"><i></i>03</span><span class="serif">Briefing</span><span>Twenty minutes on what’s up tonight and how to look at it.</span><span class="mono out">→ your own star map</span></li>
+      <li class="glass reveal"><span class="step-n mono"><i></i>04</span><span class="serif">The dome</span><span>Two to three hours at the eyepiece with our astronomer.</span><span class="mono out">→ a dozen objects, seen yourself</span></li>
+      <li class="glass reveal"><span class="step-n mono"><i></i>05</span><span class="serif">Open sky</span><span>The terrace stays open: loungers, blankets and big binoculars.</span><span class="mono out">→ the Milky Way overhead</span></li>
+      <li class="glass reveal"><span class="step-n mono"><i></i>06</span><span class="serif">Morning</span><span>Breakfast until noon. Nobody will wake you.</span><span class="mono out">→ a photo of your night</span></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═════ 06 HOUSE RULES + 07 BOOK ═════ -->
+<section id="rules" class="standard">
+  <img class="standard-img" src="assets/img/standard-mountain.webp" width="690" height="344" alt="Snow-capped peak above a misty lake" loading="lazy" decoding="async">
+  <div class="standard-veil"></div>
+  <div class="wrap standard-row">
+    <div class="standard-intro reveal">
+      <p class="eyebrow mono">06 — House rules</p>
+      <h2 class="h2 serif">House rules</h2>
+      <p class="lead">Not a list of amenities. Five rules that keep the sky dark and the nights good.</p>
+    </div>
+    <ol class="glass principles reveal">
+      <li><span class="mono">01</span><span><b>Dark sky comes first.</b><span class="en">No white light outdoors after dusk, ever.</span><span class="proof mono" data-proof hidden></span></span></li>
+      <li><span class="mono">02</span><span><b>Eight guests per astronomer.</b><span class="en">So everyone gets real time at the eyepiece.</span></span></li>
+      <li><span class="mono">03</span><span><b>Clouds move your night, not your money.</b><span class="en">Rebook any date within 12 months, free.</span></span></li>
+      <li><span class="mono">04</span><span><b>Quiet after ten.</b><span class="en">Low voices, soft doors, phones on night mode.</span></span></li>
+      <li><span class="mono">05</span><span><b>The sky is the show.</b><span class="en">No lasers, no projections. Only what is really up there.</span></span></li>
+    </ol>
+    <form id="book" class="glass enter reveal" novalidate data-enter>
+      <p class="eyebrow mono">07 — Book</p>
+      <p class="enter-title serif">If the sky is calling,<br><em>you already know.</em></p>
+      <label for="bk-when" class="mono">Your night, in a phrase</label>
+      <input id="bk-when" name="night" class="field" type="text" placeholder="Two of us, a clear night in March" autocomplete="off" required>
+      <label for="bk-who" class="mono">Email or phone</label>
+      <input id="bk-who" name="contact" class="field" type="text" placeholder="you@example.com" autocomplete="email" required>
+      <pre class="req mono" aria-hidden="true" data-req>Request · —
+Reply to · —</pre>
+      <button type="submit" class="enter-btn">Send request <span>→</span></button>
+      <p class="enter-status mono" role="status" data-status></p>
+    </form>
+  </div>
+</section>
+
+</main>
+
+<!-- ═════ FOOTER ═════ -->
+<div class="footer-fade" aria-hidden="true"></div>
+<footer class="site-footer">
+  <div class="wrap footer-row">
+    <span class="footer-brand"><span class="serif">Antares</span><span>Observatory &amp; Guesthouse</span></span>
+    <nav aria-label="Footer" class="footer-nav mono">
+      <a href="#nights">Nights</a>
+      <a href="#observatory">Observatory</a>
+      <a href="#grounds">Grounds</a>
+      <a href="#sky">Eye to star</a>
+      <a href="#your-night">Your night</a>
+      <a href="#rules">House rules</a>
+      <a href="#book">Book</a>
+    </nav>
+    <span class="footer-links">
+      <a href="#book" data-link="instagram">Instagram</a>
+      <a href="#book" data-link="whatsapp">WhatsApp</a>
+      <a href="#book" data-link="email">Email</a>
+    </span>
+    <span class="footer-build mono">© 2026 Antares Observatory · useantares.com · 2,140 m · Moon tonight <span data-moon-foot>—</span> · <button type="button" class="linkish" data-tonight-toggle aria-pressed="false">T — tonight</button></span>
+  </div>
+</footer>
+
+<!-- ═════ TONIGHT: the Moon and the best dates, worked out for today ═════ -->
+<aside class="hud mono" data-hud hidden aria-label="Tonight’s sky">
+  <div class="hud-head"><span>Tonight · above Antares</span><button type="button" data-tonight-toggle aria-pressed="false" aria-label="Close tonight’s sky">×</button></div>
+  <dl data-metrics></dl>
+  <p>Worked out for today’s date. <kbd>T</kbd> — close.</p>
+</aside>
+
+<!-- ═════ MENU ═════ -->
+<div class="palette" data-palette hidden>
+  <div class="palette-backdrop" data-palette-close></div>
+  <div class="glass palette-box" role="dialog" aria-modal="true" aria-label="Menu">
+    <div class="palette-input">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true"><circle cx="7" cy="7" r="5"/><path d="M11 11l4 4"/></svg>
+      <input type="text" placeholder="Where to?" aria-label="Search the site" role="combobox" aria-expanded="true" aria-controls="palette-list" autocomplete="off" spellcheck="false" data-palette-input>
+      <kbd class="mono">esc</kbd>
+    </div>
+    <ul id="palette-list" class="palette-list" role="listbox" data-palette-list></ul>
+    <div class="palette-foot mono"><span><kbd>↑</kbd><kbd>↓</kbd> choose</span><span><kbd>↵</kbd> go</span><span><kbd>T</kbd> tonight</span></div>
+  </div>
+</div>
+
+</body>
+</html>
