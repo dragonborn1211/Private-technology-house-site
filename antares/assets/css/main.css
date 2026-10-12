@@ -2,7 +2,7 @@
    Antares — main.css
    Light "ice" system: milk background, navy type, steel accent,
    glass cards with a hairline edge. Night windows (.screen) are navy
-   with a field of stars. The footer is navy too.
+   with a field of stars. The footer sits on the same sky as the page.
    html.tonight — tonight's sky panel is open.
    ════════════════════════════════════════════════════════════════ */
 
@@ -18,7 +18,7 @@
   --glacier: #BCD3DE;
   --line: rgba(79, 113, 132, .28);
   --line-2: rgba(79, 113, 132, .42);
-  --navy: #0F1B24;          /* night windows and footer */
+  --navy: #0F1B24;          /* night windows */
 
   --serif: 'Cormorant Garamond', 'Cormorant', Georgia, 'Times New Roman', serif;
   --sans: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -577,23 +577,6 @@ a:hover .arrow { transform: translateX(5px); }
 
 /* ════ 06 HOUSE RULES + 07 BOOK ═════════════════════════════════ */
 .standard { position: relative; overflow: hidden; color: var(--ink); }
-/* the mountain, drawn: three ridges and the dome on the summit */
-.standard-art {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 34%, #000 78%, transparent 100%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 34%, #000 78%, transparent 100%);
-}
-.ridge-far { fill: rgba(127, 160, 178, .16); }
-.ridge-mid { fill: rgba(79, 113, 132, .2); }
-.ridge-near { fill: rgba(79, 113, 132, .12); }
-.dome path, .dome rect { fill: rgba(79, 113, 132, .5); }
-.dome .slit { fill: rgba(15, 27, 36, .55); }
-.dome .torch { fill: #C9785C; }
-.standard-veil {
-  position: absolute; inset: 0; background: linear-gradient(90deg, rgba(250, 248, 244, .85) 0%, rgba(250, 248, 244, .55) 30%, rgba(250, 248, 244, 0) 62%);
-  -webkit-mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
-  mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
-}
 .standard-row { position: relative; padding-top: 140px; padding-bottom: 120px; display: flex; gap: 40px 56px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
 .standard-intro { flex: 0 1 340px; display: flex; flex-direction: column; gap: 24px; }
 .principles { flex: 1 1 420px; max-width: 540px; list-style: none; margin: 0; padding: 4px clamp(20px, 2.4vw, 32px); }
@@ -631,20 +614,19 @@ a:hover .arrow { transform: translateX(5px); }
 .enter-btn[disabled] { opacity: .6; cursor: progress; }
 .enter-status { margin: 0; min-height: 1.5em; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
 
-/* ════ FOOTER: navy, with a soft fade in ═══════════════════════ */
-.footer-fade { height: 200px; background: linear-gradient(180deg, rgba(15, 27, 36, 0) 0%, rgba(15, 27, 36, .55) 55%, var(--navy) 100%); }
-.site-footer { position: relative; background: url(../img/stars-960.webp) center / cover, var(--navy); color: #EEF3F6; }
+/* ════ FOOTER: on the same sky as the page ══════════════════════ */
+.site-footer { position: relative; margin-top: 24px; border-top: .5px solid var(--line); color: var(--ink); }
 .footer-row { padding-top: 32px; padding-bottom: 40px; display: flex; gap: 24px 48px; flex-wrap: wrap; align-items: center; }
 .footer-brand { display: flex; align-items: center; gap: 12px; }
 .footer-brand .serif { font-size: 24px; font-weight: 500; }
-.footer-brand span:last-child { font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--accent-soft); }
-.footer-nav { display: flex; flex-wrap: wrap; gap: 10px 24px; font-size: 13px; color: var(--accent-soft); }
-.footer-nav a:hover { color: #EEF3F6; }
-.footer-links a:hover { color: var(--accent-soft); }
+.footer-brand span:last-child { font-size: 11px; letter-spacing: .24em; text-transform: uppercase; color: var(--accent-ink); }
+.footer-nav { display: flex; flex-wrap: wrap; gap: 10px 24px; font-size: 13px; color: var(--ink-2); }
+.footer-nav a:hover, .footer-links a:hover { color: var(--accent-ink); }
 .footer-links { margin-left: auto; display: flex; gap: 24px; font-size: 13px; }
-.footer-build { width: 100%; margin-top: 8px; padding-top: 24px; border-top: .5px solid rgba(188, 211, 222, .18); font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--accent-soft); }
+.footer-build { width: 100%; margin-top: 8px; padding-top: 24px; border-top: .5px solid var(--line); font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--accent-ink); }
+.footer-concept { width: 100%; margin-top: -12px; font-size: 9px; letter-spacing: .08em; color: var(--ink-3); opacity: .55; }
 .linkish { padding: 0; border: 0; background: none; cursor: pointer; font: inherit; letter-spacing: inherit; color: inherit; border-bottom: .5px dotted currentColor; }
-.linkish:hover { color: #EEF3F6; }
+.linkish:hover { color: var(--ink); }
 
 /* ════ TONIGHT — the Moon and the darkest dates ═════════════════ */
 [tabindex="-1"]:focus { outline: none; }
@@ -809,12 +791,10 @@ a:hover .arrow { transform: translateX(5px); }
   .process > .wrap { padding-top: 72px; padding-bottom: 72px; }
   .steps li > span:nth-child(2) { font-size: 22px; }
   .standard-row { padding-top: 96px; padding-bottom: 72px; }
-  .standard-veil { background: rgba(250, 248, 244, .6); }
   .sky-still { background-image: url(../img/trails-960.webp); }
   .screen, .craft-visual { background-image: url(../img/stars-960.webp), linear-gradient(180deg, #172733, var(--navy)); }
   .principles { padding: 4px 20px; }
   .enter { flex-basis: 100%; padding: 24px 20px; }
-  .footer-fade { height: 120px; }
   .footer-links { margin-left: 0; }
   .hud { left: 12px; right: 12px; bottom: 12px; width: auto; }
   .hud dl { grid-template-columns: 1fr auto 1fr auto; column-gap: 10px; }
