@@ -20,7 +20,7 @@ Opening `index.html` directly also works.
 index.html            all sections
 assets/css/main.css   tokens, sections, tonight panel, responsive
 assets/js/main.js     content (OBJ, LAY), Moon maths, menu, booking form, background
-assets/img/           stars.webp (night windows), frost.webp (still background), mountain
+assets/img/           stars.webp (night windows), trails.webp (background when JS is off)
 ../tools/build_stars.py   regenerates stars.webp and stars-960.webp
 ```
 
@@ -38,9 +38,11 @@ assets/img/           stars.webp (night windows), frost.webp (still background),
 
 ## What is live
 
-- **Background.** WebGL caustics on milk (from the reference design): the light drifts by itself
-  and leans towards the pointer. With reduced motion it is a still frame; without WebGL the
-  `frost.webp` image shows instead.
+- **Background: star trails.** A long exposure of the sky drawn on canvas: every star leaves the
+  same arc around the south celestial pole, just above the top right corner. The exposure builds
+  up on load, the sky turns slowly and turns further as you scroll through the page; now and
+  then a meteor crosses. Still frame with reduced motion; `trails.webp` when JS is off.
+- **The mountain** behind the house rules is drawn in SVG: three ridges and the dome on the summit.
 - **Tonight** (header toggle, key `T`, the `00` object). Moon illumination, phase, next new and full
   moon and the darkest nights ahead, from low-precision Sun and Moon positions. Checked against
   the 2026 phases: new moons within ~5 minutes, full moons within ~30. The same figures fill the
@@ -58,6 +60,18 @@ The first screen's cloud, seeing and target altitudes are illustrative, not a li
 - **Layers** — `LAY` in the same file (title, text, specs, the facts card).
 - **Contacts** — `CONFIG` at the top of `assets/js/main.js`: `endpoint`, `email`
   (`hello@useantares.com` — create the mailbox), `whatsapp`, `instagram`.
+
+## Rights
+
+- Every text on the site was written for it. The star field, the star trails and the mountain
+  are generated in code (`tools/build_stars.py`, the canvas, an inline SVG): no stock images.
+- Fonts come from Google Fonts under the SIL Open Font License, free for commercial use.
+- Astronomical facts and object names (M4, Rho Ophiuchi, α Scorpii) are public knowledge.
+- The design system is the Private Technology House site in this repository.
+- **The name.** "Antares" is used by several real observatories (France, Austria, Brazil,
+  Argentina) and many companies. Before launching a real business under it, search trademark
+  registers in classes 39, 41 and 43 (travel, events and education, lodging) for the target
+  countries, and check who owns useantares.com. Shown in a portfolio, label it as a concept.
 
 ## Before going live
 

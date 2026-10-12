@@ -512,140 +512,115 @@
     if (href) { a.href = href; if (/^https?:/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; } }
   });
 
-  /* ── Background: light moving through ice ─────────────────────────
-     A WebGL field of caustics on milk. The light drifts by itself and
-     leans towards the pointer. Static when motion is reduced; the frost
-     image underneath stays if WebGL is not available. */
-  (function sky() {
-    var glc = $('[data-sky-gl]');
-    if (!glc) return;
-    var FRAG = [
-      '#ifdef GL_FRAGMENT_PRECISION_HIGH',
-      'precision highp float;',
-      '#else',
-      'precision mediump float;',
-      '#endif',
-      'uniform vec2 uRes;uniform float uScale;uniform float uTime;uniform vec3 uBase;uniform vec2 uMouse;uniform float uAmt;uniform float uScroll;',
-      'vec2 h2(vec2 p){p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3)));return fract(sin(p)*43758.5453);}',
-      'float h1(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}',
-      'float vn(vec2 p){vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.0-2.0*f);',
-      'float a=h1(i);float b=h1(i+vec2(1.0,0.0));float c=h1(i+vec2(0.0,1.0));float d=h1(i+vec2(1.0,1.0));',
-      'return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}',
-      'float edge(vec2 x,float t){vec2 n=floor(x);vec2 f=fract(x);float d1=8.0;float d2=8.0;',
-      'for(int j=-1;j<=1;j++){for(int i=-1;i<=1;i++){',
-      'vec2 g=vec2(float(i),float(j));vec2 o=h2(n+g);o=0.5+0.42*sin(t+6.2831*o);',
-      'vec2 r=g+o-f;float d=dot(r,r);',
-      'if(d<d1){d2=d1;d1=d;}else if(d<d2){d2=d;}}}',
-      'return sqrt(d2)-sqrt(d1);}',
-      'void main(){',
-      'vec2 px=vec2(gl_FragCoord.x,uRes.y-gl_FragCoord.y)/uScale;',
-      'float t=uTime;',
-      'vec2 dm=px-uMouse;',
-      'float lens=exp(-dot(dm,dm)/39200.0);',
-      'px-=dm*0.12*lens;',
-      'vec2 sp=px+vec2(0.0,uScroll*0.18);',
-      'vec2 p=sp/230.0;',
-      'p+=0.20*vec2(sin(p.y*1.3+t*0.32),cos(p.x*1.1-t*0.27));',
-      'float e1=edge(p,t*0.50);',
-      'float e2=edge(p*1.7+vec2(3.1,1.7),t*0.68+1.3);',
-      'float l1=1.0-smoothstep(0.0,0.09,e1);',
-      'float l2=1.0-smoothstep(0.0,0.075,e2);',
-      'float c=max(l1,l2*0.75);',
-      'c=c*c*(3.0-2.0*c);',
-      'float halo=(1.0-smoothstep(0.0,0.34,e1))*0.5+(1.0-smoothstep(0.0,0.28,e2))*0.3;',
-      'vec2 q=sp/900.0;',
-      'float pool=vn(q*1.2+vec2(t*0.020,-t*0.015))*0.65+vn(q*2.6-vec2(t*0.030,t*0.010))*0.35;',
-      'pool=smoothstep(0.30,0.85,pool);',
-      'vec3 frost=vec3(0.894,0.929,0.949);',
-      'vec3 glacier=vec3(0.737,0.827,0.871);',
-      'float a=uAmt;',
-      'vec3 col=mix(uBase,frost,clamp(0.70*pool*a,0.0,1.0));',
-      'col=mix(col,glacier,clamp(0.32*pool*pool*a,0.0,1.0));',
-      'col=mix(col,glacier,clamp(smoothstep(0.18,0.60,e1)*0.10*pool*a,0.0,1.0));',
-      'col=mix(col,vec3(1.0),clamp((c*0.85+halo*0.20)*pool*a,0.0,1.0));',
-      'col=mix(col,vec3(1.0),clamp(c*0.22*(1.0-pool)*a,0.0,1.0));',
-      'col=mix(col,vec3(1.0),lens*0.12);',
-      'gl_FragColor=vec4(col,1.0);',
-      '}'
-    ].join('\n');
+  /* ── Background: star trails ──────────────────────────────────────
+     A long exposure of the sky above the dome, drawn on canvas: every
+     star leaves the same arc around the celestial pole. The exposure
+     builds up on load, the sky keeps turning slowly and turns further
+     as you scroll down through the night. Static with reduced motion;
+     without JS the still image underneath stays. */
+  (function trails() {
+    var cv = $('[data-sky]');
+    var cx = cv && cv.getContext && cv.getContext('2d');
+    if (!cx) return;
+    var BG = '#FAF8F4';
+    var INK = [
+      { c: '79, 113, 132', p: 0.62 },   // steel
+      { c: '127, 160, 178', p: 0.22 },  // glacier
+      { c: '15, 27, 36', p: 0.11 },     // the bright ones
+      { c: '201, 120, 92', p: 0.05 }    // red giants, like Antares
+    ];
+    var EXPOSURE = 0.42;     // radians of sky rotation captured in each trail
+    var SPIN = 0.0035;       // radians per second while you watch
+    var SCROLL = 0.00022;    // radians per pixel scrolled
+    var W = 0, H = 0, dpr = 1, pole = { x: 0, y: 0 }, rFar = 1, buckets = [], drawn = { rot: -1, len: -1 };
+    var t0 = performance.now(), meteor = null, nextMeteor = t0 + 9000;
 
-    var gl = null, u = {};
-    try {
-      gl = glc.getContext('webgl', { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: 'low-power' }) || glc.getContext('experimental-webgl');
-    } catch (e) { gl = null; }
-    if (!gl) { glc.style.display = 'none'; return; }
-    function mk(type, src) {
-      var sh = gl.createShader(type);
-      gl.shaderSource(sh, src);
-      gl.compileShader(sh);
-      return gl.getShaderParameter(sh, gl.COMPILE_STATUS) ? sh : null;
+    function rand(seed) { return function () { seed = seed * 16807 % 2147483647; return (seed - 1) / 2147483646; }; }
+    function build() {
+      var r = rand(550);
+      // the south celestial pole sits just above the top right corner
+      pole.x = W * 0.84; pole.y = -H * 0.12;
+      var rNear = Math.max(40, -pole.y);
+      rFar = Math.hypot(pole.x, H - pole.y) + 40;
+      var n = Math.round(Math.min(1100, Math.max(380, W * H / 1500)));
+      var map = {};
+      buckets = [];
+      for (var i = 0; i < n; i++) {
+        var rad = Math.sqrt(r() * (rFar * rFar - rNear * rNear) + rNear * rNear);
+        var mag = Math.pow(r(), 3.2);
+        var pick = r(), k = 0, acc = INK[0].p;
+        while (pick > acc && k < INK.length - 1) acc += INK[++k].p;
+        var alpha = Math.round((0.07 + mag * 0.27) * 20) / 20;
+        var width = Math.round((0.55 + mag * 1.2) * 4) / 4;
+        var key = k + '|' + alpha + '|' + width;
+        if (!map[key]) { map[key] = { style: 'rgba(' + INK[k].c + ',' + alpha + ')', width: width, arcs: [] }; buckets.push(map[key]); }
+        map[key].arcs.push(rad, r() * Math.PI * 2);
+      }
     }
-    var v = mk(gl.VERTEX_SHADER, 'attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}');
-    var f = mk(gl.FRAGMENT_SHADER, FRAG);
-    var pr = v && f && gl.createProgram();
-    if (pr) { gl.attachShader(pr, v); gl.attachShader(pr, f); gl.linkProgram(pr); }
-    if (!pr || !gl.getProgramParameter(pr, gl.LINK_STATUS)) { glc.style.display = 'none'; return; }
-    gl.useProgram(pr);
-    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    var loc = gl.getAttribLocation(pr, 'p');
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
-    ['uRes', 'uScale', 'uTime', 'uBase', 'uMouse', 'uAmt', 'uScroll'].forEach(function (n) { u[n] = gl.getUniformLocation(pr, n); });
-    gl.uniform3f(u.uBase, 0.980, 0.973, 0.957);
-    gl.uniform1f(u.uAmt, 0.9);
-    glc.classList.add('on');
-
-    var W = 1440, H = 900, sc = 0.6;
-    var t0 = performance.now(), prev = t0;
-    var mouse = { x: -9999, y: -9999, last: -1e9, touch: false };
-    var light = { x: (window.innerWidth || 1440) * 0.62, y: (window.innerHeight || 900) * 0.32 };
-
     function resize() {
       W = window.innerWidth || 1440;
       H = window.innerHeight || 900;
-      var s = W < 700 ? 0.5 : 0.6;
-      var cap = 1300000;
-      if (W * H * s * s > cap) s = Math.sqrt(cap / (W * H));
-      glc.width = Math.max(1, Math.round(W * s));
-      glc.height = Math.max(1, Math.round(H * s));
-      sc = glc.width / W;
-      if (reduceMotion) frame(performance.now());
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      cv.width = Math.round(W * dpr);
+      cv.height = Math.round(H * dpr);
+      build();
+      drawn.rot = -1;
+      draw(performance.now());
     }
-    function frame(now) {
-      var dt = Math.min(0.05, Math.max(0, (now - prev) / 1000));
-      prev = now;
+    function draw(now) {
       var t = (now - t0) / 1000;
-      var idle = now - mouse.last > (mouse.touch ? 1400 : 2600);
-      var tx = idle ? W * (0.5 + 0.38 * Math.sin(t * 0.21)) : mouse.x;
-      var ty = idle ? H * (0.42 + 0.30 * Math.sin(t * 0.16 + 1.2)) : mouse.y;
-      var k = reduceMotion ? 1 : 1 - Math.exp(-dt * (idle ? 1.4 : 7));
-      light.x += (tx - light.x) * k;
-      light.y += (ty - light.y) * k;
-      gl.viewport(0, 0, glc.width, glc.height);
-      gl.uniform2f(u.uRes, glc.width, glc.height);
-      gl.uniform1f(u.uScale, sc);
-      gl.uniform1f(u.uTime, reduceMotion ? 12 : t % 1200);
-      gl.uniform2f(u.uMouse, light.x, light.y);
-      gl.uniform1f(u.uScroll, window.scrollY || 0);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      var grow = reduceMotion ? 1 : Math.min(1, t / 5.5);
+      grow = 1 - Math.pow(1 - grow, 3);
+      var rot = reduceMotion ? 0 : t * SPIN + (window.scrollY || 0) * SCROLL;
+      var len = Math.max(0.004, EXPOSURE * grow);
+      // Skip frames where nothing would move by more than a third of a pixel.
+      if (!meteor && Math.abs(rot - drawn.rot) * rFar < 0.35 && len === drawn.len && now <= nextMeteor) return;
+      drawn.rot = rot; drawn.len = len;
+      cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      cx.fillStyle = BG;
+      cx.fillRect(0, 0, W, H);
+      cx.lineCap = 'round';
+      for (var b = 0; b < buckets.length; b++) {
+        var bk = buckets[b], a = bk.arcs;
+        cx.strokeStyle = bk.style;
+        cx.lineWidth = bk.width;
+        cx.beginPath();
+        for (var i = 0; i < a.length; i += 2) {
+          var s = a[i + 1] + rot;
+          cx.moveTo(pole.x + a[i] * Math.cos(s), pole.y + a[i] * Math.sin(s));
+          cx.arc(pole.x, pole.y, a[i], s, s + len);
+        }
+        cx.stroke();
+      }
+      if (meteor) drawMeteor(now);
+      else if (!reduceMotion && now > nextMeteor) {
+        var m = rand(Math.floor(now) + 7);
+        meteor = { x: W * (0.15 + 0.7 * m()), y: H * (0.08 + 0.4 * m()), a: 0.35 + 0.5 * m(), born: now };
+      }
     }
-    function onMove(e) {
-      mouse.x = e.clientX; mouse.y = e.clientY;
-      mouse.last = performance.now();
-      mouse.touch = e.pointerType === 'touch';
+    // Now and then a meteor: a short bright streak that fades in under a second.
+    function drawMeteor(now) {
+      var k = (now - meteor.born) / 900;
+      if (k >= 1) { meteor = null; nextMeteor = now + 25000 + Math.random() * 35000; return; }
+      var len = 140, head = Math.min(1, k * 1.6) * len;
+      var x1 = meteor.x + Math.cos(meteor.a) * head, y1 = meteor.y + Math.sin(meteor.a) * head;
+      var g = cx.createLinearGradient(meteor.x, meteor.y, x1, y1);
+      g.addColorStop(0, 'rgba(79, 113, 132, 0)');
+      g.addColorStop(1, 'rgba(79, 113, 132, ' + (0.55 * (1 - k)).toFixed(3) + ')');
+      cx.strokeStyle = g;
+      cx.lineWidth = 1.2;
+      cx.beginPath();
+      cx.moveTo(meteor.x, meteor.y);
+      cx.lineTo(x1, y1);
+      cx.stroke();
     }
-    if (!reduceMotion) {
-      window.addEventListener('pointermove', onMove, { passive: true });
-      window.addEventListener('pointerdown', onMove, { passive: true });
-    }
+
     window.addEventListener('resize', resize);
     resize();
-    frame(performance.now());
-    if (!reduceMotion) {
-      var loop = function (now) { frame(now); requestAnimationFrame(loop); };
-      requestAnimationFrame(loop);
-    }
+    cv.classList.add('on');
+    if (reduceMotion) return;
+    var loop = function (now) { if (!doc.hidden) draw(now); requestAnimationFrame(loop); };
+    requestAnimationFrame(loop);
   })();
 
   /* ── For whoever opened the console ───────────────────────────── */
