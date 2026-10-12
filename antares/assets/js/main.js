@@ -25,24 +25,24 @@
   var OBJ = [
     { n: '01', cat: 'Dome / Main instrument', name: 'The Antares', desc: 'Our 600 mm telescope under a 6.5 m dome. Saturn’s rings look as if they were drawn with a pen.', stack: '600 mm · f/8 · Ritchey–Chrétien', url: 'useantares.com / telescope', cta: 'Book the dome' },
     { n: '02', cat: 'Pier / Astrophotography', name: 'The Imaging Pier', desc: 'Four concrete piers on the south ridge, each with power and a dew heater. Bring your camera or borrow ours.', stack: '4 piers · mounts on loan · processing room', url: 'useantares.com / pier', cta: 'Book a pier night' },
-    { n: '03', cat: 'Rooms / Guesthouse', name: 'The Guesthouse', desc: 'Eight rooms with blackout shutters, warm floors and red night lights, so your eyes stay dark on the way back from the dome. Someone is always awake.', stack: '8 rooms · breakfast until noon', url: 'useantares.com / rooms', cta: 'Write to the house' },
-    { n: '00', cat: 'Chart / Tonight', name: 'Tonight’s Sky', desc: 'Scorpius, with Antares at its heart, and the Moon worked out for today. Open it to see the darkest dates ahead.', stack: 'Moon · darkness · best dates', url: 'useantares.com / tonight', cta: 'Open tonight’s sky', self: true }
+    { n: '03', cat: 'Rooms / Guesthouse', name: 'The Guesthouse', desc: 'Eight rooms with blackout shutters, warm floors and red night lights, so your eyes stay dark-adapted on the way back from the dome. Someone is always awake.', stack: '8 rooms · breakfast until noon', url: 'useantares.com / rooms', cta: 'Write to the house' },
+    { n: '04', cat: 'Chart / Tonight', name: 'Tonight’s Sky', desc: 'Scorpius, with Antares at its heart, and the Moon worked out for today. Open it to see the darkest dates ahead.', stack: 'Moon · darkness · best dates', url: 'useantares.com / tonight', cta: 'Open tonight’s sky', self: true }
   ];
 
   var LAY = [
     { n: '01', name: 'Eye', title: 'The last 24 millimetres.', desc: 'Give your eyes thirty minutes of darkness and they become a different instrument. That is why every light here turns red after sunset.', stack: 'dark adaptation · 30 min · red light only', file: 'Layer 01 — the eye',
-      code: 'pupil       7 mm, dark-adapted\nadaptation  30 min to full\nfaintest    magnitude 6.5\nnight light red only, after dusk' },
-    { n: '02', name: 'Eyepiece', title: 'Where the image becomes yours.', desc: 'We change eyepieces through the night: wide fields for clusters and nebulae, high power for planets once the air settles.', stack: '13–49 mm · 98–369× · 82° field', file: 'Layer 02 — the eyepiece',
-      code: 'focal       13 – 49 mm\nfield       82° apparent\npower       98× – 369×\nbest for    planets, double stars' },
+      code: 'pupil       7 mm, dark-adapted\nadaptation  30 min to full\nfaintest    magnitude 7.5+ here\nnight light red only, after dusk' },
+    { n: '02', name: 'Eyepiece', title: 'Where the image becomes yours.', desc: 'We change eyepieces through the night: wide fields for clusters and nebulae, high power for planets once the air settles.', stack: '13–49 mm · 98–369× · 68–82° field', file: 'Layer 02 — the eyepiece',
+      code: 'focal       13 – 49 mm\nfield       68° – 82° apparent\npower       98× – 369×\nbest for    clusters to Saturn' },
     { n: '03', name: 'Mirror', title: 'Six hundred millimetres of patience.', desc: 'The Antares collects about 7,300 times more light than your eye. Its mirror is cleaned by hand and re-coated every five years.', stack: '600 mm · f/8 · Ritchey–Chrétien', file: 'Layer 03 — the mirror',
       code: 'diameter    600 mm\nfocal       4,800 mm · f/8\nlight       7,300 × your eye\nresolution  0.19″' },
-    { n: '04', name: 'Dome', title: 'A room that turns with the sky.', desc: 'The 6.5 m dome follows the telescope, so the slit always faces your target. It opens after sunset, once the air inside matches the air outside.', stack: '6.5 m · 1.4 m slit · 360° in 2 min', file: 'Layer 04 — the dome',
-      code: 'diameter    6.5 m\nslit        1.4 m\nrotation    360° in 2 min\nopens       when the air settles' },
-    { n: '05', name: 'Atmosphere', title: 'The thin part of the sky.', desc: 'At 2,140 m about a fifth of the air is already below you. Steady air keeps stars as sharp points; astronomers call it seeing, and we measure it every night.', stack: '2,140 m · seeing 0.6–1.2″ · Bortle 1', file: 'Layer 05 — the atmosphere',
-      code: 'altitude    2,140 m\nair below   ~22%\nseeing      0.6″ – 1.2″\nsky         21.9 mag/arcsec²' },
+    { n: '04', name: 'Dome', title: 'A room that turns with the sky.', desc: 'The 6.5 m dome follows the telescope, so the slit always faces your target. It opens at sunset, so the air inside can cool to match the night outside.', stack: '6.5 m · 1.4 m slit · 360° in 2 min', file: 'Layer 04 — the dome',
+      code: 'diameter    6.5 m\nslit        1.4 m\nrotation    360° in 2 min\nopens       at sunset, to cool down' },
+    { n: '05', name: 'Atmosphere', title: 'The thin part of the sky.', desc: 'At 2,140 m almost a quarter of the air is already below you. Steady air keeps stars as sharp points; astronomers call it seeing, and we measure it every night.', stack: '2,140 m · seeing 0.6–1.2″ · Bortle 1', file: 'Layer 05 — the atmosphere',
+      code: 'altitude    2,140 m\nair below   ~23%\nseeing      0.6″ – 1.2″\nsky         21.9 mag/arcsec²' },
     { n: '06', name: 'Dust', title: 'Dust between the stars.', desc: 'On its way to us, Antares’ light skims the Rho Ophiuchi cloud, a nursery of young stars that glows gold, blue and red in long exposures.', stack: 'Rho Ophiuchi · ~460 light years away', file: 'Layer 06 — interstellar dust',
       code: 'cloud       Rho Ophiuchi\ndistance    ~460 ly\ncolours     gold, blue, red\nbest seen   long exposures' },
-    { n: '07', name: 'Antares', title: 'Light that left 550 years ago.', desc: 'A red supergiant about 700 times wider than the Sun. The light you’ll see tonight set out when Leonardo da Vinci was still an apprentice in Florence.', stack: 'α Scorpii · red supergiant · ~550 ly', file: 'Layer 07 — Antares',
+    { n: '07', name: 'Antares', title: 'Light that left 550 years ago.', desc: 'A red supergiant about 700 times wider than the Sun. The light you’ll see tonight set out when the young Leonardo da Vinci was still working in Verrocchio’s workshop in Florence.', stack: 'α Scorpii · red supergiant · ~550 ly', file: 'Layer 07 — Antares',
       code: 'name        α Scorpii\ntype        red supergiant\nradius      ~700 × the Sun\ndistance    ~550 ly\nsurface     ~3,600 K' }
   ];
 
@@ -138,7 +138,11 @@
      good to a few tenths of a degree, so phase dates land within the hour. */
   var SYNODIC = 29.530588853;
   var DAY = 86400000;
-  var PHASES = ['New moon', 'Waxing crescent', 'First quarter', 'Waxing gibbous', 'Full moon', 'Waning gibbous', 'Last quarter', 'Waning crescent'];
+  // Named phases are moments; between them the Moon is a crescent or gibbous.
+  function phaseName(e) {
+    return e < 12 || e > 348 ? 'New moon' : Math.abs(e - 90) < 12 ? 'First quarter' : Math.abs(e - 180) < 12 ? 'Full moon' :
+      Math.abs(e - 270) < 12 ? 'Last quarter' : e < 90 ? 'Waxing crescent' : e < 180 ? 'Waxing gibbous' : e < 270 ? 'Waning gibbous' : 'Waning crescent';
+  }
   function rad(d) { return d * Math.PI / 180; }
   // Elongation of the Moon from the Sun, 0–360°: 0 new, 180 full.
   function elongation(ms) {
@@ -182,7 +186,7 @@
     return {
       age: age,
       lit: (1 - Math.cos(rad(e))) / 2,
-      phase: PHASES[Math.floor(e / 45 + 0.5) % 8],
+      phase: phaseName(e),
       trend: age < 1 || toNew < 1 ? 'new' : Math.abs(e - 180) < 12 ? 'full' : e < 180 ? 'waxing' : 'waning',
       newMoon: newMoon,
       fullMoon: nextPhase(ms, 180),
@@ -191,7 +195,8 @@
       inWindow: inWindow
     };
   }
-  function fmtDay(d) { return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); }
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fmtDay(d) { return d.getDate() + ' ' + MONTHS[d.getMonth()]; }
   function goodFor(lit) {
     return lit < 0.3 ? 'galaxies and nebulae' : lit < 0.7 ? 'clusters and double stars' : 'the Moon and the planets';
   }
@@ -223,7 +228,7 @@
       ['Next full moon', fmtDay(m.fullMoon)],
       ['Darkest nights', (m.inWindow ? 'now' : fmtDay(m.darkFrom)) + ' – ' + fmtDay(m.darkTo), true],
       ['Good for', goodFor(m.lit)],
-      ['Antares light left', '≈ ' + (new Date().getFullYear() - 550)]
+      ['Light set out', '≈ ' + (new Date().getFullYear() - 550)]
     ];
     rowsEl.innerHTML = rows.map(function (r) {
       return '<dt>' + esc(r[0]) + '</dt><dd' + (r[2] ? ' class="good"' : '') + '>' + esc(r[1]) + '</dd>';
@@ -361,11 +366,11 @@
       { g: 'Sections', label: 'The Grounds', hint: '03', k: 'telescope pier guesthouse rooms chart places', run: function () { go('#grounds'); } },
       { g: 'Sections', label: 'Eye to star', hint: '04', k: 'layers mirror eyepiece atmosphere dust antares light', run: function () { go('#sky'); } },
       { g: 'Sections', label: 'How a night goes', hint: '05', k: 'programme schedule dinner briefing breakfast', run: function () { go('#your-night'); } },
-      { g: 'Sections', label: 'House rules', hint: '06', k: 'rules dark sky clouds rebook quiet', run: function () { go('#rules'); } },
+      { g: 'Sections', label: 'House rules', hint: '06', k: 'rules dark sky clouds cancellation quiet', run: function () { go('#rules'); } },
       { g: 'Sections', label: 'Book a night', hint: '07', k: 'book booking reserve request contact', run: function () { go('#book'); } },
       { g: 'Tonight', label: isTonight() ? 'Close tonight’s sky' : 'Tonight’s sky — Moon and darkest dates', hint: 'T', k: 'moon phase new moon dark dates weather sky', run: function () { setTonight(!isTonight()); } }
     ];
-    if (CONFIG.email) list.push({ g: 'Contact', label: 'Copy our email', hint: CONFIG.email, k: 'email mail contact', run: function () { if (navigator.clipboard) navigator.clipboard.writeText(CONFIG.email); } });
+    if (CONFIG.email) list.push({ g: 'Contact', label: 'Copy our email', hint: CONFIG.email, k: 'email mail contact', stay: true, run: copyEmail });
     if (CONFIG.whatsapp) list.push({ g: 'Contact', label: 'Message us on WhatsApp', hint: '+' + CONFIG.whatsapp, k: 'whatsapp message chat', run: function () { window.open('https://wa.me/' + CONFIG.whatsapp, '_blank', 'noopener'); } });
     if (CONFIG.instagram) list.push({ g: 'Contact', label: 'Night photos on Instagram', hint: '@' + CONFIG.instagram, k: 'instagram photos', run: function () { window.open('https://instagram.com/' + CONFIG.instagram, '_blank', 'noopener'); } });
     return list;
@@ -374,6 +379,8 @@
   function renderPalette() {
     var q = pInput.value.trim().toLowerCase();
     pItems = commands().filter(function (c) { return !q || (c.label + ' ' + c.k + ' ' + c.hint).toLowerCase().indexOf(q) !== -1; });
+    // A match in the label beats a match in the keywords.
+    if (q) pItems.sort(function (a, b) { return (b.label.toLowerCase().indexOf(q) !== -1) - (a.label.toLowerCase().indexOf(q) !== -1); });
     if (pSel >= pItems.length) pSel = 0;
     var html = '', group = '';
     pItems.forEach(function (c, i) {
@@ -395,8 +402,24 @@
   function runSelected(i) {
     var c = pItems[i];
     if (!c) return;
-    closePalette(true);
+    closePalette(!c.stay);
     c.run();
+  }
+
+  var toastEl = $('[data-toast]');
+  var toastTimer;
+  function toast(msg) {
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.hidden = true; }, 2600);
+  }
+  function copyEmail() {
+    var fallback = function () { location.href = 'mailto:' + CONFIG.email; };
+    try {
+      navigator.clipboard.writeText(CONFIG.email).then(function () { toast('Copied: ' + CONFIG.email); }, fallback);
+    } catch (e) { fallback(); }
   }
   function openPalette() {
     if (!palette.hidden) return;
@@ -509,7 +532,9 @@
   };
   $$('[data-link]').forEach(function (a) {
     var href = links[a.getAttribute('data-link')];
-    if (href) { a.href = href; if (/^https?:/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; } }
+    if (!href) { a.hidden = true; return; }
+    a.href = href;
+    if (/^https?:/.test(href)) { a.target = '_blank'; a.rel = 'noopener'; }
   });
 
   /* ── Background: star trails ──────────────────────────────────────
@@ -532,7 +557,8 @@
     var EXPOSURE = 0.42;     // radians of sky rotation captured in each trail
     var SPIN = 0.0035;       // radians per second while you watch
     var SCROLL = 0.00022;    // radians per pixel scrolled
-    var W = 0, H = 0, dpr = 1, pole = { x: 0, y: 0 }, rFar = 1, buckets = [], drawn = { rot: -1, len: -1 };
+    var W = 0, H = 0, dpr = 1, pole = { x: 0, y: 0 }, rFar = 1, buckets = [], drawn = { rot: -1, len: -1, at: 0 };
+    var built = { w: 0, h: 0 }, lastScroll = -1;
     var t0 = performance.now(), meteor = null, nextMeteor = t0 + 9000;
 
     function rand(seed) { return function () { seed = seed * 16807 % 2147483647; return (seed - 1) / 2147483646; }; }
@@ -560,10 +586,11 @@
     function resize() {
       W = window.innerWidth || 1440;
       H = window.innerHeight || 900;
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       cv.width = Math.round(W * dpr);
       cv.height = Math.round(H * dpr);
-      build();
+      // A phone's toolbar hiding changes the height a little: keep the same sky.
+      if (W !== built.w || Math.abs(H - built.h) > 120) { build(); built.w = W; built.h = H; }
       drawn.rot = -1;
       draw(performance.now());
     }
@@ -573,9 +600,12 @@
       grow = 1 - Math.pow(1 - grow, 3);
       var rot = reduceMotion ? 0 : t * SPIN + (window.scrollY || 0) * SCROLL;
       var len = Math.max(0.004, EXPOSURE * grow);
-      // Skip frames where nothing would move by more than a third of a pixel.
-      if (!meteor && Math.abs(rot - drawn.rot) * rFar < 0.35 && len === drawn.len && now <= nextMeteor) return;
-      drawn.rot = rot; drawn.len = len;
+      // While scrolling, every frame; otherwise about 12 frames a second is plenty for a slow sky.
+      var sy = window.scrollY || 0, scrolling = sy !== lastScroll;
+      lastScroll = sy;
+      if (!meteor && len === drawn.len && now <= nextMeteor && !scrolling &&
+          (now - drawn.at < 80 || Math.abs(rot - drawn.rot) * rFar < 0.5)) return;
+      drawn.rot = rot; drawn.len = len; drawn.at = now;
       cx.setTransform(dpr, 0, 0, dpr, 0, 0);
       cx.fillStyle = BG;
       cx.fillRect(0, 0, W, H);

@@ -44,13 +44,14 @@ assets/img/           stars.webp (night windows), trails.webp (background when J
   then a meteor crosses. Still frame with reduced motion; `trails.webp` when JS is off.
 - **Tonight** (header toggle, key `T`, the `00` object). Moon illumination, phase, next new and full
   moon and the darkest nights ahead, from low-precision Sun and Moon positions. Checked against
-  the 2026 phases: new moons within ~5 minutes, full moons within ~30. The same figures fill the
+  the 2026 phases: new moons within ~7 minutes, full moons within ~40. The same figures fill the
   Moon card in the first screen, the chart legend, the first house rule and the footer.
 - **Menu** — button in the header (also ⌘K / Ctrl+K): search across sections and contacts.
 - **Booking form** — shows the request as it will arrive; sends to `CONFIG.endpoint`, falls back
   to email or WhatsApp.
 
-The first screen's cloud, seeing and target altitudes are illustrative, not a live feed.
+The first screen is labelled *forecast*: cloud, seeing and target altitudes are a sample night
+(altitudes worked out for latitude 30° S in September), not a live feed.
 
 ## Edit
 
