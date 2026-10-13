@@ -1,5 +1,5 @@
 // Локальный просмотр сайта: node tools/serve.mjs [порт] → http://localhost:8080
-// Отдаёт только index.html и assets/ — ровно то, что уходит на хостинг.
+// Отдаёт index.html и assets/ — ровно то, что уходит на хостинг, — и локальные эталоны tools/ref/.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -12,7 +12,8 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=
 createServer(async (req, res) => {
   const rel = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '') || 'index.html';
   const file = path.resolve(root, rel);
-  const allowed = file === path.join(root, 'index.html') || file.startsWith(path.join(root, 'assets') + path.sep);
+  // tools/ref/ — эталоны (только локально, в .gitignore), на хостинг не идут
+  const allowed = file === path.join(root, 'index.html') || file.startsWith(path.join(root, 'assets') + path.sep) || file.startsWith(path.join(root, 'tools', 'ref') + path.sep);
   if (!allowed) { res.writeHead(404).end('not found'); return; }
   try {
     const body = await readFile(file);

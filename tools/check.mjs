@@ -8,6 +8,8 @@
 // Языки: русская версия на трёх ширинах, английская (?lang=en) на двух — в ней не должно остаться кириллицы,
 // и у русских строк скрытых <template> должен быть перевод. На 1440 — переключение RU → EN → RU и прерывание
 // «Пересобрать блок» кликом.
+// Объект первого экрана (assets/hero-objects.js): пять принципов, строка принципов, стрелки, клик по панели,
+// автосмена, «Пересобрать блок», reduced motion; скриншоты каждого из пяти объектов на 1440 и 390.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -80,9 +82,10 @@ const hiddenVisible = () => [...document.querySelectorAll('.sec.s-done .ptx')].f
 const notDoneVisible = () => [...document.querySelectorAll('[data-sec]')].filter((s) => { const r = s.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight && !s.classList.contains('s-done'); }).map((s) => s.getAttribute('data-sec'));
 
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-for (const [w, h, tag, lang] of [[1440, 900, 'd1440', 'ru'], [1700, 930, 'd1700', 'ru'], [390, 844, 'm390', 'ru'], [1440, 900, 'd1440-en', 'en'], [390, 844, 'm390-en', 'en']]) {
-  console.log(`\n${tag} (${w}×${h}, ${lang})`);
-  const page = await browser.newPage({ viewport: { width: w, height: h } });
+const idx = (page) => page.evaluate(() => document.querySelector('[data-objidx]').textContent.trim());
+for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1700, 930, 'd1700', 'ru'], [390, 844, 'm390', 'ru'], [1440, 900, 'd1440-en', 'en'], [390, 844, 'm390-en', 'en'], [1440, 900, 'd1440-rm', 'ru', true]]) {
+  console.log(`\n${tag} (${w}×${h}, ${lang}${rm ? ', prefers-reduced-motion' : ''})`);
+  const page = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: rm ? 'reduce' : 'no-preference' });
   const errs = [];
   page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) errs.push(m.text()); });
@@ -95,10 +98,46 @@ for (const [w, h, tag, lang] of [[1440, 900, 'd1440', 'ru'], [1700, 930, 'd1700'
   const shot = async (name) => { await page.waitForTimeout(400); await page.screenshot({ path: path.join(shots, `${tag}-${name}.png`) }); };
   const step = () => page.evaluate(() => document.querySelector('[data-pt-step]')?.textContent || '');
 
+  if (rm) {
+    await run(3000);
+    const i0 = await idx(page);
+    await run(12000);
+    const i1 = await idx(page), nd = await page.evaluate(() => [...document.querySelectorAll('[data-sec]')].filter((s) => !s.classList.contains('s-done')).length);
+    await page.click('[data-next]'); await run(300);
+    const i2 = await idx(page);
+    if (i0 !== '01 / 05' || i1 !== i0) fail(`reduced motion: объект сменился сам (${i0} → ${i1})`);
+    else if (i2 !== '02 / 05') fail(`reduced motion: стрелка не переключила объект (${i2})`);
+    else if (nd) fail(`reduced motion: не собраны ${nd} секций`);
+    else console.log('  ✓ reduced motion: всё на месте сразу, автосмены нет, стрелки работают');
+    await shot('hero');
+    if (errs.length) { errs.forEach((e) => fail(e)); } else console.log('  ✓ ошибок в консоли нет');
+    await page.close();
+    continue;
+  }
   // первый экран по этапам
   let t = 0;
   for (const m of [0.4, 1.8, 2.9, 4.2, 7.0]) { await run(Math.round((m - t) * 1000)); t = m; await shot('hero-' + m.toFixed(1)); }
   if (!/ready/.test(await step())) fail('первый экран не дошёл до «ready»');
+  // объект первого экрана: каждый из пяти — скриншот (клик по пункту строки принципов)
+  if (tag === 'd1440' || tag === 'm390') {
+    for (let k = 0; k < 5; k++) { await page.evaluate((n) => document.querySelector(`[data-usp="${n}"]`).click(), k); await run(k === 4 ? 8200 : 4000); await shot(`hero-obj${k + 1}`); }
+    await page.evaluate(() => document.querySelector('[data-usp="0"]').click()); await run(500);
+  }
+  if (tag === 'd1440') {
+    const hx = await page.evaluate(() => ({ dots: document.querySelectorAll('[data-objdot]').length, gl: !!document.querySelector('[data-sec="hero"] canvas[data-gl]'), usp: document.querySelectorAll('[data-usp]').length }));
+    const res = [];
+    await page.click('[data-usp="3"]'); await run(300);
+    res.push(await page.evaluate(() => document.querySelector('[data-usp="3"]').getAttribute('aria-current')), await idx(page));
+    await page.click('[data-next]'); await run(300); res.push(await idx(page));
+    await page.click('[data-prev]'); await run(300); res.push(await idx(page));
+    const pb = await page.evaluate(() => { const r = document.querySelector('[data-obj]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+    await page.mouse.click(pb[0], pb[1]); await run(300); res.push(await idx(page));
+    await page.mouse.move(5, 5); await run(11000); res.push(await idx(page));
+    const want = ['step', '04 / 05', '05 / 05', '04 / 05', '05 / 05', '01 / 05'];
+    if (hx.dots || !hx.gl || hx.usp !== 5) fail(`первый экран: точек ${hx.dots}, canvas[data-gl] ${hx.gl}, пунктов принципов ${hx.usp}`);
+    else if (res.join() !== want.join()) fail(`объект первого экрана: ${res.join(' · ')} (ждали ${want.join(' · ')})`);
+    else console.log('  ✓ объект первого экрана: строка принципов, стрелки, клик по панели и автосмена');
+  }
 
   // каждая секция после сборки
   const secs = await page.evaluate(() => [...document.querySelectorAll('[data-sec]')].map((s) => s.getAttribute('data-sec')));
@@ -152,6 +191,8 @@ for (const [w, h, tag, lang] of [[1440, 900, 'd1440', 'ru'], [1700, 930, 'd1700'
     if (en.lang !== 'en' || en.url !== '?lang=en') { ok = false; fail(`после переключения на EN: lang=${en.lang}, адрес ${en.url}`); }
     if (en.swap || nd.length) { ok = false; fail(`после переключения на EN секции не собраны: s-swap ${en.swap}, не собраны ${nd.join(', ')}`); }
     if (left.length) { ok = false; fail(`после переключения на EN осталась кириллица: ${left.join(' | ')}`); }
+    const on = await page.evaluate(() => document.querySelector('[data-objname]').textContent);
+    if (!/^Object №0\d · [A-Z]/.test(on)) { ok = false; fail(`после переключения на EN подпись объекта: «${on}»`); }
     if (hid) { ok = false; fail(`после переключения на EN ${hid} текстовых элементов на экране невидимы`); }
     await page.click('[data-lang="ru"]');
     await run(4000);
@@ -159,6 +200,12 @@ for (const [w, h, tag, lang] of [[1440, 900, 'd1440', 'ru'], [1700, 930, 'd1700'
     if (ru1 !== ru0) { ok = false; fail('после возврата на RU текст не совпал с исходным'); }
     if ((await page.evaluate(() => document.documentElement.lang + location.search)) !== 'ru') { ok = false; fail('после возврата на RU: lang или адрес не сброшены'); }
     if (ok) console.log('  ✓ смена языка RU → EN → RU: текст, адрес и lang на месте');
+    // «Пересобрать блок» на первом экране: всё собирается заново, объект на месте
+    await page.click('[data-pt-replay]');
+    await run(8000);
+    const nd1 = await page.evaluate(notDoneVisible), hid1 = await page.evaluate(hiddenVisible), cv = await page.evaluate(() => getComputedStyle(document.querySelector('[data-sec="hero"] canvas[data-gl]')).opacity);
+    if (nd1.length || hid1 || cv !== '1') fail(`«Пересобрать блок» на первом экране: не собраны ${nd1.join(', ') || '—'}, невидимых текстов ${hid1}, холст объекта opacity ${cv}`);
+    else console.log('  ✓ «Пересобрать блок» на первом экране: секции и объект собраны заново');
     // «Пересобрать блок», прерванный кликом до постановки в очередь (между 1.0 и 1.7 с): секции не гаснут насовсем
     await page.click('[data-pt-replay]');
     await run(1250);

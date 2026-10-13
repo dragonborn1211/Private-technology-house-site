@@ -3,9 +3,7 @@
     var factory = function (root) {
       var canvas = root.querySelector('[data-pt-canvas]');
       var stepEl = root.querySelector('[data-pt-step]'), progEl = root.querySelector('[data-pt-prog]'), btn = root.querySelector('[data-pt-replay]');
-      var vis = root.querySelector('[data-obj]'), objName = root.querySelector('[data-objname]'), objIdx = root.querySelector('[data-objidx]');
       var countEl = root.querySelector('[data-pt-count]');
-      var dots = Array.prototype.slice.call(root.querySelectorAll('[data-objdot]'));
       var rm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
       var env = { rm: rm, mob: false, vh: 800 };
       var gl = null, c2 = null;
@@ -17,7 +15,7 @@
       var W = 1, VH = 1, dpr = 1, mob = false, N = 0, alive = true, active = true, raf = 0, prev = performance.now();
       var rootTop = 0, rootLeft = 0, lastTop = null;
       var mouse = { cx: -1e5, cy: -1e5 };
-      var P, V, T, NT, C, CT, NC, A, AT, NA, SZ, NS, SW, M, NM, OB, SP, TP, BUF, ALL = [], BLD = [], OBJ = [];
+      var P, V, T, NT, C, CT, NC, A, AT, NA, SZ, NS, SW, M, NM, SP, TP, BUF, ALL = [], BLD = [];
       var layoutGen = 0, lzT = [0, 0, 0, 0], lzQ = 0;
       var prog = null, buf = null, U = {};
       var SMK = 520, sX = new Float32Array(SMK), sY = new Float32Array(SMK), sVX = new Float32Array(SMK), sVY = new Float32Array(SMK), sL = new Float32Array(SMK), sM = new Float32Array(SMK), sC = new Float32Array(SMK), sI = 0, lastPX = null, lastPY = null;
@@ -26,53 +24,13 @@
       // язык: ссылки RU / EN в шапке и луч, который проходит экран при смене языка
       var langLinks = Array.prototype.slice.call(root.querySelectorAll('[data-lang]')), beamEl = root.querySelector('[data-lang-beam]');
       var COL = { frost: [238, 243, 246], glass: [188, 211, 222], skel: [96, 124, 142], accent: [142, 216, 248] };
-      var IRI = [[142, 216, 248], [127, 168, 255], [183, 166, 242], [159, 229, 209]];
       var DUST = [[142, 216, 248], [127, 168, 255], [183, 166, 242], [159, 229, 209], [230, 236, 241]];
-      var SHAPES = [
-        { name: 'Бриллиант', draw: function (g, cx, cy, S) {
-          var gw = S * 0.5, tw = S * 0.27, ch = S * 0.18, ph = S * 0.48, y0 = cy - S * 0.1;
-          g.lineWidth = Math.max(2, S * 0.011); g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath();
-          g.moveTo(cx - tw, y0 - ch); g.lineTo(cx + tw, y0 - ch); g.lineTo(cx + gw, y0); g.lineTo(cx, y0 + ph); g.lineTo(cx - gw, y0); g.closePath();
-          g.moveTo(cx - gw, y0); g.lineTo(cx + gw, y0);
-          g.moveTo(cx - tw, y0 - ch); g.lineTo(cx - gw * 0.55, y0); g.lineTo(cx - tw / 3, y0 - ch); g.lineTo(cx, y0); g.lineTo(cx + tw / 3, y0 - ch); g.lineTo(cx + gw * 0.55, y0); g.lineTo(cx + tw, y0 - ch);
-          g.moveTo(cx - gw * 0.55, y0); g.lineTo(cx, y0 + ph); g.moveTo(cx + gw * 0.55, y0); g.lineTo(cx, y0 + ph);
-          g.moveTo(cx, y0); g.lineTo(cx, y0 + ph * 0.84);
-          g.moveTo(cx - gw, y0); g.lineTo(cx - gw * 0.22, y0 + ph * 0.6); g.moveTo(cx + gw, y0); g.lineTo(cx + gw * 0.22, y0 + ph * 0.6);
-          g.stroke();
-        } },
-        { name: 'Решётка', draw: function (g, cx, cy, S) {
-          var R = S * 0.46, r = R * 0.5, o = [], n = [], k;
-          for (k = 0; k < 6; k++) { var a = k * Math.PI / 3 - Math.PI / 2; o.push([cx + Math.cos(a) * R, cy + Math.sin(a) * R]); n.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
-          g.lineWidth = Math.max(2, S * 0.01); g.lineJoin = 'round'; g.beginPath();
-          for (k = 0; k < 6; k++) { var j = (k + 1) % 6; g.moveTo(o[k][0], o[k][1]); g.lineTo(o[j][0], o[j][1]); g.moveTo(n[k][0], n[k][1]); g.lineTo(n[j][0], n[j][1]); g.moveTo(n[k][0], n[k][1]); g.lineTo(o[k][0], o[k][1]); g.moveTo(cx, cy); g.lineTo(n[k][0], n[k][1]); }
-          g.stroke();
-          var nr = Math.max(3, S * 0.026);
-          o.concat(n).concat([[cx, cy]]).forEach(function (p) { g.beginPath(); g.arc(p[0], p[1], nr, 0, 6.2832); g.fill(); });
-        } },
-        { name: 'Кремний', draw: function (g, cx, cy, S) {
-          var s = S * 0.62, x0 = cx - s / 2, y0 = cy - s / 2;
-          g.lineWidth = Math.max(2, s * 0.026); g.strokeRect(x0, y0, s, s);
-          var n = 4, cs = s * 0.74 / n, ix = x0 + s * 0.13, iy = y0 + s * 0.13;
-          for (var i = 0; i < n; i++) for (var j = 0; j < n; j++) g.fillRect(ix + i * cs + cs * 0.16, iy + j * cs + cs * 0.16, cs * 0.68, cs * 0.68);
-          for (var p = 0; p < 6; p++) {
-            var q = x0 + (p + 0.5) * s / 6 - s * 0.012, q2 = y0 + (p + 0.5) * s / 6 - s * 0.012;
-            g.fillRect(q, y0 - s * 0.15, s * 0.024, s * 0.11); g.fillRect(q, y0 + s * 1.04, s * 0.024, s * 0.11);
-            g.fillRect(x0 - s * 0.15, q2, s * 0.11, s * 0.024); g.fillRect(x0 + s * 1.04, q2, s * 0.11, s * 0.024);
-          }
-        } },
-        { name: 'Дом', draw: function (g, cx, cy, S) {
-          var bw = S * 0.66, bh = S * 0.42, by = cy + S * 0.36, top = by - bh, peak = top - S * 0.34, ev = S * 0.07;
-          g.lineWidth = Math.max(2, S * 0.012); g.lineJoin = 'round'; g.beginPath();
-          g.moveTo(cx - bw / 2, top); g.lineTo(cx - bw / 2, by); g.lineTo(cx + bw / 2, by); g.lineTo(cx + bw / 2, top);
-          g.moveTo(cx - bw / 2 - ev, top + ev * 0.55); g.lineTo(cx, peak); g.lineTo(cx + bw / 2 + ev, top + ev * 0.55);
-          g.stroke();
-          var ws = S * 0.1, gap = S * 0.05, wx = cx - ws - gap / 2, wy = top + bh * 0.5 - ws - gap / 2;
-          for (var i = 0; i < 2; i++) for (var j = 0; j < 2; j++) g.fillRect(wx + i * (ws + gap), wy + j * (ws + gap), ws, ws);
-        } }
-      ];
       // burst — после сборки частицы разлетаются по экрану (первый экран и контакты); у остальных секций гаснут на месте
       var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')).map(function (el) { return { el: el, name: el.getAttribute('data-sec'), state: 'idle', geo: null, geoKey: '', replay: false, burst: el.hasAttribute('data-pt-burst') }; });
-      var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, shape = 0, nextShapeAt = 0, objOn = false, cur = null, io = null;
+      var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, cur = null, io = null;
+      // Объект первого экрана — пять принципов студии (assets/hero-objects.js, свой WebGL-холст в секции).
+      // Движок только запускает его в конце сборки первого экрана; без модуля сайт работает как раньше.
+      var heroObj = null;
       // Темп сборки: HERO_K — множитель таймингов первого экрана (1 — исходные 5.8 с), SEC_K — остальных секций
       // (1 — исходные 3.1 с), одинаковый для всех секций. PRESENT_K — «Пересобрать блок»: полный темп для показа.
       // runK — темп текущей сборки секции (по нему же масштабируется sweep). runId отменяет таймеры прерванной сборки.
@@ -342,47 +300,17 @@
           SW[i] = now + 1300 + Math.random() * 700;
         }
       }
-      function objPts() {
-        if (!vis) return [];
-        var r = vis.getBoundingClientRect(), x0 = r.left - rootLeft, y0 = r.top - rootTop;
-        var cx = x0 + r.width / 2, cy = y0 + r.height * 0.5, S = Math.min(r.width * 0.78, r.height * 0.6);
-        x0 = Math.floor(x0); y0 = Math.floor(y0);
-        var w = Math.max(1, Math.ceil(r.width)), h = Math.max(1, Math.ceil(r.height));
-        oc.width = w; oc.height = h; og.setTransform(1, 0, 0, 1, 0, 0); og.clearRect(0, 0, w, h);
-        og.fillStyle = '#fff'; og.strokeStyle = '#fff';
-        og.save(); og.translate(-x0, -y0); SHAPES[shape].draw(og, cx, cy, S); og.restore();
-        var d = og.getImageData(0, 0, w, h).data, pts = [];
-        for (var y = 0; y < h; y += 2) for (var x = 0; x < w; x += 2) if (d[(y * w + x) * 4 + 3] > 110) pts.push(x0 + x + Math.random() * 2, y0 + y + Math.random() * 2);
-        return pts;
-      }
-      function phObject(inst) {
-        rootRect();
-        var pts = objPts(), n = pts.length / 2;
-        if (!n) return;
-        var mnx = 1e9, mxx = -1e9, mny = 1e9, mxy = -1e9;
-        for (var q = 0; q < pts.length; q += 2) { if (pts[q] < mnx) mnx = pts[q]; if (pts[q] > mxx) mxx = pts[q]; if (pts[q + 1] < mny) mny = pts[q + 1]; if (pts[q + 1] > mxy) mxy = pts[q + 1]; }
-        var sx = Math.max(1, mxx - mnx), sy = Math.max(1, mxy - mny), off = shape * 0.25;
-        fill(OBJ, [{ w: 1, f: function (o) {
-          var k = ((Math.random() * n) | 0) * 2;
-          o.x = pts[k] + (Math.random() - 0.5) * 0.8; o.y = pts[k + 1] + (Math.random() - 0.5) * 0.8;
-          if (Math.random() < 0.07) { setC(o, [246, 248, 250]); o.s = 2.6; }
-          // разброс ±0.4 px может вынести точку чуть левее/выше рамки фигуры: t уходил в минус, индекс цвета — в −1
-          else { var t = (((o.x - mnx) / sx * 0.7 + (o.y - mny) / sy * 0.3 + off) % 1 + 1) % 1, f = t * IRI.length, i0 = Math.floor(f) % IRI.length, i1 = (i0 + 1) % IRI.length, u = f - Math.floor(f), a = IRI[i0], b = IRI[i1];
-            o.r = a[0] + (b[0] - a[0]) * u; o.g = a[1] + (b[1] - a[1]) * u; o.b = a[2] + (b[2] - a[2]) * u; o.s = mob ? 1.6 : 1.5; }
-          o.a = o.s > 2 ? 0.95 : 0.78; o.m = 0;
-        } }], { instant: inst, axis: 'x', spread: 0, rnd: inst ? 0 : 0.45 });
-      }
       function alloc() {
         N = gl ? (mob ? 14000 : 26000) : (mob ? 3000 : 6000);
         P = new Float32Array(N * 2); V = new Float32Array(N * 2); T = new Float32Array(N * 2); NT = new Float32Array(N * 2);
         C = new Float32Array(N * 3); CT = new Float32Array(N * 3); NC = new Float32Array(N * 3);
         A = new Float32Array(N); AT = new Float32Array(N); NA = new Float32Array(N); SZ = new Float32Array(N); NS = new Float32Array(N);
-        SW = new Float64Array(N); M = new Uint8Array(N); NM = new Uint8Array(N); OB = new Uint8Array(N); SP = new Float32Array(N); TP = new Uint8Array(N);
-        BUF = new Float32Array((N + SMK) * 7); ALL = []; BLD = []; OBJ = [];
+        SW = new Float64Array(N); M = new Uint8Array(N); NM = new Uint8Array(N); SP = new Float32Array(N); TP = new Uint8Array(N);
+        BUF = new Float32Array((N + SMK) * 7); ALL = []; BLD = [];
         for (var i = 0; i < N; i++) {
-          OB[i] = Math.random() < 0.3 ? 1 : 0; SP[i] = Math.random() < 0.5 ? -1 : 1;
+          SP[i] = Math.random() < 0.5 ? -1 : 1;
           M[i] = 1; A[i] = 0; P[i * 2] = -999; P[i * 2 + 1] = -999; SZ[i] = 1.4;
-          ALL.push(i); (OB[i] ? OBJ : BLD).push(i);
+          ALL.push(i); BLD.push(i);
         }
         if (countEl) countEl.textContent = fmtN();
       }
@@ -398,12 +326,10 @@
           A[i] = AT[i] = NA[i] = 0; SZ[i] = NS[i] = 1.5; M[i] = NM[i] = 1; SW[i] = 0; TP[i] = 0;
         }
       }
-      // Первый экран помечен собранным без сборки: включаем сетку и сразу ставим частицы объекта на место
-      // (он над экраном, лететь им незачем), иначе карточка объекта осталась бы пустой.
+      // Первый экран помечен собранным без сборки: включаем сетку, объект первого экрана сразу стоит на месте.
       function skipHero() {
         seed(); root.classList.add('g-on');
-        objOn = true; phObject(true); nextShapeAt = performance.now() + 7000;
-        for (var k = 0; k < OBJ.length; k++) { var p = OBJ[k] * 2; P[p] = NT[p]; P[p + 1] = NT[p + 1]; V[p] = V[p + 1] = 0; }
+        if (heroObj) heroObj.start(true);
       }
       function burst() {
         booted = true;
@@ -480,7 +406,6 @@
           if (rr.bottom < 0 || rr.top > VH) abortRun();
         }
         var shift = lastTop == null ? 0 : lastTop - rootTop; lastTop = rootTop;
-        if (objOn && !rm && now > nextShapeAt) { var hr = hero.el.getBoundingClientRect(); if (hr.bottom > 0) setShape(shape + 1, false); else nextShapeAt = now + 3000; }
         var f = Math.min(3, dt * 60), damp = Math.pow(0.855, f), k = 0.015 * f, dd = Math.pow(0.975, f);
         var mx = mouse.cx - rootLeft, my = mouse.cy - rootTop, R = mob ? 60 : 90, R2 = R * R;
         var ca = Math.min(1, dt * 3.5), aa = Math.min(1, dt * 3), ts = now * 0.00035, vt = -rootTop, n = 0;
@@ -650,7 +575,7 @@
         if (pend) { pend(); phFade(BLD); log(s, '✓ ready'); setProg(); if (!queue.length) phSettle(BLD); pump(); return; }
         setStage(s, 'done'); s.state = 'done'; s.replay = false;
         phFade(BLD);
-        if (s === hero) { root.classList.add('g-on'); objOn = true; phObject(false); nextShapeAt = performance.now() + 7000; }
+        if (s === hero) { root.classList.add('g-on'); if (heroObj) heroObj.start(false); }
         log(s, '✓ ready'); setProg(); wakeSites(s.el);
         finish(s);
       }
@@ -672,7 +597,7 @@
         atRun((1.6 + o) * K, function () { setStage(s, 'wire'); measure(s); phWire(s, ALL, false); log(s, '02 · layout.measure()'); });
         atRun((2.65 + o) * K, function () { setStage(s, 'skel'); phSkel(s, ALL, false); log(s, '03 · styles.apply(glacier)'); });
         atRun((3.7 + o) * K, function () { setStage(s, 'text'); measure(s); phText(s, ALL, false); log(s, '04 · type.crystallize()'); });
-        atRun((5.25 + o) * K, function () { setStage(s, 'done'); s.state = 'done'; phFade(BLD); objOn = true; phObject(false); log(s, '✓ ready'); setProg(); });
+        atRun((5.25 + o) * K, function () { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (heroObj) { if (replay) heroObj.replay(); else heroObj.start(false); } log(s, '✓ ready'); setProg(); });
         atRun((5.8 + o) * K, function () { finish(s); });
       }
       function runSec(s) {
@@ -726,11 +651,10 @@
         var s = list[0], idx = s === hero ? ALL : BLD, every = list.concat(minor);
         runId++; running = s;
         every.forEach(function (x) { x.state = 'run'; });
-        list.forEach(function (x) { if (x === hero) objOn = false; });
         // прервали до постановки в очередь — все задетые секции сразу собраны (иначе гасли насовсем)
         settleFn = function () {
           every.forEach(function (x) { setStage(x, 'done'); x.state = 'done'; x.replay = false; x.instant = false; wakeSites(x.el); });
-          if (list.indexOf(hero) >= 0) { objOn = true; phObject(false); nextShapeAt = performance.now() + 7000; }
+          if (list.indexOf(hero) >= 0 && heroObj) heroObj.replay();
         };
         measure(s); phText(s, idx, false); log(s, 'text.dissolve()');
         atRun(1.0, function () {
@@ -748,17 +672,6 @@
           queue.unshift.apply(queue, every); setProg(); pump();
         });
       }
-      function shapeLabel() {
-        if (objName) objName.textContent = tr('Объект') + ' №0' + (shape + 1) + ' · ' + tr(SHAPES[shape].name);
-        if (objIdx) objIdx.textContent = '0' + (shape + 1) + ' / 0' + SHAPES.length;
-      }
-      function setShape(n, user) {
-        shape = (n % SHAPES.length + SHAPES.length) % SHAPES.length;
-        shapeLabel();
-        dots.forEach(function (d, i) { d.setAttribute('aria-pressed', i === shape ? 'true' : 'false'); });
-        nextShapeAt = performance.now() + (user ? 12000 : 7000);
-        if (objOn) { phObject(false); if (rm) { snap(); frame(performance.now()); } else for (var k = 0; k < OBJ.length; k++) { var p = OBJ[k] * 2; V[p] += (Math.random() - 0.5) * 6; V[p + 1] += (Math.random() - 0.5) * 6; } }
-      }
       // ---------- смена языка ----------
       function setToggle(lang) {
         langLinks.forEach(function (a) { if (a.getAttribute('data-lang') === lang) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
@@ -772,7 +685,7 @@
           return Array.prototype.some.call(x.el.querySelectorAll('[data-blk]'), function (b) { var r = b.getBoundingClientRect(); if (r.bottom > 0) { anchor = b; top0 = r.top; return true; } return false; });
         });
         root.classList.add('no-anchor');
-        I.apply(lang); shapeLabel(); layoutGen++;
+        I.apply(lang); if (heroObj) heroObj.relabel(); layoutGen++;
         if (anchor) { var d = anchor.getBoundingClientRect().top - top0; if (Math.abs(d) > 0.5) window.scrollTo({ top: window.scrollY + d, behavior: 'instant' }); }
         requestAnimationFrame(function () { root.classList.remove('no-anchor'); });
         scenes.forEach(function (sc) { if (sc.relang) sc.relang(); });
@@ -802,7 +715,6 @@
         var s = list[0], swapped = false;
         runId++; running = s; cur = null;
         list.forEach(function (x) { x.state = 'run'; });
-        nextShapeAt = performance.now() + 9000;
         function swap() { if (!swapped) { swapped = true; swapLang(lang, list); } }
         function end() { list.forEach(function (x) { x.el.classList.remove('s-swap'); x.state = 'done'; }); if (beamEl) beamEl.classList.remove('run'); }
         settleFn = function () { swap(); end(); };
@@ -833,8 +745,6 @@
         e.preventDefault();
         setLang(e.currentTarget.getAttribute('data-lang'));
       }
-      function onVis(e) { if (!objOn) return; if (e.target && e.target.closest && e.target.closest('[data-objdot]')) return; setShape(shape + 1, true); }
-      function onDot(e) { e.stopPropagation(); if (objOn) setShape(+e.currentTarget.getAttribute('data-objdot'), true); }
       function emit(x, y, dx, dy) {
         var i = sI; sI = (sI + 1) % SMK;
         sX[i] = x + (Math.random() - 0.5) * 4; sY[i] = y + (Math.random() - 0.5) * 4;
@@ -852,7 +762,7 @@
         start();
       }
       function onOut(e) { if (!e.relatedTarget) { mouse.cx = -1e5; mouse.cy = -1e5; lastPX = lastPY = null; } }
-      function reapply() { if (cur && running === cur.s) { measure(cur.s); cur.f(cur.s, cur.idx, true); } if (objOn) phObject(true); }
+      function reapply() { if (cur && running === cur.s) { measure(cur.s); cur.f(cur.s, cur.idx, true); } }
       function onResize() { layoutGen++; layout(); reapply(); if (rm) { snap(); frame(performance.now()); } }
       // Догрузка шрифтов только сбрасывает кэш замеров: следующая стадия возьмёт свежую геометрию. Мгновенный
       // перезапуск текущей стадии (reapply) давал рывок всех частиц, если шрифт приходил посреди сборки.
@@ -863,10 +773,11 @@
       void root.offsetWidth;
       root.classList.remove('pt-boot');
       scenes = window.PTScenes ? window.PTScenes.create(root, env) : [];
-      makeSprites(); initGL(); layout(); rootRect(); setShape(0, false);
+      // объект первого экрана: модуль сам создаёт в секции холсты [data-gl]/[data-ov] (data-pt-skip, без кликов),
+      // подписи панели, стрелки и строку принципов; ошибка модуля не должна ронять сборку сайта
+      try { heroObj = window.PTHero ? window.PTHero.mount(hero.el, { autostart: false }) : null; } catch (e) { heroObj = null; console.warn(e); }
+      makeSprites(); initGL(); layout(); rootRect();
       if (btn) btn.addEventListener('click', replay);
-      if (vis) vis.addEventListener('click', onVis);
-      dots.forEach(function (d) { d.addEventListener('click', onDot); });
       langLinks.forEach(function (a) { a.addEventListener('click', onLang); });
       bindSites();
       if (lite) root.classList.add('pt-lite');
@@ -883,7 +794,8 @@
       if (rm) {
         root.classList.add('g-on');
         secs.forEach(function (s) { setStage(s, 'done'); s.state = 'done'; wakeSites(s.el); });
-        objOn = true; phObject(true); snap(); frame(performance.now()); setProg(); typeLabel('✓ ready');
+        if (heroObj) heroObj.start(true);
+        snap(); frame(performance.now()); setProg(); typeLabel('✓ ready');
       } else {
         request(hero);
         if ('IntersectionObserver' in window) {
@@ -897,8 +809,7 @@
         destroy: function () {
           alive = false; timers.forEach(clearTimeout); clearInterval(typeT); if (raf) cancelAnimationFrame(raf); if (io) io.disconnect();
           if (btn) btn.removeEventListener('click', replay);
-          if (vis) vis.removeEventListener('click', onVis);
-          dots.forEach(function (d) { d.removeEventListener('click', onDot); });
+          if (heroObj) heroObj.destroy();
           langLinks.forEach(function (a) { a.removeEventListener('click', onLang); });
           siteOff.forEach(function (off) { off(); });
           window.removeEventListener('scroll', onScrollSites);
