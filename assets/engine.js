@@ -23,11 +23,13 @@
       var SMK = 520, sX = new Float32Array(SMK), sY = new Float32Array(SMK), sVX = new Float32Array(SMK), sVY = new Float32Array(SMK), sL = new Float32Array(SMK), sM = new Float32Array(SMK), sC = new Float32Array(SMK), sI = 0, lastPX = null, lastPY = null;
       var smk = root.querySelector('[data-pt-smoke]'), sctx = smk ? smk.getContext('2d') : null, SPR = [], smokeLive = false;
       var sites = Array.prototype.slice.call(root.querySelectorAll('.site-view iframe')), scenes = [];
+      // язык: ссылки RU / EN в шапке и луч, который проходит экран при смене языка
+      var langLinks = Array.prototype.slice.call(root.querySelectorAll('[data-lang]')), beamEl = root.querySelector('[data-lang-beam]');
       var COL = { frost: [238, 243, 246], glass: [188, 211, 222], skel: [96, 124, 142], accent: [142, 216, 248] };
       var IRI = [[142, 216, 248], [127, 168, 255], [183, 166, 242], [159, 229, 209]];
       var DUST = [[142, 216, 248], [127, 168, 255], [183, 166, 242], [159, 229, 209], [230, 236, 241]];
       var SHAPES = [
-        { name: 'Brilliant', draw: function (g, cx, cy, S) {
+        { name: 'Бриллиант', draw: function (g, cx, cy, S) {
           var gw = S * 0.5, tw = S * 0.27, ch = S * 0.18, ph = S * 0.48, y0 = cy - S * 0.1;
           g.lineWidth = Math.max(2, S * 0.011); g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath();
           g.moveTo(cx - tw, y0 - ch); g.lineTo(cx + tw, y0 - ch); g.lineTo(cx + gw, y0); g.lineTo(cx, y0 + ph); g.lineTo(cx - gw, y0); g.closePath();
@@ -38,7 +40,7 @@
           g.moveTo(cx - gw, y0); g.lineTo(cx - gw * 0.22, y0 + ph * 0.6); g.moveTo(cx + gw, y0); g.lineTo(cx + gw * 0.22, y0 + ph * 0.6);
           g.stroke();
         } },
-        { name: 'Lattice', draw: function (g, cx, cy, S) {
+        { name: 'Решётка', draw: function (g, cx, cy, S) {
           var R = S * 0.46, r = R * 0.5, o = [], n = [], k;
           for (k = 0; k < 6; k++) { var a = k * Math.PI / 3 - Math.PI / 2; o.push([cx + Math.cos(a) * R, cy + Math.sin(a) * R]); n.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
           g.lineWidth = Math.max(2, S * 0.01); g.lineJoin = 'round'; g.beginPath();
@@ -47,7 +49,7 @@
           var nr = Math.max(3, S * 0.026);
           o.concat(n).concat([[cx, cy]]).forEach(function (p) { g.beginPath(); g.arc(p[0], p[1], nr, 0, 6.2832); g.fill(); });
         } },
-        { name: 'Silicon', draw: function (g, cx, cy, S) {
+        { name: 'Кремний', draw: function (g, cx, cy, S) {
           var s = S * 0.62, x0 = cx - s / 2, y0 = cy - s / 2;
           g.lineWidth = Math.max(2, s * 0.026); g.strokeRect(x0, y0, s, s);
           var n = 4, cs = s * 0.74 / n, ix = x0 + s * 0.13, iy = y0 + s * 0.13;
@@ -58,7 +60,7 @@
             g.fillRect(x0 - s * 0.15, q2, s * 0.11, s * 0.024); g.fillRect(x0 + s * 1.04, q2, s * 0.11, s * 0.024);
           }
         } },
-        { name: 'House', draw: function (g, cx, cy, S) {
+        { name: 'Дом', draw: function (g, cx, cy, S) {
           var bw = S * 0.66, bh = S * 0.42, by = cy + S * 0.36, top = by - bh, peak = top - S * 0.34, ev = S * 0.07;
           g.lineWidth = Math.max(2, S * 0.012); g.lineJoin = 'round'; g.beginPath();
           g.moveTo(cx - bw / 2, top); g.lineTo(cx - bw / 2, by); g.lineTo(cx + bw / 2, by); g.lineTo(cx + bw / 2, top);
@@ -77,10 +79,14 @@
       var HERO_K = 0.75, SEC_K = 0.9, PRESENT_K = 1, runK = SEC_K, runId = 0, booted = false, abortAt = 0;
       // адаптивное качество: 1 — без стеклянного размытия и дымного следа, 2 — ещё и частицы в 1× разрешении
       var lite = 0, dprCap = 2, qT = 0, qN = 0, bootAt = performance.now();
+      // settleFn — как мгновенно довести до конца сборку из нескольких секций («Пересобрать блок» до постановки
+      // в очередь, смена языка), если её прервали кликом (skipNow) или прокруткой (abortRun). BEAM — проход луча, с.
+      var settleFn = null, BEAM = 1.2;
       try { lite = +sessionStorage.getItem('pt-lite') || 0; } catch (e) {}
       if (lite >= 2) dprCap = 1;
 
       function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+      function tr(s) { return window.PTI18N ? window.PTI18N.t(s) : s; }
       function fmtN() { try { return N.toLocaleString('ru-RU'); } catch (e) { return String(N); } }
       function parseColor(s) { var m = /rgba?\(([^)]+)\)/.exec(s || ''); if (!m) return COL.accent; var p = m[1].split(',').map(parseFloat); if (p.length > 3 && p[3] < 0.05) return COL.accent; return [p[0] | 0, p[1] | 0, p[2] | 0]; }
       function typeLabel(s) {
@@ -360,7 +366,8 @@
           var k = ((Math.random() * n) | 0) * 2;
           o.x = pts[k] + (Math.random() - 0.5) * 0.8; o.y = pts[k + 1] + (Math.random() - 0.5) * 0.8;
           if (Math.random() < 0.07) { setC(o, [246, 248, 250]); o.s = 2.6; }
-          else { var t = ((o.x - mnx) / sx * 0.7 + (o.y - mny) / sy * 0.3 + off) % 1, f = t * IRI.length, i0 = Math.floor(f) % IRI.length, i1 = (i0 + 1) % IRI.length, u = f - Math.floor(f), a = IRI[i0], b = IRI[i1];
+          // разброс ±0.4 px может вынести точку чуть левее/выше рамки фигуры: t уходил в минус, индекс цвета — в −1
+          else { var t = (((o.x - mnx) / sx * 0.7 + (o.y - mny) / sy * 0.3 + off) % 1 + 1) % 1, f = t * IRI.length, i0 = Math.floor(f) % IRI.length, i1 = (i0 + 1) % IRI.length, u = f - Math.floor(f), a = IRI[i0], b = IRI[i1];
             o.r = a[0] + (b[0] - a[0]) * u; o.g = a[1] + (b[1] - a[1]) * u; o.b = a[2] + (b[2] - a[2]) * u; o.s = mob ? 1.6 : 1.5; }
           o.a = o.s > 2 ? 0.95 : 0.78; o.m = 0;
         } }], { instant: inst, axis: 'x', spread: 0, rnd: inst ? 0 : 0.45 });
@@ -639,6 +646,8 @@
       function skipNow() {
         var s = running; if (!s || rm) return;
         runId++; running = null; cur = null;
+        var pend = settleFn; settleFn = null;
+        if (pend) { pend(); phFade(BLD); log(s, '✓ ready'); setProg(); if (!queue.length) phSettle(BLD); pump(); return; }
         setStage(s, 'done'); s.state = 'done'; s.replay = false;
         phFade(BLD);
         if (s === hero) { root.classList.add('g-on'); objOn = true; phObject(false); nextShapeAt = performance.now() + 7000; }
@@ -681,6 +690,8 @@
       // после перезагрузки, когда первый экран уже начал собираться).
       function abortRun() {
         var s = running; runId++; running = null; cur = null;
+        var pend = settleFn; settleFn = null;
+        if (pend) { pend(); phFade(BLD); setProg(); pump(); return; }
         setStage(s, 'done'); s.state = 'done'; s.replay = false; setProg(); wakeSites(s.el);
         if (s === hero) skipHero();
         pump();
@@ -716,6 +727,11 @@
         runId++; running = s;
         every.forEach(function (x) { x.state = 'run'; });
         list.forEach(function (x) { if (x === hero) objOn = false; });
+        // прервали до постановки в очередь — все задетые секции сразу собраны (иначе гасли насовсем)
+        settleFn = function () {
+          every.forEach(function (x) { setStage(x, 'done'); x.state = 'done'; x.replay = false; x.instant = false; wakeSites(x.el); });
+          if (list.indexOf(hero) >= 0) { objOn = true; phObject(false); nextShapeAt = performance.now() + 7000; }
+        };
         measure(s); phText(s, idx, false); log(s, 'text.dissolve()');
         atRun(1.0, function () {
           every.forEach(function (x) {
@@ -726,19 +742,96 @@
           log(s, 'content.unmount()'); measure(s); phWire(s, idx, false);
         });
         atRun(1.7, function () {
-          running = null;
+          settleFn = null; running = null;
           list.forEach(function (x) { x.state = 'queued'; x.replay = true; });
           minor.forEach(function (x) { x.state = 'queued'; x.instant = true; });
           queue.unshift.apply(queue, every); setProg(); pump();
         });
       }
+      function shapeLabel() {
+        if (objName) objName.textContent = tr('Объект') + ' №0' + (shape + 1) + ' · ' + tr(SHAPES[shape].name);
+        if (objIdx) objIdx.textContent = '0' + (shape + 1) + ' / 0' + SHAPES.length;
+      }
       function setShape(n, user) {
         shape = (n % SHAPES.length + SHAPES.length) % SHAPES.length;
-        if (objName) objName.textContent = 'Object №0' + (shape + 1) + ' · ' + SHAPES[shape].name;
-        if (objIdx) objIdx.textContent = '0' + (shape + 1) + ' / 0' + SHAPES.length;
+        shapeLabel();
         dots.forEach(function (d, i) { d.setAttribute('aria-pressed', i === shape ? 'true' : 'false'); });
         nextShapeAt = performance.now() + (user ? 12000 : 7000);
         if (objOn) { phObject(false); if (rm) { snap(); frame(performance.now()); } else for (var k = 0; k < OBJ.length; k++) { var p = OBJ[k] * 2; V[p] += (Math.random() - 0.5) * 6; V[p + 1] += (Math.random() - 0.5) * 6; } }
+      }
+      // ---------- смена языка ----------
+      function setToggle(lang) {
+        langLinks.forEach(function (a) { if (a.getAttribute('data-lang') === lang) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+        Array.prototype.forEach.call(root.querySelectorAll('.lang'), function (g) { g.setAttribute('data-cur', lang); });
+      }
+      // Подмена текста. Длина текста меняется, и блоки выше экрана могут вырасти или сжаться: якорь — первый блок
+      // у верхнего края экрана, после подмены прокрутка возвращает его на место. Сцены в карточках пересобираются.
+      function swapLang(lang, list) {
+        var I = window.PTI18N, anchor = null, top0 = 0;
+        (list || secs).some(function (x) {
+          return Array.prototype.some.call(x.el.querySelectorAll('[data-blk]'), function (b) { var r = b.getBoundingClientRect(); if (r.bottom > 0) { anchor = b; top0 = r.top; return true; } return false; });
+        });
+        root.classList.add('no-anchor');
+        I.apply(lang); shapeLabel(); layoutGen++;
+        if (anchor) { var d = anchor.getBoundingClientRect().top - top0; if (Math.abs(d) > 0.5) window.scrollTo({ top: window.scrollY + d, behavior: 'instant' }); }
+        requestAnimationFrame(function () { root.classList.remove('no-anchor'); });
+        scenes.forEach(function (sc) { if (sc.relang) sc.relang(); });
+      }
+      // точки букв только в пределах экрана (±60 px): при смене языка все частицы уходят в видимый текст
+      function clipGl(G, y0, y1) {
+        function cut(g) {
+          var o = { n: 0, x: [], y: [], r: [], g: [], b: [] };
+          for (var k = 0; k < g.n; k++) if (g.y[k] >= y0 && g.y[k] <= y1) { o.x.push(g.x[k]); o.y.push(g.y[k]); o.r.push(g.r[k]); o.g.push(g.g[k]); o.b.push(g.b[k]); }
+          o.n = o.x.length; return o;
+        }
+        var B = cut(G.big), S = cut(G.small);
+        return { n: B.n + S.n, big: B, small: S };
+      }
+      // частицы — в буквы нескольких секций сразу; волна слева направо за spread секунд (в такт с лучом)
+      function phGlyphs(list, idx, spread) {
+        var y0 = -rootTop - 60, y1 = -rootTop + VH + 60, gens = [];
+        list.forEach(function (x) { ensureGl(x); var g = x.geo && x.geo.gl ? clipGl(x.geo.gl, y0, y1) : null; if (g && g.n) gens.push({ w: g.n, f: gGlyph(g, 0.82) }); });
+        if (!gens.length) gens.push({ w: 1, f: gAmbient });
+        fill(idx, gens, { instant: false, axis: 'x', spread: spread, rnd: 0.08 });
+        cur = null;
+      }
+      // Смена языка на экране. Частицы ложатся на буквы текущего текста, и он гаснет. Луч проходит экран слева
+      // направо, за ним частицы перелетают в буквы нового языка; потом проявляется настоящий текст, частицы гаснут.
+      // Секции за экраном получают новый текст сразу. Клик или клавиша доводят смену мгновенно (skipNow).
+      function morph(lang, list) {
+        var s = list[0], swapped = false;
+        runId++; running = s; cur = null;
+        list.forEach(function (x) { x.state = 'run'; });
+        nextShapeAt = performance.now() + 9000;
+        function swap() { if (!swapped) { swapped = true; swapLang(lang, list); } }
+        function end() { list.forEach(function (x) { x.el.classList.remove('s-swap'); x.state = 'done'; }); if (beamEl) beamEl.classList.remove('run'); }
+        settleFn = function () { swap(); end(); };
+        list.forEach(function (x) { measure(x); });
+        phGlyphs(list, BLD, 0.3); log(s, 'i18n · text.capture()');
+        atRun(0.45, function () { list.forEach(function (x) { x.el.classList.add('s-swap'); }); });
+        atRun(0.95, function () {
+          swap(); list.forEach(function (x) { measure(x); });
+          if (beamEl) { beamEl.style.setProperty('--beam', BEAM + 's'); beamEl.classList.remove('run'); void beamEl.offsetWidth; beamEl.classList.add('run'); }
+          phGlyphs(list, BLD, BEAM); log(s, 'i18n · locale("' + lang + '") · morph()');
+        });
+        atRun(0.95 + BEAM + 0.35, function () { list.forEach(function (x) { x.el.classList.remove('s-swap'); }); phFade(BLD); log(s, '✓ ' + lang); });
+        atRun(0.95 + BEAM + 0.75, function () { settleFn = null; end(); running = null; if (!queue.length) phSettle(BLD); pump(); });
+      }
+      function setLang(lang) {
+        var I = window.PTI18N;
+        if (!I || !alive) return;
+        if (running && !rm) skipNow();
+        setToggle(lang);
+        if (lang === I.lang) return;
+        I.toUrl(lang);
+        var list = [];
+        if (!rm) secs.forEach(function (x) { if (x.state !== 'done') return; var r = x.el.getBoundingClientRect(); if (r.bottom > 0 && r.top < VH) list.push(x); });
+        if (list.length) morph(lang, list); else swapLang(lang, null);
+      }
+      function onLang(e) {
+        if (!window.PTI18N || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        setLang(e.currentTarget.getAttribute('data-lang'));
       }
       function onVis(e) { if (!objOn) return; if (e.target && e.target.closest && e.target.closest('[data-objdot]')) return; setShape(shape + 1, true); }
       function onDot(e) { e.stopPropagation(); if (objOn) setShape(+e.currentTarget.getAttribute('data-objdot'), true); }
@@ -774,6 +867,7 @@
       if (btn) btn.addEventListener('click', replay);
       if (vis) vis.addEventListener('click', onVis);
       dots.forEach(function (d) { d.addEventListener('click', onDot); });
+      langLinks.forEach(function (a) { a.addEventListener('click', onLang); });
       bindSites();
       if (lite) root.classList.add('pt-lite');
       window.addEventListener('wheel', onSkip, { passive: true });
@@ -805,6 +899,7 @@
           if (btn) btn.removeEventListener('click', replay);
           if (vis) vis.removeEventListener('click', onVis);
           dots.forEach(function (d) { d.removeEventListener('click', onDot); });
+          langLinks.forEach(function (a) { a.removeEventListener('click', onLang); });
           siteOff.forEach(function (off) { off(); });
           window.removeEventListener('scroll', onScrollSites);
           window.removeEventListener('pointermove', onMove);

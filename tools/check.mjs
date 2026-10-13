@@ -5,6 +5,9 @@
 // собирает ошибки консоли, проверяет запрещённые слова и горизонтальную прокрутку, кладёт скриншоты в tools/shots/.
 // Сцены в карточках (canvas[data-mini|data-flow|data-flowlight]): до сборки секции пусты, после — нарисованы,
 // вне экрана стоят на паузе.
+// Языки: русская версия на трёх ширинах, английская (?lang=en) на двух — в ней не должно остаться кириллицы,
+// и у русских строк скрытых <template> должен быть перевод. На 1440 — переключение RU → EN → RU и прерывание
+// «Пересобрать блок» кликом.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -48,9 +51,37 @@ const printsInit = () => {
   });
 };
 
+// кириллица на странице: текстовые узлы и атрибуты (кроме подписей на другом языке, [lang="ru"]); у <template>
+// — русские строки без перевода в словаре assets/i18n.js
+const cyrillic = () => {
+  const RX = /[А-Яа-яЁё]/, out = [], skip = (el) => el && el.closest('[lang="ru"]');
+  const scan = (root, isTpl) => {
+    const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = tw.nextNode())) {
+      const v = n.nodeValue;
+      if (!RX.test(v) || skip(n.parentElement)) continue;
+      if (!isTpl || window.PTI18N.t(v) === v) out.push(v.trim().slice(0, 60));
+    }
+    root.querySelectorAll('[aria-label],[title],[alt]').forEach((el) => ['aria-label', 'title', 'alt'].forEach((a) => {
+      const v = el.getAttribute(a);
+      if (v && RX.test(v) && !skip(el) && (!isTpl || window.PTI18N.t(v) === v)) out.push(`${a}="${v.slice(0, 50)}"`);
+    }));
+  };
+  scan(document.body, false);
+  document.querySelectorAll('template').forEach((t) => scan(t.content, true));
+  if (RX.test(document.title)) out.push('<title>');
+  return out;
+};
+// текст секций, который переводится (без того, что пишет JS: имя объекта и номер формы)
+const textSnap = () => [...document.querySelectorAll('.sec .ptx')].filter((el) => !el.closest('[data-objname],[data-objidx]')).map((el) => el.textContent.trim()).join('\n');
+// текст на экране, который после сборки так и остался невидимым
+const hiddenVisible = () => [...document.querySelectorAll('.sec.s-done .ptx')].filter((el) => { const r = el.getBoundingClientRect(); return el.offsetParent && r.bottom > 0 && r.top < innerHeight && getComputedStyle(el).opacity !== '1'; }).length;
+const notDoneVisible = () => [...document.querySelectorAll('[data-sec]')].filter((s) => { const r = s.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight && !s.classList.contains('s-done'); }).map((s) => s.getAttribute('data-sec'));
+
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-for (const [w, h, tag] of [[1440, 900, 'd1440'], [1700, 930, 'd1700'], [390, 844, 'm390']]) {
-  console.log(`\n${tag} (${w}×${h})`);
+for (const [w, h, tag, lang] of [[1440, 900, 'd1440', 'ru'], [1700, 930, 'd1700', 'ru'], [390, 844, 'm390', 'ru'], [1440, 900, 'd1440-en', 'en'], [390, 844, 'm390-en', 'en']]) {
+  console.log(`\n${tag} (${w}×${h}, ${lang})`);
   const page = await browser.newPage({ viewport: { width: w, height: h } });
   const errs = [];
   page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
@@ -58,7 +89,7 @@ for (const [w, h, tag] of [[1440, 900, 'd1440'], [1700, 930, 'd1700'], [390, 844
   await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
   await page.clock.pauseAt(new Date('2026-01-01T12:00:01Z'));
   await page.addInitScript(printsInit);
-  await page.goto('file://' + file);
+  await page.goto('file://' + file + (lang === 'en' ? '?lang=en' : ''));
   const run = (ms) => page.clock.runFor(ms);
   const prints = (sel, visible) => page.evaluate(([q, v]) => window.__scenePrints(q, v), [sel, !!visible]);
   const shot = async (name) => { await page.waitForTimeout(400); await page.screenshot({ path: path.join(shots, `${tag}-${name}.png`) }); };
@@ -101,6 +132,43 @@ for (const [w, h, tag] of [[1440, 900, 'd1440'], [1700, 930, 'd1700'], [390, 844
   if (hidden) fail(`${hidden} текстовых элементов остались невидимыми после сборки`);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   if (overflow > 1) fail(`горизонтальная прокрутка: ${overflow}px`);
+  if (lang === 'en') {
+    const left = await page.evaluate(cyrillic);
+    if (left.length) fail(`кириллица в английской версии: ${left.join(' | ')}`);
+    else console.log('  ✓ английская версия: кириллицы нет, у скрытых блоков есть переводы');
+    if ((await page.evaluate(() => document.documentElement.lang)) !== 'en') fail('<html lang> не en');
+  }
+  if (tag === 'd1440') {
+    // смена языка на первом экране: RU → EN → RU
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await page.waitForTimeout(200); await run(800);
+    const ru0 = await page.evaluate(textSnap);
+    await page.click('[data-lang="en"]');
+    await run(1500); await shot('lang-en-morph');
+    await run(2500); await shot('lang-en');
+    const en = await page.evaluate(() => ({ lang: document.documentElement.lang, url: location.search, swap: document.querySelectorAll('.s-swap').length }));
+    const nd = await page.evaluate(notDoneVisible), left = await page.evaluate(cyrillic), hid = await page.evaluate(hiddenVisible);
+    let ok = true;
+    if (en.lang !== 'en' || en.url !== '?lang=en') { ok = false; fail(`после переключения на EN: lang=${en.lang}, адрес ${en.url}`); }
+    if (en.swap || nd.length) { ok = false; fail(`после переключения на EN секции не собраны: s-swap ${en.swap}, не собраны ${nd.join(', ')}`); }
+    if (left.length) { ok = false; fail(`после переключения на EN осталась кириллица: ${left.join(' | ')}`); }
+    if (hid) { ok = false; fail(`после переключения на EN ${hid} текстовых элементов на экране невидимы`); }
+    await page.click('[data-lang="ru"]');
+    await run(4000);
+    const ru1 = await page.evaluate(textSnap);
+    if (ru1 !== ru0) { ok = false; fail('после возврата на RU текст не совпал с исходным'); }
+    if ((await page.evaluate(() => document.documentElement.lang + location.search)) !== 'ru') { ok = false; fail('после возврата на RU: lang или адрес не сброшены'); }
+    if (ok) console.log('  ✓ смена языка RU → EN → RU: текст, адрес и lang на месте');
+    // «Пересобрать блок», прерванный кликом до постановки в очередь (между 1.0 и 1.7 с): секции не гаснут насовсем
+    await page.click('[data-pt-replay]');
+    await run(1250);
+    await page.mouse.click(5, 300);
+    await run(3000);
+    const nd2 = await page.evaluate(notDoneVisible), hid2 = await page.evaluate(hiddenVisible);
+    if (nd2.length) fail(`«Пересобрать блок», прерванный кликом: не собраны ${nd2.join(', ')}`);
+    else if (hid2) fail(`«Пересобрать блок», прерванный кликом: ${hid2} текстовых элементов невидимы`);
+    else console.log('  ✓ «Пересобрать блок», прерванный кликом, ничего не оставляет пустым');
+  }
   if (errs.length) { errs.forEach((e) => fail(e)); } else console.log('  ✓ ошибок в консоли нет');
   await page.close();
 }

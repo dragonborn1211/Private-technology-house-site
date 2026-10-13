@@ -7,6 +7,9 @@
   function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
   function rgba(hex, a) { return 'rgba(' + parseInt(hex.slice(1, 3), 16) + ',' + parseInt(hex.slice(3, 5), 16) + ',' + parseInt(hex.slice(5, 7), 16) + ',' + a + ')'; }
   function rrect(g, x, y, w, h, r) { r = Math.max(0, Math.min(r, w / 2, h / 2)); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+  // перевод подписей на холстах (assets/i18n.js); без словаря — русский как есть
+  function tr(s) { return window.PTI18N ? window.PTI18N.t(s) : s; }
+  function lang() { return window.PTI18N ? window.PTI18N.lang : 'ru'; }
   function offscreen(cv, env) { var b = cv.getBoundingClientRect(); return b.bottom < -20 || b.top > env.vh + 20; }
   // подгоняет буфер холста под размер окна-родителя; true — если размер поменялся
   function fitCanvas(cv, st) {
@@ -112,13 +115,13 @@
         else if (e.k === 'btn' || e.k === 'obtn') {
           rr(g, x, y, w, h, h / 2);
           if (e.k === 'btn') { g.fillStyle = col(tp, e.c); g.fill(); } else { g.strokeStyle = col(tp, e.c); g.lineWidth = 1; g.stroke(); }
-          g.font = '600 ' + (h * 0.4).toFixed(1) + 'px Manrope, system-ui, sans-serif'; g.fillStyle = col(tp, e.tc); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(e.t, x + w / 2, y + h / 2 + 0.5);
+          g.font = '600 ' + (h * 0.4).toFixed(1) + 'px Manrope, system-ui, sans-serif'; g.fillStyle = col(tp, e.tc); g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(tr(e.t), x + w / 2, y + h / 2 + 0.5);
         }
-        else if (e.k === 'logo') { g.font = fnt(tp, e.s * MH); g.fillStyle = tp.ink; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillText(e.t, x, y); }
+        else if (e.k === 'logo') { g.font = fnt(tp, e.s * MH); g.fillStyle = tp.ink; g.textAlign = 'left'; g.textBaseline = 'alphabetic'; g.fillText(tr(e.t), x, y); }
       });
       if (mode !== 'blk') {
         g.font = fnt(tp, tp.hs * MH); g.textAlign = tp.al; g.textBaseline = 'alphabetic';
-        tp.h1.forEach(function (L, i) { g.fillStyle = col(tp, tp.hc[i]); g.fillText(L, tp.hx * MW, tp.hy * MH + i * tp.hs * MH * tp.lh); });
+        tp.h1.forEach(function (L, i) { g.fillStyle = col(tp, tp.hc[i]); g.fillText(tr(L), tp.hx * MW, tp.hy * MH + i * tp.hs * MH * tp.lh); });
       }
       g.restore();
     }
@@ -127,12 +130,12 @@
       mx.save();
       tp.els.forEach(function (e) {
         if (e.k === 'disc') return;
-        if (e.k === 'logo') { mx.font = fnt(tp, e.s * MH); var lw = mx.measureText(e.t).width; R.push({ x: e.x * MW, y: e.y * MH - e.s * MH * 0.8, w: lw, h: e.s * MH, t: 1 }); return; }
+        if (e.k === 'logo') { mx.font = fnt(tp, e.s * MH); var lw = mx.measureText(tr(e.t)).width; R.push({ x: e.x * MW, y: e.y * MH - e.s * MH * 0.8, w: lw, h: e.s * MH, t: 1 }); return; }
         R.push({ x: e.x * MW, y: e.y * MH, w: e.w * MW, h: e.h * MH, r: e.k === 'btn' || e.k === 'obtn' || e.k === 'bar' ? e.h * MH / 2 : 0.03 * MH, t: isTxt(e.k) ? 1 : 0 });
       });
       mx.font = fnt(tp, tp.hs * MH);
       tp.h1.forEach(function (L, i) {
-        var w = mx.measureText(L).width, bx = tp.al === 'center' ? tp.hx * MW - w / 2 : tp.hx * MW, by = tp.hy * MH + i * tp.hs * MH * tp.lh;
+        var w = mx.measureText(tr(L)).width, bx = tp.al === 'center' ? tp.hx * MW - w / 2 : tp.hx * MW, by = tp.hy * MH + i * tp.hs * MH * tp.lh;
         R.push({ x: bx, y: by - tp.hs * MH * 0.74, w: w, h: tp.hs * MH * 0.86, r: 0, t: 1 });
       });
       mx.restore();
@@ -214,7 +217,7 @@
           A[i] = 1; AT[i] = 0.32; FR[i] = 1; SWT[i] = 0;
         }
       }
-      if (lab) lab.textContent = tp.name + ' · ' + LBL[s];
+      if (lab) lab.textContent = tr(tp.name) + ' · ' + LBL[s];
     }
     function resize() {
       var p = cv.parentNode, w = Math.max(1, p.clientWidth), h = Math.max(1, p.clientHeight);
@@ -234,7 +237,7 @@
       }
       if (on && env.rm) drawStatic();
     }
-    function drawStatic() { mx.setTransform(md, 0, 0, md, 0, 0); mx.clearRect(0, 0, MW, MH); drawSite(mx, TPL[0], 1); if (lab) lab.textContent = TPL[0].name + ' · ✓ ready'; }
+    function drawStatic() { mx.setTransform(md, 0, 0, md, 0, 0); mx.clearRect(0, 0, MW, MH); drawSite(mx, TPL[0], 1); if (lab) lab.textContent = tr(TPL[0].name) + ' · ✓ ready'; }
     function tick(dt) {
       if (!on || env.rm || asleep) return;
       var br = cv.getBoundingClientRect();
@@ -293,7 +296,13 @@
       ct = 0; stage = -1; setStage(0);
     }
     function sleep() { asleep = true; }
-    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep };
+    // смена языка: текущий демо-сайт собирается заново с сетки, уже с текстами на новом языке
+    function relang() {
+      if (!on) return;
+      if (env.rm) { drawStatic(); return; }
+      ct = 0; stage = -1; RC = []; setStage(0);
+    }
+    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, relang: relang };
   }
 
   // ---------- схемы: общий движок узлов, связей и импульсов ----------
@@ -308,11 +317,11 @@
     var G = { t: 0, first: 1.5, spawnAt: 1.5, fade: 1, dusting: false, W: 1, H: 1, compact: false, fs: 11, lh: 14, py: 6, title: spec.title || '' };
     var nodes = [], edges = [], pulses = [], labels = [], parts = [], byId = {};
     spec.nodes.forEach(function (n, i) {
-      var o = { id: n.id, name: n.name, role: n.role || '', role2: '', fx: n.x, fy: n.y, turn: !!n.turn, stack: !!n.stack, i: i, x: 0, y: 0, w: 0, h: 0, lines: [], at: 0, shown: false, fl: 0, fc: ACC[0], out: [] };
+      var o = { id: n.id, name: tr(n.name), role: n.role || '', role2: '', fx: n.x, fy: n.y, turn: !!n.turn, stack: !!n.stack, i: i, x: 0, y: 0, w: 0, h: 0, lines: [], at: 0, shown: false, fl: 0, fc: ACC[0], out: [] };
       nodes.push(o); byId[n.id] = o;
     });
     spec.edges.forEach(function (e) {
-      var o = { a: byId[e.a], b: byId[e.b], ev: e.ev || '', k: e.k || 'f', grp: e.grp || '', p: e.p == null ? 1 : e.p, side: 0, hor: true, c: null, pts: null, cum: null, len: 1, at: 0 };
+      var o = { a: byId[e.a], b: byId[e.b], ev: tr(e.ev || ''), k: e.k || 'f', grp: e.grp || '', p: e.p == null ? 1 : e.p, side: 0, hor: true, c: null, pts: null, cum: null, len: 1, at: 0 };
       edges.push(o); o.a.out.push(o);
     });
     edges.forEach(function (e) {
@@ -674,7 +683,7 @@
         edges.push({ a: 'n' + i, b: 'n' + (i - 1), ev: i === n - 1 && Math.random() < 0.5 ? '200 OK' : 'sync ⇄', k: 'r' });
       } else edges.push({ a: 'n' + (i - 1), b: 'n' + i, ev: EVT[nm] || 'sync' });
     });
-    return { nodes: nodes, edges: edges, src: ['n0'], duplex: duplex, title: names.join(duplex ? ' ⇄ ' : ' → ') };
+    return { nodes: nodes, edges: edges, src: ['n0'], duplex: duplex, title: names.map(tr).join(duplex ? ' ⇄ ' : ' → ') };
   }
   function randSpec(kind, prev) {
     var s = null;
@@ -692,8 +701,9 @@
     }
     return s;
   }
-  FLOWS['your-process'].still = chainSpec(['Форма', 'CRM', 'Telegram'], false);
-  FLOWS['your-integration'].still = chainSpec(['CRM', '1С'], true);
+  // статичный кадр при prefers-reduced-motion; спецификация строится при показе — на текущем языке
+  FLOWS['your-process'].still = ['Форма', 'CRM', 'Telegram'];
+  FLOWS['your-integration'].still = ['CRM', '1С'];
 
   // ---------- карточка-схема ----------
   // Фиксированная схема: сборка → через ~1.5 с импульсы раз в 4.4 с, при наведении — раз в 1.1 с.
@@ -701,20 +711,27 @@
   function makeFlow(cv, env, cfg) {
     if (!cv || !cv.getContext) return null;
     var g = cv.getContext('2d'), win = cv.parentNode, card = win.closest('.glass') || win, lab = win.querySelector('[data-flow-label]');
-    var st = { w: 0, h: 0, d: 0 }, on = false, G = null, ct = 0, stage = '', prev = '', CYC = 7;
+    var st = { w: 0, h: 0, d: 0 }, on = false, G = null, ct = 0, stage = '', prev = '', CYC = 7, gl = '', swapAt = 0;
     var RUN = cfg.rand === 'duplex' ? 'sync' : 'run';
     function compact() { return st.w < 340; }
     function label(s) { stage = s; if (lab && G) lab.textContent = G.title + ' · ' + s; }
     function next(first) {
-      var spec = cfg.rand ? (first && env.rm ? cfg.still : randSpec(cfg.rand, prev)) : cfg;
+      var spec = cfg.rand ? (first && env.rm ? chainSpec(cfg.still, cfg.rand === 'duplex') : randSpec(cfg.rand, prev)) : cfg;
       prev = spec.title || '';
-      G = makeGraph(spec); G.layout(g, st.w, st.h, compact()); G.build(env.rm); ct = 0;
+      G = makeGraph(spec); gl = lang(); G.layout(g, st.w, st.h, compact()); G.build(env.rm); ct = 0;
       if (cfg.rand) label(env.rm ? 'ready' : 'build');
     }
     function draw() { g.setTransform(st.d, 0, 0, st.d, 0, 0); g.clearRect(0, 0, st.w, st.h); if (G) G.draw(g, 1, false); }
+    // схема заново на текущем языке: случайная — следующая цепочка, фиксированная — та же, узлы слева направо
+    function rebuild() {
+      swapAt = 0;
+      if (cfg.rand) { next(false); return; }
+      G = makeGraph(cfg); gl = lang(); G.layout(g, st.w, st.h, compact()); G.build(env.rm);
+    }
     function tick(dt) {
       if (!on || env.rm || !G || asleep) return;
       if (offscreen(cv, env)) return;
+      if (swapAt > 0) { swapAt -= dt; if (swapAt <= 0) rebuild(); }
       var hov = card.matches(':hover');
       if (cfg.rand) {
         ct += dt;
@@ -734,14 +751,23 @@
     var asleep = false;
     function wake() {
       asleep = false;
-      if (on) { if (!env.rm && G) { if (cfg.rand) next(false); else G.build(false); } return; }
+      if (on) { if (!env.rm && G) { if (cfg.rand || gl !== lang()) rebuild(); else G.build(false); } return; }
       on = true; fitCanvas(cv, st); next(true);
       if (lab) lab.classList.add('on');
       if (env.rm) draw();
     }
     function sleep() { asleep = true; }
+    // смена языка: схема рассыпается пылью и через 0.4 с собирается заново с подписями на новом языке
+    function relang() {
+      if (!on || !G) return;
+      if (env.rm) { rebuild(); draw(); return; }
+      // вне экрана или на паузе пыль никто не увидит — сразу новая схема (и подпись на новом языке)
+      if (asleep || offscreen(cv, env)) { rebuild(); return; }
+      if (!G.dusting) G.dust();
+      swapAt = 0.4;
+    }
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (G) { G.layout(g, st.w, st.h, compact()); if (on && env.rm) draw(); } });
-    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep };
+    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, relang: relang };
   }
 
   // ---------- «Поток»: световые ленты под матовым стеклом, при наведении — схема устройства ----------
@@ -838,6 +864,7 @@
       if (env.rm) still();
     }
     function sleep() { asleep = true; }
+    function relang() { G = makeGraph(LOCK); if (st.w) G.layout(g, st.w, st.h, st.w < 340); G.build(true); if (on && env.rm) still(); }
     // тап на тач-экране: первый открывает схему, второй ведёт по ссылке; тап мимо карточки закрывает
     function poke() { if (on && env.rm) setTimeout(still, 30); }
     card.addEventListener('pointerdown', function (e) { touch = e.pointerType && e.pointerType !== 'mouse' ? e.pointerType : ''; });
@@ -848,7 +875,7 @@
     document.addEventListener('pointerdown', function (e) { if (card.classList.contains('is-open') && !card.contains(e.target)) { card.classList.remove('is-open'); poke(); } }, { passive: true });
     ['pointerenter', 'pointerleave', 'focusin', 'focusout'].forEach(function (ev) { card.addEventListener(ev, poke); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (on) { G.layout(g, st.w, st.h, st.w < 340); if (env.rm) still(); } });
-    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep };
+    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, relang: relang };
   }
 
   window.PTScenes = {
