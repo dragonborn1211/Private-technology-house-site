@@ -1,0 +1,21 @@
+// Локальный просмотр сайта: node tools/serve.mjs [порт] → http://localhost:8080
+// Отдаёт только index.html и assets/ — ровно то, что уходит на хостинг.
+import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const port = +process.argv[2] || 8080;
+const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2' };
+
+createServer(async (req, res) => {
+  const rel = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '') || 'index.html';
+  const file = path.resolve(root, rel);
+  const allowed = file === path.join(root, 'index.html') || file.startsWith(path.join(root, 'assets') + path.sep);
+  if (!allowed) { res.writeHead(404).end('not found'); return; }
+  try {
+    const body = await readFile(file);
+    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' }).end(body);
+  } catch { res.writeHead(404).end('not found'); }
+}).listen(port, () => console.log(`http://localhost:${port}`));

@@ -1,0 +1,7 @@
+node_modules/
+# скриншоты проверки пересоздаёт node tools/check.mjs
+tools/shots/
+tools/shots-before/
+# список запрещённых слов и исходное ТЗ упоминают кейс с правовым ограничением — в публичный репозиторий не кладём
+tools/forbidden.local.txt
+TASK.md

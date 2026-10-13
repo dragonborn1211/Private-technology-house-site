@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Private Technology House</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&amp;family=Cormorant+Garamond:ital,wght@1,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<noscript><style>.pt-boot .sec{opacity:1}</style></noscript>
+</head>
+<body>
+<div id="pt-site" class="pt pt-boot">
+<div class="pt-grid" aria-hidden="true">
+<div class="pt-col" style="--k: 0"></div>
+<div class="pt-col" style="--k: 1"></div>
+<div class="pt-col" style="--k: 2"></div>
+<div class="pt-col" style="--k: 3"></div>
+<div class="pt-col" style="--k: 4"></div>
+<div class="pt-col" style="--k: 5"></div>
+<div class="pt-col" style="--k: 6"></div>
+<div class="pt-col" style="--k: 7"></div>
+<div class="pt-col" style="--k: 8"></div>
+<div class="pt-col" style="--k: 9"></div>
+<div class="pt-col" style="--k: 10"></div>
+<div class="pt-col" style="--k: 11"></div>
+<div class="pt-edge l" style="left: calc(clamp(20px, 5vw, 80px) - 25px)"></div>
+<div class="pt-edge r" style="right: calc(clamp(20px, 5vw, 80px) - 25px)"></div>
+</div>
+<canvas data-pt-smoke aria-hidden="true" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 0"></canvas>
+<canvas data-pt-canvas aria-hidden="true" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 30"></canvas>
+
+<section data-sec="hero" id="top" class="sec" data-pt-burst style="position: relative; min-height: 100vh; display: flex; flex-direction: column">
+<div class="scan" aria-hidden="true" data-pt-skip></div>
+<div class="wrap" style="flex: 1; display: flex; flex-direction: column">
+<header class="blk" data-blk style="display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px 0">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;header&gt;<b data-wf-size></b></span></span>
+<span class="an" data-pt-skip style="top: 30px; left: 30%">display: flex · justify-content: space-between</span>
+<a href="#top" style="display: flex; align-items: center; gap: 12px; min-height: 44px">
+<span aria-hidden="true" class="fr" style="display: block; width: 11px; height: 11px; border: 1.5px solid #8ED8F8; transform: rotate(45deg); box-shadow: 0 0 12px rgba(142,216,248,0.45)"></span>
+<span style="font-size: 11px; font-weight: 600; letter-spacing: 0.26em; text-transform: uppercase; color: #EEF3F6">Private Technology House</span>
+</a>
+<nav class="nav" aria-label="Разделы" style="display: flex; gap: 28px; font-size: 14px; color: #9DB0BC">
+<a href="#directions">Направления</a>
+<a href="#objects">Объекты</a>
+<a href="#process">Процесс</a>
+<a href="#pricing">Стоимость</a>
+</nav>
+<a href="#contact" class="btn btn-g fr" style="min-height: 44px; padding: 0 20px; font-size: 14px"><span>Обсудить проект</span></a>
+</header>
+<div style="flex: 1; display: flex; flex-wrap: wrap; gap: 48px 64px; align-items: stretch; padding: clamp(12px, 4vh, 44px) 0 clamp(28px, 5vh, 56px)">
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 28px">
+<p class="blk mono k" data-blk style="margin: 0">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;p.kicker&gt;<b data-wf-size></b></span></span>
+<span>Студия полного цикла · Object №00</span>
+</p>
+<h1 class="blk" data-blk style="margin: 0; font-weight: 300; font-size: clamp(44px, 6.6vw, 104px); line-height: 1; letter-spacing: -0.045em; color: #EEF3F6">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;h1&gt;<b data-wf-size></b></span></span>
+<span class="an" data-pt-skip style="top: -34px; left: 28%">font: 300 clamp(44px, 6.6vw, 104px) Manrope</span>
+<span class="an" data-pt-skip style="bottom: -30px; right: 4%">em · italic Cormorant · shimmer 7s</span>
+<span>Cold precision.</span><br><span class="it" data-grad="#8ED8F8,#7FA8FF,#B7A6F2,#F6F8FA,#9FE5D1">Private</span> <span>by design.</span>
+</h1>
+<p class="blk lead" data-blk>
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;p.lead&gt;<b data-wf-size></b></span></span>
+<span>Сайты, системы, инфраструктура и AI — тихо, точно и только под вашу задачу. Без шаблонов и лишнего.</span>
+</p>
+<div class="blk" data-blk style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;div.actions&gt;<b data-wf-size></b></span></span>
+<span class="an" data-pt-skip style="bottom: -32px; left: 0">border-radius: 999px · glow: #8ED8F8</span>
+<a href="#contact" class="btn btn-p fr" data-fr-color="accent"><span>Обсудить проект →</span></a>
+<a href="#objects" class="lnk"><span>Смотреть объекты</span></a>
+</div>
+</div>
+<div class="blk glass fr" data-blk data-obj style="flex: 1 1 420px; min-height: clamp(340px, 52vh, 520px); border-radius: 28px; cursor: pointer">
+<span class="wf" aria-hidden="true" data-pt-skip style="border-radius: 30px"><span class="wf-l">&lt;figure.object&gt;<b data-wf-size></b></span></span>
+<span class="an" data-pt-skip style="top: 18px; right: 18px">webgl · <span data-pt-count>26 000</span> particles</span>
+<div style="position: absolute; top: 20px; left: 22px; right: 22px; display: flex; justify-content: space-between; gap: 12px; pointer-events: none">
+<span class="mono" data-objname style="letter-spacing: 0.08em">Object №01 · Brilliant</span>
+<span class="mono" data-objidx style="letter-spacing: 0.08em; color: #6F93A6">01 / 04</span>
+</div>
+<div style="position: absolute; left: 12px; right: 22px; bottom: 8px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<div role="group" aria-label="Объекты" style="display: flex">
+<button type="button" class="dot-btn" data-objdot="0" aria-pressed="true" aria-label="Объект 1: Brilliant"><span class="fr"></span></button>
+<button type="button" class="dot-btn" data-objdot="1" aria-pressed="false" aria-label="Объект 2: Lattice"><span class="fr"></span></button>
+<button type="button" class="dot-btn" data-objdot="2" aria-pressed="false" aria-label="Объект 3: Silicon"><span class="fr"></span></button>
+<button type="button" class="dot-btn" data-objdot="3" aria-pressed="false" aria-label="Объект 4: House"><span class="fr"></span></button>
+</div>
+<span class="mono hide-m" style="letter-spacing: 0.06em; text-transform: none; color: #6F93A6; pointer-events: none">клик — следующий</span>
+</div>
+</div>
+</div>
+<div class="blk" data-blk style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 20px 32px; padding-bottom: clamp(32px, 6vh, 64px)">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;ul.principles&gt;<b data-wf-size></b></span></span>
+<div class="fr ln" data-fr-line="top" style="padding-top: 18px">
+<p class="mono" style="margin: 0 0 10px; color: #8ED8F8">01 · Тишина</p>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">Понятные этапы и один канал связи. Без лишних созвонов.</p>
+</div>
+<div class="fr ln" data-fr-line="top" style="padding-top: 18px">
+<p class="mono" style="margin: 0 0 10px; color: #7FA8FF">02 · Точность</p>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">Смета, сроки и критерии готовности — до старта работ.</p>
+</div>
+<div class="fr ln" data-fr-line="top" style="padding-top: 18px">
+<p class="mono" style="margin: 0 0 10px; color: #B7A6F2">03 · Приватность</p>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">Доступы, данные и код остаются под вашим контролем.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section data-sec="directions" id="directions" class="sec" style="position: relative; padding: clamp(72px, 12vh, 140px) 0 0">
+<div class="wrap">
+<div class="blk" data-blk style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px 48px; margin-bottom: 48px">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;header.section&gt;<b data-wf-size></b></span></span>
+<div style="flex: 1 1 520px; min-width: 0">
+<p class="mono k" style="margin: 0 0 20px">01 / Направления</p>
+<h2 class="h2">Четыре направления. <span class="it" data-grad="#8ED8F8,#7FA8FF,#B7A6F2,#F6F8FA,#9FE5D1" style="animation-delay: -0.8s">Один дом.</span></h2>
+</div>
+<p class="lead" style="flex: 0 1 420px">Берём проект целиком — от первого экрана до сервера, на котором он живёт.</p>
+</div>
+<div class="blk" data-blk style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 16px">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;div.grid&gt;<b data-wf-size></b></span></span>
+<span class="an" data-pt-skip style="top: -30px; right: 0">grid · repeat(auto-fit, minmax(260px, 1fr)) · gap: 16px</span>
+<article class="glass fr" style="--c: #8ED8F8; border-radius: 22px; padding: 26px 26px 28px; display: flex; flex-direction: column; gap: 14px">
+<p class="mono" style="margin: 0; color: #8ED8F8">01</p>
+<h3 style="margin: 0; font-size: 22px; font-weight: 500; letter-spacing: -0.01em; color: #EEF3F6">Digital Products</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">Сайты и веб-приложения, которые ощущаются продуктом.</p>
+<ul class="list">
+<li>Лендинги и сайты-визитки</li>
+<li>Корпоративные сайты и магазины</li>
+<li>Редизайн и переезд</li>
+</ul>
+</article>
+<article class="glass fr" style="--c: #7FA8FF; border-radius: 22px; padding: 26px 26px 28px; display: flex; flex-direction: column; gap: 14px">
+<p class="mono" style="margin: 0; color: #7FA8FF">02</p>
+<h3 style="margin: 0; font-size: 22px; font-weight: 500; letter-spacing: -0.01em; color: #EEF3F6">Systems</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">CRM, интеграции и автоматизация — ручная работа уходит.</p>
+<ul class="list">
+<li>1С-Битрикс и Битрикс24</li>
+<li>Автоматизация в n8n</li>
+<li>Интеграции по API</li>
+</ul>
+</article>
+<article class="glass fr" style="--c: #B7A6F2; border-radius: 22px; padding: 26px 26px 28px; display: flex; flex-direction: column; gap: 14px">
+<p class="mono" style="margin: 0; color: #B7A6F2">03</p>
+<h3 style="margin: 0; font-size: 22px; font-weight: 500; letter-spacing: -0.01em; color: #EEF3F6">Infrastructure</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">Серверы и сети, которые просто работают.</p>
+<ul class="list">
+<li>VPS, деплой и бэкапы</li>
+<li>Защищённый удалённый доступ</li>
+<li>Cloudflare и мониторинг</li>
+</ul>
+</article>
+<article class="glass fr" style="--c: #9FE5D1; border-radius: 22px; padding: 26px 26px 28px; display: flex; flex-direction: column; gap: 14px">
+<p class="mono" style="margin: 0; color: #9FE5D1">04</p>
+<h3 style="margin: 0; font-size: 22px; font-weight: 500; letter-spacing: -0.01em; color: #EEF3F6">Intelligence</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">AI внутри процессов, а не на баннерах.</p>
+<ul class="list">
+<li>AI-ассистенты и боты</li>
+<li>Базы знаний и RAG</li>
+<li>Анализ звонков и заявок</li>
+</ul>
+</article>
+</div>
+</div>
+</section>
+
+<section data-sec="objects" id="objects" class="sec" style="position: relative; padding: clamp(96px, 14vh, 160px) 0 0">
+<div class="wrap">
+<div class="blk" data-blk style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px 48px; margin-bottom: 48px">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;header.section&gt;<b data-wf-size></b></span></span>
+<div style="flex: 1 1 520px; min-width: 0">
+<p class="mono k" style="margin: 0 0 20px">02 / Объекты</p>
+<h2 class="h2">Вещи, которые <span class="it" data-grad="#8ED8F8,#7FA8FF,#B7A6F2,#F6F8FA,#9FE5D1" style="animation-delay: -1.6s">работают.</span></h2>
+</div>
+<p class="lead" style="flex: 0 1 420px">Каждый проект — отдельный объект: со своей задачей, архитектурой и характером.</p>
+</div>
+<div class="blk fr ln row-h" data-blk data-fr-line="top">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;header.row&gt;<b data-wf-size></b></span></span>
+<span class="an" data-pt-skip style="top: -30px; right: 0">live preview · iframe 1440 → scale(.27)</span>
+<p class="mono k">02.1 / Сайты</p>
+<p class="row-t">Сайты и веб-продукты под ключ.</p>
+</div>
+<div class="blk obj-grid" data-blk>
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;div.sites&gt;<b data-wf-size></b></span></span>
+<div class="glass fr obj">
+<span class="site fr" style="background-color: rgba(142,216,248,0.05)">
+<span class="site-bar" aria-hidden="true"><i></i><i></i><i></i><span>resonara.ru</span></span>
+<span class="site-view" data-site="https://resonara.ru/"><img class="site-shot" src="assets/previews/resonara.jpg" alt="" width="960" height="644" loading="lazy" decoding="async"><iframe data-src="https://resonara.ru/" title="Превью сайта resonara.ru" tabindex="-1" aria-hidden="true" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin"></iframe><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.04em; color: #6F93A6">resonara.ru</span></span>
+</span>
+<span class="obj-tx">
+<span class="mono" style="color: #8ED8F8">Object №01 · AI</span>
+<a href="https://resonara.ru/" target="_blank" rel="noopener" class="card-link" style="font-size: 22px; font-weight: 500; color: #EEF3F6">Resonara ↗</a>
+<span class="obj-d">AI-сервис: интерфейс, логика и инфраструктура.</span>
+</span>
+</div>
+<div class="glass fr obj">
+<span class="site fr" style="background-color: rgba(127,168,255,0.05)">
+<span class="site-bar" aria-hidden="true"><i></i><i></i><i></i><span>useantares.com</span></span>
+<span class="site-view" data-site="https://useantares.com/"><img class="site-shot" src="assets/previews/antares.jpg" alt="" width="960" height="644" loading="lazy" decoding="async"><iframe data-src="https://useantares.com/" title="Превью сайта useantares.com" tabindex="-1" aria-hidden="true" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin"></iframe><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.04em; color: #6F93A6">useantares.com</span></span>
+</span>
+<span class="obj-tx">
+<span class="mono" style="color: #7FA8FF">Object №02 · Hospitality</span>
+<a href="https://useantares.com/" target="_blank" rel="noopener" class="card-link" style="font-size: 22px; font-weight: 500; color: #EEF3F6">Antares ↗</a>
+<span class="obj-d">Частная обсерватория с гостевым домом: бронирование ночей и прогноз неба на сегодня.</span>
+</span>
+</div>
+<!-- Закрытый объект «Поток» (makeFlowLight) временно скрыт: выведем в другом месте.
+     Чтобы показать — перенести разметку из <template> в нужную секцию прямо в HTML (не через JS после старта, см. CLAUDE.md). -->
+<template data-hidden-card="flow-lock">
+<div class="glass fr obj flow-card" data-flowcard>
+<span class="site fr flow-lock" style="background-color: rgba(127,168,255,0.05)" role="img" aria-label="Закрытый объект под NDA: световые потоки сходятся в одну точку, при наведении видна схема устройства">
+<canvas data-flowlight aria-hidden="true"></canvas>
+<span class="frost" data-frost data-pt-skip aria-hidden="true"><span class="nda"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true"><rect x="2.6" y="6.1" width="8.8" height="6.4" rx="1.6"/><path d="M4.7 6.1V4.5a2.3 2.3 0 0 1 4.6 0v1.6"/></svg>NDA · показываем лично</span></span>
+</span>
+<span class="obj-tx">
+<span class="mono" style="color: #7FA8FF">Object №02 · Infrastructure · NDA</span>
+<span class="obj-h">Поток</span>
+<span class="obj-d">Сетевой сервис по подписке: сайт, личный кабинет, платежи и серверная инфраструктура.</span>
+<a href="#contact" class="card-link card-cta">Запросить показ →</a>
+</span>
+</div>
+</template>
+<a href="#contact" class="glass fr obj">
+<span class="fr" data-fr-color="accent" role="img" aria-label="Анимация: разные сайты по очереди собираются из частиц" style="position: relative; display: block; overflow: hidden; aspect-ratio: 4 / 3; border-radius: 18px; background-color: rgba(142,216,248,0.05); border: 1px dashed rgba(142,216,248,0.45)">
+<canvas data-mini aria-hidden="true" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block"></canvas>
+<span class="mini-lab" data-mini-label data-pt-skip>[ ваш проект ]</span>
+</span>
+<span class="obj-tx">
+<span class="mono" style="color: #B7A6F2">Object №03 · Next</span>
+<span class="obj-h">Следующий объект</span>
+<span class="obj-d">Может быть вашим. Расскажите о задаче →</span>
+</span>
+</a>
+</div>
+</div>
+</section>
+
+<section data-sec="automation" id="automation" class="sec" style="position: relative; padding: clamp(48px, 7vh, 80px) 0 0">
+<div class="wrap">
+<div class="blk fr ln row-h" data-blk data-fr-line="top">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;header.row&gt;<b data-wf-size></b></span></span>
+<span class="an" data-pt-skip style="top: -30px; right: 0">canvas 2d · makeFlow(cfg) · bezier + pulses</span>
+<p class="mono k">02.2 / Автоматизация</p>
+<p class="row-t">Процессы, которые работают без людей.</p>
+</div>
+<div class="blk obj-grid" data-blk>
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;div.automation&gt;<b data-wf-size></b></span></span>
+<div class="glass fr obj">
+<span class="flow-win fr" role="img" aria-label="Схема: Битрикс24, задачи → Webhook → n8n → AI, анализ → Telegram; из Telegram вопрос возвращается к AI">
+<canvas data-flow="b24-digest" aria-hidden="true"></canvas>
+</span>
+<span class="obj-tx">
+<span class="mono" style="color: #8ED8F8">Object №04 · Automation</span>
+<span class="obj-h">ИИ-разбор задач</span>
+<span class="obj-d">Каждое утро руководитель получает в Telegram разбор задач из Битрикс24 — и может задать боту вопрос по любой из них.</span>
+</span>
+</div>
+<div class="glass fr obj">
+<span class="flow-win fr" role="img" aria-label="Схема: телефония → Битрикс24, запись → n8n → распознавание речи → AI, оценка → CRM, сделка">
+<canvas data-flow="call-audit" aria-hidden="true"></canvas>
+</span>
+<span class="obj-tx">
+<span class="mono" style="color: #7FA8FF">Object №05 · Automation</span>
+<span class="obj-h">ИИ-аудитор звонков</span>
+<span class="obj-d">Каждый звонок расшифровывается и оценивается по скрипту продаж, итог появляется в карточке сделки.</span>
+</span>
+</div>
+<a href="#contact" class="glass fr obj">
+<span class="flow-win next fr" data-fr-color="accent" role="img" aria-label="Анимация: из типовых систем по очереди собираются разные цепочки автоматизации">
+<canvas data-flow="your-process" aria-hidden="true"></canvas>
+<span class="mini-lab" data-flow-label data-pt-skip>[ ваш процесс ]</span>
+</span>
+<span class="obj-tx">
+<span class="mono" style="color: #B7A6F2">Object №06 · Next</span>
+<span class="obj-h">Ваш процесс</span>
+<span class="obj-d">Опишите рутину — соберём автоматизацию →</span>
+</span>
+</a>
+</div>
+<!-- Кнопка закрывает весь блок «Объекты»: пока ряд «Интеграции» скрыт, она стоит здесь. Вернём ряд — переносим кнопку обратно в конец integrations. -->
+<div class="blk more" data-blk>
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;div.more&gt;<b data-wf-size></b></span></span>
+<a href="objects.html" class="btn btn-g fr"><span>Все объекты →</span></a>
+</div>
+</div>
+</section>
+
+<!-- Ряд «Интеграции» временно скрыт, код сохранён. Чтобы вернуть — достать <section> из <template> прямо в HTML
+     (не через JS после старта движка, см. CLAUDE.md) и перенести сюда кнопку «Все объекты →» из automation. -->
+<template data-hidden-section="integrations">
+<section data-sec="integrations" id="integrations" class="sec" style="position: relative; padding: clamp(48px, 7vh, 80px) 0 0">
+<div class="wrap">
+<div class="blk fr ln row-h" data-blk data-fr-line="top">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;header.row&gt;<b data-wf-size></b></span></span>
+<span class="an" data-pt-skip style="top: -30px; right: 0">makeFlow · duplex ⇄ · sync</span>
+<p class="mono k">02.3 / Интеграции</p>
+<p class="row-t">Системы, которые разговаривают друг с другом.</p>
+</div>
+<div class="blk obj-grid" data-blk>
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;div.integrations&gt;<b data-wf-size></b></span></span>
+<div class="glass fr obj">
+<span class="flow-win fr" role="img" aria-label="Схема: мини-приложение Telegram ⇄ API ⇄ CRM Битрикс24, из CRM уведомление менеджеру">
+<canvas data-flow="tg-crm" aria-hidden="true"></canvas>
+</span>
+<span class="obj-tx">
+<span class="mono" style="color: #8ED8F8">Object №07 · Integration</span>
+<span class="obj-h">Заявки из Telegram</span>
+<span class="obj-d">Заявки из мини-приложения сразу попадают в CRM, а статус заказа возвращается клиенту.</span>
+</span>
+</div>
+<div class="glass fr obj">
+<span class="flow-win fr" role="img" aria-label="Схема: сайт, CRM и бот ⇄ AI-шлюз на Cloudflare ⇄ модели A, B и C; под шлюзом логи и лимиты">
+<canvas data-flow="ai-gateway" aria-hidden="true"></canvas>
+</span>
+<span class="obj-tx">
+<span class="mono" style="color: #7FA8FF">Object №08 · Integration</span>
+<span class="obj-h">Единый AI-шлюз</span>
+<span class="obj-d">Все сервисы компании обращаются к нейросетям через один шлюз: ключи, лимиты и журнал в одном месте.</span>
+</span>
+</div>
+<a href="#contact" class="glass fr obj">
+<span class="flow-win next fr" data-fr-color="accent" role="img" aria-label="Анимация: случайные пары и тройки систем обмениваются данными в обе стороны">
+<canvas data-flow="your-integration" aria-hidden="true"></canvas>
+<span class="mini-lab" data-flow-label data-pt-skip>[ ваша интеграция ]</span>
+</span>
+<span class="obj-tx">
+<span class="mono" style="color: #B7A6F2">Object №09 · Next</span>
+<span class="obj-h">Ваша интеграция</span>
+<span class="obj-d">Свяжем ваши системы между собой →</span>
+</span>
+</a>
+</div>
+</div>
+</section>
+</template>
+
+<section data-sec="process" id="process" class="sec" style="position: relative; padding: clamp(96px, 14vh, 160px) 0 0">
+<div class="wrap">
+<div class="blk" data-blk style="margin-bottom: 56px; max-width: 760px">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;header.section&gt;<b data-wf-size></b></span></span>
+<p class="mono k" style="margin: 0 0 20px">03 / Процесс</p>
+<h2 class="h2">Как строится <span class="it" data-grad="#8ED8F8,#7FA8FF,#B7A6F2,#F6F8FA,#9FE5D1" style="animation-delay: -2.4s">дом.</span></h2>
+</div>
+<div class="blk" data-blk style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 32px">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;ol.steps&gt;<b data-wf-size></b></span></span>
+<span class="an" data-pt-skip style="top: -30px; right: 0">border-top: 1px · counter-reset: step</span>
+<div class="fr ln" data-fr-line="top" style="padding-top: 22px; display: flex; flex-direction: column; gap: 12px">
+<p style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 400; color: #8ED8F8">01</p>
+<h3 style="margin: 0; font-size: 20px; font-weight: 500; color: #EEF3F6">Разбор</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">Созвон, цели и ограничения. На выходе — план и смета.</p>
+</div>
+<div class="fr ln" data-fr-line="top" style="padding-top: 22px; display: flex; flex-direction: column; gap: 12px">
+<p style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 400; color: #7FA8FF">02</p>
+<h3 style="margin: 0; font-size: 20px; font-weight: 500; color: #EEF3F6">Проект</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">Структура, прототип и визуальная концепция.</p>
+</div>
+<div class="fr ln" data-fr-line="top" style="padding-top: 22px; display: flex; flex-direction: column; gap: 12px">
+<p style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 400; color: #B7A6F2">03</p>
+<h3 style="margin: 0; font-size: 20px; font-weight: 500; color: #EEF3F6">Сборка</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">Разработка, интеграции и тесты на реальных данных.</p>
+</div>
+<div class="fr ln" data-fr-line="top" style="padding-top: 22px; display: flex; flex-direction: column; gap: 12px">
+<p style="margin: 0; font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 400; color: #9FE5D1">04</p>
+<h3 style="margin: 0; font-size: 20px; font-weight: 500; color: #EEF3F6">Сопровождение</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">Запуск, мониторинг и развитие после релиза.</p>
+</div>
+</div>
+</div>
+</section>
+
+<section data-sec="pricing" id="pricing" class="sec" style="position: relative; padding: clamp(96px, 14vh, 160px) 0 0">
+<div class="wrap">
+<div class="blk" data-blk style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px 48px; margin-bottom: 48px">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;header.section&gt;<b data-wf-size></b></span></span>
+<div style="flex: 1 1 520px; min-width: 0">
+<p class="mono k" style="margin: 0 0 20px">04 / Стоимость</p>
+<h2 class="h2">Стандарт. <span class="it" data-grad="#8ED8F8,#7FA8FF,#B7A6F2,#F6F8FA,#9FE5D1" style="animation-delay: -3.2s">Без сюрпризов.</span></h2>
+</div>
+<p class="lead" style="flex: 0 1 420px">Точная смета — после разбора задачи. Здесь — ориентиры.</p>
+</div>
+<div class="blk" data-blk style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; align-items: stretch">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;div.tiers&gt;<b data-wf-size></b></span></span>
+<span class="an" data-pt-skip style="top: -30px; right: 0">border: 1px solid #8ED8F8 · featured</span>
+<div class="glass fr" style="border-radius: 24px; padding: 30px 28px; display: flex; flex-direction: column; gap: 18px">
+<p class="mono" style="margin: 0">Сайт</p>
+<p style="margin: 0; font-size: 34px; font-weight: 300; letter-spacing: -0.03em; color: #EEF3F6">от [цена] ₽</p>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">Лендинг или сайт-визитка под ключ.</p>
+<ul class="list" style="flex: 1">
+<li>Структура и тексты</li>
+<li>Дизайн и адаптив</li>
+<li>Запуск и аналитика</li>
+</ul>
+<a href="#contact" class="btn btn-g fr"><span>Обсудить</span></a>
+</div>
+<div class="glass fr" data-fr-color="accent" style="border-radius: 24px; padding: 30px 28px; display: flex; flex-direction: column; gap: 18px; border-color: rgba(142,216,248,0.5)">
+<p class="mono" style="margin: 0; color: #8ED8F8">Система</p>
+<p style="margin: 0; font-size: 34px; font-weight: 300; letter-spacing: -0.03em; color: #EEF3F6">от [цена] ₽</p>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">Магазин или корпоративный сайт на 1С-Битрикс.</p>
+<ul class="list" style="flex: 1">
+<li>Каталог и интеграции</li>
+<li>CRM и автоматизация</li>
+<li>Перенос и обучение</li>
+</ul>
+<a href="#contact" class="btn btn-p fr" data-fr-color="accent"><span>Обсудить</span></a>
+</div>
+<div class="glass fr" style="border-radius: 24px; padding: 30px 28px; display: flex; flex-direction: column; gap: 18px">
+<p class="mono" style="margin: 0">Сопровождение</p>
+<p style="margin: 0; font-size: 34px; font-weight: 300; letter-spacing: -0.03em; color: #EEF3F6">[цена] ₽/мес</p>
+<p style="margin: 0; font-size: 15px; line-height: 1.55; color: #9DB0BC">Поддержка, доработки и мониторинг.</p>
+<ul class="list" style="flex: 1">
+<li>Серверы и бэкапы</li>
+<li>Доработки по задачам</li>
+<li>Отчёт раз в месяц</li>
+</ul>
+<a href="#contact" class="btn btn-g fr"><span>Обсудить</span></a>
+</div>
+</div>
+</div>
+</section>
+
+<section data-sec="contact" id="contact" class="sec" data-pt-burst style="position: relative; padding: clamp(110px, 16vh, 180px) 0 120px">
+<div class="wrap">
+<div class="blk" data-blk style="display: flex; flex-direction: column; gap: 28px; max-width: 980px">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;section.contact&gt;<b data-wf-size></b></span></span>
+<p class="mono k" style="margin: 0">05 / Контакт</p>
+<h2 style="margin: 0; font-weight: 300; font-size: clamp(42px, 6.4vw, 96px); line-height: 1; letter-spacing: -0.045em; color: #EEF3F6">Let’s build something <span class="it" data-grad="#8ED8F8,#7FA8FF,#B7A6F2,#F6F8FA,#9FE5D1" style="animation-delay: -2s">private.</span></h2>
+<p class="lead">Расскажите о задаче — предложим решение, сроки и смету.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px 16px">
+<a href="#" class="btn btn-p fr" data-fr-color="accent"><span>Написать в Telegram →</span></a>
+<a href="#" class="btn btn-g fr"><span>Почта</span></a>
+</div>
+</div>
+<div class="blk fr ln" data-blk data-fr-line="top" style="margin-top: 96px; padding-top: 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px">
+<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;footer&gt;<b data-wf-size></b></span></span>
+<span style="font-size: 11px; font-weight: 600; letter-spacing: 0.26em; text-transform: uppercase; color: #EEF3F6">Private Technology House</span>
+<span style="font-size: 13px; color: #8193A0">© 2026 · Сайты, системы, инфраструктура, AI</span>
+<a href="#top" class="lnk" style="font-size: 13px"><span>Наверх ↑</span></a>
+</div>
+</div>
+</section>
+
+<div style="position: fixed; left: 50%; bottom: 18px; z-index: 40; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 24px); padding: 6px 6px 6px 16px; border-radius: 999px; background: rgba(10,18,26,0.82); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); box-shadow: 0 18px 40px -16px rgba(0,0,0,0.5); border: 1px solid rgba(188,211,222,0.16)">
+<span class="pill-dot" aria-hidden="true"></span>
+<span class="pill-step" data-pt-step aria-hidden="true" style="min-width: 250px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #BCD3DE; white-space: nowrap">boot</span>
+<button type="button" data-pt-replay style="flex: none; height: 38px; padding: 0 16px; border-radius: 999px; border: 0; background: #EEF3F6; color: #0A121A; font: 600 13px Manrope, system-ui, sans-serif; cursor: pointer">Пересобрать блок</button>
+<span aria-hidden="true" data-pt-prog style="position: absolute; left: 16px; right: 16px; bottom: 0; height: 1px; background: #8ED8F8; transform: scaleX(0); transform-origin: left; transition: transform .6s ease"></span>
+</div>
+<div class="sbar" data-sbar aria-hidden="true"><i data-sbar-thumb></i></div>
+</div>
+<script src="assets/scroll.js"></script>
+<script src="assets/scenes.js"></script>
+<script src="assets/engine.js" onerror="document.getElementById('pt-site').classList.remove('pt-boot')"></script>
+</body>
+</html>
