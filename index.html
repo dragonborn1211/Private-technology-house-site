@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&amp;family=Cormorant+Garamond:ital,wght@1,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
 <link rel="stylesheet" href="assets/site.css">
-<noscript><style>.pt-boot .sec{opacity:1}</style></noscript>
+<noscript><style>.pt-boot .sec > *,.pt-boot .sec .wrap > *{opacity:1}</style></noscript>
 </head>
 <body>
 <div id="pt-site" class="pt pt-boot">
@@ -38,12 +38,10 @@
 <section data-sec="hero" id="top" class="sec" data-pt-burst style="position: relative; min-height: 100vh; display: flex; flex-direction: column">
 <div class="scan" aria-hidden="true" data-pt-skip></div>
 <div class="wrap" style="flex: 1; display: flex; flex-direction: column">
-<header class="blk hero-hdr" data-blk>
-<span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;header&gt;<b data-wf-size></b></span></span>
-<span class="an" data-pt-skip style="top: 30px; left: 30%">display: flex · justify-content: space-between</span>
-<a href="#top" class="logo">
-<span aria-hidden="true" class="fr logo-d"></span>
-<span class="logo-t">Private Technology House</span>
+<header class="hero-hdr" data-pt-skip>
+<a href="#top" class="logo" aria-label="Private Technology House">
+<span aria-hidden="true" class="logo-d"></span>
+<span class="logo-t" aria-hidden="true">Private Technology House</span><span class="logo-s" aria-hidden="true">PTH</span>
 </a>
 <nav class="nav" aria-label="Разделы">
 <a href="#directions" data-nav="directions">Услуги</a>
@@ -52,14 +50,14 @@
 <a href="#pricing" data-nav="pricing">Цены</a>
 </nav>
 <div class="hdr-act">
-<div class="lang fr hide-m" data-cur="ru" role="group" aria-label="Язык сайта">
+<div class="lang hide-m" data-cur="ru" role="group" aria-label="Язык сайта">
 <span class="lang-thumb" aria-hidden="true"></span>
 <a href="./" hreflang="ru" lang="ru" data-lang="ru" aria-label="Русский" aria-current="true">RU</a>
 <a href="./?lang=en" hreflang="en" lang="en" data-lang="en" aria-label="English">EN</a>
 </div>
-<a href="https://t.me/dragonborne0" target="_blank" rel="noopener" class="ico fr" aria-label="Написать в Telegram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 3 10.5 13.5"/><path d="M21 3 14.5 21l-4-7.5L3 9.5z"/></svg></a>
-<a href="#contact" class="btn btn-g fr hide-m hdr-cta"><span>Обсудить проект</span></a>
-<button type="button" class="ico fr menu-btn" data-menu-open aria-controls="pt-menu" aria-expanded="false" aria-label="Открыть меню"><span class="burger" aria-hidden="true"><i></i><i></i></span></button>
+<a href="https://t.me/dragonborne0" target="_blank" rel="noopener" class="ico" aria-label="Написать в Telegram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 3 10.5 13.5"/><path d="M21 3 14.5 21l-4-7.5L3 9.5z"/></svg></a>
+<a href="#contact" class="btn btn-g hide-m hdr-cta"><span>Обсудить проект</span></a>
+<button type="button" class="ico menu-btn" data-menu-open aria-controls="pt-menu" aria-expanded="false" aria-label="Открыть меню"><span class="burger" aria-hidden="true"><i></i><i></i></span></button>
 </div>
 </header>
 <div class="hero-row">
@@ -72,7 +70,7 @@
 <span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;h1&gt;<b data-wf-size></b></span></span>
 <span class="an" data-pt-skip style="top: -34px; left: 28%">font: 300 clamp(32px, 3.7vw, 56px) Manrope</span>
 <span class="an" data-pt-skip style="bottom: -30px; right: 4%">em · italic Cormorant · shimmer 7s</span>
-<span>Сайты, интеграции и&nbsp;автоматизация&nbsp;—</span> <span class="it" data-grad="#8ED8F8,#7FA8FF,#B7A6F2,#F6F8FA,#9FE5D1">с&nbsp;холодной точностью.</span>
+<span>Сайты, интеграции<br class="hero-br"> и&nbsp;автоматизация&nbsp;—</span> <span class="it" data-grad="#8ED8F8,#7FA8FF,#B7A6F2,#F6F8FA,#9FE5D1">с&nbsp;холодной точностью.</span>
 </h1>
 <p class="blk lead" data-blk>
 <span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;p.lead&gt;<b data-wf-size></b></span></span>
@@ -86,18 +84,19 @@
 </div>
 <p class="blk trust" data-blk>
 <span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;p.trust&gt;<b data-wf-size></b></span></span>
-<span class="trust-i">Смета и&nbsp;сроки&nbsp;— до&nbsp;старта</span><span class="trust-s" aria-hidden="true">·</span> <span class="trust-i">Договор и&nbsp;NDA</span><span class="trust-s" aria-hidden="true">·</span> <span class="trust-i">Работаем по&nbsp;всей России</span>
+<span class="trust-i">Смета и&nbsp;сроки&nbsp;— до&nbsp;старта</span><span class="trust-s" aria-hidden="true">·</span> <span class="trust-i">Договор и&nbsp;NDA</span><span class="trust-s" aria-hidden="true">·</span> <span class="trust-i">Поддержка после запуска</span>
 </p>
 </div>
 <div class="blk glass fr hero-obj" data-blk data-obj role="group" aria-label="Хрустальный ферзь" style="border-radius: 28px; cursor: pointer">
 <span class="wf" aria-hidden="true" data-pt-skip style="border-radius: 30px"><span class="wf-l">&lt;figure.object&gt;<b data-wf-size></b></span></span>
 <span class="an" data-pt-skip style="top: 18px; right: 18px">webgl · <span data-pt-count>26 000</span> particles</span>
 <div style="position: absolute; top: 20px; left: 22px; right: 22px; display: flex; justify-content: space-between; gap: 12px; pointer-events: none">
-<span class="mono" data-objname style="letter-spacing: 0.08em">01 · Холодный расчёт</span>
+<span class="mono" data-objname style="letter-spacing: 0.08em">Хрустальный ферзь</span>
 <span class="mono" data-objidx style="letter-spacing: 0.08em; color: #6F93A6">01 / 05</span>
 </div>
-<div style="position: absolute; left: 14px; right: 22px; bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
-<div style="display: flex; gap: 8px">
+<div class="obj-foot">
+<p class="obj-cap" data-objcap data-pt-skip>Сначала считаем, потом делаем: варианты, риски и&nbsp;бюджет&nbsp;— до&nbsp;первой строки кода.</p>
+<div class="obj-arrows">
 <button type="button" class="arr fr" data-prev aria-label="Предыдущий принцип">←</button>
 <button type="button" class="arr fr" data-next aria-label="Следующий принцип">→</button>
 </div>
@@ -106,11 +105,11 @@
 </div>
 <div class="blk usp" data-blk role="group" aria-label="Принципы">
 <span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;ul.principles&gt;<b data-wf-size></b></span></span>
-<button type="button" class="usp-i fr ln" data-fr-line="top" data-usp="0" aria-current="step"><span class="usp-line" aria-hidden="true"><i data-usp-fill></i></span><span class="mono" style="color: #8ED8F8">01 · Холодный расчёт</span><span class="usp-t">Сначала считаем, потом делаем: варианты, риски и&nbsp;бюджет&nbsp;— до&nbsp;первой строки кода.</span></button>
-<button type="button" class="usp-i fr ln" data-fr-line="top" data-usp="1" aria-current="false"><span class="usp-line" aria-hidden="true"><i data-usp-fill></i></span><span class="mono" style="color: #7FA8FF">02 · Точность</span><span class="usp-t">Ровно то, что нужно бизнесу: до&nbsp;пикселя в&nbsp;макете, до&nbsp;поля в&nbsp;CRM, до&nbsp;рубля в&nbsp;смете.</span></button>
-<button type="button" class="usp-i fr ln" data-fr-line="top" data-usp="2" aria-current="false"><span class="usp-line" aria-hidden="true"><i data-usp-fill></i></span><span class="mono" style="color: #B7A6F2">03 · Скорость</span><span class="usp-t">Быстрый запуск без&nbsp;суеты: каждый этап идёт по&nbsp;рассчитанной траектории.</span></button>
-<button type="button" class="usp-i fr ln" data-fr-line="top" data-usp="3" aria-current="false"><span class="usp-line" aria-hidden="true"><i data-usp-fill></i></span><span class="mono" style="color: #9FE5D1">04 · Безопасность</span><span class="usp-t">Данные и&nbsp;доступы под&nbsp;замком: шифрование, резервные копии, права по&nbsp;ролям.</span></button>
-<button type="button" class="usp-i fr ln" data-fr-line="top" data-usp="4" aria-current="false"><span class="usp-line" aria-hidden="true"><i data-usp-fill></i></span><span class="mono" style="color: #EEF3F6">05 · Дизайн</span><span class="usp-t">Свой дизайн под&nbsp;ваш бизнес&nbsp;— без&nbsp;шаблонов и&nbsp;чужих тем.</span></button>
+<button type="button" class="usp-i fr ln" data-fr-line="top" data-usp="0" aria-describedby="usp-t-0" aria-current="step"><span class="usp-line" aria-hidden="true"><i data-usp-fill></i></span><span class="mono" style="color: #8ED8F8">01 · Холодный расчёт</span><span class="usp-t" id="usp-t-0">Сначала считаем, потом делаем: варианты, риски и&nbsp;бюджет&nbsp;— до&nbsp;первой строки кода.</span></button>
+<button type="button" class="usp-i fr ln" data-fr-line="top" data-usp="1" aria-describedby="usp-t-1" aria-current="false"><span class="usp-line" aria-hidden="true"><i data-usp-fill></i></span><span class="mono" style="color: #7FA8FF">02 · Точность</span><span class="usp-t" id="usp-t-1">Ровно то, что нужно бизнесу: до&nbsp;пикселя в&nbsp;макете, до&nbsp;поля в&nbsp;CRM, до&nbsp;рубля в&nbsp;смете.</span></button>
+<button type="button" class="usp-i fr ln" data-fr-line="top" data-usp="2" aria-describedby="usp-t-2" aria-current="false"><span class="usp-line" aria-hidden="true"><i data-usp-fill></i></span><span class="mono" style="color: #B7A6F2">03 · Скорость</span><span class="usp-t" id="usp-t-2">Быстрый запуск без&nbsp;суеты: каждый этап идёт по&nbsp;рассчитанной траектории.</span></button>
+<button type="button" class="usp-i fr ln" data-fr-line="top" data-usp="3" aria-describedby="usp-t-3" aria-current="false"><span class="usp-line" aria-hidden="true"><i data-usp-fill></i></span><span class="mono" style="color: #9FE5D1">04 · Безопасность</span><span class="usp-t" id="usp-t-3">Данные и&nbsp;доступы под&nbsp;замком: шифрование, резервные копии, права по&nbsp;ролям.</span></button>
+<button type="button" class="usp-i fr ln" data-fr-line="top" data-usp="4" aria-describedby="usp-t-4" aria-current="false"><span class="usp-line" aria-hidden="true"><i data-usp-fill></i></span><span class="mono" style="color: #EEF3F6">05 · Дизайн</span><span class="usp-t" id="usp-t-4">Свой дизайн под&nbsp;ваш бизнес&nbsp;— без&nbsp;шаблонов и&nbsp;чужих тем.</span></button>
 </div>
 </div>
 </section>
@@ -457,15 +456,18 @@
 
 <!-- пульт: во время первой сборки — плашка с логом шагов, потом сворачивается в кнопку ↻ в левом нижнем углу -->
 <div class="pult" data-pult>
+<div class="pult-bar">
 <span class="pill-dot" aria-hidden="true"></span>
 <span class="pill-step" data-pt-step aria-hidden="true">boot</span>
-<button type="button" class="pult-btn" data-pt-replay aria-label="Пересобрать блок"><svg class="pult-ring" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="20.5"/></svg><span class="pult-ico" aria-hidden="true">↻</span><span class="pult-t">Пересобрать блок</span></button>
+<button type="button" class="pult-btn" data-pt-replay>Пересобрать блок</button>
 <span class="pult-prog" aria-hidden="true" data-pt-prog></span>
+</div>
+<button type="button" class="pult-mini" data-pt-replay aria-label="Пересобрать блок"><svg class="pult-ring" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="20.5"/></svg><span class="pult-ico" aria-hidden="true">↻</span></button>
 </div>
 <!-- липкая шапка: появляется ниже первого экрана при прокрутке вверх (assets/nav.js) -->
 <div class="topbar" data-topbar inert>
 <div class="wrap topbar-in">
-<a href="#top" class="logo"><span aria-hidden="true" class="logo-d"></span><span class="logo-t">Private Technology House</span></a>
+<a href="#top" class="logo" aria-label="Private Technology House"><span aria-hidden="true" class="logo-d"></span><span class="logo-t" aria-hidden="true">Private Technology House</span><span class="logo-s" aria-hidden="true">PTH</span></a>
 <nav class="nav" aria-label="Разделы">
 <a href="#directions" data-nav="directions">Услуги</a>
 <a href="#objects" data-nav="objects">Работы</a>
@@ -488,7 +490,7 @@
 <div class="menu" id="pt-menu" data-menu role="dialog" aria-modal="true" aria-label="Меню" inert>
 <div class="wrap menu-in">
 <div class="menu-top">
-<a href="#top" class="logo" data-menu-link><span aria-hidden="true" class="logo-d"></span><span class="logo-t">Private Technology House</span></a>
+<a href="#top" class="logo" aria-label="Private Technology House" data-menu-link><span aria-hidden="true" class="logo-d"></span><span class="logo-t" aria-hidden="true">Private Technology House</span><span class="logo-s" aria-hidden="true">PTH</span></a>
 <button type="button" class="ico" data-menu-close aria-label="Закрыть меню"><span class="cross" aria-hidden="true"><i></i><i></i></span></button>
 </div>
 <nav class="menu-nav" aria-label="Разделы">

@@ -13,6 +13,9 @@
 // Шапка и первый экран (ТЗ TASK-header-hero.md): ссылки Telegram и отсутствие href="#", тексты H1 / строки доверия /
 // меню, неразрывные пробелы после смены языка, сгиб на 1440×900 и 1280×720, свёрнутый пульт ничего не перекрывает,
 // меню на телефоне (Esc, фокус, пункт меню, язык), липкая шапка и активный раздел; скриншоты первого экрана и меню.
+// Шлифовка (TASK-hero-polish.md): шапка с первого кадра, H1 в три строки и курсив не рвётся, принцип на экране один
+// раз (панель — объект и описание, строка — заголовки), пульт свёрнут при прокрутке сразу после первого экрана и
+// плашка по наведению ничего не перекрывает, узкие телефоны 320–430.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -149,11 +152,11 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     const bad = [];
     if (lx.hash) bad.push(`href="#": ${lx.hash}`);
     if (lx.tg < 4 || lx.tgBad) bad.push(`Telegram: ссылок ${lx.tg}, неверных ${lx.tgBad}`);
-    if (!/Сайты, интеграции и автоматизация/.test(lx.h1)) bad.push(`H1 «${lx.h1}»`);
+    if (!/Сайты, интеграции ?и автоматизация/.test(lx.h1)) bad.push(`H1 «${lx.h1}»`);
     if (!lx.nbsp) bad.push('в H1 нет неразрывных пробелов');
     if (lx.trust !== 3) bad.push(`строка доверия: пунктов ${lx.trust}`);
     if (lx.nav !== 'Услуги,Работы,Процесс,Цены') bad.push(`меню: ${lx.nav}`);
-    if (lx.name !== '01 · Холодный расчёт' || lx.aria !== 'Хрустальный ферзь') bad.push(`подпись панели «${lx.name}», aria-label «${lx.aria}»`);
+    if (lx.name !== 'Хрустальный ферзь' || lx.aria !== 'Хрустальный ферзь') bad.push(`название в панели «${lx.name}», aria-label «${lx.aria}»`);
     if (bad.length) fail('шапка и первый экран: ' + bad.join('; '));
     else console.log('  ✓ ссылки и тексты: Telegram → t.me/dragonborne0, нет href="#", H1, строка доверия, меню, подпись панели');
   }
@@ -167,10 +170,15 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     const res = [];
     await page.click('[data-usp="3"]'); await run(300);
     res.push(await page.evaluate(() => document.querySelector('[data-usp="3"]').getAttribute('aria-current')), await idx(page));
-    const nm = await page.evaluate(() => document.querySelector('[data-objname]').textContent);
-    if (nm !== '04 · Безопасность') fail(`подпись панели после выбора 04: «${nm}»`);
-    await page.click('[data-next]'); await run(300); res.push(await idx(page));
-    await page.click('[data-prev]'); await run(300); res.push(await idx(page));
+    // принцип на экране один раз: в панели — название объекта и описание активного принципа (оно же в .usp-t)
+    const capNow = () => page.evaluate(() => { const a = document.querySelector('[data-usp][aria-current="step"]'); return { name: document.querySelector('[data-objname]').textContent, head: a.querySelector('.mono').textContent, cap: document.querySelector('[data-objcap]').textContent, want: a.querySelector('.usp-t').textContent }; });
+    const capBad = [], capOk = (c, where) => { if (c.name === c.head || c.cap !== c.want) capBad.push(`${where}: «${c.name}» / «${c.cap.slice(0, 30)}»`); };
+    await run(400); capOk(await capNow(), 'клик по 04');
+    if ((await capNow()).name !== 'Шифровальные роторы') capBad.push('название объекта после выбора 04');
+    await page.click('[data-next]'); await run(300); res.push(await idx(page)); await run(400); capOk(await capNow(), 'стрелка →');
+    await page.click('[data-prev]'); await run(300); res.push(await idx(page)); await run(400); capOk(await capNow(), 'стрелка ←');
+    if (capBad.length) fail('подпись в панели: ' + capBad.join('; '));
+    else console.log('  ✓ панель: название объекта сверху, описание активного принципа внизу — меняются по клику и стрелкам');
     const pb = await page.evaluate(() => { const r = document.querySelector('[data-obj]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
     await page.mouse.click(pb[0], pb[1]); await run(300); res.push(await idx(page));
     await page.mouse.move(5, 5); await run(11000); res.push(await idx(page));
@@ -224,6 +232,9 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     const opener = '[data-sec="hero"] [data-menu-open]';
     await page.click(opener); await run(400); await page.waitForTimeout(100);
     const m1 = await st(), exp = await page.getAttribute(opener, 'aria-expanded');
+    // под открытым меню страница скрыта: иначе сквозь стекло просвечивала кнопка первого экрана (светлое пятно у RU/EN)
+    await page.waitForTimeout(300);
+    const under = await page.evaluate(() => getComputedStyle(document.querySelector('[data-sec="hero"]')).visibility);
     await shot('menu');
     await page.keyboard.press('Escape'); await run(400);
     const m2 = await st(), back = await page.evaluate((sel) => document.activeElement === document.querySelector(sel), opener);
@@ -238,6 +249,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     const bad = [];
     if (!hb) bad.push('в шапке не видно Telegram или кнопки меню');
     if (!m1.on || !m1.lock || !m1.inMenu || exp !== 'true') bad.push(`открытие: ${JSON.stringify(m1)}, aria-expanded ${exp}`);
+    if (under !== 'hidden') bad.push('под открытым меню видна страница (светлое пятно)');
     if (m2.on || m2.lock || !back) bad.push(`Esc: меню ${m2.on ? 'открыто' : 'закрыто'}, фокус на кнопке ${back}`);
     if (m3.on || Math.abs(ptop) > 8) bad.push(`пункт меню: меню ${m3.on ? 'открыто' : 'закрыто'}, «Процесс» на ${ptop}px`);
     if (m4.lang !== 'en') bad.push(`RU/EN в меню: lang=${m4.lang}`);
@@ -258,7 +270,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     if (left.length) fail(`кириллица в английской версии: ${left.join(' | ')}`);
     else console.log('  ✓ английская версия: кириллицы нет, у скрытых блоков есть переводы');
     const h1e = await page.evaluate(() => document.querySelector('h1').textContent.replace(/\s+/g, ' '));
-    if (!/Websites, integrations and automation/.test(h1e)) fail(`английский H1: «${h1e}»`);
+    if (!/Websites, integrations ?and automation/.test(h1e)) fail(`английский H1: «${h1e}»`);
     if ((await page.evaluate(() => document.documentElement.lang)) !== 'en') fail('<html lang> не en');
   }
   if (tag === 'd1440') {
@@ -276,9 +288,12 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     if (en.swap || nd.length) { ok = false; fail(`после переключения на EN секции не собраны: s-swap ${en.swap}, не собраны ${nd.join(', ')}`); }
     if (left.length) { ok = false; fail(`после переключения на EN осталась кириллица: ${left.join(' | ')}`); }
     const on = await page.evaluate(() => document.querySelector('[data-objname]').textContent);
-    if (!/^0\d · [A-Z]/.test(on)) { ok = false; fail(`после переключения на EN подпись панели: «${on}»`); }
+    if (!/^[A-Z][a-z]+( [a-z]+)*$/.test(on)) { ok = false; fail(`после переключения на EN название в панели: «${on}»`); }
+    await run(400);
+    const capEn = await page.evaluate(() => [document.querySelector('[data-objcap]').textContent, document.querySelector('[data-usp][aria-current="step"] .usp-t').textContent]);
+    if (capEn[0] !== capEn[1] || /[А-Яа-яЁё]/.test(capEn[0])) { ok = false; fail(`после переключения на EN подпись в панели: «${capEn[0].slice(0, 40)}»`); }
     const h1en = await page.evaluate(() => document.querySelector('h1').textContent.replace(/\s+/g, ' '));
-    if (!/Websites, integrations and automation/.test(h1en)) { ok = false; fail(`после переключения на EN H1: «${h1en}»`); }
+    if (!/Websites, integrations ?and automation/.test(h1en)) { ok = false; fail(`после переключения на EN H1: «${h1en}»`); }
     if (hid) { ok = false; fail(`после переключения на EN ${hid} текстовых элементов на экране невидимы`); }
     await page.click('[data-lang="ru"]');
     await run(4000);
@@ -288,7 +303,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     if ((await page.evaluate(() => document.documentElement.lang + location.search)) !== 'ru') { ok = false; fail('после возврата на RU: lang или адрес не сброшены'); }
     if (ok) console.log('  ✓ смена языка RU → EN → RU: текст, адрес и lang на месте');
     // «Пересобрать блок» на первом экране: всё собирается заново, объект на месте
-    await page.click('[data-pt-replay]');
+    await page.locator('[data-pt-replay]:visible').first().click();
     await run(8000);
     const nd1 = await page.evaluate(notDoneVisible), hid1 = await page.evaluate(hiddenVisible), cv = await page.evaluate(() => getComputedStyle(document.querySelector('[data-sec="hero"] canvas[data-gl]')).opacity);
     if (nd1.length || hid1 || cv !== '1') fail(`«Пересобрать блок» на первом экране: не собраны ${nd1.join(', ') || '—'}, невидимых текстов ${hid1}, холст объекта opacity ${cv}`);
@@ -299,18 +314,19 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     const pu = await page.evaluate(() => { const p = document.querySelector('[data-pult]'); return { mini: p.classList.contains('is-mini'), vis: getComputedStyle(p).visibility }; });
     if (!pu.mini || pu.vis !== 'visible') fail(`пульт после пересборки (курсор над ним): свёрнут ${pu.mini}, visibility ${pu.vis}`);
     else console.log('  ✓ после пересборки пульт свернулся и виден, хотя курсор над ним');
-    // ↻ во время идущей сборки: она доводится, и пересборка всё равно запускается (раньше нажатие пропадало)
+    // ↻ во время идущей сборки: она доводится, и пересборка всё равно запускается (раньше нажатие пропадало);
+    // на пересборке над свёрнутой кнопкой открыта плашка с логом (.is-open)
     await page.mouse.move(700, 400);
-    await page.click('[data-pt-replay]'); await run(600);
-    await page.click('[data-pt-replay]'); await run(300);
-    const rr = await page.evaluate(() => ({ mini: document.querySelector('[data-pult]').classList.contains('is-mini'), step: document.querySelector('[data-pt-step]').textContent }));
+    await page.locator('[data-pt-replay]:visible').first().click(); await run(600);
+    await page.locator('[data-pt-replay]:visible').first().click(); await run(300);
+    const rr = await page.evaluate(() => ({ open: document.querySelector('[data-pult]').classList.contains('is-open'), step: document.querySelector('[data-pt-step]').textContent }));
     await page.mouse.move(700, 400); await run(9000);
     const nd3 = await page.evaluate(notDoneVisible), hid3 = await page.evaluate(hiddenVisible);
-    if (rr.mini || !/dissolve|text\.|layout|grid|styles|type|boot|hero|_/.test(rr.step)) fail(`↻ во время сборки не запустил пересборку: ${JSON.stringify(rr)}`);
+    if (!rr.open || !/dissolve|text\.|layout|grid|styles|type|boot|hero|_/.test(rr.step)) fail(`↻ во время сборки не запустил пересборку: ${JSON.stringify(rr)}`);
     else if (nd3.length || hid3) fail(`↻ во время сборки: не собраны ${nd3.join(', ') || '—'}, невидимых текстов ${hid3}`);
     else console.log('  ✓ ↻ во время идущей сборки доводит её и запускает пересборку');
     // «Пересобрать блок», прерванный кликом до постановки в очередь (между 1.0 и 1.7 с): секции не гаснут насовсем
-    await page.click('[data-pt-replay]');
+    await page.locator('[data-pt-replay]:visible').first().click();
     await run(1250);
     await page.mouse.click(5, 300);
     await run(3000);
@@ -328,7 +344,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
 console.log('\nраскладка на промежуточных ширинах (RU / EN, шапка и липкая шапка)');
 {
   const bad = [];
-  for (const lang of ['ru', 'en']) for (const w of [390, 768, 820, 1024, 1280, 1440]) {
+  for (const lang of ['ru', 'en']) for (const w of [320, 360, 375, 390, 414, 430, 768, 820, 1024, 1280, 1440]) {
     const page = await browser.newPage({ viewport: { width: w, height: 900 } });
     await page.goto('file://' + file + (lang === 'en' ? '?lang=en' : ''));
     await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
@@ -341,13 +357,70 @@ console.log('\nраскладка на промежуточных ширинах
         const r = el.getBoundingClientRect(); if (!r.width) return;
         if (r.right > W + 1 || r.left < -1) res.push(`«${(el.textContent.trim() || el.getAttribute('aria-label') || el.tagName).slice(0, 24)}» ${Math.round(r.left)}..${Math.round(r.right)}`);
       });
+      if (document.documentElement.scrollWidth > W) res.push(`документ шире окна: ${document.documentElement.scrollWidth}`);
       return res;
     });
     out.forEach((x) => bad.push(`${w} ${lang}: ${x}`));
     await page.close();
   }
   if (bad.length) fail('выходят за край окна: ' + bad.slice(0, 12).join(' | ') + (bad.length > 12 ? ` …ещё ${bad.length - 12}` : ''));
-  else console.log('  ✓ на 390, 768, 820, 1024, 1280, 1440 (RU и EN) ничего не выходит за край окна');
+  else console.log('  ✓ на 320–430, 768, 820, 1024, 1280, 1440 (RU и EN) ничего не выходит за край окна, кнопки шапки целиком');
+}
+
+// Первый экран: шапка с первого кадра, H1 в три строки и курсив не рвётся, строка принципов в первом экране,
+// плашка пульта по наведению ничего не перекрывает; пульт свёрнут при прокрутке сразу после сборки (390×844).
+console.log('\nпервый экран: шапка, заголовок, строка принципов, пульт');
+{
+  const bad = [];
+  for (const lang of ['ru', 'en']) for (const [w, h] of [[1280, 720], [1440, 900], [1920, 1080], [390, 844]]) {
+    const page = await browser.newPage({ viewport: { width: w, height: h } });
+    const errs = [];
+    page.on('pageerror', (e) => errs.push(e.message));
+    await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
+    await page.clock.pauseAt(new Date('2026-01-01T12:00:01Z'));
+    await page.goto('file://' + file + (lang === 'en' ? '?lang=en' : ''));
+    const run = (ms) => page.clock.runFor(ms);
+    const tag = `${w}×${h} ${lang}`;
+    await run(300); await page.waitForTimeout(60);
+    const op = await page.evaluate(() => { let o = 1, el = document.querySelector('.hero-hdr'); while (el) { o *= +getComputedStyle(el).opacity; el = el.parentElement; } return { o, ptx: document.querySelectorAll('.hero-hdr .ptx, .hero-hdr .fr').length }; });
+    if (op.o !== 1 || op.ptx) bad.push(`${tag}: шапка на 0.3 с — прозрачность ${op.o}, собираемых элементов ${op.ptx}`);
+    if (w === 390) {
+      // прокрутка сразу после сборки первого экрана: пульт сворачивается, хотя секции ещё собираются
+      await run(2900); await page.evaluate(() => window.scrollTo({ top: 1100, behavior: 'instant' })); await page.waitForTimeout(100);
+      await run(2600);
+      const pm = await page.evaluate(() => ({ mini: document.querySelector('[data-pult]').classList.contains('is-mini'), open: document.querySelector('[data-pult]').classList.contains('is-open') }));
+      if (!pm.mini || pm.open) bad.push(`${tag}: пульт не свёрнут при прокрутке сразу после первого экрана`);
+    } else {
+      await run(6200); await page.waitForTimeout(150);
+      const r = await page.evaluate(() => {
+        const h1 = document.querySelector('h1'), lh = parseFloat(getComputedStyle(h1).lineHeight), it = document.querySelector('.hero-h .it');
+        return { lines: Math.round(h1.getBoundingClientRect().height / lh), it: it.getClientRects().length, usp: document.querySelector('.usp').getBoundingClientRect().bottom };
+      });
+      if (lang === 'ru' ? r.lines !== 3 : r.lines > 3) bad.push(`${tag}: H1 в ${r.lines} строк`);
+      if (r.it !== 1) bad.push(`${tag}: курсив H1 рвётся на ${r.it} строки`);
+      if (r.usp > h + 1) bad.push(`${tag}: строка принципов ниже первого экрана (низ ${Math.round(r.usp)})`);
+      if (w !== 1920) {
+        await run(2500);
+        const b = await page.evaluate(() => { const r = document.querySelector('.pult-mini').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
+        await page.mouse.move(b[0], b[1]); await page.waitForTimeout(120);
+        const hv = await page.evaluate(() => {
+          const bar = document.querySelector('.pult-bar'), br = bar.getBoundingClientRect();
+          const hit = [...document.querySelectorAll('.usp, .hero-act, [data-obj]')].filter((el) => { const r = el.getBoundingClientRect(); return r.right > br.left && r.left < br.right && r.bottom > br.top && r.top < br.bottom; }).map((el) => el.className.split(' ').slice(-1)[0]);
+          return { shown: getComputedStyle(bar).display !== 'none', hit };
+        });
+        if (!hv.shown) bad.push(`${tag}: плашка пульта не показалась по наведению`);
+        else if (hv.hit.length) bad.push(`${tag}: плашка пульта по наведению перекрывает ${hv.hit.join(', ')}`);
+        if (lang === 'ru' && w === 1440) await page.screenshot({ path: path.join(shots, 'd1440-pult-hover.png') });
+        await page.mouse.move(b[0], b[1] - 30, { steps: 6 }); await page.waitForTimeout(80);
+        if (await page.evaluate(() => getComputedStyle(document.querySelector('.pult-bar')).display === 'none')) bad.push(`${tag}: плашка схлопнулась по пути курсора с кнопки на неё`);
+      }
+      if (lang === 'ru' && w === 1920) await page.screenshot({ path: path.join(shots, 'd1920-first-screen.png') });
+    }
+    errs.forEach((e) => bad.push(`${tag}: ${e}`));
+    await page.close();
+  }
+  if (bad.length) fail(bad.join(' | '));
+  else console.log('  ✓ шапка видна с первого кадра; H1 — три строки, курсив целиком; строка принципов в первом экране; плашка пульта не перекрывает контент; пульт свёрнут при прокрутке (RU и EN)');
 }
 await browser.close();
 console.log(failed ? `\nИТОГ: ${failed} проблем(ы). Скриншоты: tools/shots/` : '\nИТОГ: всё чисто. Скриншоты: tools/shots/ — просмотри глазами.');

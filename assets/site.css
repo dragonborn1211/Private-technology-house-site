@@ -3,7 +3,7 @@ html::-webkit-scrollbar{display:none}
 body{margin:0;background:#0A121A}
 /* до старта движка (.pt-boot снимает engine.js) секций не видно и переходов нет: иначе браузер успевает
    нарисовать готовую страницу, пока грузятся скрипты, и она потом гаснет поверх вспышки частиц */
-.pt-boot .sec{opacity:0}
+.pt-boot .sec > :not(.wrap),.pt-boot .sec .wrap > :not(.hero-hdr){opacity:0}
 .pt-boot *,.pt-boot *::before,.pt-boot *::after{transition:none!important}
 /* свой скроллбар (assets/scroll.js): скрыт, пока страницу не прокручивают */
 .sbar{position:fixed;top:12px;right:4px;bottom:12px;z-index:35;width:12px;opacity:0;pointer-events:none;transition:opacity .45s ease}
@@ -119,13 +119,16 @@ body{margin:0;background:#0A121A}
 /* русский заголовок длиннее английского: кегль меньше, чтобы он, как и английский, держался в две строки
    (колонка заголовка рядом с панелью объекта ~620 px) */
 .hero-h:lang(ru){font-size:clamp(32px,3.7vw,56px)}
+/* курсивная фраза не рвётся (было «с холодной / точностью.»); на телефоне она в одну строку не влезает */
+@media (min-width:761px){.hero-h .it{white-space:nowrap}}
+@media (max-width:760px){.hero-br{display:none}}
 .lang{position:relative;display:inline-flex;align-items:center;flex:none;height:44px;padding:4px;border-radius:999px;background-color:rgba(228,237,242,.03);border:1px solid rgba(188,211,222,.24)}
 .pt .lang a{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;width:42px;height:34px;border-radius:999px;font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F93A6;transition:color .5s ease}
 .pt .lang a[aria-current="true"]{color:#EEF3F6}
 .pt .lang a:not([aria-current="true"]):hover{color:#BCD3DE}
 .lang-thumb{position:absolute;top:4px;left:4px;width:42px;height:34px;border-radius:999px;background:linear-gradient(120deg,rgba(142,216,248,.2),rgba(127,168,255,.14) 50%,rgba(183,166,242,.22));border:1px solid rgba(142,216,248,.5);box-shadow:0 0 18px -4px rgba(142,216,248,.55);pointer-events:none;transition:transform .6s cubic-bezier(.6,0,.2,1),opacity .9s ease}
 .lang[data-cur="en"] .lang-thumb{transform:translateX(42px)}
-.pt-on .sec:not(.s-done) .lang-thumb{opacity:0}
+.pt-on .sec:not(.s-done) .lang-thumb:not(.hero-hdr .lang-thumb){opacity:0}
 /* смена языка: текст гаснет, пока частицы держат его буквы, и проявляется уже на новом языке */
 .pt-on .sec.s-done.s-swap .ptx{opacity:0;transition:opacity .45s ease}
 /* луч смены языка: проходит экран слева направо, за ним буквы пересобираются на другом языке */
@@ -140,35 +143,36 @@ body{margin:0;background:#0A121A}
 /* ---------- объект первого экрана (assets/hero-objects.js): стрелки и строка из пяти принципов ---------- */
 .arr{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;border:1px solid rgba(188,211,222,.22);background-color:rgba(10,18,26,.5);color:#EEF3F6;font:500 16px Manrope,system-ui,sans-serif;cursor:pointer}
 .arr:hover{border-color:rgba(142,216,248,.6)}
-.usp{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:20px 28px;padding-bottom:clamp(32px,6vh,64px)}
-.usp-i{appearance:none;border:0;background:transparent;padding:0;margin:0;text-align:left;color:inherit;font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:10px}
-/* неактивный пункт: заголовок в своём цвете, приглушено только описание (0.62) — иначе пункт выглядел выключенным */
-.pt .usp-t{transition:color .4s ease,opacity .9s ease}
-.usp-i:not([aria-current="step"]) .usp-t{color:rgba(157,176,188,.62)}
-.usp-i:not([aria-current="step"]):hover .usp-t{color:rgba(157,176,188,.85)}
+.usp{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px 28px;padding-bottom:clamp(16px,2.4vh,22px)}
+.usp-i{appearance:none;border:0;background:transparent;padding:0 0 10px;margin:0;min-height:44px;text-align:left;color:inherit;font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:10px}
 /* верхняя линия пункта — это .usp-line с полоской прогресса, а не рамка .ln: иначе линий было бы две.
    Частицы при сборке всё равно обводят верх кнопки (.fr с data-fr-line="top"), линия проявляется вместе с рамками */
 .pt .usp-i.ln{border-top:0}
 .usp-line{display:block;position:relative;height:1px;margin-bottom:8px;background:rgba(188,211,222,.22)}
 .usp-line i{position:absolute;left:0;top:-.5px;width:100%;height:2px;background:linear-gradient(90deg,#8ED8F8,#B7A6F2);transform:scaleX(0);transform-origin:left}
-.usp-t{font-size:15px;line-height:1.55;color:#9DB0BC}
+/* описание принципа в разметке остаётся (поисковики, перевод, aria-describedby у кнопки), а на экране оно —
+   подписью внизу панели объекта [data-objcap] */
+.usp .usp-t{display:none}
 .pt-on .sec .usp-line{transition:opacity .9s ease}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .usp-line{opacity:0}
 /* холсты объекта видны, только когда первый экран собран (в том числе при «Пересобрать блок») */
 .pt-on .sec canvas[data-gl],.pt-on .sec canvas[data-ov]{transition:opacity .9s ease}
 .pt-on .sec:not(.s-done) canvas[data-gl],.pt-on .sec:not(.s-done) canvas[data-ov]{opacity:0}
-@media (max-width:1100px){.usp{grid-template-columns:repeat(3,minmax(0,1fr))}}
+/* уже 1100 px пять заголовков в ряд не помещаются: строка листается пальцем, пункты — по ширине заголовка */
+@media (max-width:1100px){.usp{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:24px;margin:0 calc(-1 * var(--pad));padding:0 var(--pad) 18px;scroll-padding:0 var(--pad);scrollbar-width:none}.usp::-webkit-scrollbar{display:none}.usp-i{flex:0 0 auto;scroll-snap-align:start}}
 /* на телефоне строка листается внутри себя на всю ширину экрана: отступы — как у .wrap (--pad) */
-@media (max-width:760px){.usp{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:16px;margin:0 calc(-1 * var(--pad));padding:0 var(--pad) 28px;scroll-padding:0 var(--pad);scrollbar-width:none}.usp::-webkit-scrollbar{display:none}.usp-i{flex:0 0 78%;scroll-snap-align:start}}
 /* ---------- шапка: логотип, меню, действия (первый экран и липкая шапка) ---------- */
-.logo{display:flex;align-items:center;gap:12px;min-height:44px;flex:none}
+.logo{display:flex;align-items:center;gap:12px;min-width:0;min-height:44px;flex:0 1 auto}
 .logo-d{display:block;width:11px;height:11px;border:1.5px solid #8ED8F8;transform:rotate(45deg);box-shadow:0 0 12px rgba(142,216,248,.45)}
 .logo-t{font-size:11px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#EEF3F6}
+/* короткая форма логотипа: на узких экранах длинное название с разрядкой не оставляло места кнопке меню */
+.logo-s{display:none;font-size:11px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:#EEF3F6}
+@media (max-width:420px){.logo-t{display:none}.logo-s{display:inline}}
 .nav{display:flex;gap:28px;font-size:14px;color:#9DB0BC}
 .pt .nav a{transition:color .3s ease}
 .pt .nav a:hover,.pt .nav a[aria-current="true"]{color:#EEF3F6}
 .hero-hdr{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 0}
-.hdr-act{display:flex;align-items:center;gap:12px}
+.hdr-act{display:flex;flex:none;align-items:center;gap:12px}
 .pt a.hdr-cta{min-height:44px;padding:0 20px;font-size:14px}
 .ico{display:inline-flex;align-items:center;justify-content:center;flex:none;width:44px;height:44px;padding:0;border-radius:50%;border:1px solid rgba(188,211,222,.24);background-color:rgba(228,237,242,.03);color:#EEF3F6;cursor:pointer;transition:border-color .3s ease}
 .pt .ico:hover{border-color:rgba(142,216,248,.6)}
@@ -184,9 +188,6 @@ body{margin:0;background:#0A121A}
    меню; на телефоне в шапке остаются только логотип, Telegram и меню */
 .menu-btn{display:none!important}
 @media (max-width:1023px){.hero-hdr .nav,.topbar .nav{display:none}.menu-btn{display:inline-flex!important}}
-/* значки в шапке первого экрана собираются вместе с текстом: частицы обводят кнопку (.fr), сам значок — в s-done */
-.pt-on .sec .ico svg,.pt-on .sec .ico .burger{transition:opacity .9s ease}
-.pt-on .sec:not(.s-done) .ico svg,.pt-on .sec:not(.s-done) .ico .burger{opacity:0}
 /* ---------- первый экран: колонка, кнопки, строка доверия ---------- */
 .hero-row{flex:1;display:flex;flex-wrap:wrap;gap:40px 64px;align-items:stretch;padding:clamp(8px,3vh,32px) 0 clamp(28px,5vh,52px)}
 .hero-col{flex:1.05 1 460px;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:24px}
@@ -197,13 +198,13 @@ body{margin:0;background:#0A121A}
 .trust-i{white-space:nowrap}
 .trust-s{margin:0 .2em 0 .6em;color:#6F93A6}
 /* низкие экраны (ноутбук 1280×720): строка принципов должна начинаться в первом экране */
-@media (max-height:820px){.hero-hdr{padding:14px 0}.hero-row{padding:2px 0 22px;gap:28px 56px}.hero-col{gap:16px}.hero-obj{min-height:clamp(340px,54vh,600px)}.hero-col .lead{font-size:16px}}
+@media (max-height:820px){.hero-hdr{padding:14px 0}.hero-row{padding:2px 0 22px;gap:28px 56px}.hero-col{gap:16px}.hero-obj{min-height:clamp(360px,58vh,600px)}.hero-col .lead{font-size:16px}}
 /* ---------- липкая шапка [data-topbar]: ниже первого экрана, появляется при прокрутке вверх (assets/nav.js) ---------- */
 .topbar{position:fixed;top:0;left:0;right:0;z-index:45;height:64px;background:rgba(10,18,26,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid rgba(188,211,222,.12);transform:translateY(-101%);visibility:hidden;transition:transform .25s ease,visibility 0s linear .25s}
 .topbar.on{transform:none;visibility:visible;transition:transform .25s ease}
 .topbar-in{height:100%;display:flex;align-items:center;justify-content:space-between;gap:20px}
 /* ---------- меню на телефоне [data-menu]: полноэкранный слой поверх сайта ---------- */
-.menu{position:fixed;inset:0;z-index:60;overflow-y:auto;overscroll-behavior:contain;background-color:rgba(10,18,26,.84);border:0;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);opacity:0;visibility:hidden;transform:translateY(-10px);transition:opacity .22s ease,transform .22s ease,visibility 0s linear .22s}
+.menu{position:fixed;inset:0;z-index:60;overflow-y:auto;overscroll-behavior:contain;background-color:rgba(10,18,26,.9);border:0;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);opacity:0;visibility:hidden;transform:translateY(-10px);transition:opacity .22s ease,transform .22s ease,visibility 0s linear .22s}
 .menu.on{opacity:1;visibility:visible;transform:none;transition:opacity .22s ease,transform .22s ease}
 .menu-in{min-height:100%;display:flex;flex-direction:column;gap:28px;padding-top:10px;padding-bottom:32px}
 .menu-top{display:flex;align-items:center;justify-content:space-between;min-height:68px}
@@ -213,38 +214,45 @@ body{margin:0;background:#0A121A}
 .menu-cta{display:flex;flex-direction:column;gap:12px}
 .menu .lang{align-self:flex-start}
 html.pt-lock,html.pt-lock body{overflow:hidden}
-/* ---------- пульт: во время первой сборки — плашка с логом, потом кнопка ↻ в левом нижнем углу (engine.js) ---------- */
-.pult{position:fixed;left:50%;bottom:18px;z-index:40;transform:translateX(-50%);display:flex;align-items:center;gap:12px;max-width:calc(100vw - 24px);padding:6px 6px 6px 16px;border-radius:999px;background:rgba(10,18,26,.82);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 18px 40px -16px rgba(0,0,0,.5);border:1px solid rgba(188,211,222,.16)}
+/* под открытым меню страницу прячем (когда меню уже проявилось): сквозь стекло просвечивала белая кнопка первого
+   экрана — светлое пятно у RU/EN. Под стеклом остаются только частицы */
+html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;transition:visibility 0s linear .22s}
+@media (prefers-reduced-motion:reduce){html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{transition:none}}
+/* ---------- пульт: во время первой сборки первого экрана — плашка с логом по центру; потом кнопка ↻ в левом нижнем
+   углу, а плашка появляется над ней (наведение, фокус с клавиатуры, «Пересобрать блок» — .is-open) ---------- */
+.pult{position:fixed;left:50%;bottom:18px;z-index:40;transform:translateX(-50%);max-width:calc(100vw - 24px)}
+.pult-bar{position:relative;display:flex;align-items:center;gap:12px;padding:6px 6px 6px 16px;border-radius:999px;background:rgba(10,18,26,.82);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 18px 40px -16px rgba(0,0,0,.5);border:1px solid rgba(188,211,222,.16)}
 .pill-step{min-width:250px;font-family:'JetBrains Mono',monospace;font-size:12px;color:#BCD3DE;white-space:nowrap}
-.pult-btn{position:relative;flex:none;display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 16px;border-radius:999px;border:0;background:#EEF3F6;color:#0A121A;font:600 13px Manrope,system-ui,sans-serif;cursor:pointer}
-.pult-ring,.pult-ico{display:none}
+.pult-btn{flex:none;display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 16px;border-radius:999px;border:0;background:#EEF3F6;color:#0A121A;font:600 13px Manrope,system-ui,sans-serif;cursor:pointer}
 .pult-prog{position:absolute;left:16px;right:16px;bottom:0;height:1px;background:#8ED8F8;transform:scaleX(var(--prog,0));transform-origin:left;transition:transform .6s ease}
-.pult.is-left{left:18px;transform:none;max-width:calc(100vw - 36px)}
-.pult.is-mini{width:44px;height:44px;padding:0;gap:0;border-radius:50%}
-.pult.is-mini .pill-dot,.pult.is-mini .pill-step,.pult.is-mini .pult-prog,.pult.is-mini .pult-t{display:none}
-.pult.is-mini .pult-btn{width:42px;height:42px;padding:0;background:transparent;color:#EEF3F6}
-.pult.is-mini .pult-ring,.pult.is-mini .pult-ico{display:block}
+.pult-mini{display:none;position:relative;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border-radius:50%;border:1px solid rgba(188,211,222,.16);background:rgba(10,18,26,.82);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:#EEF3F6;cursor:pointer}
 .pult-ico{font:400 18px/1 Manrope,system-ui,sans-serif}
 .pult-ring{position:absolute;left:-1px;top:-1px;width:44px;height:44px;transform:rotate(-90deg);overflow:visible;pointer-events:none}
 .pult-ring circle{fill:none;stroke:#8ED8F8;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:128.8;stroke-dashoffset:calc(128.8px * (1 - var(--prog,0)));transition:stroke-dashoffset .6s ease}
-/* свёрнутая кнопка разворачивается в плашку с текстом по наведению (только с мышью) или фокусу с клавиатуры */
-.pult.is-mini:has(:focus-visible){width:auto;height:auto;padding:6px 6px 6px 16px;gap:12px;border-radius:999px}
-.pult.is-mini:has(:focus-visible) .pill-dot,.pult.is-mini:has(:focus-visible) .pill-step,.pult.is-mini:has(:focus-visible) .pult-prog,.pult.is-mini:has(:focus-visible) .pult-t{display:block}
-.pult.is-mini:has(:focus-visible) .pult-btn{width:auto;height:38px;padding:0 16px;background:#EEF3F6;color:#0A121A}
-.pult.is-mini:has(:focus-visible) .pult-ring,.pult.is-mini:has(:focus-visible) .pult-ico{display:none}
-@media (hover:hover) and (min-width:761px){
-.pult.is-mini:hover{width:auto;height:auto;padding:6px 6px 6px 16px;gap:12px;border-radius:999px}
-.pult.is-mini:hover .pill-dot,.pult.is-mini:hover .pill-step,.pult.is-mini:hover .pult-prog,.pult.is-mini:hover .pult-t{display:block}
-.pult.is-mini:hover .pult-btn{width:auto;height:38px;padding:0 16px;background:#EEF3F6;color:#0A121A}
-.pult.is-mini:hover .pult-ring,.pult.is-mini:hover .pult-ico{display:none}
-}
+.pult.is-mini{left:18px;transform:none}
+.pult.is-mini .pult-mini{display:flex}
+.pult.is-mini .pult-bar{position:absolute;left:0;bottom:calc(100% + 8px);width:max-content;max-width:calc(100vw - 36px);display:none}
+/* мостик между кнопкой и плашкой: курсор переходит с кнопки на плашку, и она не схлопывается */
+.pult.is-mini .pult-bar::after{content:"";position:absolute;left:0;right:0;top:100%;height:10px}
+.pult.is-mini.is-open .pult-bar,.pult.is-mini:has(:focus-visible) .pult-bar{display:flex}
+@media (hover:hover) and (min-width:761px){.pult.is-mini:hover .pult-bar{display:flex}}
 /* свёрнутая кнопка легла бы на панель объекта, кнопки или строку принципов — прячется, пока они под ней (nav.js) */
 .pult.is-off{visibility:hidden}
 @media (max-width:760px){
-.hdr-act{gap:8px}
 .hero-h,.hero-h:lang(en){font-size:40px}
 .hero-h:lang(ru){font-size:38px}
 .hero-obj{min-height:320px}
-.pill-step{min-width:0}
+.pill-step{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis}
+.pult.is-mini .pult-bar{width:calc(100vw - 36px)}
 }
 @media (prefers-reduced-motion:reduce){.topbar,.topbar.on,.menu,.menu.on{transition:none}.menu{transform:none}}
+/* ---------- панель объекта: внизу подпись активного принципа и стрелки (hero-objects.js пишет [data-objcap]) ---------- */
+.obj-foot{position:absolute;left:22px;right:14px;bottom:14px;display:flex;align-items:flex-end;justify-content:space-between;gap:16px;pointer-events:none}
+.obj-foot button{pointer-events:auto}
+.obj-cap{margin:0;max-width:420px;font:400 15px/1.5 Manrope,system-ui,sans-serif;color:#BCD3DE;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden;transition:opacity .15s ease}
+.obj-cap.is-swap{opacity:0}
+.obj-arrows{display:flex;flex:none;gap:8px}
+/* подпись — текст из JS (data-pt-skip): прячем, пока первый экран не собран, как сцены */
+.pt-on .sec:not(.s-done) .obj-cap{opacity:0;transition:opacity .9s ease}
+@media (max-width:760px){.obj-foot{flex-direction:column;align-items:stretch;left:16px}.obj-cap{max-width:none;-webkit-line-clamp:3;line-clamp:3}.obj-arrows{align-self:flex-end}}
+@media (prefers-reduced-motion:reduce){.obj-cap{transition:none}}

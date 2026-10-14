@@ -644,8 +644,6 @@
 
       // ===== сцена hero: пять принципов по очереди =====
       var NAMES = ['Хрустальный ферзь', 'Оптический прицел', 'Ускоритель', 'Шифровальные роторы', 'Перо и бриллиант'];
-      // подпись панели — принцип; название объекта — в aria-label панели
-      var LABELS = ['01 · Холодный расчёт', '02 · Точность', '03 · Скорость', '04 · Безопасность', '05 · Дизайн'];
       var DUR = [8.5, 7.5, 7.5, 9, 10];
       function tr(s) { return window.PTI18N && window.PTI18N.t ? window.PTI18N.t(s) : s; }
       function makeScene(core, root, env) {
@@ -664,9 +662,18 @@
         function parts(i) { if (!cache[i]) { var P = new Parts(); SHP[i].build(P); cache[i] = P; } return cache[i]; }
         function labels() {
           lang = window.PTI18N ? window.PTI18N.lang : 'ru';
-          if (nameEl) nameEl.textContent = tr(LABELS[slot]);
+          // сверху — название объекта (и aria-label панели), внизу — описание принципа из строки принципов: в DOM оно
+          // уже на текущем языке и с неразрывными пробелами; смена — через прозрачность (CSS .is-swap, 2 × 150 мс)
+          var nm = tr(NAMES[slot]), pnl = root.querySelector('[data-obj]'), cap = root.querySelector('[data-objcap]'), src = root.querySelector('[data-usp="' + slot + '"] .usp-t');
+          if (nameEl) nameEl.textContent = nm;
           if (idxEl) idxEl.textContent = '0' + (slot + 1) + ' / 05';
-          var pnl = root.querySelector('[data-obj]'); if (pnl) pnl.setAttribute('aria-label', tr(NAMES[slot]));
+          if (pnl) pnl.setAttribute('aria-label', nm);
+          var txt = src ? src.textContent : '';
+          if (cap && cap.__txt !== txt) {
+            cap.__txt = txt; clearTimeout(cap.__t);
+            if (env.rm || !cap.textContent) cap.textContent = txt;
+            else { cap.classList.add('is-swap'); cap.__t = setTimeout(function () { cap.textContent = cap.__txt; cap.classList.remove('is-swap'); }, 150); }
+          }
         }
         function go(i, mode) {
           if (cur >= 0 && SHP[cur].reset) SHP[cur].reset();

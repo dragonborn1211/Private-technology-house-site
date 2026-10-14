@@ -2,7 +2,9 @@
 (function () {
     var factory = function (root) {
       var canvas = root.querySelector('[data-pt-canvas]');
-      var stepEl = root.querySelector('[data-pt-step]'), progEl = root.querySelector('[data-pt-prog]'), btn = root.querySelector('[data-pt-replay]');
+      var stepEl = root.querySelector('[data-pt-step]'), progEl = root.querySelector('[data-pt-prog]');
+      // «Пересобрать блок»: кнопка в плашке пульта и свёрнутая кнопка ↻
+      var btns = Array.prototype.slice.call(root.querySelectorAll('[data-pt-replay]'));
       var countEl = root.querySelector('[data-pt-count]');
       var rm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
       var env = { rm: rm, mob: false, vh: 800 };
@@ -72,11 +74,20 @@
       // Пульт. Первая сборка — плашка с логом шагов по центру, это часть шоу. Через 2 с после того, как всё собрано,
       // она сворачивается в кнопку ↻ в левом нижнем углу (CSS: .is-left, .is-mini). «Пересобрать блок» снова её
       // разворачивает, после пересборки она сворачивается. Сборка секций при прокрутке пульт не разворачивает.
-      function pultMini(v) { if (!pultEl) return; if (v) pultEl.classList.add('is-left', 'is-mini'); else pultEl.classList.remove('is-mini'); }
+      // свернуть (true) — кнопка ↻ слева внизу; открыть (false) — плашка с логом над свёрнутой кнопкой (.is-open)
+      function pultMini(v) {
+        if (!pultEl) return;
+        if (v) { pultEl.classList.add('is-left', 'is-mini'); pultEl.classList.remove('is-open'); }
+        else if (pultEl.classList.contains('is-mini')) pultEl.classList.add('is-open');
+      }
+      // Через 2 с свернуть. После первой сборки первого экрана — сразу, даже если секции ждут в очереди (их первая
+      // сборка видна только кольцом на кнопке). После «Пересобрать блок» — когда пересборка закончится.
       function pultLater() {
         clearTimeout(pultT);
-        pultT = setTimeout(function () { if (!alive) return; if (running || queue.length) { pultLater(); return; } replaying = false; pultMini(true); }, 2000);
+        pultT = setTimeout(function () { if (!alive) return; if (replaying && (running || queue.length)) { pultLater(); return; } replaying = false; pultShown = true; pultMini(true); }, 2000);
       }
+      // первый экран собран без показа (перезагрузка в середине страницы) — пульт сразу свёрнут
+      function pultSkip() { if (!pultShown && !replaying) { pultShown = true; clearTimeout(pultT); pultMini(true); } }
       function at(sec, fn) { timers.push(setTimeout(function () { if (alive) fn(); }, Math.max(0, sec) * 1000)); }
       function rootRect() { var r = root.getBoundingClientRect(); rootLeft = r.left; rootTop = r.top; return r; }
       function setStage(s, st) { var c = s.el.classList; c.remove('s-wire', 's-skel', 's-text', 's-done'); if (st) c.add('s-' + st); }
@@ -360,6 +371,7 @@
       function skipHero() {
         seed(); root.classList.add('g-on');
         if (heroObj) heroObj.start(true);
+        pultSkip();
       }
       function burst() {
         booted = true;
@@ -608,7 +620,7 @@
         if (pend) { pend(); phFade(BLD); log(s, '✓ ready'); setProg(); if (!queue.length) phSettle(BLD); pump(); return; }
         setStage(s, 'done'); s.state = 'done'; s.replay = false;
         phFade(BLD);
-        if (s === hero) { root.classList.add('g-on'); if (heroObj) heroObj.start(false); }
+        if (s === hero) { root.classList.add('g-on'); if (heroObj) heroObj.start(false); if (!pultShown && !replaying) pultLater(); }
         log(s, '✓ ready'); setProg(); wakeSites(s.el);
         finish(s);
       }
@@ -630,7 +642,7 @@
         atRun((1.6 + o) * K, function () { setStage(s, 'wire'); measure(s); phWire(s, ALL, false); log(s, '02 · layout.measure()'); });
         atRun((2.65 + o) * K, function () { setStage(s, 'skel'); phSkel(s, ALL, false); log(s, '03 · styles.apply(glacier)'); });
         atRun((3.7 + o) * K, function () { setStage(s, 'text'); measure(s); phText(s, ALL, false); log(s, '04 · type.crystallize()'); });
-        atRun((5.25 + o) * K, function () { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (heroObj) { if (replay) heroObj.replay(); else heroObj.start(false); } log(s, '✓ ready'); setProg(); });
+        atRun((5.25 + o) * K, function () { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (heroObj) { if (replay) heroObj.replay(); else heroObj.start(false); } if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); });
         atRun((5.8 + o) * K, function () { finish(s); });
       }
       function runSec(s) {
@@ -663,7 +675,7 @@
           if (r.top > VH) { queue.shift(); q.state = 'idle'; continue; }
           break;
         }
-        if (!queue.length) { if (!running && (replaying || !pultShown)) { pultShown = true; pultLater(); } return; }
+        if (!queue.length) { if (!running && replaying) pultLater(); return; }
         var s = queue.shift();
         if (s === hero) runHero(s, s.replay); else runSec(s);
       }
@@ -814,7 +826,7 @@
       // подписи панели, стрелки и строку принципов; ошибка модуля не должна ронять сборку сайта
       try { heroObj = window.PTHero ? window.PTHero.mount(hero.el, { autostart: false }) : null; } catch (e) { heroObj = null; console.warn(e); }
       makeSprites(); initGL(); layout(); rootRect();
-      if (btn) btn.addEventListener('click', replay);
+      btns.forEach(function (b) { b.addEventListener('click', replay); });
       langLinks.forEach(function (a) { a.addEventListener('click', onLang); });
       bindSites();
       if (lite) root.classList.add('pt-lite');
@@ -845,7 +857,7 @@
         setActive: function (v) { active = v; if (v) start(); },
         destroy: function () {
           alive = false; timers.forEach(clearTimeout); clearInterval(typeT); clearTimeout(pultT); if (raf) cancelAnimationFrame(raf); if (io) io.disconnect();
-          if (btn) btn.removeEventListener('click', replay);
+          btns.forEach(function (b) { b.removeEventListener('click', replay); });
           if (heroObj) heroObj.destroy();
           langLinks.forEach(function (a) { a.removeEventListener('click', onLang); });
           siteOff.forEach(function (off) { off(); });
