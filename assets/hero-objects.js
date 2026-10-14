@@ -4,8 +4,11 @@
 // API: var h = PTHero.mount(sectionEl, { autostart: false }); h.start(instant); h.replay(); h.go(k); h.setActive(bool); h.destroy(); h.count — число частиц.
 // h.relabel() — сразу переписать подписи на текущем языке (движок зовёт при смене языка, до замера букв).
 // Без autostart:false объект собирается сразу после mount. start(true) — сразу на месте, без полёта (повторный визит, reduced motion).
-// Разметка внутри sectionEl: [data-obj] — панель объекта; [data-objname], [data-objidx] — подписи; [data-prev]/[data-next] — стрелки;
-// [data-usp="0..4"] с [data-usp-fill] внутри — строка принципов. Canvas'ы [data-gl]/[data-ov] модуль создаёт сам, если их нет.
+// Разметка внутри sectionEl: [data-obj] — панель «Кодекс студии» (модуль ставит ей aria-label, --acc и data-slot);
+// [data-usp="0..4"] — вкладки принципов с [data-usp-fill] и скрытыми .usp-n (название) / .usp-t (описание);
+// [data-objcapw] > [data-captitle] + [data-objcap] — подпись активного принципа; [data-prev]/[data-next] — стрелки,
+// [data-ring] — кольцо до автосмены; [data-objname]/[data-objidx] — необязательные подписи.
+// Canvas'ы [data-gl]/[data-ov] модуль создаёт сам, если их нет.
 (function () {
   var factory = function (root) {
       // ===== общее 3D-ядро частиц для прототипов hero-объекта =====
@@ -43,7 +46,7 @@
         var gScale = new Float32Array(16).fill(1), gBright = new Float32Array(16).fill(1), gLift = new Float32Array(16), gOn = new Float32Array(16).fill(1);
         var me = { N: N, W: 1, H: 1, dpr: 1, t: 0, cx: 0, cy: 0, S: 100, panel: { x: 0, y: 0, w: 1, h: 1 },
           cam: { yaw: 0.5, pitch: 0.22, spin: 0.16, tyaw: 0, tpitch: 0, follow: 1, hold: false, holdYaw: 0, holdPitch: 0 },
-          mouse: { x: -1e5, y: -1e5, in: false }, dyn: [], ya: 0, pi: 0, ps: 1, ab: 1, gScale: gScale, gBright: gBright, gLift: gLift, gOn: gOn, k: 0.03, damp: 0.86 };
+          mouse: { x: -1e5, y: -1e5, in: false }, dyn: [], ya: 0, pi: 0, ps: 1, ab: 1, tint: [1, 1, 1], tk: 0, gScale: gScale, gBright: gBright, gLift: gLift, gOn: gOn, k: 0.03, damp: 0.86 };
         for (var i = 0; i < N; i++) { var o = { x: 0, y: 0, z: 0 }; sph([0, 0, 0], 1.6 + Math.random() * 1.2, o); P[i * 3] = T[i * 3] = o.x; P[i * 3 + 1] = T[i * 3 + 1] = o.y; P[i * 3 + 2] = T[i * 3 + 2] = o.z; C[i * 3] = CT[i * 3] = 0.7; C[i * 3 + 1] = CT[i * 3 + 1] = 0.8; C[i * 3 + 2] = CT[i * 3 + 2] = 0.9; SZ[i] = 1.4; }
         var prog = null, buf = null, U = {};
         if (gl) {
@@ -138,7 +141,8 @@
             var a = me.ab * A[i] * DB[i] * gBright[g] * gOn[g] * (0.42 + 0.58 * clamp((rz + 1.1) / 2.2, 0, 1));
             if (a < 0.01) continue;
             var b = n * 7; n++;
-            BUF[b] = sx + O[o2]; BUF[b + 1] = sy + O[o2 + 1]; BUF[b + 2] = C[j]; BUF[b + 3] = C[j + 1]; BUF[b + 4] = C[j + 2]; BUF[b + 5] = a; BUF[b + 6] = SZ[i] * ff * dpr * me.ps;
+            BUF[b] = sx + O[o2]; BUF[b + 1] = sy + O[o2 + 1]; var tk = me.tk, lu = (C[j] * 0.3 + C[j + 1] * 0.5 + C[j + 2] * 0.2) * 1.18 * tk, tq = 1 - tk;
+            BUF[b + 2] = C[j] * tq + me.tint[0] * lu; BUF[b + 3] = C[j + 1] * tq + me.tint[1] * lu; BUF[b + 4] = C[j + 2] * tq + me.tint[2] * lu; BUF[b + 5] = a; BUF[b + 6] = SZ[i] * ff * dpr * me.ps;
           }
           for (var e = 0; e < exN; e++) { var eb = e * 7, nb = n * 7; n++; BUF[nb] = EX[eb]; BUF[nb + 1] = EX[eb + 1]; BUF[nb + 2] = EX[eb + 2]; BUF[nb + 3] = EX[eb + 3]; BUF[nb + 4] = EX[eb + 4]; BUF[nb + 5] = EX[eb + 5]; BUF[nb + 6] = EX[eb + 6] * dpr; }
           draw(n);
@@ -645,34 +649,41 @@
       // ===== сцена hero: пять принципов по очереди =====
       var NAMES = ['Хрустальный ферзь', 'Оптический прицел', 'Ускоритель', 'Шифровальные роторы', 'Перо и бриллиант'];
       var DUR = [8.5, 7.5, 7.5, 9, 10];
+      // цвет принципа: частицы объекта тонируются (05 — без тона: у пера и бриллианта свой перелив), интерфейс панели берёт --acc
+      var ACC = ['#8ED8F8', '#7FA8FF', '#B7A6F2', '#9FE5D1', '#C9C2F5'], TINT = [[0.557, 0.847, 0.973], [0.498, 0.659, 1], [0.718, 0.651, 0.949], [0.624, 0.898, 0.82], [1, 1, 1]], TK = [0.5, 0.55, 0.5, 0.5, 0];
       function tr(s) { return window.PTI18N && window.PTI18N.t ? window.PTI18N.t(s) : s; }
       function makeScene(core, root, env) {
         var SHP = makeShapes(core, env), opts = root.__ptHeroOpts || {};
         var cur = -1, e = 0, kT = 0, cache = {}, swT = 0, slot = 0, slotT = 0, started = false, lang = '';
-        var nameEl = root.querySelector('[data-objname]'), idxEl = root.querySelector('[data-objidx]');
-        var usp = Array.prototype.slice.call(root.querySelectorAll('[data-usp]')), fills = usp.map(function (u) { return u.querySelector('[data-usp-fill]'); });
+        var nameEl = root.querySelector('[data-objname]'), idxEl = root.querySelector('[data-objidx]'), capT = root.querySelector('[data-captitle]'), ring = root.querySelector('[data-ring]'), RL = ring ? 2 * Math.PI * (+ring.getAttribute('r') || 25) : 0;
+        var panelEl = root.querySelector('[data-obj]'), usp = Array.prototype.slice.call(root.querySelectorAll('[data-usp]')), fills = usp.map(function (u) { return u.querySelector('[data-usp-fill]'); });
         var uspRow = usp.length ? usp[0].parentNode : null;
         SHP.forEach(function (s, i) { core.dyn[i + 1] = s.f; });
         core.onLayout = function () {
           var p = core.panel, s = SHP[cur < 0 ? 0 : cur];
-          core.cx = p.x + p.w * 0.5; core.cy = p.y + p.h * (env.mob ? 0.5 : 0.5);
-          core.S = Math.min(p.w * (env.mob ? 0.38 : 0.39), p.h * (env.mob ? 0.3 : 0.32)) * (s ? s.sc : 1);
+          // объект — между вкладками сверху и подписью снизу; на телефоне подпись со стрелками выше (стрелки под текстом),
+          // поэтому объект выше и мельче
+          core.cx = p.x + p.w * 0.5; core.cy = p.y + p.h * (env.mob ? 0.41 : 0.52);
+          core.S = Math.min(p.w * (env.mob ? 0.36 : 0.37), p.h * (env.mob ? 0.21 : 0.28)) * (s ? s.sc : 1);
         };
         core.overlay = function (g) { var s = SHP[cur]; if (s && s.ov) s.ov(g); };
         function parts(i) { if (!cache[i]) { var P = new Parts(); SHP[i].build(P); cache[i] = P; } return cache[i]; }
         function labels() {
           lang = window.PTI18N ? window.PTI18N.lang : 'ru';
-          // сверху — название объекта (и aria-label панели), внизу — описание принципа из строки принципов: в DOM оно
-          // уже на текущем языке и с неразрывными пробелами; смена — через прозрачность (CSS .is-swap, 2 × 150 мс)
-          var nm = tr(NAMES[slot]), pnl = root.querySelector('[data-obj]'), cap = root.querySelector('[data-objcap]'), src = root.querySelector('[data-usp="' + slot + '"] .usp-t');
+          // название объекта — в aria-label панели, цвет принципа — --acc и data-slot (CSS); внизу заголовок и описание
+          // активного принципа из его вкладки (.usp-n / .usp-t): в DOM они уже на текущем языке и с неразрывными
+          // пробелами. Меняются одним блоком [data-objcapw] через прозрачность (CSS .is-swap, 2 × 150 мс)
+          var nm = tr(NAMES[slot]), pnl = root.querySelector('[data-obj]'), cap = root.querySelector('[data-objcap]'), capW = root.querySelector('[data-objcapw]') || cap;
+          var tab = root.querySelector('[data-usp="' + slot + '"]'), hn = tab && tab.querySelector('.usp-n'), src = tab && tab.querySelector('.usp-t');
           if (nameEl) nameEl.textContent = nm;
           if (idxEl) idxEl.textContent = '0' + (slot + 1) + ' / 05';
-          if (pnl) pnl.setAttribute('aria-label', nm);
-          var txt = src ? src.textContent : '';
-          if (cap && cap.__txt !== txt) {
-            cap.__txt = txt; clearTimeout(cap.__t);
-            if (env.rm || !cap.textContent) cap.textContent = txt;
-            else { cap.classList.add('is-swap'); cap.__t = setTimeout(function () { cap.textContent = cap.__txt; cap.classList.remove('is-swap'); }, 150); }
+          if (pnl) { pnl.setAttribute('aria-label', nm); pnl.style.setProperty('--acc', ACC[slot]); pnl.setAttribute('data-slot', String(slot + 1)); }
+          var head = hn ? hn.textContent : '', txt = src ? src.textContent : '', key = head + '|' + txt;
+          if (cap && capW.__key !== key) {
+            capW.__key = key; clearTimeout(capW.__t);
+            var put = function () { if (capT) capT.textContent = head; cap.textContent = txt; capW.classList.remove('is-swap'); };
+            if (env.rm || !cap.textContent || (cap.textContent === txt && (!capT || capT.textContent === head))) put();
+            else { capW.classList.add('is-swap'); capW.__t = setTimeout(put, 150); }
           }
         }
         function go(i, mode) {
@@ -702,11 +713,14 @@
           if (core.cam.hold) { core.cam.holdPitch = s.pitch + (env.rm ? 0 : Math.cos(core.t * 0.17) * (s.sway || 0) * 0.25); core.cam.holdYaw = (s.yaw0 || 0) + (env.rm ? 0 : Math.sin(core.t * 0.21) * (s.sway || 0)); }
           s.upd(env.rm ? 0 : dt, e);
           if (!env.rm) { if (e < 0.5) slotT += dt; if (slotT > DUR[slot]) setSlot(slot + 1); }
+          var tg = TINT[slot], kk = env.rm ? 1 : Math.min(1, dt * 2.5); core.tk += (TK[slot] - core.tk) * kk; for (var q = 0; q < 3; q++) core.tint[q] += (tg[q] - core.tint[q]) * kk;
+          if (ring) ring.style.strokeDashoffset = (RL * (1 - (env.rm ? 1 : Math.min(1, slotT / DUR[slot])))).toFixed(1);
+          if (panelEl) panelEl.classList.toggle('is-paused', e >= 0.5);
           for (var j = 0; j < fills.length; j++) if (fills[j]) fills[j].style.transform = 'scaleX(' + (j < slot ? 1 : (j > slot ? 0 : (env.rm ? 1 : Math.min(1, slotT / DUR[slot])))).toFixed(3) + ')';
           if (window.PTI18N && window.PTI18N.lang !== lang) labels();
         };
-        usp.forEach(function (u) { u.addEventListener('click', function () { if (started) setSlot(+u.getAttribute('data-usp')); }); });
-        var prev = root.querySelector('[data-prev]'), next = root.querySelector('[data-next]'), panelEl = root.querySelector('[data-obj]');
+        usp.forEach(function (u) { u.addEventListener('click', function (ev) { ev.stopPropagation(); if (started) setSlot(+u.getAttribute('data-usp')); }); });
+        var prev = root.querySelector('[data-prev]'), next = root.querySelector('[data-next]');
         if (prev) prev.addEventListener('click', function (ev) { ev.stopPropagation(); if (started) setSlot(slot - 1); });
         if (next) next.addEventListener('click', function (ev) { ev.stopPropagation(); if (started) setSlot(slot + 1); });
         if (panelEl) panelEl.addEventListener('click', function () { if (started) setSlot(slot + 1); });

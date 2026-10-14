@@ -31,10 +31,12 @@
       var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')).map(function (el) { return { el: el, name: el.getAttribute('data-sec'), state: 'idle', geo: null, geoKey: '', replay: false, burst: el.hasAttribute('data-pt-burst') }; });
       var pultEl = root.querySelector('[data-pult]'), pultT = 0, pultShown = false, replaying = false;
       var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, cur = null, io = null;
-      // «Тихие» зоны — текстовые блоки первого экрана (кикер, H1, лид, кнопки, строка доверия, принципы): фоновая пыль
-      // на них не ложится ни при раскладке (gAmbient выбирает точку заново), ни при дрейфе (такая точка не рисуется).
-      // Координаты — от корня, как у частиц; пересчёт при смене раскладки (layoutGen).
-      var calmEls = Array.prototype.filter.call(hero.el.querySelectorAll('[data-blk]'), function (b) { return !b.matches('[data-obj], header'); });
+      // «Тихие» зоны — текстовые блоки первого экрана (кикер, H1, лид, кнопки, строка доверия) и текст панели «Кодекс
+      // студии» (вкладки сверху, подпись снизу): фоновая пыль на них не ложится ни при раскладке (gAmbient выбирает
+      // точку заново), ни при дрейфе (такая точка не рисуется). Координаты — от корня, как у частиц; пересчёт при смене
+      // раскладки (layoutGen).
+      var calmEls = Array.prototype.filter.call(hero.el.querySelectorAll('[data-blk]'), function (b) { return !b.matches('[data-obj], header'); })
+        .concat(Array.prototype.slice.call(hero.el.querySelectorAll('[data-obj] .obj-top, [data-obj] .obj-cw')));
       var calm = [], calmGen = -1;
       // доля видимых точек пыли после сборки
       var DUSTA = 0.035, DUSTM = 0.015;

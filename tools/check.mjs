@@ -8,14 +8,19 @@
 // Языки: русская версия на трёх ширинах, английская (?lang=en) на двух — в ней не должно остаться кириллицы,
 // и у русских строк скрытых <template> должен быть перевод. На 1440 — переключение RU → EN → RU и прерывание
 // «Пересобрать блок» кликом.
-// Объект первого экрана (assets/hero-objects.js): пять принципов, строка принципов, стрелки, клик по панели,
-// автосмена, «Пересобрать блок», reduced motion; скриншоты каждого из пяти объектов на 1440 и 390.
+// Объект первого экрана (assets/hero-objects.js): пять принципов, стрелки, клик по панели, автосмена,
+// «Пересобрать блок», reduced motion; скриншоты каждого из пяти объектов на 1440 и 390.
 // Шапка и первый экран (ТЗ TASK-header-hero.md): ссылки Telegram и отсутствие href="#", тексты H1 / строки доверия /
 // меню, неразрывные пробелы после смены языка, сгиб на 1440×900 и 1280×720, свёрнутый пульт ничего не перекрывает,
 // меню на телефоне (Esc, фокус, пункт меню, язык), липкая шапка и активный раздел; скриншоты первого экрана и меню.
 // Шлифовка (TASK-hero-polish.md): шапка с первого кадра, H1 в три строки и курсив не рвётся, принцип на экране один
 // раз (панель — объект и описание, строка — заголовки), пульт свёрнут при прокрутке сразу после первого экрана и
 // плашка по наведению ничего не перекрывает, узкие телефоны 320–430.
+// Панель «Кодекс студии» (TASK-codex.md): строки принципов под первым экраном нет, пять вкладок внутри панели; клик по
+// вкладке не перескакивает дальше; у принципа свой цвет (data-slot, --acc) и подпись (.usp-n / .usp-t); стрелки; пауза
+// под курсором; кольцо [data-ring] перед автосменой почти замкнуто; вкладки — Manrope с табличными цифрами, слова
+// прячутся по ширине панели (< 540 px); английская версия; reduced motion — цвет без анимации, автосмены нет;
+// панель целиком в первом экране на 1280×720 и 1440×900; скриншот паузы.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -81,14 +86,17 @@ const cyrillic = () => {
   if (RX.test(document.title)) out.push('<title>');
   return out;
 };
-// текст секций, который переводится (без того, что пишет JS: имя объекта и номер формы)
-const textSnap = () => [...document.querySelectorAll('.sec .ptx')].filter((el) => !el.closest('[data-objname],[data-objidx]')).map((el) => el.textContent.trim()).join('\n');
+// текст секций, который переводится (то, что пишет JS, — data-pt-skip, без .ptx)
+const textSnap = () => [...document.querySelectorAll('.sec .ptx')].map((el) => el.textContent.trim()).join('\n');
 // текст на экране, который после сборки так и остался невидимым
 const hiddenVisible = () => [...document.querySelectorAll('.sec.s-done .ptx')].filter((el) => { const r = el.getBoundingClientRect(); return el.offsetParent && r.bottom > 0 && r.top < innerHeight && getComputedStyle(el).opacity !== '1'; }).length;
 const notDoneVisible = () => [...document.querySelectorAll('[data-sec]')].filter((s) => { const r = s.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight && !s.classList.contains('s-done'); }).map((s) => s.getAttribute('data-sec'));
 
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-const idx = (page) => page.evaluate(() => document.querySelector('[data-objidx]').textContent.trim());
+// активный принцип «04 / 05» — по data-slot панели (его ставит модуль)
+const idx = (page) => page.evaluate(() => '0' + document.querySelector('[data-obj]').dataset.slot + ' / 05');
+// --acc панели: в CSS он @property <color>, поэтому getComputedStyle отдаёт rgb()
+const accOf = () => getComputedStyle(document.querySelector('[data-obj]')).getPropertyValue('--acc').trim();
 for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1280', 'ru'], [1700, 930, 'd1700', 'ru'], [390, 844, 'm390', 'ru'], [1440, 900, 'd1440-en', 'en'], [390, 844, 'm390-en', 'en'], [1440, 900, 'd1440-rm', 'ru', true]]) {
   console.log(`\n${tag} (${w}×${h}, ${lang}${rm ? ', prefers-reduced-motion' : ''})`);
   const page = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: rm ? 'reduce' : 'no-preference' });
@@ -109,12 +117,15 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     const i0 = await idx(page);
     await run(12000);
     const i1 = await idx(page), nd = await page.evaluate(() => [...document.querySelectorAll('[data-sec]')].filter((s) => !s.classList.contains('s-done')).length);
-    await page.click('[data-next]'); await run(300);
+    await page.click('[data-next]');
+    const acc = await page.evaluate(accOf);   // сразу после клика: CSS-переход шёл бы в реальном времени
+    await run(300);
     const i2 = await idx(page);
     if (i0 !== '01 / 05' || i1 !== i0) fail(`reduced motion: объект сменился сам (${i0} → ${i1})`);
     else if (i2 !== '02 / 05') fail(`reduced motion: стрелка не переключила объект (${i2})`);
+    else if (acc !== 'rgb(127, 168, 255)') fail(`reduced motion: цвет панели меняется с анимацией (--acc сразу после клика ${acc})`);
     else if (nd) fail(`reduced motion: не собраны ${nd} секций`);
-    else console.log('  ✓ reduced motion: всё на месте сразу, автосмены нет, стрелки работают');
+    else console.log('  ✓ reduced motion: всё на месте сразу, автосмены нет, стрелки работают, цвет панели без анимации');
     await shot('hero');
     if (errs.length) { errs.forEach((e) => fail(e)); } else console.log('  ✓ ошибок в консоли нет');
     await page.close();
@@ -128,14 +139,16 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     await run(2500);   // пульт сворачивается через 2 с после сборки
     const fx = await page.evaluate(() => {
       const R = (el) => el.getBoundingClientRect(), p = document.querySelector('[data-pult]'), pr = R(p), hidden = getComputedStyle(p).visibility === 'hidden';
-      const hit = [...document.querySelectorAll('[data-sec="hero"] .usp, [data-sec="hero"] [data-obj], [data-sec="hero"] .hero-act .btn, [data-sec="hero"] .hero-act .lnk')]
+      const hit = [...document.querySelectorAll('[data-sec="hero"] [data-obj], [data-sec="hero"] .hero-act .btn, [data-sec="hero"] .hero-act .lnk, [data-sec="hero"] .trust')]
         .filter((el) => { const r = R(el); return r.right > pr.left && r.left < pr.right && r.bottom > pr.top && r.top < pr.bottom; }).length;
-      return { usp: Math.round(R(document.querySelector('.usp')).top), mini: p.classList.contains('is-mini'), hit: hidden ? 0 : hit };
+      const o = R(document.querySelector('[data-obj]'));
+      return { row: !!document.querySelector('.usp'), obj: [Math.round(o.top), Math.round(o.bottom)], mini: p.classList.contains('is-mini'), hit: hidden ? 0 : hit };
     });
-    if (w > 760 && fx.usp >= h - 60) fail(`сгиб: строка принципов начинается на ${fx.usp}px при окне ${h}px`);
+    if (fx.row) fail('под первым экраном осталась строка принципов .usp');
+    else if (w > 760 && (fx.obj[0] < 0 || fx.obj[1] > h)) fail(`сгиб: панель «Кодекс студии» ${fx.obj[0]}..${fx.obj[1]}px при окне ${h}px`);
     else if (!fx.mini) fail('пульт не свернулся после сборки');
     else if (fx.hit) fail(`свёрнутый пульт перекрывает первый экран (${fx.hit} эл.)`);
-    else console.log(`  ✓ первый экран: ${w > 760 ? `строка принципов с ${fx.usp}px из ${h}, ` : ''}пульт свёрнут и не перекрывает контент`);
+    else console.log(`  ✓ первый экран: ${w > 760 ? `панель целиком в первом экране (${fx.obj[0]}..${fx.obj[1]} из ${h}), ` : ''}пульт свёрнут и не перекрывает контент`);
     await shot('first-screen');
   }
   if (tag === 'd1440') {
@@ -147,7 +160,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
         tgBad: tg.filter((a) => a.getAttribute('href') !== 'https://t.me/dragonborne0' || a.target !== '_blank' || !/noopener/.test(a.rel)).length,
         h1: nb(document.querySelector('h1').textContent), trust: document.querySelectorAll('.trust .trust-i').length,
         nav: [...document.querySelectorAll('[data-sec="hero"] .nav a')].map((a) => nb(a.textContent)).join(','), nbsp: /\u00a0/.test(document.querySelector('h1').textContent),
-        name: document.querySelector('[data-objname]').textContent, aria: document.querySelector('[data-obj]').getAttribute('aria-label') };
+        name: document.querySelector('[data-captitle]').textContent, aria: document.querySelector('[data-obj]').getAttribute('aria-label') };
     });
     const bad = [];
     if (lx.hash) bad.push(`href="#": ${lx.hash}`);
@@ -156,36 +169,66 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     if (!lx.nbsp) bad.push('в H1 нет неразрывных пробелов');
     if (lx.trust !== 3) bad.push(`строка доверия: пунктов ${lx.trust}`);
     if (lx.nav !== 'Услуги,Работы,Процесс,Цены') bad.push(`меню: ${lx.nav}`);
-    if (lx.name !== 'Хрустальный ферзь' || lx.aria !== 'Хрустальный ферзь') bad.push(`название в панели «${lx.name}», aria-label «${lx.aria}»`);
+    if (lx.name !== 'Холодный расчёт' || lx.aria !== 'Хрустальный ферзь') bad.push(`подпись панели «${lx.name}», aria-label «${lx.aria}»`);
     if (bad.length) fail('шапка и первый экран: ' + bad.join('; '));
     else console.log('  ✓ ссылки и тексты: Telegram → t.me/dragonborne0, нет href="#", H1, строка доверия, меню, подпись панели');
   }
-  // объект первого экрана: каждый из пяти — скриншот (клик по пункту строки принципов)
+  // объект первого экрана: каждый из пяти — скриншот (клик по вкладке); на телефоне панель целиком в кадре (низ
+  // панели у низа окна — следующая секция ещё не видна и не начинает собираться)
   if (tag === 'd1440' || tag === 'm390') {
+    if (w <= 760) { await page.evaluate(() => { const r = document.querySelector('[data-obj]').getBoundingClientRect(); window.scrollTo({ top: Math.max(0, r.bottom + scrollY - innerHeight + 8), behavior: 'instant' }); }); await page.waitForTimeout(100); }
     for (let k = 0; k < 5; k++) { await page.evaluate((n) => document.querySelector(`[data-usp="${n}"]`).click(), k); await run(k === 4 ? 8200 : 4000); await shot(`hero-obj${k + 1}`); }
     await page.evaluate(() => document.querySelector('[data-usp="0"]').click()); await run(500);
+    if (w <= 760) { await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(100); await run(300); }
   }
   if (tag === 'd1440') {
-    const hx = await page.evaluate(() => ({ dots: document.querySelectorAll('[data-objdot]').length, gl: !!document.querySelector('[data-sec="hero"] canvas[data-gl]'), usp: document.querySelectorAll('[data-usp]').length }));
-    const res = [];
-    await page.click('[data-usp="3"]'); await run(300);
-    res.push(await page.evaluate(() => document.querySelector('[data-usp="3"]').getAttribute('aria-current')), await idx(page));
-    // принцип на экране один раз: в панели — название объекта и описание активного принципа (оно же в .usp-t)
-    const capNow = () => page.evaluate(() => { const a = document.querySelector('[data-usp][aria-current="step"]'); return { name: document.querySelector('[data-objname]').textContent, head: a.querySelector('.mono').textContent, cap: document.querySelector('[data-objcap]').textContent, want: a.querySelector('.usp-t').textContent }; });
-    const capBad = [], capOk = (c, where) => { if (c.name === c.head || c.cap !== c.want) capBad.push(`${where}: «${c.name}» / «${c.cap.slice(0, 30)}»`); };
-    await run(400); capOk(await capNow(), 'клик по 04');
-    if ((await capNow()).name !== 'Шифровальные роторы') capBad.push('название объекта после выбора 04');
-    await page.click('[data-next]'); await run(300); res.push(await idx(page)); await run(400); capOk(await capNow(), 'стрелка →');
-    await page.click('[data-prev]'); await run(300); res.push(await idx(page)); await run(400); capOk(await capNow(), 'стрелка ←');
-    if (capBad.length) fail('подпись в панели: ' + capBad.join('; '));
-    else console.log('  ✓ панель: название объекта сверху, описание активного принципа внизу — меняются по клику и стрелкам');
+    // панель «Кодекс студии»: пять вкладок внутри панели, шрифт вкладок, слова видны (панель шире 540 px)
+    const hx = await page.evaluate(() => {
+      const o = document.querySelector('[data-obj]').getBoundingClientRect(), tabs = [...document.querySelectorAll('[data-usp]')];
+      return { dots: document.querySelectorAll('[data-objdot]').length, gl: !!document.querySelector('[data-sec="hero"] canvas[data-gl]'), usp: tabs.length,
+        out: tabs.filter((t) => { const r = t.getBoundingClientRect(); return r.left < o.left || r.right > o.right || r.top < o.top || r.bottom > o.bottom; }).length,
+        font: getComputedStyle(document.querySelector('.cx-l')).fontFamily, num: getComputedStyle(document.querySelector('.cx-n')).fontVariantNumeric,
+        words: [...document.querySelectorAll('.cx-w')].filter((x) => getComputedStyle(x).display !== 'none').length, wide: o.width >= 540,
+        clip: [...document.querySelectorAll('.cx-l')].filter((l) => l.scrollWidth > l.clientWidth + 1).length };
+    });
+    const state = () => page.evaluate(() => {
+      const o = document.querySelector('[data-obj]'), a = document.querySelector('[data-usp][aria-current="step"]');
+      return { slot: o.dataset.slot, acc: getComputedStyle(o).getPropertyValue('--acc').trim(), tab: a ? a.dataset.usp : '-', title: document.querySelector('[data-captitle]').textContent,
+        capOk: !!a && document.querySelector('[data-captitle]').textContent === a.querySelector('.usp-n').textContent && document.querySelector('[data-objcap]').textContent === a.querySelector('.usp-t').textContent,
+        paused: o.classList.contains('is-paused'), ring: parseFloat(getComputedStyle(document.querySelector('[data-ring]')).strokeDashoffset) };
+    });
+    // CSS-переход цвета (0.9 с) идёт в реальном времени, таймеры модуля — по виртуальным часам
+    const settle = async (ms) => { await run(ms); await page.waitForTimeout(1000); await run(50); };
+    const bad = [], res = [];
+    const want = (st, slot, acc, where) => { if (st.slot !== String(slot) || st.tab !== String(slot - 1) || st.acc !== acc || !st.capOk) bad.push(`${where}: ${JSON.stringify(st)}`); };
+    // клик по вкладке 04: активна она, «Безопасность», мята; через 1 с всё ещё 04 — клик не всплывает до панели
+    await page.click('[data-usp="3"]'); await settle(1000);
+    let st = await state(); want(st, 4, 'rgb(159, 229, 209)', 'клик по вкладке 04');
+    if (st.title !== 'Безопасность') bad.push(`подпись после клика по 04: «${st.title}»`);
+    res.push(await idx(page));
+    await page.click('[data-next]'); await settle(400); want(await state(), 5, 'rgb(201, 194, 245)', 'стрелка →'); res.push(await idx(page));
+    await page.click('[data-prev]'); await settle(400); want(await state(), 4, 'rgb(159, 229, 209)', 'стрелка ←'); res.push(await idx(page));
+    // курсор над панелью (он на стрелке): пауза, автосмены нет; ушёл — автосмена идёт
+    await run(12000); st = await state(); res.push(await idx(page));
+    if (!st.paused) bad.push('курсор над панелью, а класса is-paused нет');
+    await page.waitForTimeout(400); await page.screenshot({ path: path.join(shots, 'd1440-codex-pause.png') });
+    await page.mouse.move(5, 5); await run(400);
+    if ((await state()).paused) bad.push('курсор ушёл, а is-paused остался');
+    await run(9600); res.push(await idx(page));
+    // клик по панели — следующий
     const pb = await page.evaluate(() => { const r = document.querySelector('[data-obj]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
     await page.mouse.click(pb[0], pb[1]); await run(300); res.push(await idx(page));
-    await page.mouse.move(5, 5); await run(11000); res.push(await idx(page));
-    const want = ['step', '04 / 05', '05 / 05', '04 / 05', '05 / 05', '01 / 05'];
-    if (hx.dots || !hx.gl || hx.usp !== 5) fail(`первый экран: точек ${hx.dots}, canvas[data-gl] ${hx.gl}, пунктов принципов ${hx.usp}`);
-    else if (res.join() !== want.join()) fail(`объект первого экрана: ${res.join(' · ')} (ждали ${want.join(' · ')})`);
-    else console.log('  ✓ объект первого экрана: строка принципов, стрелки, клик по панели и автосмена');
+    // без курсора через ~8.5 с вкладка 01 сменяется на 02; перед сменой кольцо почти замкнуто
+    await page.mouse.move(5, 5); await run(8100); st = await state(); res.push(await idx(page));
+    if (!(st.ring >= 0 && st.ring < 169.65 * 0.12)) bad.push(`кольцо перед автосменой: stroke-dashoffset ${st.ring} из 169.65`);
+    await run(900); res.push(await idx(page));
+    const order = ['04 / 05', '05 / 05', '04 / 05', '04 / 05', '05 / 05', '01 / 05', '01 / 05', '02 / 05'];
+    if (hx.dots || !hx.gl || hx.usp !== 5 || hx.out) bad.push(`точек ${hx.dots}, canvas[data-gl] ${hx.gl}, вкладок ${hx.usp}, вне панели ${hx.out}`);
+    if (!/Manrope/.test(hx.font) || !/tabular-nums/.test(hx.num)) bad.push(`шрифт вкладок «${hx.font}», цифры «${hx.num}»`);
+    if (!hx.wide || hx.words !== 5 || hx.clip) bad.push(`на 1440 слова вкладок: видно ${hx.words}, обрезано ${hx.clip}`);
+    if (res.join() !== order.join()) bad.push(`порядок: ${res.join(' · ')} (ждали ${order.join(' · ')})`);
+    if (bad.length) fail('панель «Кодекс студии»: ' + bad.join('; '));
+    else console.log('  ✓ панель «Кодекс студии»: вкладки в панели, клик по вкладке не перескакивает, цвет и подпись принципа, стрелки, пауза, кольцо, клик по панели, автосмена');
   }
 
   // каждая секция после сборки
@@ -271,6 +314,8 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     else console.log('  ✓ английская версия: кириллицы нет, у скрытых блоков есть переводы');
     const h1e = await page.evaluate(() => document.querySelector('h1').textContent.replace(/\s+/g, ' '));
     if (!/Websites, integrations ?and automation/.test(h1e)) fail(`английский H1: «${h1e}»`);
+    const cx = await page.evaluate(() => [document.querySelector('.obj-k').textContent.trim(), [...document.querySelectorAll('.cx-w')].map((x) => x.textContent).join(','), document.querySelector('[data-captitle]').textContent]);
+    if (cx[0] !== 'The studio code' || cx[1] !== 'Logic,Precision,Speed,Security,Design' || !/^[A-Z][a-z]+( [a-z]+)*$/.test(cx[2])) fail(`английская панель: ${cx.join(' | ')}`);
     if ((await page.evaluate(() => document.documentElement.lang)) !== 'en') fail('<html lang> не en');
   }
   if (tag === 'd1440') {
@@ -287,11 +332,11 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     if (en.lang !== 'en' || en.url !== '?lang=en') { ok = false; fail(`после переключения на EN: lang=${en.lang}, адрес ${en.url}`); }
     if (en.swap || nd.length) { ok = false; fail(`после переключения на EN секции не собраны: s-swap ${en.swap}, не собраны ${nd.join(', ')}`); }
     if (left.length) { ok = false; fail(`после переключения на EN осталась кириллица: ${left.join(' | ')}`); }
-    const on = await page.evaluate(() => document.querySelector('[data-objname]').textContent);
-    if (!/^[A-Z][a-z]+( [a-z]+)*$/.test(on)) { ok = false; fail(`после переключения на EN название в панели: «${on}»`); }
+    const on = await page.evaluate(() => [document.querySelector('[data-obj]').getAttribute('aria-label'), document.querySelector('.obj-k').textContent.trim(), [...document.querySelectorAll('.cx-w')].map((x) => x.textContent).join(',')]);
+    if (!/^[A-Z][a-z]+( [a-z]+)*$/.test(on[0]) || on[1] !== 'The studio code' || on[2] !== 'Logic,Precision,Speed,Security,Design') { ok = false; fail(`после переключения на EN панель: ${on.join(' | ')}`); }
     await run(400);
-    const capEn = await page.evaluate(() => [document.querySelector('[data-objcap]').textContent, document.querySelector('[data-usp][aria-current="step"] .usp-t').textContent]);
-    if (capEn[0] !== capEn[1] || /[А-Яа-яЁё]/.test(capEn[0])) { ok = false; fail(`после переключения на EN подпись в панели: «${capEn[0].slice(0, 40)}»`); }
+    const capEn = await page.evaluate(() => { const a = document.querySelector('[data-usp][aria-current="step"]'); return [document.querySelector('[data-captitle]').textContent + ' / ' + document.querySelector('[data-objcap]').textContent, a.querySelector('.usp-n').textContent + ' / ' + a.querySelector('.usp-t').textContent]; });
+    if (capEn[0] !== capEn[1] || /[А-Яа-яЁё]/.test(capEn[0])) { ok = false; fail(`после переключения на EN подпись в панели: «${capEn[0].slice(0, 50)}»`); }
     const h1en = await page.evaluate(() => document.querySelector('h1').textContent.replace(/\s+/g, ' '));
     if (!/Websites, integrations ?and automation/.test(h1en)) { ok = false; fail(`после переключения на EN H1: «${h1en}»`); }
     if (hid) { ok = false; fail(`после переключения на EN ${hid} текстовых элементов на экране невидимы`); }
@@ -340,11 +385,11 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
 }
 // Раскладка на промежуточных ширинах: ни кнопка, ни ссылка, ни строка текста не выходят за край окна. Документ вбок
 // не листается в любом случае (корень .pt обрезает лишнее), поэтому меряем сами элементы. Липкую шапку на время
-// замера показываем; строка принципов на телефоне листается сама — её не считаем.
+// замера показываем. Вкладки панели: слова видны, только если панель шире 540 px, и не вылезают из вкладки.
 console.log('\nраскладка на промежуточных ширинах (RU / EN, шапка и липкая шапка)');
 {
   const bad = [];
-  for (const lang of ['ru', 'en']) for (const w of [320, 360, 375, 390, 414, 430, 768, 820, 1024, 1280, 1440]) {
+  for (const lang of ['ru', 'en']) for (const w of [320, 360, 375, 390, 414, 430, 768, 820, 1024, 1150, 1280, 1440]) {
     const page = await browser.newPage({ viewport: { width: w, height: 900 } });
     await page.goto('file://' + file + (lang === 'en' ? '?lang=en' : ''));
     await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
@@ -352,24 +397,28 @@ console.log('\nраскладка на промежуточных ширинах
       document.querySelector('[data-topbar]').classList.add('on');
       const W = innerWidth, res = [];
       document.querySelectorAll('#pt-site .sec a, #pt-site .sec button, #pt-site .sec h1, #pt-site .sec h2, #pt-site .sec h3, #pt-site .sec p, #pt-site .sec li, [data-topbar] a, [data-topbar] button').forEach((el) => {
-        if (el.closest('.usp, template, [data-menu], .site-view, .an, .wf')) return;
+        if (el.closest('template, [data-menu], .site-view, .an, .wf')) return;
         const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') return;
         const r = el.getBoundingClientRect(); if (!r.width) return;
         if (r.right > W + 1 || r.left < -1) res.push(`«${(el.textContent.trim() || el.getAttribute('aria-label') || el.tagName).slice(0, 24)}» ${Math.round(r.left)}..${Math.round(r.right)}`);
       });
       if (document.documentElement.scrollWidth > W) res.push(`документ шире окна: ${document.documentElement.scrollWidth}`);
+      const pw = document.querySelector('[data-obj]').getBoundingClientRect().width, words = [...document.querySelectorAll('.cx-w')].filter((x) => getComputedStyle(x).display !== 'none').length;
+      if (pw < 540 ? words : words !== 5) res.push(`панель ${Math.round(pw)} px: видно слов на вкладках ${words}`);
+      const clip = [...document.querySelectorAll('.cx-l')].filter((l) => l.scrollWidth > l.clientWidth + 1).length;
+      if (clip) res.push(`вкладок, где подпись шире вкладки: ${clip}`);
       return res;
     });
     out.forEach((x) => bad.push(`${w} ${lang}: ${x}`));
     await page.close();
   }
   if (bad.length) fail('выходят за край окна: ' + bad.slice(0, 12).join(' | ') + (bad.length > 12 ? ` …ещё ${bad.length - 12}` : ''));
-  else console.log('  ✓ на 320–430, 768, 820, 1024, 1280, 1440 (RU и EN) ничего не выходит за край окна, кнопки шапки целиком');
+  else console.log('  ✓ на 320–430, 768, 820, 1024, 1150, 1280, 1440 (RU и EN) ничего не выходит за край окна, кнопки шапки целиком; слова вкладок — по ширине панели');
 }
 
-// Первый экран: шапка с первого кадра, H1 в три строки и курсив не рвётся, строка принципов в первом экране,
+// Первый экран: шапка с первого кадра, H1 в три строки и курсив не рвётся, панель «Кодекс студии» в первом экране,
 // плашка пульта по наведению ничего не перекрывает; пульт свёрнут при прокрутке сразу после сборки (390×844).
-console.log('\nпервый экран: шапка, заголовок, строка принципов, пульт');
+console.log('\nпервый экран: шапка, заголовок, панель, пульт');
 {
   const bad = [];
   for (const lang of ['ru', 'en']) for (const [w, h] of [[1280, 720], [1440, 900], [1920, 1080], [390, 844]]) {
@@ -394,18 +443,18 @@ console.log('\nпервый экран: шапка, заголовок, стро
       await run(6200); await page.waitForTimeout(150);
       const r = await page.evaluate(() => {
         const h1 = document.querySelector('h1'), lh = parseFloat(getComputedStyle(h1).lineHeight), it = document.querySelector('.hero-h .it');
-        return { lines: Math.round(h1.getBoundingClientRect().height / lh), it: it.getClientRects().length, usp: document.querySelector('.usp').getBoundingClientRect().bottom };
+        return { lines: Math.round(h1.getBoundingClientRect().height / lh), it: it.getClientRects().length, obj: document.querySelector('[data-obj]').getBoundingClientRect().bottom };
       });
       if (lang === 'ru' ? r.lines !== 3 : r.lines > 3) bad.push(`${tag}: H1 в ${r.lines} строк`);
       if (r.it !== 1) bad.push(`${tag}: курсив H1 рвётся на ${r.it} строки`);
-      if (r.usp > h + 1) bad.push(`${tag}: строка принципов ниже первого экрана (низ ${Math.round(r.usp)})`);
+      if (r.obj > h + 1) bad.push(`${tag}: панель ниже первого экрана (низ ${Math.round(r.obj)})`);
       if (w !== 1920) {
         await run(2500);
         const b = await page.evaluate(() => { const r = document.querySelector('.pult-mini').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
         await page.mouse.move(b[0], b[1]); await page.waitForTimeout(120);
         const hv = await page.evaluate(() => {
           const bar = document.querySelector('.pult-bar'), br = bar.getBoundingClientRect();
-          const hit = [...document.querySelectorAll('.usp, .hero-act, [data-obj]')].filter((el) => { const r = el.getBoundingClientRect(); return r.right > br.left && r.left < br.right && r.bottom > br.top && r.top < br.bottom; }).map((el) => el.className.split(' ').slice(-1)[0]);
+          const hit = [...document.querySelectorAll('.trust, .hero-act, [data-obj]')].filter((el) => { const r = el.getBoundingClientRect(); return r.right > br.left && r.left < br.right && r.bottom > br.top && r.top < br.bottom; }).map((el) => el.className.split(' ').slice(-1)[0]);
           return { shown: getComputedStyle(bar).display !== 'none', hit };
         });
         if (!hv.shown) bad.push(`${tag}: плашка пульта не показалась по наведению`);
@@ -420,7 +469,7 @@ console.log('\nпервый экран: шапка, заголовок, стро
     await page.close();
   }
   if (bad.length) fail(bad.join(' | '));
-  else console.log('  ✓ шапка видна с первого кадра; H1 — три строки, курсив целиком; строка принципов в первом экране; плашка пульта не перекрывает контент; пульт свёрнут при прокрутке (RU и EN)');
+  else console.log('  ✓ шапка видна с первого кадра; H1 — три строки, курсив целиком; панель в первом экране; плашка пульта не перекрывает контент; пульт свёрнут при прокрутке (RU и EN)');
 }
 await browser.close();
 console.log(failed ? `\nИТОГ: ${failed} проблем(ы). Скриншоты: tools/shots/` : '\nИТОГ: всё чисто. Скриншоты: tools/shots/ — просмотри глазами.');

@@ -97,9 +97,9 @@
   }
 
   // ---------- свёрнутый пульт не ложится на первый экран ----------
-  // Кнопка ↻ стоит в левом нижнем углу. Если под ней панель объекта, кнопки или строка принципов (на телефоне и
+  // Кнопка ↻ стоит в левом нижнем углу. Если под ней панель объекта, кнопки или строка доверия (на телефоне и
   // средних ширинах так бывает), она прячется, пока их не прокрутят.
-  var guard = hero ? Array.prototype.slice.call(hero.querySelectorAll('[data-obj], .usp, .hero-act .btn, .hero-act .lnk, .trust')) : [];
+  var guard = hero ? Array.prototype.slice.call(hero.querySelectorAll('[data-obj], .hero-act .btn, .hero-act .lnk, .trust')) : [];
   function guardPult() {
     if (!pult) return;
     var off = false;
