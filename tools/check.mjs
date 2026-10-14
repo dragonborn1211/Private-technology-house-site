@@ -286,7 +286,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     await page.evaluate((n) => { const el = document.querySelector(`[data-sec="${n}"]`); window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 40, behavior: 'instant' }); }, name);
     await page.waitForTimeout(300);
     const sel = `[data-sec="${name}"] ${SCENES}`;
-    await run(1000); await shot(name + '-building');
+    await run(300); await shot(name + '-building');
     const building = await page.evaluate((n) => !document.querySelector(`[data-sec="${n}"]`).classList.contains('s-done'), name);
     const early = building ? (await prints(sel)).filter(Boolean).length : 0;
     if (early) fail(`${name}: ${early} сцен(ы) рисуют до сборки секции`);
