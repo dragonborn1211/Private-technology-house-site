@@ -114,10 +114,11 @@ async function fullShot(page, file) {
   writeFileSync(file, Buffer.from(data, 'base64'));
 }
 // Границы объекта первого экрана по пикселям скриншота панели: текст панели и пыль движка на время замера скрыты.
-// top — низ вкладок, cap — верх подписи или стрелок (от верха панели).
+// top — низ подписей вкладок (.cx-l, без нижнего отступа кнопок), cap — верх заголовка подписи или стрелок (от верха
+// панели).
 async function objBox(page) {
   const g = await page.evaluate(() => {
-    const o = document.querySelector('[data-obj]').getBoundingClientRect(), t = document.querySelector('.obj-top').getBoundingClientRect(), c = document.querySelector('.obj-cw').getBoundingClientRect(), n = document.querySelector('.nav2').getBoundingClientRect();
+    const o = document.querySelector('[data-obj]').getBoundingClientRect(), t = { bottom: Math.max(...[...document.querySelectorAll('.cx-l')].map((l) => l.getBoundingClientRect().bottom)) }, c = document.querySelector('.obj-ct').getBoundingClientRect(), n = document.querySelector('.nav2').getBoundingClientRect();
     document.querySelectorAll('.obj-top, .obj-foot, [data-pt-canvas]').forEach((e) => { e.style.visibility = 'hidden'; });
     return { o: [o.left, o.top, o.width, o.height], top: Math.round(t.bottom - o.top), cap: Math.round(Math.min(c.top, n.top) - o.top) };
   });
@@ -678,12 +679,17 @@ console.log('\nпервый экран: шапка, заголовок, пане
         if (await page.evaluate(() => getComputedStyle(document.querySelector('.pult-bar')).display === 'none')) bad.push(`${tag}: плашка схлопнулась по пути курсора с кнопки на неё`);
       }
       if (lang === 'ru' && w === 1920) await page.screenshot({ path: path.join(shots, 'd1920-first-screen.png') });
-      // объект крупнее, но не задевает вкладки и подпись: границы по пикселям (текст и пыль на время замера скрыты)
+      // объект крупнее, но не задевает вкладки и подпись: границы по пикселям за весь цикл объекта, без первой секунды —
+      // там частицы перелетают из прошлого объекта по всей панели (текст и пыль на время замера скрыты)
       if (lang === 'ru' && w === 1280) for (const k of [0, 4]) {
         await page.mouse.move(2, 2);
-        await page.evaluate((n) => document.querySelector(`[data-usp="${n}"]`).click(), k); await run(k === 4 ? 7000 : 3200); await page.waitForTimeout(80);
-        const ob = await objBox(page);
-        if (ob.box[1] < ob.top || ob.box[3] > ob.cap) bad.push(`${tag}: объект 0${k + 1} по вертикали ${ob.box[1]}..${ob.box[3]}, вкладки до ${ob.top}, подпись с ${ob.cap}`);
+        await page.evaluate((n) => document.querySelector(`[data-usp="${n}"]`).click(), k);
+        let top = 1e9, bot = 0, lim = null;
+        for (const ms of k === 4 ? [1200, 1500, 1500, 1500, 1500, 1500] : [1200, 1400, 1400, 1400, 1400, 1300]) {
+          await run(ms); await page.waitForTimeout(60);
+          const ob = await objBox(page); top = Math.min(top, ob.box[1]); bot = Math.max(bot, ob.box[3]); lim = ob;
+        }
+        if (top < lim.top || bot > lim.cap) bad.push(`${tag}: объект 0${k + 1} по вертикали ${top}..${bot}, подписи вкладок до ${lim.top}, подпись со стрелками с ${lim.cap}`);
       }
     }
     await page.waitForTimeout(1000);
