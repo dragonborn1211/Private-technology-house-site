@@ -3,7 +3,7 @@ html::-webkit-scrollbar{display:none}
 body{margin:0;background:#0A121A}
 /* до старта движка (.pt-boot снимает engine.js) секций не видно и переходов нет: иначе браузер успевает
    нарисовать готовую страницу, пока грузятся скрипты, и она потом гаснет поверх вспышки частиц */
-.pt-boot .sec > :not(.wrap),.pt-boot .sec .wrap > :not(.hero-hdr){opacity:0}
+.pt-boot .sec > :not(.wrap),.pt-boot .sec .wrap > *{opacity:0}
 .pt-boot *,.pt-boot *::before,.pt-boot *::after{transition:none!important}
 /* свой скроллбар (assets/scroll.js): скрыт, пока страницу не прокручивают */
 .sbar{position:fixed;top:12px;right:4px;bottom:12px;z-index:35;width:12px;opacity:0;pointer-events:none;transition:opacity .45s ease}
@@ -128,9 +128,11 @@ body{margin:0;background:#0A121A}
 .pt .lang a:not([aria-current="true"]):hover{color:#BCD3DE}
 .lang-thumb{position:absolute;top:4px;left:4px;width:42px;height:34px;border-radius:999px;background:linear-gradient(120deg,rgba(142,216,248,.2),rgba(127,168,255,.14) 50%,rgba(183,166,242,.22));border:1px solid rgba(142,216,248,.5);box-shadow:0 0 18px -4px rgba(142,216,248,.55);pointer-events:none;transition:transform .6s cubic-bezier(.6,0,.2,1),opacity .9s ease}
 .lang[data-cur="en"] .lang-thumb{transform:translateX(42px)}
-.pt-on .sec:not(.s-done) .lang-thumb:not(.hero-hdr .lang-thumb){opacity:0}
-/* смена языка: текст гаснет, пока частицы держат его буквы, и проявляется уже на новом языке */
-.pt-on .sec.s-done.s-swap .ptx{opacity:0;transition:opacity .45s ease}
+.pt-on .sec:not(.s-done) .lang-thumb{opacity:0}
+/* смена языка: на это время у секции снят s-done, и гаснет всё, что появляется при сборке, — текст, рамки, кнопки,
+   подпись панели, объект, сцены (частицы держат буквы и контуры рамок); быстрее обычного. Потом всё проявляется уже
+   на новом языке (engine.js, morph) */
+.pt-on .sec.s-swap *,.pt-on .sec.s-swap *::before,.pt-on .sec.s-swap *::after{transition-duration:.45s!important}
 /* луч смены языка: проходит экран слева направо, за ним буквы пересобираются на другом языке */
 .lang-beam{position:fixed;top:0;bottom:0;left:0;z-index:31;width:2px;pointer-events:none;opacity:0;background:linear-gradient(180deg,rgba(142,216,248,0),#8ED8F8 18%,#FFFFFF 50%,#B7A6F2 82%,rgba(183,166,242,0));box-shadow:0 0 22px 3px rgba(142,216,248,.35)}
 .lang-beam::before{content:"";position:absolute;top:0;bottom:0;right:2px;width:180px;background:linear-gradient(90deg,rgba(142,216,248,0),rgba(142,216,248,.06))}
@@ -186,7 +188,7 @@ body{margin:0;background:#0A121A}
 .rg .tr{fill:none;stroke:rgba(188,211,222,.16);stroke-width:1.5}
 .rg .rv{fill:none;stroke:var(--acc);stroke-width:2;stroke-linecap:round;stroke-dasharray:169.65;filter:drop-shadow(0 0 4px var(--acc));transition:opacity .4s}
 .hero-obj.is-paused .rg .rv{opacity:.4}
-.ps{position:absolute;right:-2px;top:-6px;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#6F93A6;opacity:0;transition:opacity .3s;pointer-events:none}
+.ps{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);padding:4px 9px;border-radius:999px;background:rgba(10,18,26,.78);border:1px solid color-mix(in srgb,var(--acc) 45%,transparent);font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;color:#EEF3F6;box-shadow:0 0 16px -6px var(--acc);opacity:0;transition:opacity .3s;pointer-events:none}
 .hero-obj.is-paused .ps{opacity:1}
 /* сборка: подсветка, полоски вкладок и стрелки проявляются вместе с рамками; точка кикера, прогресс вкладок, кольцо,
    «пауза» и подпись (её текст пишет модуль, data-pt-skip) — вместе с текстом */
@@ -198,7 +200,7 @@ body{margin:0;background:#0A121A}
 .pt-on .sec:not(.s-done) canvas[data-gl],.pt-on .sec:not(.s-done) canvas[data-ov]{opacity:0}
 /* слова на вкладках прячутся по ширине панели, а не окна: в узкой панели — только номера, полное название — в подписи */
 @container (max-width:540px){.cx-w{display:none}}
-@media (max-width:760px){.cx{gap:6px}.cx-w{display:none}.obj-foot{flex-direction:column;align-items:stretch;left:16px;right:12px;bottom:12px;gap:10px}.obj-cw{max-width:none}.nav2{align-self:flex-end}.obj-ct{font-size:26px}.obj-cap{-webkit-line-clamp:3;line-clamp:3}}
+@media (max-width:760px){.ps{left:auto;bottom:auto;top:50%;right:calc(100% + 66px);transform:translateY(-50%)}.cx{gap:6px}.cx-w{display:none}.obj-foot{flex-direction:column;align-items:stretch;left:16px;right:12px;bottom:12px;gap:10px}.obj-cw{max-width:none}.nav2{align-self:flex-end}.obj-ct{font-size:26px}.obj-cap{-webkit-line-clamp:3;line-clamp:3}}
 /* без анимации: автосмены нет — кольцо до неё и «пауза» не нужны */
 @media (prefers-reduced-motion:reduce){.hero-obj,.pt-on .sec .hero-obj.fr,.obj-cw,.nb .ar{transition:none}.rg .rv,.ps{display:none}}
 /* ---------- шапка: логотип, меню, действия (первый экран и липкая шапка) ---------- */
@@ -212,6 +214,12 @@ body{margin:0;background:#0A121A}
 .pt .nav a{transition:color .3s ease}
 .pt .nav a:hover,.pt .nav a[aria-current="true"]{color:#EEF3F6}
 .hero-hdr{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 0}
+/* шапка собирается из частиц, как весь первый экран: каркас — вокруг содержимого (над шапкой край окна), подпись —
+   под ним справа (слева под шапкой подпись кикера); ромб логотипа и иконки проявляются вместе с рамками кнопок */
+.hero-hdr > .wf{top:10px;bottom:10px}
+.hero-hdr > .wf .wf-l{top:calc(100% + 6px);left:auto;right:0}
+.pt-on .sec .hero-hdr .logo-d,.pt-on .sec .hero-hdr .ico svg,.pt-on .sec .hero-hdr .burger{transition:opacity .9s ease}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .logo-d,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .ico svg,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .burger{opacity:0}
 .hdr-act{display:flex;flex:none;align-items:center;gap:12px}
 .pt a.hdr-cta{min-height:44px;padding:0 20px;font-size:14px}
 .ico{display:inline-flex;align-items:center;justify-content:center;flex:none;width:44px;height:44px;padding:0;border-radius:50%;border:1px solid rgba(188,211,222,.24);background-color:rgba(228,237,242,.03);color:#EEF3F6;cursor:pointer;transition:border-color .3s ease}

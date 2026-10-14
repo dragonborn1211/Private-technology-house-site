@@ -751,33 +751,50 @@
         var B = cut(G.big), S = cut(G.small);
         return { n: B.n + S.n, big: B, small: S };
       }
-      // частицы — в буквы нескольких секций сразу; волна слева направо за spread секунд (в такт с лучом)
+      // частицы — в буквы и контуры рамок нескольких секций сразу (при смене языка гаснут и рамки, кнопки, панели —
+      // их держат частицы); волна слева направо за spread секунд (в такт с лучом)
       function phGlyphs(list, idx, spread) {
-        var y0 = -rootTop - 60, y1 = -rootTop + VH + 60, gens = [];
-        list.forEach(function (x) { ensureGl(x); var g = x.geo && x.geo.gl ? clipGl(x.geo.gl, y0, y1) : null; if (g && g.n) gens.push({ w: g.n, f: gGlyph(g, 0.82) }); });
+        var y0 = -rootTop - 60, y1 = -rootTop + VH + 60, gens = [], frs = [], gw = 0;
+        list.forEach(function (x) {
+          ensureGl(x); var g = x.geo && x.geo.gl ? clipGl(x.geo.gl, y0, y1) : null; if (g && g.n) { gens.push({ w: g.n, f: gGlyph(g, 0.82) }); gw += g.n; }
+          if (x.geo) x.geo.frames.forEach(function (f) { if (f.y + f.h >= y0 && f.y <= y1) frs.push(f); });
+        });
+        if (frs.length) gens.push({ w: Math.max(1, gw) * 0.3, f: gFrames(frs, 0.6, 1.35) });
         if (!gens.length) gens.push({ w: 1, f: gAmbient });
         fill(idx, gens, { instant: false, axis: 'x', spread: spread, rnd: 0.08 });
         cur = null;
       }
-      // Смена языка на экране. Частицы ложатся на буквы текущего текста, и он гаснет. Луч проходит экран слева
-      // направо, за ним частицы перелетают в буквы нового языка; потом проявляется настоящий текст, частицы гаснут.
-      // Секции за экраном получают новый текст сразу. Клик или клавиша доводят смену мгновенно (skipNow).
+      // Смена языка на экране. Частицы ложатся на буквы текущего текста и контуры рамок, и гаснет всё сразу: у секций
+      // снимается s-done (.s-swap — быстрее обычного), пропадают текст, рамки, кнопки, подпись панели, объект и сцены.
+      // Луч проходит экран слева направо, за ним частицы перелетают в буквы и рамки нового языка; потом всё
+      // проявляется, объект и сцены собираются заново, частицы гаснут. Секции за экраном получают новый текст сразу.
+      // Клик или клавиша доводят смену мгновенно (skipNow).
       function morph(lang, list) {
-        var s = list[0], swapped = false;
+        var s = list[0], swapped = false, shown = false;
         runId++; running = s; cur = null;
         list.forEach(function (x) { x.state = 'run'; });
         function swap() { if (!swapped) { swapped = true; swapLang(lang, list); } }
-        function end() { list.forEach(function (x) { x.el.classList.remove('s-swap'); x.state = 'done'; }); if (beamEl) beamEl.classList.remove('run'); }
+        function reveal() {
+          if (shown) return; shown = true;
+          list.forEach(function (x) { x.el.classList.remove('s-swap'); setStage(x, 'done'); wakeSites(x.el); if (x === hero && heroObj) heroObj.replay(); });
+        }
+        function end() { reveal(); list.forEach(function (x) { x.state = 'done'; }); if (beamEl) beamEl.classList.remove('run'); }
         settleFn = function () { swap(); end(); };
         list.forEach(function (x) { measure(x); });
         phGlyphs(list, BLD, 0.3); log(s, 'i18n · text.capture()');
-        atRun(0.45, function () { list.forEach(function (x) { x.el.classList.add('s-swap'); }); });
+        atRun(0.45, function () {
+          list.forEach(function (x) {
+            x.el.classList.add('s-swap'); setStage(x, null);
+            // сцены гаснут вместе со всем и спят: на новом языке они соберутся заново, уже на виду (wakeSites)
+            scenes.forEach(function (sc) { if (sc.sleep && x.el.contains(sc.cv)) sc.sleep(); });
+          });
+        });
         atRun(0.95, function () {
           swap(); list.forEach(function (x) { measure(x); });
           if (beamEl) { beamEl.style.setProperty('--beam', BEAM + 's'); beamEl.classList.remove('run'); void beamEl.offsetWidth; beamEl.classList.add('run'); }
           phGlyphs(list, BLD, BEAM); log(s, 'i18n · locale("' + lang + '") · morph()');
         });
-        atRun(0.95 + BEAM + 0.35, function () { list.forEach(function (x) { x.el.classList.remove('s-swap'); }); phFade(BLD); log(s, '✓ ' + lang); });
+        atRun(0.95 + BEAM + 0.35, function () { reveal(); phFade(BLD); log(s, '✓ ' + lang); });
         atRun(0.95 + BEAM + 0.75, function () { settleFn = null; end(); running = null; if (!queue.length) phSettle(BLD); pump(); });
       }
       function setLang(lang) {

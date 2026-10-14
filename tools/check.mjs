@@ -20,7 +20,9 @@
 // вкладке не перескакивает дальше; у принципа свой цвет (data-slot, --acc) и подпись (.usp-n / .usp-t); стрелки; пауза
 // под курсором; кольцо [data-ring] перед автосменой почти замкнуто; вкладки — Manrope с табличными цифрами, слова
 // прячутся по ширине панели (< 540 px); английская версия; reduced motion — цвет без анимации, автосмены нет;
-// панель целиком в первом экране на 1280×720 и 1440×900; скриншот паузы.
+// панель целиком в первом экране на 1280×720 и 1440×900; скриншот паузы, «пауза» не лежит на кольце.
+// Шапка первого экрана снова собирается из частиц. Смена языка гасит всё сразу (текст, рамки, панель, объект, шапку)
+// и собирает заново.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -212,6 +214,8 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     await run(12000); st = await state(); res.push(await idx(page));
     if (!st.paused) bad.push('курсор над панелью, а класса is-paused нет');
     await page.waitForTimeout(400); await page.screenshot({ path: path.join(shots, 'd1440-codex-pause.png') });
+    const ps = await page.evaluate(() => { const a = document.querySelector('.ps').getBoundingClientRect(), b = document.querySelector('[data-next]').getBoundingClientRect(); return { op: getComputedStyle(document.querySelector('.ps')).opacity, gap: Math.round(b.top - a.bottom) }; });
+    if (ps.op !== '1' || ps.gap < 4) bad.push(`«пауза»: прозрачность ${ps.op}, зазор до кнопки ${ps.gap}px`);
     await page.mouse.move(5, 5); await run(400);
     if ((await state()).paused) bad.push('курсор ушёл, а is-paused остался');
     await run(9600); res.push(await idx(page));
@@ -325,6 +329,12 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     const ru0 = await page.evaluate(textSnap);
     await page.click('[data-lang="en"]');
     await run(1500); await shot('lang-en-morph');
+    // посреди смены гаснет всё сразу, а не только текст: шапка, рамка панели, подпись, объект
+    await page.waitForTimeout(300);
+    const mid = await page.evaluate(() => { const h = document.querySelector('[data-sec="hero"]'), o = document.querySelector('[data-obj]'), op = (q) => getComputedStyle(document.querySelector(q)).opacity;
+      return { done: h.classList.contains('s-done'), border: getComputedStyle(o).borderTopColor, gl: op('[data-sec="hero"] canvas[data-gl]'), cap: op('.obj-cap'), hdr: op('.hero-hdr .nav a'), lang: getComputedStyle(document.querySelector('.hero-hdr .lang')).borderTopColor }; });
+    if (mid.done || mid.border !== 'rgba(0, 0, 0, 0)' || mid.gl !== '0' || mid.cap !== '0' || mid.hdr !== '0' || mid.lang !== 'rgba(0, 0, 0, 0)') fail(`посреди смены языка погасло не всё: ${JSON.stringify(mid)}`);
+    else console.log('  ✓ посреди смены языка погасло всё: текст, шапка, рамки, подпись и объект панели');
     await run(2500); await shot('lang-en');
     const en = await page.evaluate(() => ({ lang: document.documentElement.lang, url: location.search, swap: document.querySelectorAll('.s-swap').length }));
     const nd = await page.evaluate(notDoneVisible), left = await page.evaluate(cyrillic), hid = await page.evaluate(hiddenVisible);
@@ -340,6 +350,9 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     const h1en = await page.evaluate(() => document.querySelector('h1').textContent.replace(/\s+/g, ' '));
     if (!/Websites, integrations ?and automation/.test(h1en)) { ok = false; fail(`после переключения на EN H1: «${h1en}»`); }
     if (hid) { ok = false; fail(`после переключения на EN ${hid} текстовых элементов на экране невидимы`); }
+    await page.waitForTimeout(1000);
+    const back = await page.evaluate(() => ({ gl: getComputedStyle(document.querySelector('[data-sec="hero"] canvas[data-gl]')).opacity, border: getComputedStyle(document.querySelector('[data-obj]')).borderTopColor }));
+    if (back.gl !== '1' || back.border === 'rgba(0, 0, 0, 0)') { ok = false; fail(`после переключения на EN панель не вернулась: ${JSON.stringify(back)}`); }
     await page.click('[data-lang="ru"]');
     await run(4000);
     const ru1 = await page.evaluate(textSnap);
@@ -431,8 +444,10 @@ console.log('\nпервый экран: шапка, заголовок, пане
     const run = (ms) => page.clock.runFor(ms);
     const tag = `${w}×${h} ${lang}`;
     await run(300); await page.waitForTimeout(60);
-    const op = await page.evaluate(() => { let o = 1, el = document.querySelector('.hero-hdr'); while (el) { o *= +getComputedStyle(el).opacity; el = el.parentElement; } return { o, ptx: document.querySelectorAll('.hero-hdr .ptx, .hero-hdr .fr').length }; });
-    if (op.o !== 1 || op.ptx) bad.push(`${tag}: шапка на 0.3 с — прозрачность ${op.o}, собираемых элементов ${op.ptx}`);
+    // шапка собирается из частиц вместе с первым экраном: на 0.3 с её текст скрыт, после сборки — виден
+    const hd = () => page.evaluate(() => { const t = [...document.querySelectorAll('.hero-hdr .ptx')].filter((el) => el.offsetParent); return { n: t.length, shown: t.filter((el) => getComputedStyle(el).opacity === '1').length, fr: document.querySelectorAll('.hero-hdr .fr').length }; });
+    const h0 = await hd();
+    if (!h0.n || h0.shown || !h0.fr) bad.push(`${tag}: шапка на 0.3 с не собирается — текстов ${h0.n}, из них видно ${h0.shown}, рамок ${h0.fr}`);
     if (w === 390) {
       // прокрутка сразу после сборки первого экрана: пульт сворачивается, хотя секции ещё собираются
       await run(2900); await page.evaluate(() => window.scrollTo({ top: 1100, behavior: 'instant' })); await page.waitForTimeout(100);
@@ -465,11 +480,14 @@ console.log('\nпервый экран: шапка, заголовок, пане
       }
       if (lang === 'ru' && w === 1920) await page.screenshot({ path: path.join(shots, 'd1920-first-screen.png') });
     }
+    await page.waitForTimeout(1000);
+    const h1 = await hd();
+    if (h1.shown !== h1.n) bad.push(`${tag}: после сборки в шапке видно ${h1.shown} из ${h1.n} текстов`);
     errs.forEach((e) => bad.push(`${tag}: ${e}`));
     await page.close();
   }
   if (bad.length) fail(bad.join(' | '));
-  else console.log('  ✓ шапка видна с первого кадра; H1 — три строки, курсив целиком; панель в первом экране; плашка пульта не перекрывает контент; пульт свёрнут при прокрутке (RU и EN)');
+  else console.log('  ✓ шапка собирается вместе с первым экраном; H1 — три строки, курсив целиком; панель в первом экране; плашка пульта не перекрывает контент; пульт свёрнут при прокрутке (RU и EN)');
 }
 await browser.close();
 console.log(failed ? `\nИТОГ: ${failed} проблем(ы). Скриншоты: tools/shots/` : '\nИТОГ: всё чисто. Скриншоты: tools/shots/ — просмотри глазами.');
