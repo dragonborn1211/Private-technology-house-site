@@ -64,6 +64,28 @@
       if (INTRO_LINES) root.classList.add('pt-lines');
       try { lite = +sessionStorage.getItem('pt-lite') || 0; } catch (e) {}
       if (lite >= 2) dprCap = 1;
+      // Режим сборки (TASK-glyphs-transitions.md, раздел 3). full — первое знакомство с сайтом или прошло больше 30 дней
+      // с последней полной сборки: вспышка, две линии, сборка частицами. fast — страница сайта, которую в этой вкладке ещё
+      // не открывали (переход главная → услуги), или новый визит в течение 30 дней: один луч, за ним всё проявляется,
+      // секции ниже — в темпе FAST_K. instant — страница уже открывалась в этой вкладке (назад, ссылка, обновление): всё
+      // на месте с первого кадра, движение (объект, пыль, сцены, рисунки) идёт. ?intro=full|fast|instant — принудительно
+      // (проверки, показ клиенту). Хранилище недоступно — full. Reduced motion — как раньше (rm). «Пересобрать блок» —
+      // всегда полная показательная сборка. PAGE — страница без языка и якоря: / и /index.html — одна.
+      var FAST_K = 0.3, FAST_LD = 0.6, PAGE = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/, '');
+      var MODE = (function () {
+        var q = /[?&]intro=(full|fast|instant)(?:&|$)/.exec(location.search);
+        if (rm) return 'rm';
+        if (q) return q[1];
+        try {
+          var seen = JSON.parse(sessionStorage.getItem('pt-seen') || '[]');
+          if (seen.indexOf(PAGE) >= 0) return 'instant';
+          var t = +localStorage.getItem('pt-intro') || 0;
+          if (t && Date.now() - t < 30 * 864e5) return 'fast';
+          localStorage.setItem('pt-intro', String(Date.now()));
+        } catch (e) { /* хранилище запрещено — полная сборка */ }
+        return 'full';
+      })();
+      root.setAttribute('data-intro', MODE);
 
       function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
       function tr(s) { return window.PTI18N ? window.PTI18N.t(s) : s; }
@@ -383,7 +405,7 @@
       // Линии вступления. line — запустить луч на sec секунд; linesOff — погасить (сборку первого экрана довели или
       // прервали); lineDelays — элемент проявляется, когда до него доходит линия: задержка по его положению (--ld).
       function line(el, sec) { if (!el) return; el.style.setProperty('--beam', sec + 's'); el.classList.remove('run'); void el.offsetWidth; el.classList.add('run'); }
-      function linesOff() { heroSweep = null; if (!INTRO_LINES) return; if (beamEl) beamEl.classList.remove('run'); if (beamH) beamH.classList.remove('run'); }
+      function linesOff() { heroSweep = null; root.classList.remove('pt-sweep'); if (!INTRO_LINES) return; if (beamEl) beamEl.classList.remove('run'); if (beamH) beamH.classList.remove('run'); }
       function lineDelays(sel, axis, sec) {
         var vw = Math.max(1, window.innerWidth);
         Array.prototype.forEach.call(hero.el.querySelectorAll(sel), function (el) {
@@ -681,7 +703,24 @@
       }
       // таймер текущей сборки: молча отменяется, если сборку прервали (abortRun) или запустили новую
       function atRun(sec, fn) { var my = runId; at(sec, function () { if (my === runId) fn(); }); }
+      // Быстрая сборка первого экрана (fast): без вспышки и двух линий — один луч слева направо (FAST_LD), за ним по --ld
+      // всё проявляется сразу в финальном виде (s-done и .pt-sweep: задержка по положению, текст — 0.35 с); частицы из
+      // невидимой раскладки волной за лучом ложатся на буквы, на долю секунды держат их и разлетаются. По сути — смена
+      // языка из пустого состояния. Объект первого экрана стартует сразу. Пульт сразу свёрнут.
+      function runHeroFast(s) {
+        runId++; running = s; s.state = 'run'; s.replay = false;
+        seed(); root.classList.add('g-on'); measure(s);
+        lineDelays('*', 'x', FAST_LD); root.classList.add('pt-sweep');
+        heroSweep = { axis: 'x', spread: FAST_LD }; line(beamEl, FAST_LD);
+        setStage(s, 'done'); phText(s, ALL, false); heroSweep = null;
+        if (heroObj) heroObj.start(false);
+        pultSkip(); log(s, '✓ ready');
+        atRun(FAST_LD + 0.15, function () { phFade(BLD); });
+        atRun(FAST_LD + 0.35, function () { s.state = 'done'; setProg(); finish(s); });
+        atRun(FAST_LD + 1.2, function () { root.classList.remove('pt-sweep'); if (beamEl) beamEl.classList.remove('run'); });
+      }
       function runHero(s, replay) {
+        if (MODE === 'fast' && !replay) { runHeroFast(s); return; }
         runId++; running = s; s.state = 'run'; s.replay = false; measure(s);
         var o = replay ? -0.6 : 0, K = replay ? PRESENT_K : HERO_K, LD = LINE * K;
         if (!replay) { burst(); log(s, 'boot · ' + fmtN() + ' particles'); }
@@ -711,7 +750,7 @@
       }
       function runSec(s) {
         // темп одинаковый для всех секций (раньше при очереди ускорялся ×0.6, и блоки собирались вразнобой)
-        var k = runK = s.replay ? PRESENT_K : SEC_K;
+        var k = runK = s.replay ? PRESENT_K : (MODE === 'fast' ? FAST_K : SEC_K);
         seed(); runId++; running = s; s.state = 'run'; s.replay = false;
         measure(s); setStage(s, 'wire'); phWire(s, BLD, false); log(s, '01 · layout.measure()');
         atRun(0.75 * k, function () { setStage(s, 'skel'); phSkel(s, BLD, false); log(s, '02 · styles.apply()'); });
@@ -899,6 +938,9 @@
       function onFonts() { layoutGen++; }
       markText();
       root.classList.add('pt-on');
+      // режим «сразу»: на первые кадры переходы выключены (.pt-instant) — секции получают s-done в том же кадре, что
+      // снимается .pt-boot, и ничего не проявляется постепенно
+      if (MODE === 'instant') root.classList.add('pt-instant');
       // текст и рамки уже скрыты движком — фиксируем это без переходов и открываем секции (см. .pt-boot в site.css)
       void root.offsetWidth;
       root.classList.remove('pt-boot');
@@ -921,11 +963,18 @@
       window.addEventListener('resize', onResize);
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(onFonts);
       if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', onFonts);
-      if (rm) {
+      if (rm || MODE === 'instant') {
+        // reduced motion и режим «сразу»: всё на местах с первого кадра. В «сразу» — с движением: объект живёт, пыль на
+        // местах, сцены и рисунки играют; прокрутку (назад, обновление) браузер восстанавливает сам — якорем не трогаем
         root.classList.add('g-on');
         secs.forEach(function (s) { setStage(s, 'done'); s.state = 'done'; wakeSites(s.el); });
         if (heroObj) heroObj.start(true);
-        snap(); frame(performance.now()); setProg(); typeLabel('✓ ready'); pultShown = true; pultMini(true);
+        if (rm) { snap(); frame(performance.now()); }
+        else {
+          seed(); phAmbient(ALL, true); start();
+          requestAnimationFrame(function () { requestAnimationFrame(function () { root.classList.remove('pt-instant'); }); });
+        }
+        setProg(); typeLabel('✓ ready'); pultShown = true; pultMini(true);
       } else {
         if (!jumpStart()) request(hero);
         if ('IntersectionObserver' in window) {
@@ -934,6 +983,11 @@
         } else secs.forEach(function (s) { request(s); });
         start();
       }
+      // страница открыта в этой вкладке: при возврате на неё — режим «сразу»
+      try { var seenNow = JSON.parse(sessionStorage.getItem('pt-seen') || '[]'); if (seenNow.indexOf(PAGE) < 0) { seenNow.push(PAGE); sessionStorage.setItem('pt-seen', JSON.stringify(seenNow)); } } catch (e) { /* хранилище запрещено */ }
+      // «Назад» из кэша браузера (bfcache): страница вернулась целиком, сборка уже готова — только возобновляем кадры.
+      // unload / beforeunload не вешаем: они отключают bfcache
+      window.addEventListener('pageshow', function (e) { if (e.persisted) { prev = performance.now(); start(); } });
       return {
         setActive: function (v) { active = v; if (v) start(); },
         destroy: function () {

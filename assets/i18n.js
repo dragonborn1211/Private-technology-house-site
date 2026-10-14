@@ -181,6 +181,9 @@
 
     // 05 — контакт и футер
     '05 / Контакт': '05 / Contact',
+    '03 / Контакт': '03 / Contact',
+    '04 / Контакт': '04 / Contact',
+    '03 / Цены': '03 / Pricing',
     'Построим что-то': 'Let’s build something',
     'своё.': 'private.',
     'Расскажите о задаче — предложим решение, сроки и смету.': 'Tell us about your task — we’ll propose a solution, timeline and estimate.',

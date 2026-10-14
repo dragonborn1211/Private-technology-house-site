@@ -41,7 +41,8 @@
 
   // активный раздел: пункт меню текущей секции — aria-current (секции «Работы» две: objects и automation)
   var links = Array.prototype.slice.call(root.querySelectorAll('[data-nav]'));
-  var KEY = { directions: 'directions', objects: 'objects', automation: 'objects', process: 'process', pricing: 'pricing' };
+  // «Процесс» живёт на странице услуг (пункт меню главной ведёт туда), «Цены» скрыты до утверждения цен
+  var KEY = { directions: 'directions', objects: 'objects', automation: 'objects', pricing: 'pricing' };
   var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')), inBand = [];
   function setActive() {
     var cur = null;

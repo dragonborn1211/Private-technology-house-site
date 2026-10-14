@@ -30,6 +30,11 @@
 // <details> открываются кликом и Enter, JSON-LD парсится и вопросы FAQPage = тексты <summary>, смена языка на лету,
 // переход по services.html#apps — модуль готов за 3.5 с. Раскладка обеих страниц 320–1920, курсив H2 в одну строку,
 // объект первого экрана не задевает вкладки и подпись, ↻ на телефоне только на первом экране.
+// Рисунки и переходы (TASK-glyphs-transitions.md): чертежи направлений линиями (вариант A) — шесть на главной, шесть
+// мини на странице услуг, без иконок в квадратах; прорисовываются со сборкой секции, после ↻ — заново, вне экрана на
+// паузе, при reduced motion — сразу на месте, без импульсов. «Процесс» только на странице услуг. Режимы сборки: полная
+// (первый визит / старше 30 дней), быстрая (переход между страницами, моложе 30 дней), сразу (страница уже открывалась
+// в этой вкладке, «Назад»), ?intro=…, запрещённое хранилище; нет unload / beforeunload.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -303,13 +308,13 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     const bar = () => page.evaluate(() => { const b = document.querySelector('[data-topbar]'); return { on: b.classList.contains('on') && getComputedStyle(b).visibility !== 'hidden', cur: [...b.querySelectorAll('[data-nav][aria-current="true"]')].map((a) => a.getAttribute('data-nav')).join(',') }; });
     const go = async (y) => { await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), y); await page.waitForTimeout(80); await run(150); await page.waitForTimeout(120); await run(50); };
     await go(0); const b0 = await bar();
-    const py = await page.evaluate(() => document.querySelector('#process').getBoundingClientRect().top + window.scrollY);
+    const py = await page.evaluate(() => document.querySelector('#automation').getBoundingClientRect().top + window.scrollY);
     await go(py + 300); const b1 = await bar();
     await go(py + 100); const b2 = await bar();
     await go(py + 400); const b3 = await bar();
     if (b0.on || b1.on || !b2.on || b3.on) fail(`липкая шапка: в первом экране ${b0.on}, вниз ${b1.on}, вверх ${b2.on}, снова вниз ${b3.on}`);
-    else if (b2.cur !== 'process') fail(`липкая шапка: активный пункт «${b2.cur}», ждали process`);
-    else console.log('  ✓ липкая шапка: скрыта в первом экране, вверх — видна (активен «Процесс»), вниз — прячется');
+    else if (b2.cur !== 'objects') fail(`липкая шапка: активный пункт «${b2.cur}», ждали objects`);
+    else console.log('  ✓ липкая шапка: скрыта в первом экране, вверх — видна (активен «Работы»), вниз — прячется');
   }
   if (tag === 'm390') {
     // меню на телефоне: Telegram и кнопка меню в шапке, Esc, фокус, пункт меню, язык
@@ -326,8 +331,8 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     await page.keyboard.press('Escape'); await run(400);
     const m2 = await st(), back = await page.evaluate((sel) => document.activeElement === document.querySelector(sel), opener);
     await page.click(opener); await run(400);
-    await page.click('[data-menu] .menu-nav a[href="#process"]'); await run(2600); await page.waitForTimeout(150); await run(100);
-    const m3 = await st(), ptop = await page.evaluate(() => Math.round(document.querySelector('#process').getBoundingClientRect().top));
+    await page.click('[data-menu] .menu-nav a[href="#objects"]'); await run(2600); await page.waitForTimeout(150); await run(100);
+    const m3 = await st(), ptop = await page.evaluate(() => Math.round(document.querySelector('#objects').getBoundingClientRect().top));
     await page.click('[data-topbar] [data-menu-open]'); await run(400);
     await page.click('[data-menu] [data-lang="en"]'); await run(4200);
     const m4 = await st();
@@ -338,7 +343,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     if (!m1.on || !m1.lock || !m1.inMenu || exp !== 'true') bad.push(`открытие: ${JSON.stringify(m1)}, aria-expanded ${exp}`);
     if (under !== 'hidden') bad.push('под открытым меню видна страница (светлое пятно)');
     if (m2.on || m2.lock || !back) bad.push(`Esc: меню ${m2.on ? 'открыто' : 'закрыто'}, фокус на кнопке ${back}`);
-    if (m3.on || Math.abs(ptop) > 8) bad.push(`пункт меню: меню ${m3.on ? 'открыто' : 'закрыто'}, «Процесс» на ${ptop}px`);
+    if (m3.on || Math.abs(ptop) > 8) bad.push(`пункт меню: меню ${m3.on ? 'открыто' : 'закрыто'}, «Работы» на ${ptop}px`);
     if (m4.lang !== 'en') bad.push(`RU/EN в меню: lang=${m4.lang}`);
     if (bad.length) fail('меню на телефоне: ' + bad.join('; '));
     else console.log('  ✓ меню на телефоне: открывается, Esc закрывает и возвращает фокус, пункт ведёт к секции, RU/EN переключает язык');
@@ -449,7 +454,9 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
       h2: d.querySelector('h2').textContent.replace(/\s+/g, ' ').trim(), nums: [...d.querySelectorAll('.mono')].filter((m) => /^0[1-4]$/.test(m.textContent.trim())).length,
       old: ['Лендинги и сайты-визитки', '1С-Битрикс'].filter((t) => document.body.innerText.includes(t)),
       pricing: !!document.querySelector('[data-sec="pricing"]'), tpl: !!(document.querySelector('template[data-hidden-section="pricing"]') || { content: document.createDocumentFragment() }).content.querySelector('[data-sec="pricing"]'),
-      pricingLinks: all('a[href="#pricing"]').length, dead: all('a[href$="objects.html"]').length, canonical: (document.querySelector('link[rel="canonical"]') || {}).href || '' };
+      pricingLinks: all('a[href="#pricing"]').length, dead: all('a[href$="objects.html"]').length, canonical: (document.querySelector('link[rel="canonical"]') || {}).href || '',
+      glyphs: d.querySelectorAll('a.svc .glyph').length, icons: all('.svc-ic').length, process: !!document.querySelector('[data-sec="process"]'),
+      procLinks: all('a').filter((a) => a.textContent.trim() === 'Процесс').map((a) => a.getAttribute('href')), contact: document.querySelector('#contact .mono.k').textContent.trim() };
   });
   const bad = [];
   if (r.cards.length !== 6 || r.cards.some((h) => !/^services\.html#/.test(h) || !ids.has(h.split('#')[1]))) bad.push(`карточки: ${r.cards.join(', ')}`);
@@ -460,12 +467,17 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
   if (r.pricing || !r.tpl || r.pricingLinks) bad.push(`«Цены»: секция на странице ${r.pricing}, в <template> ${r.tpl}, ссылок #pricing ${r.pricingLinks}`);
   if (r.dead) bad.push(`ссылок на objects.html: ${r.dead}`);
   if (r.canonical !== 'https://privatechouse.ru/') bad.push(`canonical «${r.canonical}»`);
+  if (r.glyphs !== 6 || r.icons) bad.push(`рисунков в карточках ${r.glyphs}, иконок в квадратах ${r.icons}`);
+  if (r.process || r.procLinks.length !== 3 || r.procLinks.some((h) => h !== 'services.html#process') || r.contact !== '03 / Контакт') bad.push(`«Процесс»: секция ${r.process}, ссылки ${r.procLinks.join(', ')}, контакт «${r.contact}»`);
+  const sv = readFileSync(path.join(root, 'services.html'), 'utf8');
+  if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 6 || /svc-ic/.test(sv) || (sv.match(/<a href="#process"[^>]*>Процесс<\/a>/g) || []).length !== 3) bad.push('страница услуг: шесть мини-рисунков, нет иконок, «Процесс» → #process');
+  for (const f of readdirSync(path.join(root, 'assets')).filter((x) => x.endsWith('.js'))) if (/addEventListener\(\s*['"](before)?unload['"]/.test(readFileSync(path.join(root, 'assets', f), 'utf8'))) bad.push(`${f}: unload / beforeunload отключает кэш «Назад»`);
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8'), rb = readFileSync(path.join(root, 'robots.txt'), 'utf8');
   if (!sm.includes('<loc>https://privatechouse.ru/</loc>') || !sm.includes('<loc>https://privatechouse.ru/services.html</loc>') || (sm.match(/hreflang="en"/g) || []).length !== 2) bad.push('sitemap.xml: нет страницы или EN-версии');
   if (!/User-agent: \*/.test(rb) || !/Sitemap: https:\/\/privatechouse\.ru\/sitemap\.xml/.test(rb)) bad.push('robots.txt');
   await page.close();
   if (bad.length) fail('главная: ' + bad.join('; '));
-  else console.log('  ✓ «Делаем один раз. Держим всегда.»: шесть карточек на существующие якоря services.html, «Все услуги», без старых пунктов; «Цены» в <template> и без пункта меню; нет objects.html; canonical, sitemap.xml, robots.txt');
+  else console.log('  ✓ «Делаем один раз. Держим всегда.»: шесть карточек с рисунками на существующие якоря services.html, «Все услуги», без старых пунктов и иконок в квадратах; «Цены» в <template>; «Процесс» → services.html#process, контакт «03 / Контакт»; нет objects.html и unload; canonical, sitemap.xml, robots.txt');
 }
 
 // Страница услуг: как главная — сборка всех секций на трёх ширинах RU и двух EN, ошибки консоли, кириллица в EN.
@@ -574,6 +586,133 @@ for (const w of [1440, 390]) {
   await page.evaluate(() => document.querySelectorAll('img[loading="lazy"]').forEach((i) => { i.loading = 'eager'; })); await page.waitForTimeout(300);
   await fullShot(page, path.join(shots, `services-${w}.png`));
   await ctx.close();
+}
+
+// Рисунки направлений (вариант A — чертежи линиями): после сборки секции прорисованы (is-on, линии дорисованы, есть
+// пиксели), вне экрана на паузе, после ↻ — заново; на странице услуг — шесть мини; reduced motion — сразу, без импульсов.
+console.log('\nрисунки направлений');
+{
+  const bad = [];
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const errs = []; page.on('pageerror', (e) => errs.push(e.message));
+  await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T12:00:01Z'));
+  await page.goto('file://' + file);
+  const run = (ms) => page.clock.runFor(ms);
+  await run(4000);
+  await page.evaluate(() => window.scrollTo({ top: document.querySelector('#directions').getBoundingClientRect().top + scrollY + 280, behavior: 'instant' }));
+  await page.waitForTimeout(150); await run(3200); await page.waitForTimeout(3300);   // CSS-прорисовка идёт в реальном времени
+  const g = await page.evaluate(() => [...document.querySelectorAll('#directions .glyph')].map((el) => {
+    const ds = [...el.querySelectorAll('.d')].filter((d) => !d.closest('.type')), undrawn = ds.filter((d) => parseFloat(getComputedStyle(d).strokeDashoffset) > 0.02).length, r = el.getBoundingClientRect();
+    return { k: el.dataset.glyph, on: el.classList.contains('is-on'), vis: el.classList.contains('is-vis'), undrawn, n: ds.length, box: [r.left, r.top, r.width, r.height] };
+  }));
+  for (const x of g.filter((y) => y.box[1] + y.box[3] > 0 && y.box[1] < 900)) {
+    const png = (await page.screenshot({ clip: { x: x.box[0], y: Math.max(0, x.box[1]), width: x.box[2], height: Math.min(x.box[3], 900 - Math.max(0, x.box[1])) } })).toString('base64');
+    x.px = await page.evaluate(async (b64) => { const im = new Image(); im.src = 'data:image/png;base64,' + b64; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const q = c.getContext('2d'); q.drawImage(im, 0, 0); const d = q.getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 300) n++; return n; }, png);
+  }
+  if (g.length !== 6 || g.some((x) => !x.on || x.undrawn)) bad.push(`после сборки: ${g.map((x) => `${x.k} ${x.on ? 'on' : 'off'} недорисовано ${x.undrawn}/${x.n}`).join(', ')}`);
+  if (g.some((x) => x.px != null && x.px < 40)) bad.push(`пустые рисунки на экране: ${g.filter((x) => x.px != null && x.px < 40).map((x) => x.k).join(', ')}`);
+  await page.screenshot({ path: path.join(shots, 'd1440-glyphs.png') });
+  // вне экрана — на паузе
+  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' })); await page.waitForTimeout(250);
+  const off = await page.evaluate(() => [...document.querySelectorAll('#directions .glyph')].filter((el) => el.classList.contains('is-vis') || !el.querySelector('svg').animationsPaused()).length);
+  if (off) bad.push(`вне экрана не на паузе: ${off}`);
+  // «Пересобрать блок»: рисунок гаснет вместе с секцией и прорисовывается заново
+  await page.evaluate(() => { window.scrollTo({ top: document.querySelector('#directions').getBoundingClientRect().top + scrollY + 280, behavior: 'instant' }); window.__glOff = 0; document.querySelectorAll('#directions .glyph').forEach((el) => new MutationObserver(() => { if (!el.classList.contains('is-on')) window.__glOff++; }).observe(el, { attributes: true, attributeFilter: ['class'] })); });
+  await page.waitForTimeout(200); await run(3000);
+  await page.locator('[data-pt-replay]:visible').first().click(); await run(9000);
+  const rp = await page.evaluate(() => ({ off: window.__glOff, on: [...document.querySelectorAll('#directions .glyph')].filter((el) => el.classList.contains('is-on')).length }));
+  if (!rp.off || rp.on !== 6) bad.push(`после ↻: гасли ${rp.off} раз, прорисованы ${rp.on} из 6`);
+  errs.forEach((e) => bad.push(e));
+  await page.close();
+  // страница услуг: шесть мини-рисунков у подписей модулей
+  {
+    const pg = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await pg.goto('file://' + path.join(root, 'services.html') + '?intro=instant'); await pg.waitForTimeout(300);
+    const m = await pg.evaluate(() => ({ n: document.querySelectorAll('.sv-lab .glyph-mini').length, on: document.querySelectorAll('.sv-lab .glyph-mini.is-on.is-now').length, icons: document.querySelectorAll('.svc-ic').length, dots: document.querySelectorAll('.sv-jump .sv-dot').length }));
+    if (m.n !== 6 || m.on !== 6 || m.icons || m.dots !== 6) bad.push(`страница услуг: мини ${m.n}, на месте ${m.on}, иконок ${m.icons}, точек в переходах ${m.dots}`);
+    await pg.evaluate(() => { const e = document.getElementById('sites'); window.scrollTo({ top: e.getBoundingClientRect().top + scrollY - 20, behavior: 'instant' }); }); await pg.waitForTimeout(300);
+    await pg.screenshot({ path: path.join(shots, 's1440-sites.png') });
+    await pg.close();
+  }
+  // reduced motion: сразу на месте, импульсов нет
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    const pg = await ctx.newPage();
+    await pg.goto('file://' + file); await pg.waitForTimeout(300);
+    const r = await pg.evaluate(() => ({ now: document.querySelectorAll('.glyph.is-now').length, off: [...document.querySelectorAll('.glyph .d')].filter((d) => parseFloat(getComputedStyle(d).strokeDashoffset) > 0.01).length, pulses: [...document.querySelectorAll('.glyph .pulse')].filter((p) => getComputedStyle(p).display !== 'none').length }));
+    if (r.now !== 6 || r.off || r.pulses) bad.push(`reduced motion: на месте ${r.now}, не прорисовано ${r.off}, импульсов видно ${r.pulses}`);
+    await ctx.close();
+  }
+  if (bad.length) fail('рисунки: ' + bad.join('; '));
+  else console.log('  ✓ шесть рисунков прорисовываются со сборкой секции и не пустые, вне экрана на паузе, после ↻ — заново; на странице услуг шесть мини и точки в переходах; reduced motion — сразу, без импульсов');
+}
+
+// Режимы сборки: каждый сценарий — отдельный контекст браузера; хранилища задаются addInitScript. Время виртуальное
+// (2026-01-01 12:00 UTC), поэтому и метки pt-intro — от него.
+console.log('\nрежимы сборки: полная / быстрая / сразу');
+{
+  const T0 = Date.parse('2026-01-01T12:00:00Z'), bad = [], ok = [];
+  const scene = async (name, url, init, fn) => {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    if (init) await ctx.addInitScript(init);
+    const page = await ctx.newPage(), errs = [];
+    page.on('pageerror', (e) => errs.push(e.message)); page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) errs.push(m.text()); });
+    await page.clock.install({ time: new Date(T0) });
+    await page.goto('file://' + path.join(root, url));
+    const mode = () => page.evaluate(() => document.getElementById('pt-site').getAttribute('data-intro'));
+    try { const r = await fn(page, mode); if (r) bad.push(`${name}: ${r}`); else ok.push(name); } catch (e) { bad.push(`${name}: ${e.message.split('\n')[0]}`); }
+    errs.forEach((e) => bad.push(`${name}: ${e}`));
+    await ctx.close();
+  };
+  const h1on = (page) => page.evaluate(() => [...document.querySelectorAll('h1 .ptx')].every((el) => getComputedStyle(el).opacity === '1'));
+  const doneAll = (page) => page.evaluate(() => [...document.querySelectorAll('[data-sec]')].every((x) => x.classList.contains('s-done')));
+  await scene('пусто → полная', 'index.html', '', async (page, mode) => {
+    await page.clock.runFor(1450);
+    const r = { m: await mode(), intro: await page.evaluate(() => localStorage.getItem('pt-intro')), lines: await page.evaluate(() => document.querySelector('[data-scan-beam]').classList.contains('run')) };
+    return r.m === 'full' && r.intro && r.lines ? '' : JSON.stringify(r);
+  });
+  const fastCheck = async (page, mode) => {
+    await page.clock.runFor(100); await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(shots, 's1440-fast-0.4.png') });
+    await page.waitForTimeout(400);
+    const r = { m: await mode(), h1: await h1on(page), lines: await page.evaluate(() => document.querySelector('[data-scan-beam]').classList.contains('run')) };
+    const first = await page.evaluate(() => { const s = document.querySelectorAll('[data-sec]')[1]; window.scrollTo({ top: s.getBoundingClientRect().top + scrollY - 40, behavior: 'instant' }); return s.dataset.sec; });
+    await page.waitForTimeout(150); await page.clock.runFor(900);
+    r.sec = await page.evaluate((n) => document.querySelector(`[data-sec="${n}"]`).classList.contains('s-done'), first);
+    return r.m === 'fast' && r.h1 && !r.lines && r.sec ? '' : JSON.stringify(r);
+  };
+  await scene('pt-intro −1 день → быстрая', 'services.html', `localStorage.setItem('pt-intro', '${T0 - 864e5}')`, fastCheck);
+  await scene('pt-intro −31 день → полная', 'services.html', `localStorage.setItem('pt-intro', '${T0 - 31 * 864e5}')`, async (page, mode) => { await page.clock.runFor(200); const m = await mode(); return m === 'full' ? '' : m; });
+  await scene('страница в pt-seen → сразу', 'index.html', `localStorage.setItem('pt-intro', '${T0 - 864e5}'); sessionStorage.setItem('pt-seen', '["index"]')`, async (page, mode) => {
+    const r = { m: await mode(), all: await doneAll(page) };
+    await page.waitForTimeout(150);
+    r.h1 = await h1on(page);
+    return r.m === 'instant' && r.all && r.h1 ? '' : JSON.stringify(r);
+  });
+  await scene('главная → «Все услуги» → назад → снова услуги', 'index.html', '', async (page, mode) => {
+    await page.clock.runFor(6500);
+    await page.evaluate(() => document.querySelector('#directions .more a[href="services.html"]').click());
+    await page.waitForURL(/services\.html/);
+    const f = { m: await mode() };
+    await page.clock.runFor(100); await page.waitForTimeout(700); f.h1 = await h1on(page);
+    await page.goBack(); await page.clock.runFor(100); await page.waitForTimeout(100);
+    const b = { m: await mode(), all: await doneAll(page) };
+    await page.goForward(); await page.clock.runFor(100); await page.waitForTimeout(100);
+    const c = { m: await mode(), all: await doneAll(page) };
+    return f.m === 'fast' && f.h1 && b.all && c.m === 'instant' && c.all ? '' : JSON.stringify({ f, b, c });
+  });
+  await scene('«Процесс» с главной → услуги, не под шапкой', 'index.html', '', async (page) => {
+    await page.clock.runFor(6500);
+    await page.click('.hero-hdr .nav a[href="services.html#process"]'); await page.waitForURL(/services\.html#process/);
+    await page.clock.runFor(1000); await page.waitForTimeout(100);
+    const r = await page.evaluate(() => ({ done: document.querySelector('[data-sec="process"]').classList.contains('s-done'), h2: Math.round(document.querySelector('[data-sec="process"] h2').getBoundingClientRect().top) }));
+    return r.done && r.h2 >= 64 && r.h2 < 900 ? '' : JSON.stringify(r);
+  });
+  for (const m of ['full', 'fast', 'instant']) await scene(`?intro=${m}`, `index.html?intro=${m}`, `sessionStorage.setItem('pt-seen', '["index"]')`, async (page, mode) => { await page.clock.runFor(100); const got = await mode(); return got === m ? '' : got; });
+  await scene('хранилище запрещено → полная', 'index.html', `Object.defineProperty(window, 'localStorage', { get() { throw new Error('denied'); } }); Object.defineProperty(window, 'sessionStorage', { get() { throw new Error('denied'); } });`, async (page, mode) => { await page.clock.runFor(4000); const r = { m: await mode(), hero: await page.evaluate(() => document.querySelector('[data-sec="hero"]').classList.contains('s-done')) }; return r.m === 'full' && r.hero ? '' : JSON.stringify(r); });
+  if (bad.length) fail('режимы: ' + bad.join(' | '));
+  else console.log(`  ✓ ${ok.join('; ')}`);
 }
 
 // Раскладка на промежуточных ширинах: ни кнопка, ни ссылка, ни строка текста не выходят за край окна. Документ вбок
