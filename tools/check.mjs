@@ -649,8 +649,10 @@ console.log('\nрисунки направлений');
 }
 
 // Режимы сборки: каждый сценарий — отдельный контекст браузера; хранилища задаются addInitScript. Время виртуальное
-// (2026-01-01 12:00 UTC), поэтому и метки pt-intro — от него.
-console.log('\nрежимы сборки: полная / быстрая / сразу');
+// (2026-01-01 12:00 UTC), поэтому и метки pt-intro — от него. AUTO_MODE в engine.js выключен (владелец проверяет
+// полную сборку) — тогда без ?intro= везде полная, а быстрая проверяется через ?intro=fast.
+const AUTO = /var AUTO_MODE = true/.test(readFileSync(path.join(root, 'assets', 'engine.js'), 'utf8'));
+console.log(`\nрежимы сборки: полная / быстрая / сразу (автовыбор ${AUTO ? 'включён' : 'выключен — всегда полная'})`);
 {
   const T0 = Date.parse('2026-01-01T12:00:00Z'), bad = [], ok = [];
   const scene = async (name, url, init, fn) => {
@@ -670,8 +672,9 @@ console.log('\nрежимы сборки: полная / быстрая / сра
   await scene('пусто → полная', 'index.html', '', async (page, mode) => {
     await page.clock.runFor(1450);
     const r = { m: await mode(), intro: await page.evaluate(() => localStorage.getItem('pt-intro')), lines: await page.evaluate(() => document.querySelector('[data-scan-beam]').classList.contains('run')) };
-    return r.m === 'full' && r.intro && r.lines ? '' : JSON.stringify(r);
+    return r.m === 'full' && (r.intro || !AUTO) && r.lines ? '' : JSON.stringify(r);
   });
+  const isFull = async (page, mode) => { await page.clock.runFor(200); const m = await mode(); return m === 'full' ? '' : m; };
   const fastCheck = async (page, mode) => {
     await page.clock.runFor(100); await page.waitForTimeout(300);
     await page.screenshot({ path: path.join(shots, 's1440-fast-0.4.png') });
@@ -682,15 +685,16 @@ console.log('\nрежимы сборки: полная / быстрая / сра
     r.sec = await page.evaluate((n) => document.querySelector(`[data-sec="${n}"]`).classList.contains('s-done'), first);
     return r.m === 'fast' && r.h1 && !r.lines && r.sec ? '' : JSON.stringify(r);
   };
-  await scene('pt-intro −1 день → быстрая', 'services.html', `localStorage.setItem('pt-intro', '${T0 - 864e5}')`, fastCheck);
+  await scene('?intro=fast → быстрая', 'services.html?intro=fast', '', fastCheck);
+  await scene(`pt-intro −1 день → ${AUTO ? 'быстрая' : 'полная'}`, 'services.html', `localStorage.setItem('pt-intro', '${T0 - 864e5}')`, AUTO ? fastCheck : isFull);
   await scene('pt-intro −31 день → полная', 'services.html', `localStorage.setItem('pt-intro', '${T0 - 31 * 864e5}')`, async (page, mode) => { await page.clock.runFor(200); const m = await mode(); return m === 'full' ? '' : m; });
-  await scene('страница в pt-seen → сразу', 'index.html', `localStorage.setItem('pt-intro', '${T0 - 864e5}'); sessionStorage.setItem('pt-seen', '["index"]')`, async (page, mode) => {
+  await scene(`страница в pt-seen → ${AUTO ? 'сразу' : 'полная'}`, 'index.html', `localStorage.setItem('pt-intro', '${T0 - 864e5}'); sessionStorage.setItem('pt-seen', '["index"]')`, !AUTO ? isFull : async (page, mode) => {
     const r = { m: await mode(), all: await doneAll(page) };
     await page.waitForTimeout(150);
     r.h1 = await h1on(page);
     return r.m === 'instant' && r.all && r.h1 ? '' : JSON.stringify(r);
   });
-  await scene('главная → «Все услуги» → назад → снова услуги', 'index.html', '', async (page, mode) => {
+  if (AUTO) await scene('главная → «Все услуги» → назад → снова услуги', 'index.html', '', async (page, mode) => {
     await page.clock.runFor(6500);
     await page.evaluate(() => document.querySelector('#directions .more a[href="services.html"]').click());
     await page.waitForURL(/services\.html/);
@@ -705,7 +709,7 @@ console.log('\nрежимы сборки: полная / быстрая / сра
   await scene('«Процесс» с главной → услуги, не под шапкой', 'index.html', '', async (page) => {
     await page.clock.runFor(6500);
     await page.click('.hero-hdr .nav a[href="services.html#process"]'); await page.waitForURL(/services\.html#process/);
-    await page.clock.runFor(1000); await page.waitForTimeout(100);
+    await page.clock.runFor(3000); await page.waitForTimeout(100);
     const r = await page.evaluate(() => ({ done: document.querySelector('[data-sec="process"]').classList.contains('s-done'), h2: Math.round(document.querySelector('[data-sec="process"] h2').getBoundingClientRect().top) }));
     return r.done && r.h2 >= 64 && r.h2 < 900 ? '' : JSON.stringify(r);
   });

@@ -71,11 +71,16 @@
       // на месте с первого кадра, движение (объект, пыль, сцены, рисунки) идёт. ?intro=full|fast|instant — принудительно
       // (проверки, показ клиенту). Хранилище недоступно — full. Reduced motion — как раньше (rm). «Пересобрать блок» —
       // всегда полная показательная сборка. PAGE — страница без языка и якоря: / и /index.html — одна.
+      // AUTO_MODE — выбирать режим сам (по pt-seen и pt-intro). Сейчас выключен по просьбе владельца: он проверяет полную
+      // сборку, а память режимов показывала ему только быструю и «сразу». Пока false — всегда полная (кроме ?intro=… и
+      // reduced motion), хранилища не трогаем. Включить — true.
+      var AUTO_MODE = false;
       var FAST_K = 0.3, FAST_LD = 0.6, PAGE = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/, '');
       var MODE = (function () {
         var q = /[?&]intro=(full|fast|instant)(?:&|$)/.exec(location.search);
         if (rm) return 'rm';
         if (q) return q[1];
+        if (!AUTO_MODE) return 'full';
         try {
           var seen = JSON.parse(sessionStorage.getItem('pt-seen') || '[]');
           if (seen.indexOf(PAGE) >= 0) return 'instant';
@@ -984,7 +989,7 @@
         start();
       }
       // страница открыта в этой вкладке: при возврате на неё — режим «сразу»
-      try { var seenNow = JSON.parse(sessionStorage.getItem('pt-seen') || '[]'); if (seenNow.indexOf(PAGE) < 0) { seenNow.push(PAGE); sessionStorage.setItem('pt-seen', JSON.stringify(seenNow)); } } catch (e) { /* хранилище запрещено */ }
+      if (AUTO_MODE) try { var seenNow = JSON.parse(sessionStorage.getItem('pt-seen') || '[]'); if (seenNow.indexOf(PAGE) < 0) { seenNow.push(PAGE); sessionStorage.setItem('pt-seen', JSON.stringify(seenNow)); } } catch (e) { /* хранилище запрещено */ }
       // «Назад» из кэша браузера (bfcache): страница вернулась целиком, сборка уже готова — только возобновляем кадры.
       // unload / beforeunload не вешаем: они отключают bfcache
       window.addEventListener('pageshow', function (e) { if (e.persisted) { prev = performance.now(); start(); } });
