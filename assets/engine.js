@@ -53,6 +53,14 @@
       // settleFn — как мгновенно довести до конца сборку из нескольких секций («Пересобрать блок» до постановки
       // в очередь, смена языка), если её прервали кликом (skipNow) или прокруткой (abortRun). BEAM — проход луча, с.
       var settleFn = null, BEAM = 1.2;
+      // Вступление первого экрана (просьба владельца). INTRO_LINES — две быстрые линии «рисуют» контент: вертикальная
+      // (тот же луч, что при смене языка) на стадии каркаса идёт слева направо, горизонтальная на стадии стилей —
+      // сверху вниз; за ними волной летят частицы и проявляются каркас и рамки (CSS --ld). false — прежняя
+      // линия-сканер .scan. BURST_FULL — вспышка при загрузке разлетается на весь экран; false — прежний сгусток в
+      // центре. LINE — проход линии при темпе 1, с (умножается на HERO_K / PRESENT_K). heroSweep — волна частиц первого
+      // экрана в такт с линией (sweep).
+      var INTRO_LINES = true, BURST_FULL = true, LINE = 1.0, heroSweep = null, burstEnd = 0, beamH = root.querySelector('[data-scan-beam]');
+      if (INTRO_LINES) root.classList.add('pt-lines');
       try { lite = +sessionStorage.getItem('pt-lite') || 0; } catch (e) {}
       if (lite >= 2) dprCap = 1;
 
@@ -281,7 +289,9 @@
           SW[i] = now + d * 1000;
         }
       }
-      function sweep(s, inst, spread) { return s === hero ? { instant: inst, axis: 'x', spread: spread * 0.8, rnd: 0.1 } : { instant: inst, axis: 'y', y0: s.geo.box.y, h: Math.min(s.geo.box.h, VH * 1.4), spread: spread * runK, rnd: 0.12 * runK }; }
+      function sweep(s, inst, spread) {
+        if (s === hero && heroSweep) return heroSweep.axis === 'x' ? { instant: inst, axis: 'x', spread: heroSweep.spread, rnd: 0.06 } : { instant: inst, axis: 'y', y0: -rootTop, h: VH, spread: heroSweep.spread, rnd: 0.06 };
+        return s === hero ? { instant: inst, axis: 'x', spread: spread * 0.8, rnd: 0.1 } : { instant: inst, axis: 'y', y0: s.geo.box.y, h: Math.min(s.geo.box.h, VH * 1.4), spread: spread * runK, rnd: 0.12 * runK }; }
       function phGrid(s, idx, inst) {
         var cols = [];
         Array.prototype.forEach.call(root.querySelectorAll('.pt-col'), function (el) { var r = el.getBoundingClientRect(); if (r.width > 0) cols.push(r.left - rootLeft, r.right - rootLeft); });
@@ -369,6 +379,17 @@
           A[i] = AT[i] = NA[i] = 0; SZ[i] = NS[i] = 1.5; M[i] = NM[i] = 1; SW[i] = 0; TP[i] = 0;
         }
       }
+      // Линии вступления. line — запустить луч на sec секунд; linesOff — погасить (сборку первого экрана довели или
+      // прервали); lineDelays — элемент проявляется, когда до него доходит линия: задержка по его положению (--ld).
+      function line(el, sec) { if (!el) return; el.style.setProperty('--beam', sec + 's'); el.classList.remove('run'); void el.offsetWidth; el.classList.add('run'); }
+      function linesOff() { heroSweep = null; if (!INTRO_LINES) return; if (beamEl) beamEl.classList.remove('run'); if (beamH) beamH.classList.remove('run'); }
+      function lineDelays(sel, axis, sec) {
+        var vw = Math.max(1, window.innerWidth);
+        Array.prototype.forEach.call(hero.el.querySelectorAll(sel), function (el) {
+          var r = el.getBoundingClientRect(), u = axis === 'x' ? r.left / vw : r.top / Math.max(1, VH);
+          el.style.setProperty('--ld', (clamp(u, 0, 1) * sec).toFixed(3) + 's');
+        });
+      }
       // Первый экран помечен собранным без сборки: включаем сетку, объект первого экрана сразу стоит на месте.
       function skipHero() {
         seed(); root.classList.add('g-on');
@@ -378,9 +399,17 @@
       function burst() {
         booted = true;
         var hr = hero.el.getBoundingClientRect(), cx = W / 2, cy = hr.top - rootTop + Math.min(VH, hr.height) * 0.46;
+        // BURST_FULL: круглая вспышка растёт и к стадии сетки (0.6 · HERO_K с) накрывает весь экран — круг радиусом в
+        // полдиагонали, точки равномерно по кругу, скорость с разбросом (край рваный). Свободная частица за n кадров при
+        // затухании 0.975 проходит v · (1 − 0.975ⁿ) / 0.025 — отсюда скорость. Что улетело за край, пока идёт вспышка,
+        // не переносится на другую сторону (burstEnd), а потом слетается к сетке.
+        var reach = (1 - Math.pow(0.975, 0.6 * HERO_K * 60)) / 0.025, R = Math.sqrt(W * W + VH * VH) / 2;
+        burstEnd = performance.now() + 0.6 * HERO_K * 1000 + 150;
         for (var i = 0; i < N; i++) {
           var p = i * 2, c = i * 3, a = Math.random() * 6.2832, rr = Math.random() * 4, s = 2 + Math.pow(Math.random(), 0.7) * 18;
-          P[p] = cx + Math.cos(a) * rr; P[p + 1] = cy + Math.sin(a) * rr; V[p] = Math.cos(a) * s; V[p + 1] = Math.sin(a) * s;
+          P[p] = cx + Math.cos(a) * rr; P[p + 1] = cy + Math.sin(a) * rr;
+          if (BURST_FULL) { var d = R * Math.sqrt(Math.random()) * (0.85 + Math.random() * 0.3) / reach; V[p] = Math.cos(a) * d; V[p + 1] = Math.sin(a) * d; }
+          else { V[p] = Math.cos(a) * s; V[p + 1] = Math.sin(a) * s; }
           var col = Math.random() < 0.25 ? COL.frost : DUST[(Math.random() * DUST.length) | 0];
           C[c] = CT[c] = NC[c] = col[0] / 255; C[c + 1] = CT[c + 1] = NC[c + 1] = col[1] / 255; C[c + 2] = CT[c + 2] = NC[c + 2] = col[2] / 255;
           A[i] = 0.95; AT[i] = NA[i] = 0.55; SZ[i] = NS[i] = 2 + Math.random() * 1.4; M[i] = NM[i] = 1; SW[i] = 0;
@@ -501,7 +530,7 @@
           var ex = x - mx, ey = y - my, e2 = ex * ex + ey * ey;
           if (e2 < R2) { var ed = Math.sqrt(e2) || 1, es = (1 - ed / R) * 1.6 * f; vx += ex / ed * es; vy += ey / ed * es; }
           x += vx * f; y += vy * f;
-          if (M[i]) { if (x < -4) x += W + 8; else if (x > W + 4) x -= W + 8; if (y < vt - 30) y += VH + 60; else if (y > vt + VH + 30) y -= VH + 60; }
+          if (M[i] && now > burstEnd) { if (x < -4) x += W + 8; else if (x > W + 4) x -= W + 8; if (y < vt - 30) y += VH + 60; else if (y > vt + VH + 30) y -= VH + 60; }
           P[p] = x; P[p + 1] = y; V[p] = vx; V[p + 1] = vy;
           C[c] += (CT[c] - C[c]) * ca; C[c + 1] += (CT[c + 1] - C[c + 1]) * ca; C[c + 2] += (CT[c + 2] - C[c + 2]) * ca;
           A[i] += (AT[i] - A[i]) * aa;
@@ -622,7 +651,7 @@
         if (pend) { pend(); phFade(BLD); log(s, '✓ ready'); setProg(); if (!queue.length) phSettle(BLD); pump(); return; }
         setStage(s, 'done'); s.state = 'done'; s.replay = false;
         phFade(BLD);
-        if (s === hero) { root.classList.add('g-on'); if (heroObj) heroObj.start(false); if (!pultShown && !replaying) pultLater(); }
+        if (s === hero) { linesOff(); root.classList.add('g-on'); if (heroObj) heroObj.start(false); if (!pultShown && !replaying) pultLater(); }
         log(s, '✓ ready'); setProg(); wakeSites(s.el);
         finish(s);
       }
@@ -638,12 +667,19 @@
       function atRun(sec, fn) { var my = runId; at(sec, function () { if (my === runId) fn(); }); }
       function runHero(s, replay) {
         runId++; running = s; s.state = 'run'; s.replay = false; measure(s);
-        var o = replay ? -0.6 : 0, K = replay ? PRESENT_K : HERO_K;
+        var o = replay ? -0.6 : 0, K = replay ? PRESENT_K : HERO_K, LD = LINE * K;
         if (!replay) { burst(); log(s, 'boot · ' + fmtN() + ' particles'); }
         atRun((0.6 + o) * K, function () { root.classList.add('g-on'); measure(s); phGrid(s, ALL, false); log(s, '01 · grid.init(12)'); });
-        atRun((1.6 + o) * K, function () { setStage(s, 'wire'); measure(s); phWire(s, ALL, false); log(s, '02 · layout.measure()'); });
-        atRun((2.65 + o) * K, function () { setStage(s, 'skel'); phSkel(s, ALL, false); log(s, '03 · styles.apply(glacier)'); });
-        atRun((3.7 + o) * K, function () { setStage(s, 'text'); measure(s); phText(s, ALL, false); log(s, '04 · type.crystallize()'); });
+        // каркас: вертикальная линия слева направо, за ней уголки блоков и частицы; стили: горизонтальная — сверху вниз
+        atRun((1.6 + o) * K, function () {
+          if (INTRO_LINES) { lineDelays('.wf', 'x', LD); heroSweep = { axis: 'x', spread: LD }; line(beamEl, LD); }
+          setStage(s, 'wire'); measure(s); phWire(s, ALL, false); log(s, '02 · layout.measure()');
+        });
+        atRun((2.65 + o) * K, function () {
+          if (INTRO_LINES) { lineDelays('.fr, .an, .hero-obj, .nb .ar, .logo-d, .ico svg, .burger', 'y', LD); heroSweep = { axis: 'y', spread: LD }; line(beamH, LD); }
+          setStage(s, 'skel'); phSkel(s, ALL, false); log(s, '03 · styles.apply(glacier)');
+        });
+        atRun((3.7 + o) * K, function () { heroSweep = null; setStage(s, 'text'); measure(s); phText(s, ALL, false); log(s, '04 · type.crystallize()'); });
         atRun((5.25 + o) * K, function () { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (heroObj) { if (replay) heroObj.replay(); else heroObj.start(false); } if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); });
         atRun((5.8 + o) * K, function () { finish(s); });
       }
@@ -665,7 +701,7 @@
         var pend = settleFn; settleFn = null;
         if (pend) { pend(); phFade(BLD); setProg(); pump(); return; }
         setStage(s, 'done'); s.state = 'done'; s.replay = false; setProg(); wakeSites(s.el);
-        if (s === hero) skipHero();
+        if (s === hero) { linesOff(); skipHero(); }
         pump();
       }
       function pump() {

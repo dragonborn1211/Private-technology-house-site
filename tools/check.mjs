@@ -22,7 +22,8 @@
 // прячутся по ширине панели (< 540 px); английская версия; reduced motion — цвет без анимации, автосмены нет;
 // панель целиком в первом экране на 1280×720 и 1440×900; скриншот паузы, «пауза» не лежит на кольце.
 // Шапка первого экрана снова собирается из частиц. Смена языка гасит всё сразу (текст, рамки, панель, объект, шапку)
-// и собирает заново.
+// и собирает заново. Вступление: вспышка на весь экран, вертикальная линия на каркасе, горизонтальная на стилях,
+// прежний сканер .scan не идёт; кадры d1440-intro-*.png.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -455,7 +456,19 @@ console.log('\nпервый экран: шапка, заголовок, пане
       const pm = await page.evaluate(() => ({ mini: document.querySelector('[data-pult]').classList.contains('is-mini'), open: document.querySelector('[data-pult]').classList.contains('is-open') }));
       if (!pm.mini || pm.open) bad.push(`${tag}: пульт не свёрнут при прокрутке сразу после первого экрана`);
     } else {
-      await run(6200); await page.waitForTimeout(150);
+      if (w === 1440 && lang === 'ru') {
+        // вступление: вспышка на весь экран, потом вертикальная линия (каркас) и горизонтальная (стили)
+        await page.screenshot({ path: path.join(shots, 'd1440-intro-burst.png') });
+        await run(550); await page.waitForTimeout(60);
+        const v = await page.evaluate(() => document.querySelector('[data-lang-beam]').classList.contains('run'));
+        await page.screenshot({ path: path.join(shots, 'd1440-intro-line-v.png') });
+        await run(550); await page.waitForTimeout(60);
+        const hz = await page.evaluate(() => ({ run: document.querySelector('[data-scan-beam]').classList.contains('run'), scan: getComputedStyle(document.querySelector('.scan')).animationName }));
+        await page.screenshot({ path: path.join(shots, 'd1440-intro-line-h.png') });
+        if (!v || !hz.run || hz.scan !== 'none') bad.push(`${tag}: вступление — вертикальная линия ${v}, горизонтальная ${hz.run}, старый сканер ${hz.scan}`);
+        await run(5100);
+      } else await run(6200);
+      await page.waitForTimeout(150);
       const r = await page.evaluate(() => {
         const h1 = document.querySelector('h1'), lh = parseFloat(getComputedStyle(h1).lineHeight), it = document.querySelector('.hero-h .it');
         return { lines: Math.round(h1.getBoundingClientRect().height / lh), it: it.getClientRects().length, obj: document.querySelector('[data-obj]').getBoundingClientRect().bottom };
@@ -487,7 +500,7 @@ console.log('\nпервый экран: шапка, заголовок, пане
     await page.close();
   }
   if (bad.length) fail(bad.join(' | '));
-  else console.log('  ✓ шапка собирается вместе с первым экраном; H1 — три строки, курсив целиком; панель в первом экране; плашка пульта не перекрывает контент; пульт свёрнут при прокрутке (RU и EN)');
+  else console.log('  ✓ вступление: две линии, старый сканер выключен; шапка собирается вместе с первым экраном; H1 — три строки, курсив целиком; панель в первом экране; плашка пульта не перекрывает контент; пульт свёрнут при прокрутке (RU и EN)');
 }
 await browser.close();
 console.log(failed ? `\nИТОГ: ${failed} проблем(ы). Скриншоты: tools/shots/` : '\nИТОГ: всё чисто. Скриншоты: tools/shots/ — просмотри глазами.');
