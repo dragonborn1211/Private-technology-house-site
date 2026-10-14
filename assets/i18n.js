@@ -15,19 +15,25 @@
 
     // первый экран
     'Разделы': 'Sections',
-    'Направления': 'Services',
-    'Объекты': 'Objects',
+    'Работы': 'Work',
+    'Цены': 'Pricing',
+    'Открыть меню': 'Open menu',
+    'Закрыть меню': 'Close menu',
+    'Меню': 'Menu',
+    'Написать в Telegram': 'Message us on Telegram',
+    'Студия полного цикла · по всей России': 'Full-cycle studio · across Russia',
+    'Сайты, интеграции и автоматизация —': 'Websites, integrations and automation —',
+    'с холодной точностью.': 'with cold precision.',
+    'Делаем сайты, связываем CRM, Битрикс24 и Telegram, автоматизируем заявки и отчёты. Под вашу задачу, без шаблонов — от первого экрана до сервера.': 'We build websites, connect CRM, Bitrix24 and Telegram, and automate leads and reports. Built for your task, no templates — from the first screen to the server.',
+    'Смотреть работы': 'View our work',
+    // строка доверия: три пункта, каждый отдельным узлом
+    'Смета и сроки — до старта': 'Estimate and timeline before we start',
+    'Договор и NDA': 'Contract and NDA',
+    'Работаем по всей России': 'Working across Russia',
     'Процесс': 'Process',
-    'Стоимость': 'Pricing',
     'Язык сайта': 'Site language',
     'Обсудить проект': 'Start a project',
-    'Студия полного цикла · Объект №00': 'Full-cycle studio · Object №00',
-    'Холодная точность.': 'Cold precision.',
-    'Приватность': 'Private',
-    'в основе.': 'by design.',
-    'Сайты, системы, инфраструктура и AI — тихо, точно и только под вашу задачу. Без шаблонов и лишнего.': 'Websites, systems, infrastructure and AI — quiet, precise and built only for your task. No templates, nothing extra.',
     'Обсудить проект →': 'Start a project →',
-    'Смотреть объекты': 'View objects',
     // объект первого экрана (assets/hero-objects.js) и строка из пяти принципов
     'Объект': 'Object',
     'Хрустальный ферзь': 'Crystal queen',
@@ -38,7 +44,6 @@
     'Предыдущий принцип': 'Previous principle',
     'Следующий принцип': 'Next principle',
     'Принципы': 'Principles',
-    'наведи — пауза · клик — следующий': 'hover — pause · click — next',
     '01 · Холодный расчёт': '01 · Cold calculation',
     '02 · Точность': '02 · Precision',
     '03 · Скорость': '03 · Speed',
@@ -51,7 +56,7 @@
     'Свой дизайн под ваш бизнес — без шаблонов и чужих тем.': 'A design of your own for your business — no templates, no borrowed themes.',
 
     // 01 — направления
-    '01 / Направления': '01 / Services',
+    '01 / Услуги': '01 / Services',
     'Четыре направления.': 'Four disciplines.',
     'Один дом.': 'One house.',
     'Берём проект целиком — от первого экрана до сервера, на котором он живёт.': 'We take on the whole project — from the first screen to the server it lives on.',
@@ -77,7 +82,7 @@
     'Анализ звонков и заявок': 'Call and lead analytics',
 
     // 02 — объекты
-    '02 / Объекты': '02 / Objects',
+    '02 / Работы': '02 / Work',
     'Вещи, которые': 'Things that',
     'работают.': 'work.',
     'Каждый проект — отдельный объект: со своей задачей, архитектурой и характером.': 'Every project is an object of its own — with its own task, architecture and character.',
@@ -147,7 +152,7 @@
     'Запуск, мониторинг и развитие после релиза.': 'Launch, monitoring and growth after release.',
 
     // 04 — стоимость
-    '04 / Стоимость': '04 / Pricing',
+    '04 / Цены': '04 / Pricing',
     'Стандарт.': 'Standard.',
     'Без сюрпризов.': 'No surprises.',
     'Точная смета — после разбора задачи. Здесь — ориентиры.': 'The exact estimate comes after discovery. Here are the benchmarks.',
@@ -176,8 +181,8 @@
     'Расскажите о задаче — предложим решение, сроки и смету.': 'Tell us about your task — we’ll propose a solution, timeline and estimate.',
     'Написать в Telegram →': 'Message us on Telegram →',
     'Почта': 'Email',
-    '© 2026 · Сайты, системы, инфраструктура, AI': '© 2026 · Websites, systems, infrastructure, AI',
     'Наверх ↑': 'Back to top ↑',
+    '© 2026 · Холодная точность. Приватность в основе.': '© 2026 · Cold precision. Private by design.',
     'Пересобрать блок': 'Rebuild block',
 
     // сцены (scenes.js): демо-сайты «ваш проект»

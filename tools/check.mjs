@@ -10,6 +10,9 @@
 // «Пересобрать блок» кликом.
 // Объект первого экрана (assets/hero-objects.js): пять принципов, строка принципов, стрелки, клик по панели,
 // автосмена, «Пересобрать блок», reduced motion; скриншоты каждого из пяти объектов на 1440 и 390.
+// Шапка и первый экран (ТЗ TASK-header-hero.md): ссылки Telegram и отсутствие href="#", тексты H1 / строки доверия /
+// меню, неразрывные пробелы после смены языка, сгиб на 1440×900 и 1280×720, свёрнутый пульт ничего не перекрывает,
+// меню на телефоне (Esc, фокус, пункт меню, язык), липкая шапка и активный раздел; скриншоты первого экрана и меню.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -83,7 +86,7 @@ const notDoneVisible = () => [...document.querySelectorAll('[data-sec]')].filter
 
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const idx = (page) => page.evaluate(() => document.querySelector('[data-objidx]').textContent.trim());
-for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1700, 930, 'd1700', 'ru'], [390, 844, 'm390', 'ru'], [1440, 900, 'd1440-en', 'en'], [390, 844, 'm390-en', 'en'], [1440, 900, 'd1440-rm', 'ru', true]]) {
+for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1280', 'ru'], [1700, 930, 'd1700', 'ru'], [390, 844, 'm390', 'ru'], [1440, 900, 'd1440-en', 'en'], [390, 844, 'm390-en', 'en'], [1440, 900, 'd1440-rm', 'ru', true]]) {
   console.log(`\n${tag} (${w}×${h}, ${lang}${rm ? ', prefers-reduced-motion' : ''})`);
   const page = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: rm ? 'reduce' : 'no-preference' });
   const errs = [];
@@ -118,6 +121,42 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1700, 930, 'd1
   let t = 0;
   for (const m of [0.4, 1.8, 2.9, 4.2, 7.0]) { await run(Math.round((m - t) * 1000)); t = m; await shot('hero-' + m.toFixed(1)); }
   if (!/ready/.test(await step())) fail('первый экран не дошёл до «ready»');
+  if (tag === 'd1440' || tag === 'd1280' || tag === 'm390') {
+    await run(2500);   // пульт сворачивается через 2 с после сборки
+    const fx = await page.evaluate(() => {
+      const R = (el) => el.getBoundingClientRect(), p = document.querySelector('[data-pult]'), pr = R(p), hidden = getComputedStyle(p).visibility === 'hidden';
+      const hit = [...document.querySelectorAll('[data-sec="hero"] .usp, [data-sec="hero"] [data-obj], [data-sec="hero"] .hero-act .btn, [data-sec="hero"] .hero-act .lnk')]
+        .filter((el) => { const r = R(el); return r.right > pr.left && r.left < pr.right && r.bottom > pr.top && r.top < pr.bottom; }).length;
+      return { usp: Math.round(R(document.querySelector('.usp')).top), mini: p.classList.contains('is-mini'), hit: hidden ? 0 : hit };
+    });
+    if (w > 760 && fx.usp >= h - 60) fail(`сгиб: строка принципов начинается на ${fx.usp}px при окне ${h}px`);
+    else if (!fx.mini) fail('пульт не свернулся после сборки');
+    else if (fx.hit) fail(`свёрнутый пульт перекрывает первый экран (${fx.hit} эл.)`);
+    else console.log(`  ✓ первый экран: ${w > 760 ? `строка принципов с ${fx.usp}px из ${h}, ` : ''}пульт свёрнут и не перекрывает контент`);
+    await shot('first-screen');
+  }
+  if (tag === 'd1440') {
+    const lx = await page.evaluate(() => {
+      const nb = (t) => t.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+      const as = [...document.querySelectorAll('[data-sec="hero"] a, [data-topbar] a, [data-menu] a, [data-sec="contact"] a')];
+      const tg = [...document.querySelectorAll('#pt-site a[href*="t.me"]')];
+      return { hash: as.filter((a) => a.getAttribute('href') === '#').length, tg: tg.length,
+        tgBad: tg.filter((a) => a.getAttribute('href') !== 'https://t.me/dragonborne0' || a.target !== '_blank' || !/noopener/.test(a.rel)).length,
+        h1: nb(document.querySelector('h1').textContent), trust: document.querySelectorAll('.trust .trust-i').length,
+        nav: [...document.querySelectorAll('[data-sec="hero"] .nav a')].map((a) => nb(a.textContent)).join(','), nbsp: /\u00a0/.test(document.querySelector('h1').textContent),
+        name: document.querySelector('[data-objname]').textContent, aria: document.querySelector('[data-obj]').getAttribute('aria-label') };
+    });
+    const bad = [];
+    if (lx.hash) bad.push(`href="#": ${lx.hash}`);
+    if (lx.tg < 4 || lx.tgBad) bad.push(`Telegram: ссылок ${lx.tg}, неверных ${lx.tgBad}`);
+    if (!/Сайты, интеграции и автоматизация/.test(lx.h1)) bad.push(`H1 «${lx.h1}»`);
+    if (!lx.nbsp) bad.push('в H1 нет неразрывных пробелов');
+    if (lx.trust !== 3) bad.push(`строка доверия: пунктов ${lx.trust}`);
+    if (lx.nav !== 'Услуги,Работы,Процесс,Цены') bad.push(`меню: ${lx.nav}`);
+    if (lx.name !== '01 · Холодный расчёт' || lx.aria !== 'Хрустальный ферзь') bad.push(`подпись панели «${lx.name}», aria-label «${lx.aria}»`);
+    if (bad.length) fail('шапка и первый экран: ' + bad.join('; '));
+    else console.log('  ✓ ссылки и тексты: Telegram → t.me/dragonborne0, нет href="#", H1, строка доверия, меню, подпись панели');
+  }
   // объект первого экрана: каждый из пяти — скриншот (клик по пункту строки принципов)
   if (tag === 'd1440' || tag === 'm390') {
     for (let k = 0; k < 5; k++) { await page.evaluate((n) => document.querySelector(`[data-usp="${n}"]`).click(), k); await run(k === 4 ? 8200 : 4000); await shot(`hero-obj${k + 1}`); }
@@ -128,6 +167,8 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1700, 930, 'd1
     const res = [];
     await page.click('[data-usp="3"]'); await run(300);
     res.push(await page.evaluate(() => document.querySelector('[data-usp="3"]').getAttribute('aria-current')), await idx(page));
+    const nm = await page.evaluate(() => document.querySelector('[data-objname]').textContent);
+    if (nm !== '04 · Безопасность') fail(`подпись панели после выбора 04: «${nm}»`);
     await page.click('[data-next]'); await run(300); res.push(await idx(page));
     await page.click('[data-prev]'); await run(300); res.push(await idx(page));
     const pb = await page.evaluate(() => { const r = document.querySelector('[data-obj]').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
@@ -162,6 +203,47 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1700, 930, 'd1
   const moving = p0.filter((p, i) => p !== p1[i]).length;
   if (moving) fail(`${moving} сцен(ы) анимируются вне экрана`);
   else console.log(`  ✓ сцены (${p0.length}) стартуют после сборки и стоят на паузе вне экрана`);
+  if (tag === 'd1440') {
+    // липкая шапка: в первом экране скрыта; ниже — видна при прокрутке вверх, прячется при прокрутке вниз
+    const bar = () => page.evaluate(() => { const b = document.querySelector('[data-topbar]'); return { on: b.classList.contains('on') && getComputedStyle(b).visibility !== 'hidden', cur: [...b.querySelectorAll('[data-nav][aria-current="true"]')].map((a) => a.getAttribute('data-nav')).join(',') }; });
+    const go = async (y) => { await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), y); await page.waitForTimeout(80); await run(150); await page.waitForTimeout(120); await run(50); };
+    await go(0); const b0 = await bar();
+    const py = await page.evaluate(() => document.querySelector('#process').getBoundingClientRect().top + window.scrollY);
+    await go(py + 300); const b1 = await bar();
+    await go(py + 100); const b2 = await bar();
+    await go(py + 400); const b3 = await bar();
+    if (b0.on || b1.on || !b2.on || b3.on) fail(`липкая шапка: в первом экране ${b0.on}, вниз ${b1.on}, вверх ${b2.on}, снова вниз ${b3.on}`);
+    else if (b2.cur !== 'process') fail(`липкая шапка: активный пункт «${b2.cur}», ждали process`);
+    else console.log('  ✓ липкая шапка: скрыта в первом экране, вверх — видна (активен «Процесс»), вниз — прячется');
+  }
+  if (tag === 'm390') {
+    // меню на телефоне: Telegram и кнопка меню в шапке, Esc, фокус, пункт меню, язык
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(100); await run(300);
+    const st = () => page.evaluate(() => ({ on: document.querySelector('[data-menu]').classList.contains('on'), lock: document.documentElement.classList.contains('pt-lock'), inMenu: document.querySelector('[data-menu]').contains(document.activeElement), lang: document.documentElement.lang }));
+    const hb = await page.evaluate(() => { const v = (sel) => { const el = document.querySelector(sel), r = el && el.getBoundingClientRect(); return !!r && r.width > 0 && r.bottom > 0 && r.top < innerHeight; }; return v('[data-sec="hero"] header a[href*="t.me"]') && v('[data-sec="hero"] [data-menu-open]'); });
+    const opener = '[data-sec="hero"] [data-menu-open]';
+    await page.click(opener); await run(400); await page.waitForTimeout(100);
+    const m1 = await st(), exp = await page.getAttribute(opener, 'aria-expanded');
+    await shot('menu');
+    await page.keyboard.press('Escape'); await run(400);
+    const m2 = await st(), back = await page.evaluate((sel) => document.activeElement === document.querySelector(sel), opener);
+    await page.click(opener); await run(400);
+    await page.click('[data-menu] .menu-nav a[href="#process"]'); await run(2600); await page.waitForTimeout(150); await run(100);
+    const m3 = await st(), ptop = await page.evaluate(() => Math.round(document.querySelector('#process').getBoundingClientRect().top));
+    await page.click('[data-topbar] [data-menu-open]'); await run(400);
+    await page.click('[data-menu] [data-lang="en"]'); await run(4200);
+    const m4 = await st();
+    await page.keyboard.press('Escape'); await run(400);
+    await page.evaluate(() => document.querySelector('[data-menu] [data-lang="ru"]').click()); await run(4200);
+    const bad = [];
+    if (!hb) bad.push('в шапке не видно Telegram или кнопки меню');
+    if (!m1.on || !m1.lock || !m1.inMenu || exp !== 'true') bad.push(`открытие: ${JSON.stringify(m1)}, aria-expanded ${exp}`);
+    if (m2.on || m2.lock || !back) bad.push(`Esc: меню ${m2.on ? 'открыто' : 'закрыто'}, фокус на кнопке ${back}`);
+    if (m3.on || Math.abs(ptop) > 8) bad.push(`пункт меню: меню ${m3.on ? 'открыто' : 'закрыто'}, «Процесс» на ${ptop}px`);
+    if (m4.lang !== 'en') bad.push(`RU/EN в меню: lang=${m4.lang}`);
+    if (bad.length) fail('меню на телефоне: ' + bad.join('; '));
+    else console.log('  ✓ меню на телефоне: открывается, Esc закрывает и возвращает фокус, пункт ведёт к секции, RU/EN переключает язык');
+  }
   // догоняем всё, что ещё в очереди
   await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }));
   await run(8000);
@@ -175,6 +257,8 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1700, 930, 'd1
     const left = await page.evaluate(cyrillic);
     if (left.length) fail(`кириллица в английской версии: ${left.join(' | ')}`);
     else console.log('  ✓ английская версия: кириллицы нет, у скрытых блоков есть переводы');
+    const h1e = await page.evaluate(() => document.querySelector('h1').textContent.replace(/\s+/g, ' '));
+    if (!/Websites, integrations and automation/.test(h1e)) fail(`английский H1: «${h1e}»`);
     if ((await page.evaluate(() => document.documentElement.lang)) !== 'en') fail('<html lang> не en');
   }
   if (tag === 'd1440') {
@@ -192,12 +276,15 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1700, 930, 'd1
     if (en.swap || nd.length) { ok = false; fail(`после переключения на EN секции не собраны: s-swap ${en.swap}, не собраны ${nd.join(', ')}`); }
     if (left.length) { ok = false; fail(`после переключения на EN осталась кириллица: ${left.join(' | ')}`); }
     const on = await page.evaluate(() => document.querySelector('[data-objname]').textContent);
-    if (!/^Object №0\d · [A-Z]/.test(on)) { ok = false; fail(`после переключения на EN подпись объекта: «${on}»`); }
+    if (!/^0\d · [A-Z]/.test(on)) { ok = false; fail(`после переключения на EN подпись панели: «${on}»`); }
+    const h1en = await page.evaluate(() => document.querySelector('h1').textContent.replace(/\s+/g, ' '));
+    if (!/Websites, integrations and automation/.test(h1en)) { ok = false; fail(`после переключения на EN H1: «${h1en}»`); }
     if (hid) { ok = false; fail(`после переключения на EN ${hid} текстовых элементов на экране невидимы`); }
     await page.click('[data-lang="ru"]');
     await run(4000);
     const ru1 = await page.evaluate(textSnap);
     if (ru1 !== ru0) { ok = false; fail('после возврата на RU текст не совпал с исходным'); }
+    if (!(await page.evaluate(() => /\u00a0/.test(document.querySelector('h1').textContent)))) { ok = false; fail('после возврата на RU пропали неразрывные пробелы'); }
     if ((await page.evaluate(() => document.documentElement.lang + location.search)) !== 'ru') { ok = false; fail('после возврата на RU: lang или адрес не сброшены'); }
     if (ok) console.log('  ✓ смена языка RU → EN → RU: текст, адрес и lang на месте');
     // «Пересобрать блок» на первом экране: всё собирается заново, объект на месте
