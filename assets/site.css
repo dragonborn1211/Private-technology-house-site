@@ -180,7 +180,10 @@ body{margin:0;background:#0A121A}
 .cross i{top:50%;margin-top:-.75px}
 .cross i:first-child{transform:rotate(45deg)}
 .cross i:last-child{transform:rotate(-45deg)}
-.show-m{display:none!important}
+/* кнопка меню: на планшетах и узких ноутбуках (до 1023 px) меню разделов в шапке не помещается — вместо него кнопка
+   меню; на телефоне в шапке остаются только логотип, Telegram и меню */
+.menu-btn{display:none!important}
+@media (max-width:1023px){.hero-hdr .nav,.topbar .nav{display:none}.menu-btn{display:inline-flex!important}}
 /* значки в шапке первого экрана собираются вместе с текстом: частицы обводят кнопку (.fr), сам значок — в s-done */
 .pt-on .sec .ico svg,.pt-on .sec .ico .burger{transition:opacity .9s ease}
 .pt-on .sec:not(.s-done) .ico svg,.pt-on .sec:not(.s-done) .ico .burger{opacity:0}
@@ -238,7 +241,6 @@ html.pt-lock,html.pt-lock body{overflow:hidden}
 /* свёрнутая кнопка легла бы на панель объекта, кнопки или строку принципов — прячется, пока они под ней (nav.js) */
 .pult.is-off{visibility:hidden}
 @media (max-width:760px){
-.show-m{display:inline-flex!important}
 .hdr-act{gap:8px}
 .hero-h,.hero-h:lang(en){font-size:40px}
 .hero-h:lang(ru){font-size:38px}

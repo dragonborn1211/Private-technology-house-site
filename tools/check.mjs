@@ -293,6 +293,22 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     const nd1 = await page.evaluate(notDoneVisible), hid1 = await page.evaluate(hiddenVisible), cv = await page.evaluate(() => getComputedStyle(document.querySelector('[data-sec="hero"] canvas[data-gl]')).opacity);
     if (nd1.length || hid1 || cv !== '1') fail(`«Пересобрать блок» на первом экране: не собраны ${nd1.join(', ') || '—'}, невидимых текстов ${hid1}, холст объекта opacity ${cv}`);
     else console.log('  ✓ «Пересобрать блок» на первом экране: секции и объект собраны заново');
+    // курсор так и остался над кнопкой ↻: после пересборки пульт сворачивается и не прячется (раньше прятался —
+    // защита от наложения мерила развёрнутую наведением плашку)
+    await run(3000); await page.waitForTimeout(100);
+    const pu = await page.evaluate(() => { const p = document.querySelector('[data-pult]'); return { mini: p.classList.contains('is-mini'), vis: getComputedStyle(p).visibility }; });
+    if (!pu.mini || pu.vis !== 'visible') fail(`пульт после пересборки (курсор над ним): свёрнут ${pu.mini}, visibility ${pu.vis}`);
+    else console.log('  ✓ после пересборки пульт свернулся и виден, хотя курсор над ним');
+    // ↻ во время идущей сборки: она доводится, и пересборка всё равно запускается (раньше нажатие пропадало)
+    await page.mouse.move(700, 400);
+    await page.click('[data-pt-replay]'); await run(600);
+    await page.click('[data-pt-replay]'); await run(300);
+    const rr = await page.evaluate(() => ({ mini: document.querySelector('[data-pult]').classList.contains('is-mini'), step: document.querySelector('[data-pt-step]').textContent }));
+    await page.mouse.move(700, 400); await run(9000);
+    const nd3 = await page.evaluate(notDoneVisible), hid3 = await page.evaluate(hiddenVisible);
+    if (rr.mini || !/dissolve|text\.|layout|grid|styles|type|boot|hero|_/.test(rr.step)) fail(`↻ во время сборки не запустил пересборку: ${JSON.stringify(rr)}`);
+    else if (nd3.length || hid3) fail(`↻ во время сборки: не собраны ${nd3.join(', ') || '—'}, невидимых текстов ${hid3}`);
+    else console.log('  ✓ ↻ во время идущей сборки доводит её и запускает пересборку');
     // «Пересобрать блок», прерванный кликом до постановки в очередь (между 1.0 и 1.7 с): секции не гаснут насовсем
     await page.click('[data-pt-replay]');
     await run(1250);
@@ -305,6 +321,33 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
   }
   if (errs.length) { errs.forEach((e) => fail(e)); } else console.log('  ✓ ошибок в консоли нет');
   await page.close();
+}
+// Раскладка на промежуточных ширинах: ни кнопка, ни ссылка, ни строка текста не выходят за край окна. Документ вбок
+// не листается в любом случае (корень .pt обрезает лишнее), поэтому меряем сами элементы. Липкую шапку на время
+// замера показываем; строка принципов на телефоне листается сама — её не считаем.
+console.log('\nраскладка на промежуточных ширинах (RU / EN, шапка и липкая шапка)');
+{
+  const bad = [];
+  for (const lang of ['ru', 'en']) for (const w of [390, 768, 820, 1024, 1280, 1440]) {
+    const page = await browser.newPage({ viewport: { width: w, height: 900 } });
+    await page.goto('file://' + file + (lang === 'en' ? '?lang=en' : ''));
+    await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
+    const out = await page.evaluate(() => {
+      document.querySelector('[data-topbar]').classList.add('on');
+      const W = innerWidth, res = [];
+      document.querySelectorAll('#pt-site .sec a, #pt-site .sec button, #pt-site .sec h1, #pt-site .sec h2, #pt-site .sec h3, #pt-site .sec p, #pt-site .sec li, [data-topbar] a, [data-topbar] button').forEach((el) => {
+        if (el.closest('.usp, template, [data-menu], .site-view, .an, .wf')) return;
+        const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') return;
+        const r = el.getBoundingClientRect(); if (!r.width) return;
+        if (r.right > W + 1 || r.left < -1) res.push(`«${(el.textContent.trim() || el.getAttribute('aria-label') || el.tagName).slice(0, 24)}» ${Math.round(r.left)}..${Math.round(r.right)}`);
+      });
+      return res;
+    });
+    out.forEach((x) => bad.push(`${w} ${lang}: ${x}`));
+    await page.close();
+  }
+  if (bad.length) fail('выходят за край окна: ' + bad.slice(0, 12).join(' | ') + (bad.length > 12 ? ` …ещё ${bad.length - 12}` : ''));
+  else console.log('  ✓ на 390, 768, 820, 1024, 1280, 1440 (RU и EN) ничего не выходит за край окна');
 }
 await browser.close();
 console.log(failed ? `\nИТОГ: ${failed} проблем(ы). Скриншоты: tools/shots/` : '\nИТОГ: всё чисто. Скриншоты: tools/shots/ — просмотри глазами.');
