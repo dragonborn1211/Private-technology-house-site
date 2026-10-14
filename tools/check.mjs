@@ -24,8 +24,14 @@
 // Шапка первого экрана снова собирается из частиц. Смена языка гасит всё сразу (текст, рамки, панель, объект, шапку)
 // и собирает заново. Вступление: вспышка на весь экран, вертикальная линия на каркасе, горизонтальная на стилях,
 // прежний сканер .scan не идёт; кадры d1440-intro-*.png.
+// Услуги (TASK-services.md): на главной блок «Услуги» — шесть карточек на якоря services.html, «Все услуги», без старых
+// пунктов, «Цены» скрыты, нет ссылки на несуществующую objects.html, canonical. Страница services.html — на трёх
+// ширинах RU и двух EN: секции собираются, якоря ведут на существующие id и модули не уходят под липкую шапку,
+// <details> открываются кликом и Enter, JSON-LD парсится и вопросы FAQPage = тексты <summary>, смена языка на лету,
+// переход по services.html#apps — модуль готов за 3.5 с. Раскладка обеих страниц 320–1920, курсив H2 в одну строку,
+// объект первого экрана не задевает вкладки и подпись, ↻ на телефоне только на первом экране.
 import { chromium } from 'playwright';
-import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -41,7 +47,7 @@ const fail = (msg) => { failed++; console.log('  ✗ ' + msg); };
 
 // 1. Запрещённые слова (юридическое требование, см. CLAUDE.md) — во всех файлах, которые уходят на сайт.
 //    Сам список не хранится в публичном репозитории: tools/forbidden.local.txt, по слову на строку, # — комментарий.
-const siteFiles = ['index.html', ...readdirSync(path.join(root, 'assets'), { recursive: true })
+const siteFiles = [...readdirSync(root).filter((f) => /\.html$/i.test(f) || f === 'sitemap.xml' || f === 'robots.txt'), ...readdirSync(path.join(root, 'assets'), { recursive: true })
   .map((f) => 'assets/' + String(f).replace(/\\/g, '/')).filter((f) => /\.(html|css|js|svg|json|txt)$/i.test(f))];
 const listFile = path.join(here, 'forbidden.local.txt');
 const words = existsSync(listFile) ? readFileSync(listFile, 'utf8').split(/\r?\n/).map((s) => s.trim()).filter((s) => s && !s.startsWith('#')) : [];
@@ -95,6 +101,38 @@ const textSnap = () => [...document.querySelectorAll('.sec .ptx')].map((el) => e
 const hiddenVisible = () => [...document.querySelectorAll('.sec.s-done .ptx')].filter((el) => { const r = el.getBoundingClientRect(); return el.offsetParent && r.bottom > 0 && r.top < innerHeight && getComputedStyle(el).opacity !== '1'; }).length;
 const notDoneVisible = () => [...document.querySelectorAll('[data-sec]')].filter((s) => { const r = s.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight && !s.classList.contains('s-done'); }).map((s) => s.getAttribute('data-sec'));
 
+// Снимок всей страницы кусками по 2000 px, склейка на холсте в самой странице: длинную страницу (телефон, ~12 000 px)
+// Chromium снимает целиком с повтором — вторая половина снимка повторяет первую.
+async function fullShot(page, file) {
+  const W = await page.evaluate(() => innerWidth), H = await page.evaluate(() => document.documentElement.scrollHeight), parts = [];
+  for (let y = 0; y < H; y += 2000) parts.push((await page.screenshot({ fullPage: true, clip: { x: 0, y, width: W, height: Math.min(2000, H - y) } })).toString('base64'));
+  const data = await page.evaluate(async ({ parts, W, H }) => {
+    const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); let y = 0;
+    for (const b of parts) { const im = new Image(); im.src = 'data:image/png;base64,' + b; await im.decode(); g.drawImage(im, 0, y); y += im.height; }
+    return c.toDataURL('image/png').split(',')[1];
+  }, { parts, W, H });
+  writeFileSync(file, Buffer.from(data, 'base64'));
+}
+// Границы объекта первого экрана по пикселям скриншота панели: текст панели и пыль движка на время замера скрыты.
+// top — низ вкладок, cap — верх подписи или стрелок (от верха панели).
+async function objBox(page) {
+  const g = await page.evaluate(() => {
+    const o = document.querySelector('[data-obj]').getBoundingClientRect(), t = document.querySelector('.obj-top').getBoundingClientRect(), c = document.querySelector('.obj-cw').getBoundingClientRect(), n = document.querySelector('.nav2').getBoundingClientRect();
+    document.querySelectorAll('.obj-top, .obj-foot, [data-pt-canvas]').forEach((e) => { e.style.visibility = 'hidden'; });
+    return { o: [o.left, o.top, o.width, o.height], top: Math.round(t.bottom - o.top), cap: Math.round(Math.min(c.top, n.top) - o.top) };
+  });
+  await page.waitForTimeout(40);
+  const png = (await page.screenshot({ clip: { x: Math.round(g.o[0]) + 6, y: Math.round(g.o[1]) + 6, width: Math.round(g.o[2]) - 12, height: Math.round(g.o[3]) - 12 } })).toString('base64');
+  const b = await page.evaluate(async (b64) => {
+    const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
+    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const x2 = c.getContext('2d'); x2.drawImage(img, 0, 0);
+    const d = x2.getImageData(0, 0, c.width, c.height).data, W = c.width, H = c.height, rows = new Array(H).fill(0);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = (y * W + x) * 4; if (d[i] * 0.3 + d[i + 1] * 0.5 + d[i + 2] * 0.2 > 105) rows[y]++; }
+    return [rows.findIndex((v) => v >= 3), H - 1 - [...rows].reverse().findIndex((v) => v >= 3)];
+  }, png);
+  await page.evaluate(() => document.querySelectorAll('.obj-top, .obj-foot, [data-pt-canvas]').forEach((e) => { e.style.visibility = ''; }));
+  return { box: [0, b[0] + 6, 0, b[1] + 6], top: g.top, cap: g.cap };
+}
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 // активный принцип «04 / 05» — по data-slot панели (его ставит модуль)
 const idx = (page) => page.evaluate(() => '0' + document.querySelector('[data-obj]').dataset.slot + ' / 05');
@@ -171,7 +209,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     if (!/Сайты, интеграции ?и автоматизация/.test(lx.h1)) bad.push(`H1 «${lx.h1}»`);
     if (!lx.nbsp) bad.push('в H1 нет неразрывных пробелов');
     if (lx.trust !== 3) bad.push(`строка доверия: пунктов ${lx.trust}`);
-    if (lx.nav !== 'Услуги,Работы,Процесс,Цены') bad.push(`меню: ${lx.nav}`);
+    if (lx.nav !== 'Услуги,Работы,Процесс') bad.push(`меню: ${lx.nav}`);
     if (lx.name !== 'Холодный расчёт' || lx.aria !== 'Хрустальный ферзь') bad.push(`подпись панели «${lx.name}», aria-label «${lx.aria}»`);
     if (bad.length) fail('шапка и первый экран: ' + bad.join('; '));
     else console.log('  ✓ ссылки и тексты: Telegram → t.me/dragonborne0, нет href="#", H1, строка доверия, меню, подпись панели');
@@ -397,37 +435,182 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
   if (errs.length) { errs.forEach((e) => fail(e)); } else console.log('  ✓ ошибок в консоли нет');
   await page.close();
 }
+// Главная: блок «Услуги» (шесть карточек на якоря services.html, «Все услуги»), без старых пунктов; «Цены» скрыты
+// (секция в <template>, пункта меню нет); нет ссылки на несуществующую objects.html; canonical.
+console.log('\nглавная: блок «Услуги», скрытые «Цены», ссылки');
+{
+  const sHtml = readFileSync(path.join(root, 'services.html'), 'utf8'), ids = new Set([...sHtml.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto('file://' + file); await page.waitForTimeout(200);
+  const r = await page.evaluate(() => {
+    const d = document.querySelector('#directions'), all = (q) => [...document.querySelectorAll(q)];
+    return { cards: [...d.querySelectorAll('a.svc')].map((a) => a.getAttribute('href')), more: [...d.querySelectorAll('.more a')].map((a) => a.getAttribute('href')),
+      h2: d.querySelector('h2').textContent.replace(/\s+/g, ' ').trim(), nums: [...d.querySelectorAll('.mono')].filter((m) => /^0[1-4]$/.test(m.textContent.trim())).length,
+      old: ['Лендинги и сайты-визитки', '1С-Битрикс'].filter((t) => document.body.innerText.includes(t)),
+      pricing: !!document.querySelector('[data-sec="pricing"]'), tpl: !!(document.querySelector('template[data-hidden-section="pricing"]') || { content: document.createDocumentFragment() }).content.querySelector('[data-sec="pricing"]'),
+      pricingLinks: all('a[href="#pricing"]').length, dead: all('a[href$="objects.html"]').length, canonical: (document.querySelector('link[rel="canonical"]') || {}).href || '' };
+  });
+  const bad = [];
+  if (r.cards.length !== 6 || r.cards.some((h) => !/^services\.html#/.test(h) || !ids.has(h.split('#')[1]))) bad.push(`карточки: ${r.cards.join(', ')}`);
+  if (r.more.join() !== 'services.html') bad.push(`«Все услуги» → ${r.more.join()}`);
+  if (r.h2 !== 'Делаем один раз. Держим всегда.') bad.push(`заголовок «${r.h2}»`);
+  if (r.nums) bad.push(`номера 01–04 в блоке: ${r.nums}`);
+  if (r.old.length) bad.push(`старые пункты: ${r.old.join(', ')}`);
+  if (r.pricing || !r.tpl || r.pricingLinks) bad.push(`«Цены»: секция на странице ${r.pricing}, в <template> ${r.tpl}, ссылок #pricing ${r.pricingLinks}`);
+  if (r.dead) bad.push(`ссылок на objects.html: ${r.dead}`);
+  if (r.canonical !== 'https://privatechouse.ru/') bad.push(`canonical «${r.canonical}»`);
+  const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8'), rb = readFileSync(path.join(root, 'robots.txt'), 'utf8');
+  if (!sm.includes('<loc>https://privatechouse.ru/</loc>') || !sm.includes('<loc>https://privatechouse.ru/services.html</loc>') || (sm.match(/hreflang="en"/g) || []).length !== 2) bad.push('sitemap.xml: нет страницы или EN-версии');
+  if (!/User-agent: \*/.test(rb) || !/Sitemap: https:\/\/privatechouse\.ru\/sitemap\.xml/.test(rb)) bad.push('robots.txt');
+  await page.close();
+  if (bad.length) fail('главная: ' + bad.join('; '));
+  else console.log('  ✓ «Делаем один раз. Держим всегда.»: шесть карточек на существующие якоря services.html, «Все услуги», без старых пунктов; «Цены» в <template> и без пункта меню; нет objects.html; canonical, sitemap.xml, robots.txt');
+}
+
+// Страница услуг: как главная — сборка всех секций на трёх ширинах RU и двух EN, ошибки консоли, кириллица в EN.
+// На 1440 RU: якоря (существуют, модуль после перехода не под липкой шапкой), <details>, JSON-LD, смена языка, снимки.
+console.log('\nстраница услуг (services.html)');
+const sfile = path.join(root, 'services.html');
+for (const [w, h, tag, lang] of [[1440, 900, 's1440', 'ru'], [1700, 930, 's1700', 'ru'], [390, 844, 's390', 'ru'], [1440, 900, 's1440-en', 'en'], [390, 844, 's390-en', 'en']]) {
+  const page = await browser.newPage({ viewport: { width: w, height: h } });
+  const errs = [], bad = [];
+  page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) errs.push(m.text()); });
+  await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T12:00:01Z'));
+  await page.goto('file://' + sfile + (lang === 'en' ? '?lang=en' : ''));
+  const run = (ms) => page.clock.runFor(ms), done = (n) => page.evaluate((q) => document.querySelector(`[data-sec="${q}"]`).classList.contains('s-done'), n);
+  await run(4000);
+  if (!(await done('hero'))) bad.push('шапка страницы не собралась за 4 с');
+  if (tag === 's1440-en') await page.screenshot({ path: path.join(shots, 's1440-en-head.png') });
+  if (w === 390) {
+    // ↻ на телефоне: на первом экране виден, ниже — спрятан
+    await run(2600); await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(120); await run(100);
+    const p0 = await page.evaluate(() => {
+      const p = document.querySelector('[data-pult]'), b = p.getBoundingClientRect(), m = { l: b.left, r: b.left + 44, t: b.bottom - 44, b: b.bottom };
+      const over = [...document.querySelectorAll('[data-sec="hero"] .sv-fmt, [data-sec="hero"] .sv-jump a')].some((el) => { const r = el.getBoundingClientRect(); return r.right > m.l && r.left < m.r && r.bottom > m.t && r.top < m.b; });
+      return p.className.replace(over ? ' is-off' : '', '');
+    });
+    await page.evaluate(() => window.scrollTo({ top: 3000, behavior: 'instant' })); await page.waitForTimeout(120); await run(100);
+    const p1 = await page.evaluate(() => document.querySelector('[data-pult]').className);
+    if (!/is-mini/.test(p0) || /is-off/.test(p0) || !/is-off/.test(p1)) bad.push(`↻ на телефоне: в первом экране «${p0}», ниже «${p1}»`);
+  }
+  const secs = await page.evaluate(() => [...document.querySelectorAll('[data-sec]')].map((s) => s.dataset.sec));
+  for (const name of secs.slice(1)) {
+    await page.evaluate((n) => { const el = document.querySelector(`[data-sec="${n}"]`); window.scrollTo({ top: el.getBoundingClientRect().top + scrollY - 40, behavior: 'instant' }); }, name);
+    await page.waitForTimeout(200); await run(3600);
+    if (!(await done(name))) bad.push(`${name} не собралась за 3.6 с`);
+  }
+  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' })); await run(6000);
+  const fin = await page.evaluate(() => ({ nd: [...document.querySelectorAll('[data-sec]')].filter((s) => !s.classList.contains('s-done')).map((s) => s.dataset.sec), hid: [...document.querySelectorAll('.sec.s-done .ptx')].filter((el) => el.offsetParent && !(el.closest('details:not([open])') && !el.closest('summary')) && getComputedStyle(el).opacity === '0').length, sw: document.documentElement.scrollWidth - innerWidth }));
+  if (fin.nd.length) bad.push(`не собрались: ${fin.nd.join(', ')}`);
+  if (fin.hid) bad.push(`${fin.hid} текстов невидимы после сборки`);
+  if (fin.sw > 1) bad.push(`горизонтальная прокрутка ${fin.sw}px`);
+  if (lang === 'en') { const left = await page.evaluate(cyrillic); if (left.length) bad.push(`кириллица в EN: ${left.slice(0, 6).join(' | ')}`); }
+  if (tag === 's1440') {
+    const st = await page.evaluate(() => {
+      const missing = [...document.querySelectorAll('a[href^="#"]')].map((a) => a.getAttribute('href')).filter((hh) => hh.length > 1 && !document.getElementById(hh.slice(1)));
+      const ld = [...document.querySelectorAll('script[type="application/ld+json"]')].map((sc) => { try { return JSON.parse(sc.textContent); } catch (e) { return { error: e.message }; } });
+      const faq = ld.find((x) => x['@type'] === 'FAQPage'), org = ld.find((x) => x['@type'] === 'Organization'), nb = (t) => t.replace(/\s+/g, ' ').trim();
+      const qs = faq ? faq.mainEntity.map((q) => nb(q.name)) : [], sums = [...document.querySelectorAll('.sv-q summary')].map((x) => nb(x.textContent));
+      return { missing, errs: ld.filter((x) => x.error).length, types: ld.map((x) => x['@type']).join(','), offers: org && org.hasOfferCatalog ? org.hasOfferCatalog.itemListElement.length : 0, faqOk: qs.length === 6 && qs.join('|') === sums.join('|'), qs: qs.length, sums: sums.length };
+    });
+    if (st.missing.length) bad.push(`якоря без цели: ${st.missing.join(', ')}`);
+    if (st.errs || st.types !== 'BreadcrumbList,Organization,FAQPage' || st.offers !== 6 || !st.faqOk) bad.push(`JSON-LD: ошибок ${st.errs}, типы ${st.types}, услуг ${st.offers}, вопросы ${st.qs} / ${st.sums}, совпадают ${st.faqOk}`);
+    // <details>: клик открывает, Enter закрывает; Enter на другом — открывает
+    const q = page.locator('.sv-q summary');
+    await q.nth(0).click(); await page.waitForTimeout(450); const o1 = await page.evaluate(() => { const d = document.querySelectorAll('.sv-q')[0]; return d.open && getComputedStyle(d.querySelector('p')).opacity === '1'; });
+    await q.nth(0).press('Enter'); const o2 = await page.evaluate(() => document.querySelectorAll('.sv-q')[0].open);
+    await q.nth(1).focus(); await page.keyboard.press('Enter'); const o3 = await page.evaluate(() => document.querySelectorAll('.sv-q')[1].open);
+    if (!o1 || o2 || !o3) bad.push(`<details>: клик ${o1 ? 'открыл, ответ виден' : 'не открыл или ответ невидим'}, Enter ${!o2 ? 'закрыл' : 'не закрыл'}, Enter на втором ${o3}`);
+    // якоря шапки и переходов: модуль встаёт под липкой шапкой с зазором (scroll-margin-top 88), а не под неё
+    const tops = [];
+    for (const id of ['projects', 'sites', 'apps', 'servers', 'subscription', 'care', 'automation', 'ai']) {
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(80); await run(200);
+      await page.click(`a[href="#${id}"]`); await run(2400); await page.waitForTimeout(60);
+      tops.push([id, await page.evaluate((i) => Math.round(document.getElementById(i).getBoundingClientRect().top), id)]);
+    }
+    const low = tops.filter(([, t]) => t < 64 || t > 120);
+    if (low.length) bad.push(`после перехода по якорю: ${low.map(([i, t]) => `${i} ${t}px`).join(', ')}`);
+    // смена языка на лету: RU → EN → RU
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(150); await run(800);
+    const ru0 = await page.evaluate(textSnap);
+    await page.click('.hero-hdr [data-lang="en"]'); await run(4200);
+    const en = await page.evaluate(() => ({ lang: document.documentElement.lang, url: location.search, title: document.title }));
+    const left = await page.evaluate(cyrillic);
+    if (en.lang !== 'en' || en.url !== '?lang=en' || /[А-Яа-яЁё]/.test(en.title) || left.length) bad.push(`EN на лету: ${JSON.stringify(en)}, кириллица ${left.slice(0, 4).join(' | ')}`);
+    await page.click('.hero-hdr [data-lang="ru"]'); await run(4200);
+    if ((await page.evaluate(textSnap)) !== ru0) bad.push('после возврата на RU текст не совпал');
+  }
+  errs.forEach((e) => bad.push(e));
+  await page.close();
+  if (bad.length) fail(`${tag}: ` + bad.join('; '));
+  else console.log(`  ✓ ${tag}: ${secs.length} секций собраны, ошибок нет${lang === 'en' ? ', кириллицы нет' : ''}${tag === 's1440' ? '; якоря, <details>, JSON-LD, смена языка' : ''}${w === 390 ? '; ↻ только на первом экране' : ''}`);
+}
+// переход с главной по якорю: секции выше цели готовы сразу, цель собирается первой — готова за 3.5 с
+{
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
+  await page.clock.pauseAt(new Date('2026-01-01T12:00:01Z'));
+  await page.goto('file://' + sfile + '#apps');
+  await page.clock.runFor(3500);
+  const r = await page.evaluate(() => ({ apps: document.querySelector('[data-sec="apps"]').classList.contains('s-done'), above: ['hero', 'sites'].filter((n) => !document.querySelector(`[data-sec="${n}"]`).classList.contains('s-done')), top: Math.round(document.getElementById('apps').getBoundingClientRect().top) }));
+  await page.close();
+  if (!r.apps || r.above.length || r.top < 64) fail(`services.html#apps: через 3.5 с apps ${r.apps ? 'собран' : 'не собран'}, выше не готовы ${r.above.join(', ') || '—'}, модуль на ${r.top}px`);
+  else console.log(`  ✓ services.html#apps: модуль собран за 3.5 с, секции выше готовы сразу, модуль на ${r.top}px — не под липкой шапкой`);
+}
+// снимки: блок «Услуги» главной и страница услуг целиком на 1440 и 390 (reduced motion — всё собрано; холсты на время
+// снимка скрыты, длинная страница снимается кусками — fullShot)
+for (const w of [1440, 390]) {
+  const ctx = await browser.newContext({ viewport: { width: w, height: 900 }, reducedMotion: 'reduce' });
+  const page = await ctx.newPage();
+  await page.goto('file://' + file); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
+  const b = await page.evaluate(() => { const r = document.querySelector('#directions').getBoundingClientRect(); return { y: r.top + scrollY, h: r.height }; });
+  await page.addStyleTag({ content: 'canvas{display:none!important}' });
+  await page.screenshot({ path: path.join(shots, `home-services-${w}.png`), fullPage: true, clip: { x: 0, y: Math.round(b.y), width: w, height: Math.round(b.h) } });
+  await page.goto('file://' + sfile); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
+  await page.addStyleTag({ content: 'canvas{display:none!important}' });
+  await page.evaluate(() => document.querySelectorAll('img[loading="lazy"]').forEach((i) => { i.loading = 'eager'; })); await page.waitForTimeout(300);
+  await fullShot(page, path.join(shots, `services-${w}.png`));
+  await ctx.close();
+}
+
 // Раскладка на промежуточных ширинах: ни кнопка, ни ссылка, ни строка текста не выходят за край окна. Документ вбок
 // не листается в любом случае (корень .pt обрезает лишнее), поэтому меряем сами элементы. Липкую шапку на время
 // замера показываем. Вкладки панели: слова видны, только если панель шире 540 px, и не вылезают из вкладки.
-console.log('\nраскладка на промежуточных ширинах (RU / EN, шапка и липкая шапка)');
+console.log('\nраскладка на промежуточных ширинах (главная и услуги, RU / EN, шапка и липкая шапка)');
 {
   const bad = [];
-  for (const lang of ['ru', 'en']) for (const w of [320, 360, 375, 390, 414, 430, 768, 820, 1024, 1150, 1280, 1440]) {
+  for (const pg of ['index.html', 'services.html']) for (const lang of ['ru', 'en']) for (const w of [320, 360, 375, 390, 414, 430, 768, 820, 1024, 1150, 1280, 1440, 1920]) {
     const page = await browser.newPage({ viewport: { width: w, height: 900 } });
-    await page.goto('file://' + file + (lang === 'en' ? '?lang=en' : ''));
+    await page.goto('file://' + path.join(root, pg) + (lang === 'en' ? '?lang=en' : ''));
     await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
     const out = await page.evaluate(() => {
       document.querySelector('[data-topbar]').classList.add('on');
       const W = innerWidth, res = [];
       document.querySelectorAll('#pt-site .sec a, #pt-site .sec button, #pt-site .sec h1, #pt-site .sec h2, #pt-site .sec h3, #pt-site .sec p, #pt-site .sec li, [data-topbar] a, [data-topbar] button').forEach((el) => {
-        if (el.closest('template, [data-menu], .site-view, .an, .wf')) return;
+        if (el.closest('template, [data-menu], .site-view, .an, .wf, .sv-jump')) return;
         const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') return;
         const r = el.getBoundingClientRect(); if (!r.width) return;
         if (r.right > W + 1 || r.left < -1) res.push(`«${(el.textContent.trim() || el.getAttribute('aria-label') || el.tagName).slice(0, 24)}» ${Math.round(r.left)}..${Math.round(r.right)}`);
       });
       if (document.documentElement.scrollWidth > W) res.push(`документ шире окна: ${document.documentElement.scrollWidth}`);
-      const pw = document.querySelector('[data-obj]').getBoundingClientRect().width, words = [...document.querySelectorAll('.cx-w')].filter((x) => getComputedStyle(x).display !== 'none').length;
-      if (pw < 540 ? words : words !== 5) res.push(`панель ${Math.round(pw)} px: видно слов на вкладках ${words}`);
-      const clip = [...document.querySelectorAll('.cx-l')].filter((l) => l.scrollWidth > l.clientWidth + 1).length;
-      if (clip) res.push(`вкладок, где подпись шире вкладки: ${clip}`);
+      const obj = document.querySelector('[data-obj]');
+      if (obj) {
+        const pw = obj.getBoundingClientRect().width, words = [...document.querySelectorAll('.cx-w')].filter((x) => getComputedStyle(x).display !== 'none').length;
+        if (pw < 540 ? words : words !== 5) res.push(`панель ${Math.round(pw)} px: видно слов на вкладках ${words}`);
+        const clip = [...document.querySelectorAll('.cx-l')].filter((l) => l.scrollWidth > l.clientWidth + 1).length;
+        if (clip) res.push(`вкладок, где подпись шире вкладки: ${clip}`);
+      }
+      // курсивный кусок заголовка на ширине от 761 — одной строкой («Один / дом.» рвалось)
+      if (W > 760) document.querySelectorAll('.h2 .it, .sv-h1 .it').forEach((it) => { const n = it.getClientRects().length, r = it.getBoundingClientRect(); if (n !== 1 || r.right > W + 1) res.push(`курсив «${it.textContent.trim().slice(0, 20)}» — ${n} стр., край ${Math.round(r.right)}`); });
       return res;
     });
-    out.forEach((x) => bad.push(`${w} ${lang}: ${x}`));
+    out.forEach((x) => bad.push(`${pg} ${w} ${lang}: ${x}`));
     await page.close();
   }
   if (bad.length) fail('выходят за край окна: ' + bad.slice(0, 12).join(' | ') + (bad.length > 12 ? ` …ещё ${bad.length - 12}` : ''));
-  else console.log('  ✓ на 320–430, 768, 820, 1024, 1150, 1280, 1440 (RU и EN) ничего не выходит за край окна, кнопки шапки целиком; слова вкладок — по ширине панели');
+  else console.log('  ✓ главная и услуги на 320–430, 768, 820, 1024, 1150, 1280, 1440, 1920 (RU и EN): ничего не выходит за край окна, кнопки шапки целиком; слова вкладок — по ширине панели; курсив заголовков — одной строкой');
 }
 
 // Первый экран: шапка с первого кадра, H1 в три строки и курсив не рвётся, панель «Кодекс студии» в первом экране,
@@ -455,6 +638,9 @@ console.log('\nпервый экран: шапка, заголовок, пане
       await run(2600);
       const pm = await page.evaluate(() => ({ mini: document.querySelector('[data-pult]').classList.contains('is-mini'), open: document.querySelector('[data-pult]').classList.contains('is-open') }));
       if (!pm.mini || pm.open) bad.push(`${tag}: пульт не свёрнут при прокрутке сразу после первого экрана`);
+      // на телефоне ↻ — только на первом экране: ниже он лежал поверх карточек
+      await page.evaluate(() => window.scrollTo({ top: document.querySelector('[data-sec="hero"]').getBoundingClientRect().bottom + scrollY + 400, behavior: 'instant' })); await page.waitForTimeout(150); await run(100);
+      if (!(await page.evaluate(() => document.querySelector('[data-pult]').classList.contains('is-off')))) bad.push(`${tag}: ↻ виден ниже первого экрана`);
     } else {
       if (w === 1440 && lang === 'ru') {
         // вступление: вспышка на весь экран, потом вертикальная линия (каркас) и горизонтальная (стили)
@@ -492,6 +678,13 @@ console.log('\nпервый экран: шапка, заголовок, пане
         if (await page.evaluate(() => getComputedStyle(document.querySelector('.pult-bar')).display === 'none')) bad.push(`${tag}: плашка схлопнулась по пути курсора с кнопки на неё`);
       }
       if (lang === 'ru' && w === 1920) await page.screenshot({ path: path.join(shots, 'd1920-first-screen.png') });
+      // объект крупнее, но не задевает вкладки и подпись: границы по пикселям (текст и пыль на время замера скрыты)
+      if (lang === 'ru' && w === 1280) for (const k of [0, 4]) {
+        await page.mouse.move(2, 2);
+        await page.evaluate((n) => document.querySelector(`[data-usp="${n}"]`).click(), k); await run(k === 4 ? 7000 : 3200); await page.waitForTimeout(80);
+        const ob = await objBox(page);
+        if (ob.box[1] < ob.top || ob.box[3] > ob.cap) bad.push(`${tag}: объект 0${k + 1} по вертикали ${ob.box[1]}..${ob.box[3]}, вкладки до ${ob.top}, подпись с ${ob.cap}`);
+      }
     }
     await page.waitForTimeout(1000);
     const h1 = await hd();

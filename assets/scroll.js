@@ -63,7 +63,8 @@
       var el = id && document.getElementById(id);
       if (!el) return;
       e.preventDefault();
-      to(el.getBoundingClientRect().top + window.scrollY);
+      // scroll-margin-top цели (модули страницы услуг — 88 px): иначе она уходила под липкую шапку
+      to(el.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(el).scrollMarginTop) || 0));
       if (history.pushState) history.pushState(null, '', '#' + id);
     });
     window.PTScroll = { tick: step, to: to };

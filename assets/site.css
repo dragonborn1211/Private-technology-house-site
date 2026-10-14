@@ -306,3 +306,196 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .pult.is-mini .pult-bar{width:calc(100vw - 36px)}
 }
 @media (prefers-reduced-motion:reduce){.topbar,.topbar.on,.menu,.menu.on{transition:none}.menu{transform:none}}
+/* ---------- «01 / Услуги» на главной: две группы — «Проекты» и «По подписке», шесть карточек-ссылок на services.html.
+   Цвет направления — --c (иконка, подсветка угла, рамка при наведении). Эталон — tools/ref/services/ ---------- */
+.svc-grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;margin-bottom:44px}
+.svc{position:relative;grid-column:span 3;display:flex;flex-direction:column;gap:10px;min-height:248px;padding:22px 22px 26px 24px;border-radius:24px;overflow:hidden;transition:border-color .35s ease,box-shadow .45s ease,transform .45s cubic-bezier(.3,.7,.2,1)}
+.svc-xl{grid-column:span 6}
+.svc-3 .svc{grid-column:span 4}
+/* подсветка угла цветом направления — отдельным слоем: .fr до стадии рамок гасит фон и рамку, но не background-image */
+.svc::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background-image:radial-gradient(70% 60% at 100% 0%,color-mix(in srgb,var(--c) 13%,transparent),transparent 70%);transition:opacity .9s ease}
+.svc-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:auto;padding-bottom:28px}
+.svc-ic{position:relative;display:inline-flex;align-items:center;justify-content:center;flex:none;width:46px;height:46px;border-radius:14px;color:var(--c);background-color:color-mix(in srgb,var(--c) 8%,transparent);border:1px solid color-mix(in srgb,var(--c) 32%,transparent);box-shadow:0 0 26px -10px var(--c)}
+.svc-ic svg,.sv-ico{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.svc-go{display:block;width:20px;height:20px;margin-top:4px;fill:none;stroke:#6F93A6;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:stroke .3s ease,transform .3s cubic-bezier(.3,.7,.2,1),opacity .9s ease}
+.svc-h{font-size:22px;font-weight:500;line-height:1.2;letter-spacing:-.01em;color:#EEF3F6}
+.svc-d{font-size:15px;line-height:1.55;color:#9DB0BC}
+.svc-xl .svc-h{font-size:clamp(28px,2.4vw,34px);font-weight:300;letter-spacing:-.03em}
+.svc-xl .svc-d{max-width:460px}
+.svc-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.svc-tags span{padding:7px 12px;border-radius:999px;border:1px solid color-mix(in srgb,var(--c) 24%,rgba(188,211,222,.14));background-color:rgba(228,237,242,.025);font-size:12.5px;font-weight:500;line-height:1;color:#BCD3DE;transition:border-color .9s ease,background-color .9s ease}
+/* наведение: рамка и свечение цветом направления, стрелка уезжает вправо; после сборки — быстрые переходы */
+.svc:hover{border-color:color-mix(in srgb,var(--c) 46%,rgba(188,211,222,.14));box-shadow:inset 0 1px 0 rgba(246,248,250,.06),0 30px 60px -30px rgba(0,0,0,.55),0 0 70px -34px var(--c);transform:translateY(-2px)}
+.svc:hover .svc-go{stroke:var(--c);transform:translateX(3px)}
+.pt-on .sec.s-done .svc.fr{transition:border-color .35s ease,box-shadow .45s ease,transform .45s cubic-bezier(.3,.7,.2,1)}
+/* AI — переливом, как пятый принцип в «Кодексе студии» */
+.svc-iri .svc-ic,.sv-iri .svc-ic{background-image:linear-gradient(135deg,rgba(142,216,248,.14),rgba(183,166,242,.12) 55%,rgba(159,229,209,.14));border-color:rgba(183,166,242,.4)}
+/* сборка: иконка, стрелка, подсветка и рамки чипов проявляются вместе с рамками карточек */
+.pt-on .sec .svc-ic,.pt-on .sec .sv-dot{transition:opacity .9s ease,background-color .9s ease,border-color .9s ease}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) :is(.svc-ic,.svc-go,.sv-dot){opacity:0}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .svc::before,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .sv-mod::before{opacity:0}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) :is(.svc-tags span,.sv-chips li){border-color:transparent;background-color:transparent}
+@media (max-width:1100px){.svc{grid-column:span 6}.svc-xl{grid-column:span 12}.svc-xl .svc-top{padding-bottom:20px}}
+@media (max-width:900px){.svc-3 .svc{grid-column:span 12;min-height:0}}
+/* телефон: карточка — строкой, иконка слева, текст справа; стрелка не нужна — кликается вся карточка */
+@media (max-width:760px){
+.svc-grid{grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:36px}
+.svc,.svc-xl,.svc-3 .svc{grid-column:auto;min-height:0;display:grid;grid-template-columns:46px minmax(0,1fr);column-gap:16px;row-gap:6px;align-content:start;padding:18px 18px 20px}
+.svc > :not(.svc-top){grid-column:2}
+.svc-top{grid-row:1 / span 3;padding:0;margin:0}
+.svc-go{display:none}
+.svc-h,.svc-xl .svc-h{font-size:19px;font-weight:500;letter-spacing:-.01em}
+.svc-d{font-size:14.5px}
+.svc-tags{margin-top:6px}
+}
+
+/* ---------- страница услуг (services.html): шапка страницы, «Два формата», переходы к направлениям, модули-прайсы,
+   «Как работаем», «После запуска», вопросы. Эталон — tools/ref/services/ ---------- */
+.sv-head{display:flex;flex-wrap:wrap;gap:40px 64px;align-items:stretch;padding:clamp(16px,5vh,64px) 0 0}
+.sv-col{flex:1.15 1 520px;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:24px}
+.crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0}
+.pt .crumbs a{color:#8FAEC0;transition:color .3s ease}
+.pt .crumbs a:hover{color:#EEF3F6}
+.crumbs i{font-style:normal;color:#4E6878}
+.crumbs [aria-current]{color:#8ED8F8}
+.sv-h1{margin:0;font-weight:300;font-size:clamp(38px,4.6vw,70px);line-height:1.02;letter-spacing:-.04em;color:#EEF3F6}
+@media (min-width:761px){.sv-h1 .it,.h2 .it{white-space:nowrap}}
+/* «Два формата»: проект и подписка — две строки-ссылки в стеклянной панели */
+.sv-fmt{flex:1 1 400px;align-self:center;display:flex;flex-direction:column;padding:8px;border-radius:28px}
+.pt a.sv-f{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:8px 20px;padding:22px 22px 24px;border-radius:21px;transition:background-color .35s ease}
+.sv-f + .sv-f{border-top:1px solid rgba(188,211,222,.1);border-top-left-radius:0;border-top-right-radius:0}
+.pt a.sv-f:hover{background-color:rgba(228,237,242,.04)}
+.sv-fw{font:italic 500 40px/1 'Cormorant Garamond',Georgia,serif;letter-spacing:-.01em;color:var(--c);text-shadow:0 0 26px color-mix(in srgb,var(--c) 30%,transparent)}
+.sv-fm{font:500 11px/1.4 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8FAEC0;white-space:nowrap}
+.sv-fd{grid-column:1 / -1;font-size:15px;line-height:1.55;color:#9DB0BC}
+.sv-fl{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:4px;font-size:13px;font-weight:500;color:#BCD3DE}
+.sv-fl span{display:inline-flex;align-items:center;gap:8px}
+.sv-dot{flex:none;width:6px;height:6px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c)}
+.sv-dot.iri,.sv-jump .iri .svc-ic{background:linear-gradient(135deg,#8ED8F8,#B7A6F2 55%,#9FE5D1)}
+/* переходы к направлениям: шесть «таблеток» с иконкой в цвете направления */
+.sv-jump{display:flex;flex-wrap:wrap;gap:10px;margin:44px 0 0;padding:0;list-style:none}
+.pt .sv-jump a{display:inline-flex;align-items:center;gap:10px;min-height:46px;padding:0 18px 0 8px;border-radius:999px;border:1px solid rgba(188,211,222,.18);background-color:rgba(228,237,242,.03);font-size:14px;font-weight:500;color:#BCD3DE;white-space:nowrap;transition:border-color .3s ease,color .3s ease}
+.pt .sv-jump a:hover{border-color:color-mix(in srgb,var(--c) 60%,transparent);color:#EEF3F6}
+.sv-jump .svc-ic{width:32px;height:32px;border-radius:50%;box-shadow:none}
+.sv-jump .svc-ic svg{width:17px;height:17px}
+.sv-jump .iri .svc-ic{background:none;background-image:linear-gradient(135deg,rgba(142,216,248,.14),rgba(183,166,242,.12) 55%,rgba(159,229,209,.14))}
+/* модуль направления: слева — суть, состав и условия; справа — строки услуг */
+.sv-mods{display:flex;flex-direction:column;gap:16px}
+.sv-mod{position:relative;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:28px 64px;padding:34px 34px 34px 36px;border-radius:30px;overflow:hidden;scroll-margin-top:88px}
+.sv-mod::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background-image:radial-gradient(55% 70% at 0% 0%,color-mix(in srgb,var(--c) 11%,transparent),transparent 70%);transition:opacity .9s ease}
+.sv-info{position:relative;display:flex;flex-direction:column;gap:18px;min-width:0}
+.sv-lab{display:flex;align-items:center;gap:14px;margin:0}
+.sv-lab .mono{color:var(--c)}
+.sv-t{margin:0;font-weight:300;font-size:clamp(26px,2.4vw,36px);line-height:1.12;letter-spacing:-.03em;color:#EEF3F6}
+.sv-p{margin:0;max-width:460px;font-size:15.5px;line-height:1.6;color:#9DB0BC}
+.sv-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.sv-chips li{padding:7px 12px;border-radius:999px;border:1px solid color-mix(in srgb,var(--c) 24%,rgba(188,211,222,.14));font-size:12.5px;font-weight:500;line-height:1;color:#BCD3DE;transition:border-color .9s ease,background-color .9s ease}
+.sv-meta{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px 36px;margin:auto 0 0;padding-top:20px;border-top:1px solid rgba(188,211,222,.1)}
+.sv-meta div{display:flex;flex-direction:column;gap:7px}
+.sv-meta dt{font:500 10.5px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F93A6}
+.sv-meta dd{margin:0;font-size:15px;font-weight:500;color:#EEF3F6}
+.pt a.sv-go{display:inline-flex;align-self:flex-start;align-items:center;gap:8px;min-height:44px;margin:-8px 0 -10px;font-size:15px;font-weight:600;color:#BCD3DE;transition:color .3s ease}
+.pt a.sv-go:hover{color:var(--c)}
+.sv-go svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s cubic-bezier(.3,.7,.2,1)}
+.sv-go:hover svg{transform:translateX(3px)}
+.sv-meta .nda{align-self:flex-end}
+.sv-rows{position:relative;display:flex;flex-direction:column;align-self:start;margin:0;padding:0;list-style:none}
+.sv-rows li{position:relative;display:grid;grid-template-columns:minmax(0,14fr) minmax(0,22fr);gap:6px 28px;padding:19px 4px 19px 22px;border-bottom:1px solid rgba(188,211,222,.1)}
+.sv-rows li:first-child{border-top:1px solid rgba(188,211,222,.1)}
+.sv-rows li::before{content:"";position:absolute;left:0;top:30px;width:8px;height:1px;background:var(--c);box-shadow:0 0 8px var(--c);transition:width .35s ease,opacity .9s ease}
+.sv-rows li:hover::before{width:14px}
+.sv-rn{font-size:16.5px;font-weight:500;line-height:1.35;letter-spacing:-.005em;color:#EEF3F6}
+.sv-rd{font-size:14.5px;line-height:1.55;color:#9DB0BC}
+.pt-on .sec:not(.s-done) .sv-rows li::before{opacity:0}
+/* примеры в модуле «Сайты»: во всю ширину модуля — два снимка (assets/previews) и плитка «ваш проект» */
+.sv-ex{grid-column:1 / -1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.pt a.sv-shot{position:relative;display:block;aspect-ratio:2 / 1;border-radius:18px;overflow:hidden;background-color:rgba(142,216,248,.05);border:1px solid rgba(188,211,222,.14);transition:border-color .3s ease,background-color .9s ease}
+.pt a.sv-shot:hover{border-color:color-mix(in srgb,var(--c) 55%,transparent)}
+.sv-shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block;transition:opacity .9s ease,transform .6s cubic-bezier(.3,.7,.2,1)}
+.sv-shot:hover img{transform:scale(1.03)}
+.sv-shot b{position:absolute;left:12px;bottom:12px;padding:5px 10px;border-radius:999px;background:rgba(10,18,26,.82);border:1px solid rgba(188,211,222,.16);font:500 11px/1.2 'JetBrains Mono',monospace;letter-spacing:.02em;color:#BCD3DE}
+.pt a.sv-next{display:flex;flex-direction:column;justify-content:space-between;padding:18px 20px;border:1px dashed rgba(142,216,248,.45)}
+.sv-next .mono{color:#8ED8F8}
+.sv-nt{max-width:240px;font-size:16px;font-weight:500;line-height:1.4;color:#EEF3F6}
+.pt-on .sec:not(.s-done) .sv-shot img{opacity:0}
+.sv-nda{margin:0}
+/* «Как работаем»: пять шагов в ряд, номер в цвете шага */
+.sv-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:28px;margin:0;padding:0;list-style:none}
+.sv-step{display:flex;flex-direction:column;gap:12px;padding-top:22px}
+.sv-sn{margin:0;font:400 30px/1 'JetBrains Mono',monospace;color:var(--c)}
+.sv-sh{margin:0;font-size:20px;font-weight:500;color:#EEF3F6}
+.sv-sd{margin:0;font-size:15px;line-height:1.55;color:#9DB0BC}
+/* «После запуска»: три пути; «Оставить нам» — выделен */
+.sv-paths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:stretch}
+.sv-path{position:relative;display:flex;flex-direction:column;gap:16px;padding:30px 28px 28px;border-radius:26px}
+.sv-path.is-rec{border-color:rgba(142,216,248,.5);box-shadow:inset 0 1px 0 rgba(246,248,250,.06),0 30px 60px -30px rgba(0,0,0,.55),0 0 80px -40px #8ED8F8}
+.sv-pn{margin:0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.sv-badge{padding:5px 10px;border-radius:999px;background:rgba(142,216,248,.1);border:1px solid rgba(142,216,248,.45);font:500 10px/1 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8ED8F8;white-space:nowrap;transition:opacity .9s ease,border-color .9s ease,background-color .9s ease}
+.sv-ph{margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em;color:#EEF3F6}
+.sv-pd{margin:0;font-size:15px;line-height:1.55;color:#9DB0BC}
+.sv-path .list{flex:1}
+.sv-pf{margin:0;padding-top:16px;border-top:1px solid rgba(188,211,222,.1);font:500 11px/1.4 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8FAEC0}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .sv-badge{border-color:transparent;background-color:transparent}
+/* вопросы: слева заголовок, справа список <details> */
+.sv-faq{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:32px 64px;align-items:start}
+.sv-qs{margin:0;padding:0;border-bottom:1px solid rgba(188,211,222,.16)}
+.sv-q summary{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:68px;padding:18px 0;list-style:none;cursor:pointer;font-size:18px;font-weight:500;line-height:1.35;color:#EEF3F6}
+.sv-q summary::-webkit-details-marker{display:none}
+.sv-q summary:focus-visible{outline:1px solid #8ED8F8;outline-offset:4px;border-radius:6px}
+.sv-pl{position:relative;flex:none;width:30px;height:30px;border-radius:50%;border:1px solid rgba(188,211,222,.22);transition:border-color .3s ease,transform .35s cubic-bezier(.3,.7,.2,1),opacity .9s ease}
+.sv-pl::before,.sv-pl::after{content:"";position:absolute;left:50%;top:50%;width:11px;height:1.5px;margin:-.75px 0 0 -5.5px;border-radius:2px;background:#BCD3DE}
+.sv-pl::after{transform:rotate(90deg);transition:transform .35s cubic-bezier(.3,.7,.2,1)}
+.sv-q summary:hover .sv-pl{border-color:rgba(142,216,248,.6)}
+.sv-q[open] .sv-pl{transform:rotate(180deg);border-color:rgba(142,216,248,.6)}
+.sv-q[open] .sv-pl::after{transform:rotate(0deg)}
+.sv-q p{margin:-4px 0 24px;max-width:640px;font-size:15.5px;line-height:1.6;color:#9DB0BC}
+/* ответ закрытого вопроса движок не собирает (он скрыт), а стиль его Chrome не пересчитывает до первого открытия:
+   ответ проявлялся общим переходом сборки за 0.9 с. Короткое проявление */
+.pt-on .sec .sv-q p.ptx{transition:opacity .25s ease}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .sv-pl{opacity:0}
+@media (max-width:1100px){.sv-mod{grid-template-columns:minmax(0,1fr);gap:28px}.sv-steps{grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}.sv-paths{grid-template-columns:minmax(0,1fr)}.sv-faq{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:760px){
+.sv-head{padding-top:4px}
+.sv-h1{font-size:40px}
+.sv-fw{font-size:34px}
+.pt a.sv-f{padding:18px 16px 20px}
+.sv-jump{flex-wrap:nowrap;overflow-x:auto;margin:32px calc(-1 * var(--pad)) 0;padding:2px var(--pad);scrollbar-width:none}
+.sv-jump::-webkit-scrollbar{display:none}
+.sv-jump a{flex:none}
+.sv-mod{padding:24px 18px 22px;border-radius:24px}
+.sv-rows li{grid-template-columns:minmax(0,1fr);padding:15px 0 15px 20px}
+.sv-rows li::before{top:26px}
+.sv-rn{font-size:16px}
+.sv-ex{grid-template-columns:1fr 1fr;gap:8px}.pt a.sv-shot{aspect-ratio:16 / 11;border-radius:14px}.pt a.sv-next{grid-column:1 / -1;aspect-ratio:auto;min-height:96px;padding:14px 16px}
+.sv-steps{grid-template-columns:minmax(0,1fr);gap:0}
+.sv-step{display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px 12px;padding:18px 0}
+.sv-sn{grid-row:1 / span 2;font-size:22px}
+.sv-path{padding:24px 20px 22px}
+.sv-q summary{font-size:16.5px;min-height:60px}
+}
+@media (prefers-reduced-motion:reduce){.svc,.svc-go,.sv-go svg,.sv-shot img,.sv-pl,.sv-pl::after{transition:none}.svc:hover{transform:none}}
+/* рисунок большой карточки: справа, текст карточки — в левых 56 % */
+.svc-art{position:absolute;right:-6px;bottom:-22px;width:min(44%,340px);height:auto;pointer-events:none;fill:none;stroke:var(--c);stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;transition:opacity .9s ease}
+.svc-art .w2{opacity:.22}
+.svc-art .w1{opacity:.4}
+.svc-art circle.w1{fill:var(--c);stroke:none;opacity:.35}
+.svc-art .dm{filter:drop-shadow(0 0 6px var(--c))}
+.svc-art .dm path{stroke-dasharray:1;stroke-dashoffset:0}
+.svc-art .gl{fill:#EEF3F6;stroke:none;opacity:.9}
+.svc-xl > .svc-h,.svc-xl > .svc-d,.svc-xl > .svc-tags{position:relative;max-width:56%}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .svc-art{opacity:0}
+/* после сборки секции грани чертятся одной линией, затем вспыхивает блик */
+.pt-on .sec.s-done .svc-art .dm path{animation:svcDraw 2.2s cubic-bezier(.6,0,.3,1) both}
+.pt-on .sec.s-done .svc-art .dm path:nth-child(2){animation-delay:.5s}
+.pt-on .sec.s-done .svc-art .dm path:nth-child(3){animation-delay:.9s}
+.pt-on .sec.s-done .svc-art .gl{animation:svcGlint 1.4s ease 2.4s both}
+.pt-on .sec:not(.s-done) .svc-art .dm path{stroke-dashoffset:1}
+.pt-on .sec:not(.s-done) .svc-art .gl{opacity:0}
+@keyframes svcDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes svcGlint{0%{opacity:0;transform:scale(.4)}40%{opacity:1;transform:scale(1.2)}100%{opacity:.9;transform:scale(1)}}
+.svc-art .gl{transform-box:fill-box;transform-origin:center}
+.svc-xl:hover .svc-art .w1{opacity:.6}
+@media (max-width:1100px){.svc-art{width:min(40%,340px)}}
+@media (max-width:760px){.svc-art{display:none}.svc-xl > .svc-h,.svc-xl > .svc-d,.svc-xl > .svc-tags{max-width:none}}
+@media (prefers-reduced-motion:reduce){.pt-on .sec.s-done .svc-art .dm path,.pt-on .sec.s-done .svc-art .gl{animation:none}}
+.pt .nav a[aria-current="page"]{color:#EEF3F6}

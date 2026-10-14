@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://privatechouse.ru/</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/"/>
+  </url>
+  <url>
+    <loc>https://privatechouse.ru/services.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/services.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/services.html?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/services.html"/>
+  </url>
+</urlset>

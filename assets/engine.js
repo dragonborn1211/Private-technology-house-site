@@ -391,6 +391,21 @@
           el.style.setProperty('--ld', (clamp(u, 0, 1) * sec).toFixed(3) + 's');
         });
       }
+      // Переход по якорю с другой страницы (services.html#apps): секции выше цели сразу готовы — как уже прокрученные, —
+      // страница стоит у цели (с учётом scroll-margin-top), и цель собирается первой. Раньше сначала собирался
+      // частично видимый блок выше, и цель была готова только через 5–6 с. false — якоря нет или он в первом экране.
+      function jumpStart() {
+        var el = null, to = null;
+        try { el = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null; } catch (e) { el = null; }
+        if (!el) return false;
+        for (var k = 1; k < secs.length && !to; k++) if (secs[k].el.contains(el)) to = secs[k];
+        if (!to) return false;
+        for (k = 0; secs[k] !== to; k++) { setStage(secs[k], 'done'); secs[k].state = 'done'; wakeSites(secs[k].el); }
+        skipHero();
+        window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(el).scrollMarginTop) || 0), behavior: 'instant' });
+        rootRect(); request(to);
+        return true;
+      }
       // Первый экран помечен собранным без сборки: включаем сетку, объект первого экрана сразу стоит на месте.
       function skipHero() {
         seed(); root.classList.add('g-on');
@@ -912,7 +927,7 @@
         if (heroObj) heroObj.start(true);
         snap(); frame(performance.now()); setProg(); typeLabel('✓ ready'); pultShown = true; pultMini(true);
       } else {
-        request(hero);
+        if (!jumpStart()) request(hero);
         if ('IntersectionObserver' in window) {
           io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { for (var i = 0; i < secs.length; i++) if (secs[i].el === e.target) request(secs[i]); } }); }, { rootMargin: '0px 0px -18% 0px', threshold: 0 });
           secs.forEach(function (s) { io.observe(s.el); });
