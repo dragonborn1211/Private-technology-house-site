@@ -138,17 +138,18 @@ body{margin:0;background:#0A121A}
 .lang-beam::before{content:"";position:absolute;top:0;bottom:0;right:2px;width:180px;background:linear-gradient(90deg,rgba(142,216,248,0),rgba(142,216,248,.06))}
 .lang-beam.run{animation:ptBeam var(--beam,1.2s) linear forwards}
 @keyframes ptBeam{0%{transform:translateX(-4px);opacity:0}6%{opacity:1}94%{opacity:1}100%{transform:translateX(calc(100vw + 4px));opacity:0}}
-/* вступление первого экрана (engine.js, INTRO_LINES): две быстрые линии рисуют контент — вертикальная (.lang-beam) на
-   стадии каркаса идёт слева направо, горизонтальная (.scan-beam) на стадии стилей — сверху вниз. Уголки каркаса,
-   рамки, кнопки и панель проявляются, когда до них доходит линия: задержку --ld по положению ставит движок.
-   Прежняя линия-сканер .scan при этом не идёт (она обрывалась на трети пути: её 1.4 с не влезали в стадию 0.5 с) */
+/* вступление первого экрана (engine.js, INTRO_LINES): две быстрые линии рисуют первый экран — вертикальная
+   (.lang-beam) слева направо рисует все рамки (уголки каркаса, рамки, кнопки, панель, аннотации), горизонтальная
+   (.scan-beam) сверху вниз — текст. Всё проявляется, когда до него доходит линия: задержку --ld по положению ставит
+   движок. Прежняя линия-сканер .scan при этом не идёт (она обрывалась на трети пути: её 1.4 с не влезали в стадию
+   0.5 с) */
 .scan-beam{position:fixed;left:0;right:0;top:0;z-index:31;height:2px;pointer-events:none;opacity:0;background:linear-gradient(90deg,rgba(142,216,248,0),#8ED8F8 18%,#FFFFFF 50%,#B7A6F2 82%,rgba(183,166,242,0));box-shadow:0 0 22px 3px rgba(142,216,248,.35)}
 .scan-beam::before{content:"";position:absolute;left:0;right:0;bottom:2px;height:140px;background:linear-gradient(180deg,rgba(142,216,248,0),rgba(142,216,248,.06))}
 .scan-beam.run{animation:ptBeamH var(--beam,.5s) linear forwards}
 @keyframes ptBeamH{0%{transform:translateY(-4px);opacity:0}6%{opacity:1}94%{opacity:1}100%{transform:translateY(calc(100vh + 4px));opacity:0}}
 .pt-lines .sec.s-skel .scan{animation:none}
-.pt-lines .sec[data-sec="hero"].s-wire .wf{transition-delay:var(--ld,0s)}
-.pt-lines .sec[data-sec="hero"].s-skel .fr,.pt-lines .sec[data-sec="hero"].s-skel .an,.pt-lines .sec[data-sec="hero"].s-skel .hero-obj::before,.pt-lines .sec[data-sec="hero"].s-skel .nb .ar,.pt-lines .sec[data-sec="hero"].s-skel .logo-d,.pt-lines .sec[data-sec="hero"].s-skel .ico svg,.pt-lines .sec[data-sec="hero"].s-skel .burger{transition-delay:var(--ld,0s)}
+.pt-lines .sec[data-sec="hero"].s-skel .wf,.pt-lines .sec[data-sec="hero"].s-skel .fr,.pt-lines .sec[data-sec="hero"].s-skel .an,.pt-lines .sec[data-sec="hero"].s-skel .hero-obj::before,.pt-lines .sec[data-sec="hero"].s-skel .nb .ar,.pt-lines .sec[data-sec="hero"].s-skel .logo-d,.pt-lines .sec[data-sec="hero"].s-skel .ico svg,.pt-lines .sec[data-sec="hero"].s-skel .burger{transition-delay:var(--ld,0s)}
+.pt-lines .sec[data-sec="hero"].s-text .ptx,.pt-lines .sec[data-sec="hero"].s-text .obj-ct,.pt-lines .sec[data-sec="hero"].s-text .obj-cap{opacity:1;transition:opacity .4s ease var(--ld,0s)}
 /* на время подмены текста браузер не подкручивает прокрутку сам: якорь держит движок */
 .pt.no-anchor{overflow-anchor:none}
 @media (max-width:760px){.pt-edge{display:none}}

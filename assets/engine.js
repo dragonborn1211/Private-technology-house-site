@@ -53,10 +53,11 @@
       // settleFn — как мгновенно довести до конца сборку из нескольких секций («Пересобрать блок» до постановки
       // в очередь, смена языка), если её прервали кликом (skipNow) или прокруткой (abortRun). BEAM — проход луча, с.
       var settleFn = null, BEAM = 1.2;
-      // Вступление первого экрана (просьба владельца). INTRO_LINES — две быстрые линии «рисуют» контент: вертикальная
-      // (тот же луч, что при смене языка) на стадии каркаса идёт слева направо, горизонтальная на стадии стилей —
-      // сверху вниз; за ними волной летят частицы и проявляются каркас и рамки (CSS --ld). false — прежняя
-      // линия-сканер .scan. BURST_FULL — вспышка при загрузке разлетается на весь экран; false — прежний сгусток в
+      // Вступление первого экрана (просьба владельца). INTRO_LINES — две быстрые линии «рисуют» первый экран:
+      // вертикальная (тот же луч, что при смене языка) слева направо рисует все рамки — каркас и стили одной стадией,
+      // горизонтальная сверху вниз — текст; за линией волной летят частицы и проявляется то, до чего она дошла (CSS
+      // --ld). Потом частицы долю секунды держат буквы и разлетаются (finish). false — прежние стадии и линия-сканер
+      // .scan. BURST_FULL — вспышка при загрузке разлетается на весь экран; false — прежний сгусток в
       // центре. LINE — проход линии при темпе 1, с (умножается на HERO_K / PRESENT_K). heroSweep — волна частиц первого
       // экрана в такт с линией (sweep).
       var INTRO_LINES = true, BURST_FULL = true, LINE = 1.0, heroSweep = null, burstEnd = 0, beamH = root.querySelector('[data-scan-beam]');
@@ -670,17 +671,27 @@
         var o = replay ? -0.6 : 0, K = replay ? PRESENT_K : HERO_K, LD = LINE * K;
         if (!replay) { burst(); log(s, 'boot · ' + fmtN() + ' particles'); }
         atRun((0.6 + o) * K, function () { root.classList.add('g-on'); measure(s); phGrid(s, ALL, false); log(s, '01 · grid.init(12)'); });
-        // каркас: вертикальная линия слева направо, за ней уголки блоков и частицы; стили: горизонтальная — сверху вниз
-        atRun((1.6 + o) * K, function () {
-          if (INTRO_LINES) { lineDelays('.wf', 'x', LD); heroSweep = { axis: 'x', spread: LD }; line(beamEl, LD); }
-          setStage(s, 'wire'); measure(s); phWire(s, ALL, false); log(s, '02 · layout.measure()');
-        });
-        atRun((2.65 + o) * K, function () {
-          if (INTRO_LINES) { lineDelays('.fr, .an, .hero-obj, .nb .ar, .logo-d, .ico svg, .burger', 'y', LD); heroSweep = { axis: 'y', spread: LD }; line(beamH, LD); }
-          setStage(s, 'skel'); phSkel(s, ALL, false); log(s, '03 · styles.apply(glacier)');
-        });
-        atRun((3.7 + o) * K, function () { heroSweep = null; setStage(s, 'text'); measure(s); phText(s, ALL, false); log(s, '04 · type.crystallize()'); });
-        atRun((5.25 + o) * K, function () { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (heroObj) { if (replay) heroObj.replay(); else heroObj.start(false); } if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); });
+        function done() { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (heroObj) { if (replay) heroObj.replay(); else heroObj.start(false); } if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); }
+        if (INTRO_LINES) {
+          // вертикальная линия рисует все рамки (каркас и стили — одна стадия), за ней частицы обводят блоки и рамки
+          atRun((1.6 + o) * K, function () {
+            lineDelays('.wf, .fr, .an, .hero-obj, .nb .ar, .logo-d, .ico svg, .burger', 'x', LD); heroSweep = { axis: 'x', spread: LD }; line(beamEl, LD);
+            setStage(s, 'skel'); measure(s); phWire(s, ALL, false); heroSweep = null; log(s, '02 · frames.draw()');
+          });
+          // горизонтальная линия — текст: за ней частицы ложатся на буквы и проявляется настоящий текст
+          atRun((2.65 + o) * K, function () {
+            lineDelays('.ptx, .obj-ct, .obj-cap', 'y', LD); heroSweep = { axis: 'y', spread: LD }; line(beamH, LD);
+            setStage(s, 'text'); measure(s); phText(s, ALL, false); heroSweep = null; log(s, '03 · type.crystallize()');
+          });
+          // частицы долю секунды держат буквы — и разлетаются
+          atRun((4.2 + o) * K, done);
+          atRun((4.75 + o) * K, function () { finish(s); });
+          return;
+        }
+        atRun((1.6 + o) * K, function () { setStage(s, 'wire'); measure(s); phWire(s, ALL, false); log(s, '02 · layout.measure()'); });
+        atRun((2.65 + o) * K, function () { setStage(s, 'skel'); phSkel(s, ALL, false); log(s, '03 · styles.apply(glacier)'); });
+        atRun((3.7 + o) * K, function () { setStage(s, 'text'); measure(s); phText(s, ALL, false); log(s, '04 · type.crystallize()'); });
+        atRun((5.25 + o) * K, done);
         atRun((5.8 + o) * K, function () { finish(s); });
       }
       function runSec(s) {
