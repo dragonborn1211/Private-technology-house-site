@@ -39,6 +39,9 @@
 // телефоне), окно схемы в крупном режиме (≥ 520 / ≥ 400 px), номера объектов не повторяются; на странице услуг — кейсы
 // catalog и b24-digest в «Автоматизации», call-audit и dept-agents в «AI», схемы нарисованы и на паузе вне экрана;
 // строки схем из scenes.js переведены (холсты, не DOM); снимки ряда и модулей.
+// Чистка (TASK-cleanup.md): на странице услуг нет чипов-дублей и ряда переходов, направления — ссылками в карточке
+// форматов (порядок, зона нажатия 40 px), нет сроков автоматизации, «код и доступ» — не больше 3 раз. Облегчённый режим
+// включается при кадрах ~150 мс (≤ 20 с), снимает размытие со стёкол и не включается в обычном прогоне.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -442,6 +445,8 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     else if (hid2) fail(`«Пересобрать блок», прерванный кликом: ${hid2} текстовых элементов невидимы`);
     else console.log('  ✓ «Пересобрать блок», прерванный кликом, ничего не оставляет пустым');
   }
+  // обычный прогон (быстрые кадры): облегчённый режим не включился
+  if (!rm) { const lite = await page.evaluate(() => sessionStorage.getItem('pt-lite')); if (lite) fail(`облегчённый режим включился в обычном прогоне: pt-lite = ${lite}`); }
   if (errs.length) { errs.forEach((e) => fail(e)); } else console.log('  ✓ ошибок в консоли нет');
   await page.close();
 }
@@ -501,16 +506,18 @@ for (const [w, h, tag, lang] of [[1440, 900, 's1440', 'ru'], [1700, 930, 's1700'
   if (!(await done('hero'))) bad.push('шапка страницы не собралась за 4 с');
   if (tag === 's1440-en') await page.screenshot({ path: path.join(shots, 's1440-en-head.png') });
   if (w === 390) {
-    // ↻ на телефоне: на первом экране виден, ниже — спрятан
+    // ↻ на телефоне: видна, только пока её угол лежит на первом экране и не на карточке форматов (первый экран услуг
+    // короче окна — под кнопкой уже следующая секция, поэтому кнопка спрятана); ниже — спрятана
     await run(2600); await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(120); await run(100);
     const p0 = await page.evaluate(() => {
       const p = document.querySelector('[data-pult]'), b = p.getBoundingClientRect(), m = { l: b.left, r: b.left + 44, t: b.bottom - 44, b: b.bottom };
-      const over = [...document.querySelectorAll('[data-sec="hero"] .sv-fmt, [data-sec="hero"] .sv-jump a')].some((el) => { const r = el.getBoundingClientRect(); return r.right > m.l && r.left < m.r && r.bottom > m.t && r.top < m.b; });
-      return p.className.replace(over ? ' is-off' : '', '');
+      const h = document.querySelector('[data-sec="hero"]').getBoundingClientRect(), f = document.querySelector('[data-sec="hero"] .sv-fmt').getBoundingClientRect();
+      const ok = h.bottom >= m.b && !(f.right > m.l && f.left < m.r && f.bottom > m.t && f.top < m.b);
+      return { cls: p.className, ok };
     });
     await page.evaluate(() => window.scrollTo({ top: 3000, behavior: 'instant' })); await page.waitForTimeout(120); await run(100);
     const p1 = await page.evaluate(() => document.querySelector('[data-pult]').className);
-    if (!/is-mini/.test(p0) || /is-off/.test(p0) || !/is-off/.test(p1)) bad.push(`↻ на телефоне: в первом экране «${p0}», ниже «${p1}»`);
+    if (!/is-mini/.test(p0.cls) || /is-off/.test(p0.cls) === p0.ok || !/is-off/.test(p1)) bad.push(`↻ на телефоне: в первом экране «${p0.cls}» (место ${p0.ok ? 'свободно' : 'занято'}), ниже «${p1}»`);
   }
   const secs = await page.evaluate(() => [...document.querySelectorAll('[data-sec]')].map((s) => s.dataset.sec));
   for (const name of secs.slice(1)) {
@@ -675,6 +682,65 @@ console.log('\nавтоматизация: ряд главной и кейсы �
   else console.log('  ✓ ряд главной: site-leads → voice-task → reviews → «Ваш процесс», две колонки на 1440, одна на 390, окно схемы 520+ / 400+ / <340 px, без сроков и старых кикеров, номера объектов не повторяются; кейсы на странице услуг нарисованы и на паузе вне экрана');
 }
 
+// Чистка страницы услуг: чипы-дубли, ряд переходов, карточка форматов со ссылками, сроки и повторы в текстах; снимки.
+console.log('\nстраница услуг без повторов');
+{
+  const bad = [];
+  if (/\.sv-jump/.test(readFileSync(path.join(root, 'assets', 'site.css'), 'utf8'))) bad.push('в site.css остались стили .sv-jump');
+  for (const [w, h] of [[1440, 900], [390, 844]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
+    const page = await ctx.newPage();
+    await page.goto('file://' + path.join(root, 'services.html')); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
+    const r = await page.evaluate(() => {
+      const chips = ['sites', 'apps', 'servers', 'care', 'automation', 'ai'].map((id) => id + ':' + (document.querySelector(`#${id} .sv-chips`) ? 1 : 0)).join(' ');
+      const links = [...document.querySelectorAll('.sv-fmt .sv-fl a')].map((a) => ({ h: a.getAttribute('href'), ok: !!document.getElementById(a.getAttribute('href').slice(1)), ht: Math.round(a.getBoundingClientRect().height) }));
+      const vis = document.body.innerText;
+      return { chips, jump: !!document.querySelector('.sv-jump'), links, fw: [...document.querySelectorAll('.sv-fmt a.sv-fw')].map((a) => a.getAttribute('href')).join(','),
+        terms: /от 2 дней|от двух дней/.test(vis), code: (vis.match(/код и\s+доступ/gi) || []).length };
+    });
+    if (r.chips !== 'sites:1 apps:0 servers:0 care:0 automation:1 ai:0') bad.push(`${w}: чипы ${r.chips}`);
+    if (r.jump) bad.push(`${w}: ряд переходов .sv-jump на странице`);
+    if (r.links.map((l) => l.h).join(',') !== '#sites,#apps,#servers,#care,#automation,#ai' || r.links.some((l) => !l.ok || l.ht < 40)) bad.push(`${w}: ссылки карточки форматов ${r.links.map((l) => `${l.h}${l.ok ? '' : '?'}:${l.ht}`).join(' ')}`);
+    if (r.fw !== '#projects,#subscription') bad.push(`${w}: слова форматов ведут на ${r.fw}`);
+    if (r.terms) bad.push(`${w}: остались сроки автоматизации`);
+    if (r.code > 3) bad.push(`${w}: «код и доступ» в тексте ${r.code} раз`);
+    await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
+    await page.screenshot({ path: path.join(shots, `services-hero-${w}.png`) });
+    if (w === 1440) {
+      const b = await page.evaluate(() => { const e = document.getElementById('ai').getBoundingClientRect(); return { y: e.top + scrollY, h: e.height }; });
+      await page.screenshot({ path: path.join(shots, 'services-ai-1440.png'), fullPage: true, clip: { x: 0, y: Math.round(b.y), width: w, height: Math.round(b.h) } });
+    }
+    await ctx.close();
+  }
+  if (bad.length) fail('страница услуг без повторов: ' + bad.join('; '));
+  else console.log('  ✓ чипы только в «Сайтах» и «Автоматизации», ряда переходов нет, шесть направлений — ссылки карточки форматов (≥ 40 px, на существующие id), «Разово» / «Ежемесячно» → #projects / #subscription, сроков автоматизации нет, «код и доступ» ≤ 3 (1440 и 390)');
+}
+
+// Облегчённый режим: кадры ~150 мс (настоящий rAF вызывается из setTimeout 140 мс; часы — настоящие, без page.clock,
+// чтобы кадры и окна watchQuality шли в реальном времени) — через ≤ 20 с у корня .pt-lite, sessionStorage pt-lite ≥ 1,
+// размытие со стёкол снято. Обычный прогон (быстрые кадры) облегчение не включает.
+console.log('\nоблегчённый режим');
+{
+  const bad = [];
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await ctx.addInitScript(() => { const raf = window.requestAnimationFrame.bind(window); window.requestAnimationFrame = (cb) => setTimeout(() => raf(cb), 140); });
+  const page = await ctx.newPage();
+  const errs = []; page.on('pageerror', (e) => errs.push(e.message));
+  await page.goto('file://' + file);
+  const t0 = Date.now(); let st = null;
+  while (Date.now() - t0 < 20000) {
+    await page.waitForTimeout(500);
+    st = await page.evaluate(() => ({ lite: document.getElementById('pt-site').classList.contains('pt-lite'), ss: sessionStorage.getItem('pt-lite'), bar: getComputedStyle(document.querySelector('.topbar')).backdropFilter, glass: getComputedStyle(document.querySelector('.glass')).backdropFilter }));
+    if (st.lite) break;
+  }
+  const sec = ((Date.now() - t0) / 1000).toFixed(1);
+  if (!st.lite || !(+st.ss >= 1) || st.bar !== 'none' || st.glass !== 'none') bad.push(`за ${sec} с: ${JSON.stringify(st)}`);
+  errs.forEach((e) => bad.push(e));
+  await ctx.close();
+  if (bad.length) fail('облегчённый режим при кадрах ~150 мс: ' + bad.join('; '));
+  else console.log(`  ✓ при кадрах ~150 мс облегчение включилось за ${sec} с: .pt-lite, pt-lite = ${st.ss}, у липкой шапки и стекла размытия нет`);
+}
+
 // Рисунки направлений (вариант A — чертежи линиями): после сборки секции прорисованы (is-on, линии дорисованы, есть
 // пиксели), вне экрана на паузе, после ↻ — заново; на странице услуг — шесть мини; reduced motion — сразу, без импульсов.
 console.log('\nрисунки направлений');
@@ -716,8 +782,8 @@ console.log('\nрисунки направлений');
   {
     const pg = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await pg.goto('file://' + path.join(root, 'services.html') + '?intro=instant'); await pg.waitForTimeout(300);
-    const m = await pg.evaluate(() => ({ n: document.querySelectorAll('.sv-lab .glyph-mini').length, on: document.querySelectorAll('.sv-lab .glyph-mini.is-on.is-now').length, icons: document.querySelectorAll('.svc-ic').length, dots: document.querySelectorAll('.sv-jump .sv-dot').length }));
-    if (m.n !== 6 || m.on !== 6 || m.icons || m.dots !== 6) bad.push(`страница услуг: мини ${m.n}, на месте ${m.on}, иконок ${m.icons}, точек в переходах ${m.dots}`);
+    const m = await pg.evaluate(() => ({ n: document.querySelectorAll('.sv-lab .glyph-mini').length, on: document.querySelectorAll('.sv-lab .glyph-mini.is-on.is-now').length, icons: document.querySelectorAll('.svc-ic').length, dots: document.querySelectorAll('.sv-fmt .sv-fl .sv-dot').length }));
+    if (m.n !== 6 || m.on !== 6 || m.icons || m.dots !== 6) bad.push(`страница услуг: мини ${m.n}, на месте ${m.on}, иконок ${m.icons}, точек в карточке форматов ${m.dots}`);
     await pg.evaluate(() => { const e = document.getElementById('sites'); window.scrollTo({ top: e.getBoundingClientRect().top + scrollY - 20, behavior: 'instant' }); }); await pg.waitForTimeout(300);
     await pg.screenshot({ path: path.join(shots, 's1440-sites.png') });
     await pg.close();
@@ -820,7 +886,7 @@ console.log('\nраскладка на промежуточных ширинах
       document.querySelector('[data-topbar]').classList.add('on');
       const W = innerWidth, res = [];
       document.querySelectorAll('#pt-site .sec a, #pt-site .sec button, #pt-site .sec h1, #pt-site .sec h2, #pt-site .sec h3, #pt-site .sec p, #pt-site .sec li, [data-topbar] a, [data-topbar] button').forEach((el) => {
-        if (el.closest('template, [data-menu], .site-view, .an, .wf, .sv-jump')) return;
+        if (el.closest('template, [data-menu], .site-view, .an, .wf')) return;
         const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') return;
         const r = el.getBoundingClientRect(); if (!r.width) return;
         if (r.right > W + 1 || r.left < -1) res.push(`«${(el.textContent.trim() || el.getAttribute('aria-label') || el.tagName).slice(0, 24)}» ${Math.round(r.left)}..${Math.round(r.right)}`);

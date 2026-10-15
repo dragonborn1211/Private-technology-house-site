@@ -99,10 +99,10 @@
 
   // ---------- свёрнутый пульт не ложится на первый экран ----------
   // Кнопка ↻ стоит в левом нижнем углу. Если под ней панель объекта, кнопки или строка доверия (на странице услуг —
-  // «Два формата» и переходы к направлениям; на телефоне и
+  // «Два формата» со ссылками на направления; на телефоне и
   // средних ширинах так бывает), она прячется, пока их не прокрутят. На телефоне она есть только на первом экране:
   // ниже свёрнутый пульт ложился поверх карточек всех секций.
-  var guard = hero ? Array.prototype.slice.call(hero.querySelectorAll('[data-obj], .hero-act .btn, .hero-act .lnk, .trust, .sv-fmt, .sv-jump a')) : [];
+  var guard = hero ? Array.prototype.slice.call(hero.querySelectorAll('[data-obj], .hero-act .btn, .hero-act .lnk, .trust, .sv-fmt')) : [];
   var phone = window.matchMedia ? window.matchMedia('(max-width: 760px)') : null;
   function guardPult() {
     if (!pult) return;
@@ -111,7 +111,9 @@
       // меряем свёрнутую кнопку 44×44 от левого нижнего угла: если курсор над ней, она развёрнута в плашку, и по
       // плашке выходило бы «легла на контент» — кнопка пряталась сразу после пересборки и не возвращалась
       var b = pult.getBoundingClientRect(), p = { left: b.left, right: b.left + 44, top: b.bottom - 44, bottom: b.bottom };
-      if (phone && phone.matches && hero && hero.getBoundingClientRect().bottom < 0) off = true;
+      // телефон: только пока под кнопкой сам первый экран. Первый экран страницы услуг короче окна, и раньше (правило
+      // «первый экран целиком ушёл вверх») ↻ ложилась на заголовок и текст следующей секции
+      if (phone && phone.matches && hero && hero.getBoundingClientRect().bottom < p.bottom) off = true;
       for (var k = 0; k < guard.length && !off; k++) { var r = guard[k].getBoundingClientRect(); off = r.width > 0 && r.right > p.left && r.left < p.right && r.bottom > p.top && r.top < p.bottom; }
     }
     if (pult.classList.contains('is-off') !== off) pult.classList.toggle('is-off', off);

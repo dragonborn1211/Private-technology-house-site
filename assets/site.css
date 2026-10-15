@@ -46,7 +46,10 @@ body{margin:0;background:#0A121A}
 .pt-on .sec:not(.s-done) .it{animation-play-state:paused}
 .pt-on .sec:not([data-sec="hero"]) .it{animation-iteration-count:2}
 /* облегчённый режим (движок включает .pt-lite, если кадры стабильно медленные): без стеклянного размытия */
-.pt-lite .glass{-webkit-backdrop-filter:none;backdrop-filter:none}
+.pt-lite :is(.glass,.topbar,.menu,.pult-bar,.pult-mini,.nb,.frost){-webkit-backdrop-filter:none;backdrop-filter:none}
+.pt-lite .topbar{background:rgba(10,18,26,.95)}
+.pt-lite .menu{background-color:rgba(10,18,26,.97)}
+.pt-lite .pult-bar{background:rgba(10,18,26,.95)}
 .site{position:relative;display:block;aspect-ratio:4/3;border-radius:18px;overflow:hidden;background-color:rgba(142,216,248,.05);border:1px solid rgba(188,211,222,.12)}
 .site-view{position:absolute;top:0;left:0;right:0;bottom:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .site-view iframe{position:absolute;top:0;left:0;width:1440px;height:1100px;border:0;transform-origin:0 0;opacity:0;visibility:hidden;transition:opacity .6s ease,visibility 0s linear .6s;pointer-events:none;background:#0A121A}
@@ -361,22 +364,20 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .crumbs [aria-current]{color:#8ED8F8}
 .sv-h1{margin:0;font-weight:300;font-size:clamp(38px,4.6vw,70px);line-height:1.02;letter-spacing:-.04em;color:#EEF3F6}
 @media (min-width:761px){.sv-h1 .it,.h2 .it{white-space:nowrap}}
-/* «Два формата»: проект и подписка — две строки-ссылки в стеклянной панели */
+/* «Два формата»: проект и подписка; слово формата ведёт к разделу, точки — к модулям направлений */
 .sv-fmt{flex:1 1 400px;align-self:center;display:flex;flex-direction:column;padding:8px;border-radius:28px}
-.pt a.sv-f{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:8px 20px;padding:22px 22px 24px;border-radius:21px;transition:background-color .35s ease}
+.sv-f{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:8px 20px;padding:20px 22px 16px;border-radius:21px}
 .sv-f + .sv-f{border-top:1px solid rgba(188,211,222,.1);border-top-left-radius:0;border-top-right-radius:0}
-.pt a.sv-f:hover{background-color:rgba(228,237,242,.04)}
-.sv-fw{font:italic 500 40px/1 'Cormorant Garamond',Georgia,serif;letter-spacing:-.01em;color:var(--c);text-shadow:0 0 26px color-mix(in srgb,var(--c) 30%,transparent)}
+.pt a.sv-fw{justify-self:start;font:italic 500 40px/1 'Cormorant Garamond',Georgia,serif;letter-spacing:-.01em;color:var(--c);text-shadow:0 0 26px color-mix(in srgb,var(--c) 30%,transparent);transition:text-shadow .3s ease}
+.pt a.sv-fw:hover{text-shadow:0 0 30px color-mix(in srgb,var(--c) 65%,transparent)}
 .sv-fm{font:500 11px/1.4 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8FAEC0;white-space:nowrap}
-.sv-fd{grid-column:1 / -1;font-size:15px;line-height:1.55;color:#9DB0BC}
-.sv-fl{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:4px;font-size:13px;font-weight:500;color:#BCD3DE}
-.sv-fl span{display:inline-flex;align-items:center;gap:8px}
+.sv-fl{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:0 20px;margin-top:2px;font-size:14px;font-weight:500}
+/* направления — ссылки на модули; высота строки — зона нажатия (не меньше 40 px на телефоне) */
+.pt .sv-fl a{display:inline-flex;align-items:center;gap:8px;min-height:40px;color:#BCD3DE;transition:color .25s ease}
+.pt .sv-fl a:hover{color:#EEF3F6}
+.sv-fl a:hover .sv-dot{box-shadow:0 0 14px var(--c),0 0 4px var(--c)}
 .sv-dot{flex:none;width:6px;height:6px;border-radius:50%;background:var(--c);box-shadow:0 0 10px var(--c)}
-.sv-dot.iri,.sv-jump .iri .sv-dot{background:linear-gradient(135deg,#8ED8F8,#B7A6F2 55%,#9FE5D1)}
-/* переходы к направлениям: шесть «таблеток» с иконкой в цвете направления */
-.sv-jump{display:flex;flex-wrap:wrap;gap:10px;margin:44px 0 0;padding:0;list-style:none}
-.pt .sv-jump a{display:inline-flex;align-items:center;gap:10px;min-height:46px;padding:0 18px 0 8px;border-radius:999px;border:1px solid rgba(188,211,222,.18);background-color:rgba(228,237,242,.03);font-size:14px;font-weight:500;color:#BCD3DE;white-space:nowrap;transition:border-color .3s ease,color .3s ease}
-.pt .sv-jump a:hover{border-color:color-mix(in srgb,var(--c) 60%,transparent);color:#EEF3F6}
+.sv-dot.iri{background:linear-gradient(135deg,#8ED8F8,#B7A6F2 55%,#9FE5D1)}
 /* модуль направления: слева — суть, состав и условия; справа — строки услуг */
 .sv-mods{display:flex;flex-direction:column;gap:16px}
 .sv-mod{position:relative;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:28px 64px;padding:34px 34px 34px 36px;border-radius:30px;overflow:hidden;scroll-margin-top:88px}
@@ -459,11 +460,9 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 @media (max-width:760px){
 .sv-head{padding-top:4px}
 .sv-h1{font-size:40px}
-.sv-fw{font-size:34px}
-.pt a.sv-f{padding:18px 16px 20px}
-.sv-jump{flex-wrap:nowrap;overflow-x:auto;margin:32px calc(-1 * var(--pad)) 0;padding:2px var(--pad);scrollbar-width:none}
-.sv-jump::-webkit-scrollbar{display:none}
-.sv-jump a{flex:none}
+.pt a.sv-fw{font-size:34px}
+.sv-f{padding:16px 16px 10px}
+.sv-fl{gap:0 18px}
 .sv-mod{padding:24px 18px 22px;border-radius:24px}
 .sv-rows li{grid-template-columns:minmax(0,1fr);padding:15px 0 15px 20px}
 .sv-rows li::before{top:26px}
@@ -542,10 +541,8 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .svc-xl > .svc-h,.svc-xl > .svc-d,.svc-xl > .svc-tags{max-width:none}
 .svc-xl .svc-h{margin-top:0}
 }
-/* страница услуг: мини-рисунок у подписи модуля; в переходах — цветная точка */
+/* страница услуг: мини-рисунок у подписи модуля */
 .sv-lab .glyph-mini{flex:none;width:112px;margin:-6px 0 -6px -4px}
-.pt .sv-jump a{padding:0 18px 0 16px}
-.sv-jump .sv-dot{width:7px;height:7px}
 @media (max-width:760px){.sv-lab .glyph-mini{width:88px}}
 @media (max-width:760px){.svc-pic svg,.glyph-xl svg{stroke-width:2.6}}
 /* без анимации: чертёж сразу на месте, петель нет; импульсы стоят на месте и ничего не значат — их нет */
