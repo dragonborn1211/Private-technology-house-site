@@ -35,6 +35,10 @@
 // паузе, при reduced motion — сразу на месте, без импульсов. «Процесс» только на странице услуг. Режимы сборки: полная
 // (первый визит / старше 30 дней), быстрая (переход между страницами, моложе 30 дней), сразу (страница уже открывалась
 // в этой вкладке, «Назад»), ?intro=…, запрещённое хранилище; нет unload / beforeunload.
+// Автоматизация (TASK-automation.md): на главной — site-leads, voice-task, reviews, your-process в две колонки (одна на
+// телефоне), окно схемы в крупном режиме (≥ 520 / ≥ 400 px), номера объектов не повторяются; на странице услуг — кейсы
+// catalog и b24-digest в «Автоматизации», call-audit и dept-agents в «AI», схемы нарисованы и на паузе вне экрана;
+// строки схем из scenes.js переведены (холсты, не DOM); снимки ряда и модулей.
 import { chromium } from 'playwright';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -586,6 +590,89 @@ for (const w of [1440, 390]) {
   await page.evaluate(() => document.querySelectorAll('img[loading="lazy"]').forEach((i) => { i.loading = 'eager'; })); await page.waitForTimeout(300);
   await fullShot(page, path.join(shots, `services-${w}.png`));
   await ctx.close();
+}
+
+// Автоматизация: ряд главной (порядок схем, колонки, крупный режим, номера объектов), кейсы на странице услуг (схемы
+// нарисованы после сборки, на паузе вне экрана), перевод строк схем, снимки.
+console.log('\nавтоматизация: ряд главной и кейсы на странице услуг');
+{
+  const bad = [];
+  // номера объектов во всём index.html, включая <template>, не повторяются
+  const nums = [...readFileSync(file, 'utf8').matchAll(/Объект №(\d+)/g)].map((m) => m[1]);
+  const dup = nums.filter((n, i) => nums.indexOf(n) !== i);
+  if (dup.length) bad.push(`повторяются номера объектов: ${[...new Set(dup)].join(', ')}`);
+  for (const [w, h] of [[1440, 900], [1100, 900], [390, 844]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
+    const page = await ctx.newPage();
+    await page.goto('file://' + file); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
+    const r = await page.evaluate(() => {
+      const a = document.querySelector('#automation'), cards = [...a.querySelectorAll('canvas[data-flow]')].map((c) => c.closest('.obj') || c.parentElement);
+      return { flows: [...a.querySelectorAll('canvas[data-flow]')].map((c) => c.dataset.flow).join(','), tops: cards.map((c) => Math.round(c.getBoundingClientRect().top)), win: Math.round(a.querySelector('.flow-win').getBoundingClientRect().width),
+        old: /Объект №0[45] · Автоматизация/.test(a.textContent), text: a.textContent };
+    });
+    if (r.flows !== 'site-leads,voice-task,reviews,your-process') bad.push(`${w}: схемы в ряду ${r.flows}`);
+    if (w === 1440 && r.tops[0] !== r.tops[1]) bad.push(`1440: карточки 1 и 2 не в одной строке (${r.tops[0]} / ${r.tops[1]})`);
+    if (w === 390 && !(r.tops[1] > r.tops[0])) bad.push('390: карточки не друг под другом');
+    if ((w === 1440 && r.win < 520) || (w === 1100 && r.win < 400) || (w === 390 && r.win >= 340)) bad.push(`${w}: окно схемы ${r.win} px — не тот режим`);
+    if (r.old) bad.push(`${w}: остались старые кикеры «Автоматизация»`);
+    if (/\d+\s*(дн|час|мин|недел)|не работает|работает/i.test(r.text.replace('Процессы, которые работают без людей.', ''))) bad.push(`${w}: в текстах ряда сроки или «работает»`);
+    // снимок ряда: холсты частиц на время снимка скрыты
+    const b = await page.evaluate(() => { const e = document.querySelector('#automation').getBoundingClientRect(); return { y: e.top + scrollY, h: e.height }; });
+    await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
+    await page.screenshot({ path: path.join(shots, `home-auto-${w}.png`), fullPage: true, clip: { x: 0, y: Math.round(b.y), width: w, height: Math.round(b.h) } });
+    await ctx.close();
+  }
+  // EN: снимок ряда; строки схем из scenes.js (от var FLOWS до function pickOne) переведены словарём
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    const page = await ctx.newPage();
+    await page.goto('file://' + file + '?lang=en'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
+    const src = readFileSync(path.join(root, 'assets', 'scenes.js'), 'utf8'), part = src.slice(src.indexOf('var FLOWS'), src.indexOf('function pickOne'));
+    const lits = [...new Set([...part.matchAll(/'([^'\n]*[А-Яа-яЁё][^'\n]*)'/g)].map((m) => m[1]))];
+    const miss = await page.evaluate((l) => l.filter((x) => window.PTI18N.t(x) === x), lits);
+    if (!lits.length || miss.length) bad.push(`строки схем без перевода (${miss.length} из ${lits.length}): ${miss.slice(0, 6).join(' | ')}`);
+    const b = await page.evaluate(() => { const e = document.querySelector('#automation').getBoundingClientRect(); return { y: e.top + scrollY, h: e.height }; });
+    await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
+    await page.screenshot({ path: path.join(shots, 'home-auto-en-1440.png'), fullPage: true, clip: { x: 0, y: Math.round(b.y), width: 1440, height: Math.round(b.h) } });
+    await ctx.close();
+    if (!miss.length) console.log(`  ✓ строки схем переведены: ${lits.length} кириллических строк в FLOWS и пулах «Вашего процесса»`);
+  }
+  // страница услуг: кейсы в модулях, схемы нарисованы после сборки и на паузе вне экрана
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
+    await page.clock.pauseAt(new Date('2026-01-01T12:00:01Z'));
+    await page.addInitScript(printsInit);
+    await page.goto('file://' + path.join(root, 'services.html'));
+    const run = (ms) => page.clock.runFor(ms);
+    await run(3000);
+    const cs = await page.evaluate(() => ({ auto: [...document.querySelectorAll('#automation .sv-cases canvas[data-flow]')].map((c) => c.dataset.flow).join(','), ai: [...document.querySelectorAll('#ai .sv-cases canvas[data-flow]')].map((c) => c.dataset.flow).join(',') }));
+    if (cs.auto !== 'catalog,b24-digest' || cs.ai !== 'call-audit,dept-agents') bad.push(`кейсы на странице услуг: «Автоматизация» ${cs.auto}, «AI» ${cs.ai}`);
+    for (const id of ['automation', 'ai']) {
+      await page.evaluate((i) => { const e = document.querySelector(`#${i} .sv-cases`); window.scrollTo({ top: e.getBoundingClientRect().top + scrollY - 200, behavior: 'instant' }); }, id);
+      await page.waitForTimeout(200); await run(4500);
+      const p = await page.evaluate((i) => window.__scenePrints(`#${i} .sv-cases canvas[data-flow]`, true), id);
+      if (p.length !== 2 || p.some((x) => !x)) bad.push(`#${id}: схем кейсов на экране ${p.length}, пустых ${p.filter((x) => !x).length}`);
+    }
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(200); await run(500);
+    const p0 = await page.evaluate(() => window.__scenePrints('.sv-cases canvas[data-flow]')); await run(2000);
+    const p1 = await page.evaluate(() => window.__scenePrints('.sv-cases canvas[data-flow]'));
+    if (p0.some((x, i) => x !== p1[i])) bad.push('схемы кейсов анимируются вне экрана');
+    await page.close();
+    for (const w of [1440, 390]) {
+      const ctx = await browser.newContext({ viewport: { width: w, height: 900 }, reducedMotion: 'reduce' });
+      const pg = await ctx.newPage();
+      await pg.goto('file://' + path.join(root, 'services.html')); await pg.evaluate(() => document.fonts.ready); await pg.waitForTimeout(300);
+      await pg.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
+      for (const id of ['automation', 'ai']) {
+        const b = await pg.evaluate((i) => { const e = document.getElementById(i).getBoundingClientRect(); return { y: e.top + scrollY, h: e.height }; }, id);
+        await pg.screenshot({ path: path.join(shots, `services-${id}-${w}.png`), fullPage: true, clip: { x: 0, y: Math.round(b.y), width: w, height: Math.round(b.h) } });
+      }
+      await ctx.close();
+    }
+  }
+  if (bad.length) fail('автоматизация: ' + bad.join('; '));
+  else console.log('  ✓ ряд главной: site-leads → voice-task → reviews → «Ваш процесс», две колонки на 1440, одна на 390, окно схемы 520+ / 400+ / <340 px, без сроков и старых кикеров, номера объектов не повторяются; кейсы на странице услуг нарисованы и на паузе вне экрана');
 }
 
 // Рисунки направлений (вариант A — чертежи линиями): после сборки секции прорисованы (is-on, линии дорисованы, есть

@@ -4,6 +4,8 @@
 // env — живые параметры движка: env.rm (prefers-reduced-motion), env.mob (ширина < 760), env.vh (высота окна).
 (function () {
   var ACC = ['#8ED8F8', '#7FA8FF', '#B7A6F2', '#9FE5D1'], LILAC = '#B7A6F2';
+  // цвет подписи роли над названием плашки: источник, связка, обработка, AI, результат
+  var ROLEC = { trigger: '#8ED8F8', webhook: '#7FA8FF', workflow: '#7FA8FF', ai: '#B7A6F2', output: '#9FE5D1' };
   function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
   function rgba(hex, a) { return 'rgba(' + parseInt(hex.slice(1, 3), 16) + ',' + parseInt(hex.slice(3, 5), 16) + ',' + parseInt(hex.slice(5, 7), 16) + ',' + a + ')'; }
   function rrect(g, x, y, w, h, r) { r = Math.max(0, Math.min(r, w / 2, h / 2)); g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
@@ -317,7 +319,7 @@
     var G = { t: 0, first: 1.5, spawnAt: 1.5, fade: 1, dusting: false, W: 1, H: 1, compact: false, fs: 11, lh: 14, py: 6, title: spec.title || '' };
     var nodes = [], edges = [], pulses = [], labels = [], parts = [], byId = {};
     spec.nodes.forEach(function (n, i) {
-      var o = { id: n.id, name: tr(n.name), role: n.role || '', role2: '', fx: n.x, fy: n.y, turn: !!n.turn, stack: !!n.stack, i: i, x: 0, y: 0, w: 0, h: 0, lines: [], at: 0, shown: false, fl: 0, fc: ACC[0], out: [] };
+      var o = { id: n.id, name: tr(n.name), role: n.role || '', role2: '', fx: n.x, fy: n.y, mx: n.mx, my: n.my, tx: n.tx, ty: n.ty, turn: !!n.turn, stack: !!n.stack, i: i, x: 0, y: 0, w: 0, h: 0, lines: [], at: 0, shown: false, fl: 0, fc: ACC[0], out: [] };
       nodes.push(o); byId[n.id] = o;
     });
     spec.edges.forEach(function (e) {
@@ -376,21 +378,57 @@
       var u = (s - cum[i]) / ((cum[i + 1] - cum[i]) || 1);
       o.x = P[i * 2] + (P[i * 2 + 2] - P[i * 2]) * u; o.y = P[i * 2 + 1] + (P[i * 2 + 3] - P[i * 2 + 1]) * u;
     }
-    // подпись события: над горизонтальной связью (встречная — под ней), плашки узлов не перекрывает;
-    // у вертикальной — на самой линии ближе к источнику, чтобы подписи соседних связей зигзага не сходились
+    // Подпись события: над горизонтальной связью (встречная — под ней), у вертикальной — сбоку от линии ближе к источнику,
+    // чтобы подписи соседних связей зигзага не сходились. Место выбирается один раз, когда подпись появляется (и заново
+    // после смены размера окна), из вариантов: точки вдоль линии (у горизонтальной — сверху и снизу, со сдвигом с плашек
+    // на концах; у вертикальной — с обеих сторон). Берётся первое, где нет ни плашек, ни уже видимых подписей; нет такого —
+    // без плашек и с наименьшим перекрытием подписей (плашки важнее); нет и его — как раньше. Раньше подпись вертикальной связи вообще не обходила
+    // плашки (короткая крутая связь «Ozon → n8n» на ~450 px), а на телефоне подписи центра «звезды» ложились друг на друга.
+    function hitsNode(x, y, w, h) {
+      for (var i = 0; i < nodes.length; i++) { var n = nodes[i]; if (x < n.x + n.w / 2 + 3 && x + w > n.x - n.w / 2 - 3 && y < n.y + n.h / 2 + 3 && y + h > n.y - n.h / 2 - 3) return true; }
+      return false;
+    }
+    // площадь перекрытия с уже видимыми подписями (с зазором)
+    function overLabels(x, y, w, h, self) {
+      var a = 0;
+      for (var j = 0; j < labels.length; j++) {
+        var o = labels[j]; if (o === self || !o.key || o.t >= 0.9) continue;
+        var ox = Math.min(x + w, o.x + o.w + 4) - Math.max(x, o.x - 4), oy = Math.min(y + h, o.y + o.h + 2) - Math.max(y, o.y - 2);
+        if (ox > 0 && oy > 0) a += ox * oy;
+      }
+      return a;
+    }
     function labelPos(L) {
-      var e = L.e, m = e.len / 2, h = L.h = G.compact ? 14 : 15, x, y, side;
+      var key = G.W + '|' + G.H + '|' + G.fs;
+      if (L.key === key && L.t > 0) return;
+      var e = L.e, m = e.len / 2, h = L.h = G.lbh, W = G.W, H = G.H, cand = [];
       pos(e, m - 3, PS); pos(e, m + 3, PT);
       var mx = (PS.x + PT.x) / 2, my = (PS.y + PT.y) / 2;
       if (e.hor) {
-        side = e.side > 0 ? 1 : -1; x = mx - L.w / 2; y = side < 0 ? my - 5 - h : my + 5;
-        for (var pass = 0; pass < 2; pass++) [e.a, e.b].forEach(function (n) {
-          if (x < n.x + n.w / 2 + 3 && x + L.w > n.x - n.w / 2 - 3 && y < n.y + n.h / 2 + 3 && y + h > n.y - n.h / 2 - 3) y = side < 0 ? n.y - n.h / 2 - h - 4 : n.y + n.h / 2 + 4;
-        });
+        var s0 = e.side > 0 ? 1 : -1;
+        [s0, -s0].forEach(function (side) { [0.5, 0.35, 0.65].forEach(function (t) {
+          var cx0 = mx, cy0 = my;
+          if (t !== 0.5) { pos(e, e.len * t, PS); cx0 = PS.x; cy0 = PS.y; }
+          var x = cx0 - L.w / 2, y = side < 0 ? cy0 - 5 - h : cy0 + 5;
+          for (var pass = 0; pass < 2; pass++) [e.a, e.b].forEach(function (n) {
+            if (x < n.x + n.w / 2 + 3 && x + L.w > n.x - n.w / 2 - 3 && y < n.y + n.h / 2 + 3 && y + h > n.y - n.h / 2 - 3) y = side < 0 ? n.y - n.h / 2 - h - 4 : n.y + n.h / 2 + 4;
+          });
+          cand.push([x, y]);
+        }); });
       } else {
-        pos(e, e.len * 0.4, PS); x = PS.x - L.w / 2 + e.side * (L.w / 2 + 6); y = PS.y - h / 2;
+        var sd = e.side || 1;
+        [sd, -sd].forEach(function (side) { [0.4, 0.55, 0.25, 0.7, 0.15, 0.85].forEach(function (t) { pos(e, e.len * t, PS); cand.push([PS.x - L.w / 2 + side * (L.w / 2 + 6), PS.y - h / 2]); }); });
       }
-      L.x = clamp(x, 3, G.W - L.w - 3); L.y = clamp(y, 3, G.H - h - 3);
+      // первое место без плашек и подписей; нет такого — без плашек и с наименьшим перекрытием подписей; нет и его — как раньше
+      var pick = null, bestA = Infinity;
+      for (var c = 0; c < cand.length; c++) {
+        var cx = clamp(cand[c][0], 3, W - L.w - 3), cy = clamp(cand[c][1], 3, H - h - 3);
+        if (hitsNode(cx, cy, L.w, h)) continue;
+        var ov = overLabels(cx, cy, L.w, h, L);
+        if (ov < bestA) { bestA = ov; pick = [cx, cy]; if (!ov) break; }
+      }
+      if (!pick) pick = [clamp(cand[0][0], 3, W - L.w - 3), clamp(cand[0][1], 3, H - h - 3)];
+      L.x = pick[0]; L.y = pick[1]; L.key = key;
     }
 
     function go(e, from, path, ret) {
@@ -417,8 +455,8 @@
       n.fl = 0.4; n.fc = p.col;
       if (p.e.ev) {
         for (var j = 0; j < labels.length; j++) if (labels[j].e === p.e) { L = labels[j]; break; }
-        if (L) L.t = Math.min(L.t, 0.12);
-        else labels.push(L = { e: p.e, txt: p.e.ev, t: 0, w: 0, h: 15, x: 0, y: 0, fs: 0 });
+        if (L) { if (L.t >= 0.9) L.key = ''; L.t = Math.min(L.t, 0.12); }
+        else labels.push(L = { e: p.e, txt: p.e.ev, t: 0, w: 0, h: 15, x: 0, y: 0, fs: 0, key: '' });
         L.col = p.col;
       }
       route(n, p);
@@ -442,18 +480,23 @@
 
     G.layout = function (g, W, H, compact) {
       G.W = W; G.H = H; G.compact = compact;
-      var fs = compact ? 10 : 11, px = compact ? 7 : 10, py = compact ? 5 : 6, lh = fs + 3, maxW = W * (compact ? 0.3 : 0.27) - 2 * px;
-      G.fs = fs; G.lh = lh; G.py = py;
+      // крупные схемы (окно ≥ 400 px — ряд «Автоматизация» в две колонки): шрифт 13 px, от 520 px — 14.5 px, цветная подпись роли 10 px
+      var big = !compact && W >= 400, wide = W >= 520;
+      var fs = compact ? 11 : big ? (wide ? 14.5 : 13) : 11, px = compact ? 7 : big ? (wide ? 13 : 11) : 10, py = compact ? 5 : big ? 10 : 6, lh = fs + (big ? 5 : 3), maxW = W * (compact ? 0.3 : big ? 0.25 : 0.27) - 2 * px;
+      G.fs = fs; G.lh = lh; G.py = py; G.big = big; G.rfs = big ? 10 : 9; G.rh = big ? 17 : 12; G.rad = big ? 11 : 8; G.lfs = big ? 10.5 : (compact ? 9 : 9.5); G.lbh = big ? 19 : (compact ? 14 : 15);
       g.save();
       nodes.forEach(function (n) {
-        g.font = '600 ' + fs + 'px Manrope, system-ui, sans-serif';
+        g.font = (big ? '500 ' : '600 ') + fs + 'px Manrope, system-ui, sans-serif';
         n.lines = wrapName(g, n.name, maxW);
         var tw = 0;
         n.lines.forEach(function (l) { tw = Math.max(tw, g.measureText(l).width); });
         n.role2 = compact ? '' : n.role;
-        if (n.role2) { g.font = '500 9px "JetBrains Mono", monospace'; tw = Math.max(tw, g.measureText(n.role2).width); }
-        n.w = Math.ceil(tw + 2 * px); n.h = Math.ceil(2 * py + n.lines.length * lh + (n.role2 ? 12 : 0));
-        n.x = clamp(n.fx * W, n.w / 2 + 6, W - n.w / 2 - 6); n.y = clamp(n.fy * H, n.h / 2 + 6, H - n.h / 2 - 6);
+        if (n.role2) { g.font = '500 ' + G.rfs + 'px "JetBrains Mono", monospace'; tw = Math.max(tw, g.measureText(n.role2).width * (big ? 1.1 : 1)); }
+        n.w = Math.ceil(tw + 2 * px); n.h = Math.ceil(2 * py + n.lines.length * lh + (n.role2 ? G.rh : 0));
+        // mx / my — раскладка узкого окна (телефон); tx / ty — средней ширины (крупный шрифт, окно 400–519 px): там плашки
+        // уже крупные, а окно ещё узкое, и короткие связи не вмещали подписи событий. Нет полей — узел стоит по x / y
+        var mid = big && !wide, fx = compact && n.mx != null ? n.mx : mid && n.tx != null ? n.tx : n.fx, fy = compact && n.my != null ? n.my : mid && n.ty != null ? n.ty : n.fy;
+        n.x = clamp(fx * W, n.w / 2 + 6, W - n.w / 2 - 6); n.y = clamp(fy * H, n.h / 2 + 6, H - n.h / 2 - 6);
       });
       g.restore();
       edges.forEach(curve);
@@ -462,8 +505,9 @@
     G.build = function (instant) {
       G.t = 0; G.fade = 1; G.dusting = false; G.first = G.spawnAt = instant ? 0.3 : 1.5;
       pulses.length = 0; labels.length = 0; parts.length = 0;
-      // узлы появляются по одному слева направо, связи прорисовываются вслед за ними
-      nodes.forEach(function (n) { n.at = instant ? -1 : 0.12 + n.fx * 0.95 + n.fy * 0.15; n.shown = instant; n.fl = 0; });
+      // узлы появляются по одному слева направо (seq — в порядке процесса), связи прорисовываются вслед за ними
+      var last = Math.max(1, nodes.length - 1);
+      nodes.forEach(function (n) { n.at = instant ? -1 : spec.seq ? 0.12 + n.i / last * 1.1 : 0.12 + n.fx * 0.95 + n.fy * 0.15; n.shown = instant; n.fl = 0; });
       edges.forEach(function (e) { e.at = instant ? -1 : Math.max(e.a.at, e.b.at) + 0.12; });
     };
     G.fire = function () {
@@ -519,7 +563,7 @@
       g.save();
       g.lineCap = 'round'; g.lineJoin = 'round';
       if (F > 0.003) {
-        g.lineWidth = 1;
+        g.lineWidth = G.big ? 1.25 : 1;
         for (j = 0; j < edges.length; j++) {
           var e = edges[j], u = clamp((t - e.at) / 0.45, 0, 1), c = e.c;
           if (u <= 0) continue;
@@ -530,8 +574,9 @@
           // шеврон у входа в узел
           var N = e.cum.length - 1, ex = e.pts[N * 2], ey = e.pts[N * 2 + 1], tx = ex - e.pts[N * 2 - 4], ty = ey - e.pts[N * 2 - 3], tl = Math.sqrt(tx * tx + ty * ty) || 1;
           tx /= tl; ty /= tl;
+          var cs = G.big ? 1.35 : 1;
           g.strokeStyle = 'rgba(188,211,222,.5)'; g.beginPath();
-          g.moveTo(ex - tx * 4.5 - ty * 3.2, ey - ty * 4.5 + tx * 3.2); g.lineTo(ex, ey); g.lineTo(ex - tx * 4.5 + ty * 3.2, ey - ty * 4.5 - tx * 3.2); g.stroke();
+          g.moveTo(ex - tx * 4.5 * cs - ty * 3.2 * cs, ey - ty * 4.5 * cs + tx * 3.2 * cs); g.lineTo(ex, ey); g.lineTo(ex - tx * 4.5 * cs + ty * 3.2 * cs, ey - ty * 4.5 * cs - tx * 3.2 * cs); g.stroke();
         }
         for (j = 0; j < nodes.length; j++) {
           var n = nodes[j], a = clamp((t - n.at) / 0.3, 0, 1) * F;
@@ -539,26 +584,31 @@
           var x = n.x - n.w / 2, y = n.y - n.h / 2, fl = n.fl / 0.4;
           g.lineWidth = 1;
           if (n.stack) for (var s = 2; s >= 1; s--) {
-            g.globalAlpha = a * (s === 2 ? 0.35 : 0.6); rrect(g, x + s * 4, y - s * 4, n.w, n.h, 8);
+            g.globalAlpha = a * (s === 2 ? 0.35 : 0.6); rrect(g, x + s * 4, y - s * 4, n.w, n.h, G.rad);
             if (solid) { g.fillStyle = 'rgba(10,18,26,.85)'; g.fill(); }
             g.strokeStyle = 'rgba(188,211,222,.22)'; g.stroke();
           }
-          g.globalAlpha = a; rrect(g, x, y, n.w, n.h, 8);
+          g.globalAlpha = a; rrect(g, x, y, n.w, n.h, G.rad);
           if (solid) { g.fillStyle = 'rgba(10,18,26,.8)'; g.fill(); }
           g.fillStyle = fl > 0 ? rgba(n.fc, 0.04 + fl * 0.08) : 'rgba(228,237,242,.04)'; g.fill();
-          g.strokeStyle = 'rgba(188,211,222,.22)'; g.stroke();
+          g.strokeStyle = G.big ? 'rgba(188,211,222,.28)' : 'rgba(188,211,222,.22)'; g.stroke();
           if (fl > 0) {
             // вспышка: обводка ярче и расходящееся кольцо
             g.strokeStyle = rgba(n.fc, 0.75 * fl); g.stroke();
             var gr = (1 - fl) * 8;
             g.globalAlpha = a * fl * 0.55; g.lineWidth = 1.5; g.strokeStyle = n.fc;
-            rrect(g, x - gr, y - gr, n.w + gr * 2, n.h + gr * 2, 8 + gr); g.stroke();
+            rrect(g, x - gr, y - gr, n.w + gr * 2, n.h + gr * 2, G.rad + gr); g.stroke();
             g.globalAlpha = a; g.lineWidth = 1;
           }
           g.textAlign = 'center'; g.textBaseline = 'middle';
           var ty2 = y + G.py;
-          if (n.role2) { g.font = '500 9px "JetBrains Mono", monospace'; g.fillStyle = '#8FAEC0'; g.fillText(n.role2, n.x, ty2 + 5); ty2 += 12; }
-          g.font = '600 ' + G.fs + 'px Manrope, system-ui, sans-serif'; g.fillStyle = '#EEF3F6';
+          if (n.role2) {
+            g.font = '500 ' + G.rfs + 'px "JetBrains Mono", monospace'; g.fillStyle = G.big ? (ROLEC[n.role] || '#8FAEC0') : '#8FAEC0';
+            if (G.big && 'letterSpacing' in g) g.letterSpacing = '1px';
+            g.fillText(G.big ? n.role2.toUpperCase() : n.role2, n.x, ty2 + G.rh / 2 - 1); ty2 += G.rh;
+            if (G.big && 'letterSpacing' in g) g.letterSpacing = '0px';
+          }
+          g.font = (G.big ? '500 ' : '600 ') + G.fs + 'px Manrope, system-ui, sans-serif'; g.fillStyle = '#EEF3F6';
           for (var li = 0; li < n.lines.length; li++) g.fillText(n.lines[li], n.x, ty2 + G.lh * li + G.lh / 2 + 0.5);
         }
         g.globalCompositeOperation = 'lighter';
@@ -578,14 +628,14 @@
           }
         }
         g.globalCompositeOperation = 'source-over';
-        g.font = '500 ' + (G.compact ? 9 : 9.5) + 'px "JetBrains Mono", monospace'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.lineWidth = 1;
+        g.font = '500 ' + G.lfs + 'px "JetBrains Mono", monospace'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.lineWidth = 1;
         for (j = 0; j < labels.length; j++) {
           var L = labels[j], la = Math.min(1, L.t / 0.12) * Math.min(1, (0.9 - L.t) / 0.45) * F;
           if (la <= 0) continue;
-          if (L.fs !== G.fs) { L.w = g.measureText(L.txt).width + 12; L.fs = G.fs; }
+          if (L.fs !== G.fs) { L.w = g.measureText(L.txt).width + (G.big ? 16 : 12); L.fs = G.fs; }
           labelPos(L);
           g.globalAlpha = la * 0.9; rrect(g, L.x, L.y, L.w, L.h, L.h / 2); g.fillStyle = 'rgba(10,18,26,.82)'; g.fill(); g.strokeStyle = rgba(L.col, 0.3); g.stroke();
-          g.globalAlpha = la; g.fillStyle = L.col; g.fillText(L.txt, L.x + 6, L.y + L.h / 2 + 0.5);
+          g.globalAlpha = la; g.fillStyle = L.col; g.fillText(L.txt, L.x + (G.big ? 8 : 6), L.y + L.h / 2 + 0.5);
         }
       }
       if (parts.length) {
@@ -662,15 +712,92 @@
       { a: 'gw', b: 'crm', ev: '200 OK', k: 'r' },
       { a: 'gw', b: 'bot', ev: '200 OK', k: 'r' }
     ] },
+    // ряд «Автоматизация» на главной: шаблонные связки «откуда → n8n на сервере → куда»
+    'site-leads': { src: ['form'], seq: true, nodes: [
+      { id: 'form', name: 'Форма на сайте', role: 'trigger', x: 0.14, y: 0.5, mx: 0.18, my: 0.25 },
+      { id: 'wh', name: 'Webhook', role: 'webhook', x: 0.375, y: 0.5, mx: 0.5, my: 0.25 },
+      { id: 'n8n', name: 'n8n · сервер', role: 'workflow', x: 0.6, y: 0.5, mx: 0.82, my: 0.25 },
+      { id: 'b24', name: 'Битрикс24 · новый лид', role: 'output', x: 0.86, y: 0.25, mx: 0.78, my: 0.76 },
+      { id: 'tg', name: 'Telegram · менеджеру', role: 'output', x: 0.86, y: 0.75, mx: 0.3, my: 0.76 }
+    ], edges: [
+      { a: 'form', b: 'wh', ev: 'POST /form' },
+      { a: 'wh', b: 'n8n', ev: 'lead.new' },
+      { a: 'n8n', b: 'b24', ev: 'crm.lead.add' },
+      { a: 'n8n', b: 'tg', ev: 'sendMessage' }
+    ] },
+    'voice-task': { src: ['tg'], seq: true, nodes: [
+      { id: 'tg', name: 'Telegram · голосовое', role: 'trigger', x: 0.15, y: 0.27 },
+      { id: 'n8n', name: 'n8n · сервер', role: 'workflow', x: 0.5, y: 0.27 },
+      { id: 'stt', name: 'Расшифровка речи', role: 'ai', x: 0.84, y: 0.27 },
+      { id: 'ai', name: 'Исполнитель и срок', role: 'ai', x: 0.84, y: 0.73 },
+      { id: 'b24', name: 'Битрикс24 · задача', role: 'output', x: 0.5, y: 0.73 },
+      { id: 'ok', name: 'Telegram · «готово»', role: 'output', x: 0.15, y: 0.73 }
+    ], edges: [
+      { a: 'tg', b: 'n8n', ev: 'voice.ogg' },
+      { a: 'n8n', b: 'stt', ev: 'transcribe()' },
+      { a: 'stt', b: 'ai', ev: 'text' },
+      { a: 'ai', b: 'b24', ev: 'tasks.task.add' },
+      { a: 'b24', b: 'ok', ev: 'sendMessage' }
+    ] },
+    'reviews': { src: ['wb', 'oz'], duplex: true, seq: true, nodes: [
+      { id: 'wb', name: 'Wildberries · отзыв', role: 'trigger', x: 0.13, y: 0.25, mx: 0.19, my: 0.2, tx: 0.11, ty: 0.15 },
+      { id: 'oz', name: 'Ozon · отзыв', role: 'trigger', x: 0.13, y: 0.75, mx: 0.19, my: 0.8, tx: 0.11, ty: 0.85 },
+      { id: 'n8n', name: 'n8n · сервер', role: 'workflow', x: 0.38, y: 0.5, mx: 0.5, my: 0.5, tx: 0.43, ty: 0.5 },
+      { id: 'ai', name: 'Черновик ответа', role: 'ai', x: 0.63, y: 0.5, mx: 0.81, my: 0.2, tx: 0.665, ty: 0.5 },
+      { id: 'tg', name: 'Telegram · одобрить', role: 'output', x: 0.88, y: 0.5, mx: 0.81, my: 0.8, tx: 0.9, ty: 0.5, turn: true }
+    ], edges: [
+      { a: 'wb', b: 'n8n', ev: 'feedback.new' },
+      { a: 'oz', b: 'n8n', ev: 'review.new' },
+      { a: 'n8n', b: 'ai', ev: 'draft()' },
+      { a: 'ai', b: 'tg', ev: 'sendMessage' },
+      { a: 'tg', b: 'ai', ev: 'одобрено ✓', k: 'r' },
+      { a: 'ai', b: 'n8n', ev: 'answer', k: 'r' },
+      { a: 'n8n', b: 'wb', ev: 'publish', k: 'r' },
+      { a: 'n8n', b: 'oz', ev: 'publish', k: 'r' }
+    ] },
+    // кейсы на странице услуг (модули «Автоматизация» и «AI»); там же — b24-digest и call-audit, бывшие карточки главной
+    'catalog': { src: ['csv'], seq: true, nodes: [
+      { id: 'csv', name: 'Прайс · CSV', role: 'trigger', x: 0.15, y: 0.27 },
+      { id: 'agent', name: 'LibreChat · агент', role: 'ai', x: 0.5, y: 0.27 },
+      { id: 'n8n', name: 'n8n · сервер', role: 'workflow', x: 0.84, y: 0.27 },
+      { id: 'ai', name: 'Карточка и SEO', role: 'ai', x: 0.84, y: 0.73 },
+      { id: 'site', name: 'Сайт · каталог', role: 'output', x: 0.5, y: 0.73 },
+      { id: 'tg', name: 'Telegram · отчёт', role: 'output', x: 0.15, y: 0.73 }
+    ], edges: [
+      { a: 'csv', b: 'agent', ev: 'upload.csv' },
+      { a: 'agent', b: 'n8n', ev: 'import()' },
+      { a: 'n8n', b: 'ai', ev: 'items[]' },
+      { a: 'ai', b: 'site', ev: 'REST · POST' },
+      { a: 'site', b: 'tg', ev: 'sendMessage' }
+    ] },
+    'dept-agents': { src: ['s', 'b', 'h'], duplex: true, nodes: [
+      { id: 's', name: 'Продажи', role: 'trigger', x: 0.13, y: 0.2 },
+      { id: 'b', name: 'Бухгалтерия', role: 'trigger', x: 0.13, y: 0.5 },
+      { id: 'h', name: 'Поддержка', role: 'trigger', x: 0.13, y: 0.8 },
+      { id: 'ag', name: 'LibreChat · агенты', role: 'workflow', x: 0.47, y: 0.5 },
+      { id: 'gw', name: 'AI-шлюз · Cloudflare', role: 'webhook', x: 0.84, y: 0.27, turn: true },
+      { id: 'kb', name: 'База знаний', role: 'ai', x: 0.84, y: 0.73, turn: true }
+    ], edges: [
+      { a: 's', b: 'ag', ev: 'chat' },
+      { a: 'b', b: 'ag', ev: 'chat' },
+      { a: 'h', b: 'ag', ev: 'chat' },
+      { a: 'ag', b: 'kb', ev: 'search()', grp: 'go' },
+      { a: 'ag', b: 'gw', ev: 'POST /v1/chat', grp: 'go' },
+      { a: 'kb', b: 'ag', ev: 'docs: 3', k: 'r' },
+      { a: 'gw', b: 'ag', ev: '200 OK', k: 'r' },
+      { a: 'ag', b: 's', ev: 'answer', k: 'r' },
+      { a: 'ag', b: 'b', ev: 'answer', k: 'r' },
+      { a: 'ag', b: 'h', ev: 'answer', k: 'r' }
+    ] },
     'your-process': { rand: 'chain' },
     'your-integration': { rand: 'duplex' }
   };
 
   // ---------- случайные цепочки для «Ваш процесс» / «Ваша интеграция» ----------
-  var POOL = ['Сайт', 'Форма', 'CRM', 'Webhook', 'n8n', 'AI', 'Таблица', '1С', 'Telegram', 'Почта', 'Склад', 'Оплата'];
-  var P_SRC = ['Сайт', 'Форма', 'Оплата', 'Почта', 'Telegram'], P_MID = ['Webhook', 'n8n', 'AI', 'CRM', '1С'], P_DST = ['Telegram', 'Почта', 'Таблица', 'CRM', '1С', 'Склад'];
-  var ROLE = { Webhook: 'webhook', n8n: 'workflow', AI: 'ai', CRM: 'workflow', '1С': 'workflow' };
-  var EVT = { Webhook: 'POST /hook', n8n: 'workflow.run', AI: 'classify()', CRM: 'lead.create', 'Таблица': 'row.append', '1С': 'doc.sync', Telegram: 'sendMessage', 'Почта': 'mail.send', 'Склад': 'stock.update' };
+  var POOL = ['Сайт', 'Форма', 'CRM', 'Webhook', 'n8n', 'AI', 'Таблица', 'Telegram', 'Почта', 'Склад', 'Оплата', 'Авито', 'Битрикс24', 'Звонок'];
+  var P_SRC = ['Сайт', 'Форма', 'Авито', 'Почта', 'Telegram', 'Звонок'], P_MID = ['Webhook', 'n8n', 'AI'], P_DST = ['Telegram', 'Почта', 'Таблица', 'Битрикс24', 'CRM'];
+  var ROLE = { Webhook: 'webhook', n8n: 'workflow', AI: 'ai', CRM: 'workflow', 'Битрикс24': 'workflow' };
+  var EVT = { Webhook: 'POST /hook', n8n: 'workflow.run', AI: 'classify()', CRM: 'lead.create', 'Таблица': 'row.append', Telegram: 'sendMessage', 'Почта': 'mail.send', 'Склад': 'stock.update', 'Битрикс24': 'crm.lead.add' };
   function pickOne(list, used) { var l = list.filter(function (x) { return used.indexOf(x) < 0; }); return l[(Math.random() * l.length) | 0]; }
   function chainSpec(names, duplex) {
     var n = names.length, X = n === 2 ? [0.27, 0.73] : n === 3 ? [0.17, 0.5, 0.83] : null, nodes = [], edges = [];
@@ -702,8 +829,8 @@
     return s;
   }
   // статичный кадр при prefers-reduced-motion; спецификация строится при показе — на текущем языке
-  FLOWS['your-process'].still = ['Форма', 'CRM', 'Telegram'];
-  FLOWS['your-integration'].still = ['CRM', '1С'];
+  FLOWS['your-process'].still = ['Форма', 'n8n', 'Битрикс24'];
+  FLOWS['your-integration'].still = ['Сайт', 'CRM'];
 
   // ---------- карточка-схема ----------
   // Фиксированная схема: сборка → через ~1.5 с импульсы раз в 4.4 с, при наведении — раз в 1.1 с.

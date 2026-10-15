@@ -232,6 +232,16 @@
 <li><span class="sv-rn">Любая связка по&nbsp;API</span><span class="sv-rd">Есть API или вебхук&nbsp;— соединим, хоть в&nbsp;обе стороны.</span></li>
 </ul>
 </div>
+<div class="sv-ex sv-cases">
+<div class="sv-case">
+<span class="flow-win fr" role="img" aria-label="Схема: прайс в CSV → агент в LibreChat → n8n на сервере → AI пишет карточку и SEO → товар в каталоге сайта → отчёт в Telegram"><canvas data-flow="catalog" aria-hidden="true"></canvas></span>
+<p class="sv-cx"><span class="mono">Кейс · LibreChat · n8n</span><span class="sv-ch">Каталог на&nbsp;автопилоте</span><span class="sv-cd">Менеджер загружает прайс в&nbsp;чат с&nbsp;агентом. Каждый товар получает описание и&nbsp;SEO, попадает в&nbsp;каталог сайта, а&nbsp;отчёт приходит в&nbsp;Telegram.</span></p>
+</div>
+<div class="sv-case">
+<span class="flow-win fr" role="img" aria-label="Схема: Битрикс24, задачи → Webhook → n8n → AI, анализ → Telegram; из Telegram вопрос возвращается к AI"><canvas data-flow="b24-digest" aria-hidden="true"></canvas></span>
+<p class="sv-cx"><span class="mono">Кейс · Битрикс24 · Telegram</span><span class="sv-ch">ИИ-разбор задач</span><span class="sv-cd">Каждое утро руководитель получает в&nbsp;Telegram разбор задач из&nbsp;Битрикс24&nbsp;— и&nbsp;может задать боту вопрос по&nbsp;любой из&nbsp;них.</span></p>
+</div>
+</div>
 </article>
 </div>
 </section>
@@ -255,6 +265,16 @@
 <li><span class="sv-rn">Разбор звонков</span><span class="sv-rd">Записи расшифровываются на&nbsp;нашем сервере, нейросеть оценивает разговор, итог&nbsp;— в&nbsp;CRM или Telegram.</span></li>
 <li><span class="sv-rn">ИИ-продавец для Авито</span><span class="sv-rd">Отвечает покупателям в&nbsp;чатах круглосуточно и&nbsp;знает ваш каталог.</span></li>
 </ul>
+</div>
+<div class="sv-ex sv-cases">
+<div class="sv-case">
+<span class="flow-win fr" role="img" aria-label="Схема: телефония → Битрикс24, запись → n8n → распознавание речи → AI, оценка → CRM, сделка"><canvas data-flow="call-audit" aria-hidden="true"></canvas></span>
+<p class="sv-cx"><span class="mono">Кейс · Битрикс24 · AI</span><span class="sv-ch">ИИ-аудитор звонков</span><span class="sv-cd">Каждый звонок расшифровывается и&nbsp;оценивается по&nbsp;скрипту продаж, итог появляется в&nbsp;карточке сделки.</span></p>
+</div>
+<div class="sv-case">
+<span class="flow-win fr" role="img" aria-label="Схема: продажи, бухгалтерия и поддержка ⇄ агенты в LibreChat ⇄ AI-шлюз на Cloudflare и база знаний"><canvas data-flow="dept-agents" aria-hidden="true"></canvas></span>
+<p class="sv-cx"><span class="mono">Кейс · LibreChat · AI-шлюз</span><span class="sv-ch">Агенты для&nbsp;отделов</span><span class="sv-cd">Продажи, бухгалтерия и&nbsp;поддержка спрашивают своих агентов в&nbsp;одном чате. Ответы&nbsp;— по&nbsp;вашим документам, а&nbsp;запросы к&nbsp;нейросетям идут через один шлюз: ключи и&nbsp;лимиты в&nbsp;одном месте.</span></p>
+</div>
 </div>
 </article>
 </div>

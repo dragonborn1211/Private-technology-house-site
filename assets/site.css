@@ -550,3 +550,24 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 @media (max-width:760px){.svc-pic svg,.glyph-xl svg{stroke-width:2.6}}
 /* без анимации: чертёж сразу на месте, петель нет; импульсы стоят на месте и ничего не значат — их нет */
 @media (prefers-reduced-motion:reduce){.glyph .d{stroke-dashoffset:0}.glyph *{animation:none!important;transition:none!important}.glyph .pulse{display:none}}
+
+/* ---------- ряд «Автоматизация»: две карточки в ряд, окно схемы 16:10, текст карточки крупнее
+   (схема в окне ≥ 400 px рисуется крупно — assets/scenes.js, G.big). Эталон — tools/ref/automation/ ---------- */
+.obj-grid-2{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.obj-grid-2 .obj{padding:16px 16px 28px;gap:22px}
+.obj-grid-2 .flow-win{aspect-ratio:16 / 10;border-radius:20px}
+.obj-grid-2 .obj-tx{gap:10px;padding:0 12px}
+.obj-grid-2 .obj-h{font-size:clamp(22px,2vw,28px);font-weight:400;letter-spacing:-.02em;line-height:1.2}
+.obj-grid-2 .obj-d{max-width:540px;font-size:16px}
+@media (max-width:900px){.obj-grid-2{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:760px){.obj-grid-2 .flow-win{aspect-ratio:4 / 3}.obj-grid-2 .obj-h{font-size:22px}.obj-grid-2 .obj-d{font-size:15px}}
+/* кейсы в модулях «Автоматизация» и «AI» страницы услуг: схемы makeFlow во всю ширину модуля, две в ряд */
+.sv-cases{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 20px;margin-top:4px}
+.sv-case{display:flex;flex-direction:column;gap:16px;min-width:0}
+.sv-cases .flow-win{aspect-ratio:16 / 9;border-radius:18px}
+.sv-cx{display:flex;flex-direction:column;gap:8px;margin:0;padding:0 4px}
+.sv-cx .mono{color:var(--c)}
+.sv-ch{font-size:20px;font-weight:400;line-height:1.25;letter-spacing:-.015em;color:#EEF3F6}
+.sv-cd{max-width:520px;font-size:15px;line-height:1.55;color:#9DB0BC}
+@media (max-width:900px){.sv-cases{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:760px){.sv-cases{gap:24px}.sv-cases .flow-win{aspect-ratio:4 / 3;border-radius:14px}.sv-ch{font-size:18px}}

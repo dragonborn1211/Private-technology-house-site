@@ -222,7 +222,8 @@
 </span>
 </div>
 <!-- Закрытый объект «Поток» (makeFlowLight) временно скрыт: выведем в другом месте.
-     Чтобы показать — перенести разметку из <template> в нужную секцию прямо в HTML (не через JS после старта, см. CLAUDE.md). -->
+     Чтобы показать — перенести разметку из <template> в нужную секцию прямо в HTML (не через JS после старта, см. CLAUDE.md). 
+     Номер №11 — свободный (№02 у Antares); при возвращении перенумеровать ряд. -->
 <template data-hidden-card="flow-lock">
 <div class="glass fr obj flow-card" data-flowcard>
 <span class="site fr flow-lock" style="background-color: rgba(127,168,255,0.05)" role="img" aria-label="Закрытый объект под NDA: световые потоки сходятся в одну точку, при наведении видна схема устройства">
@@ -230,7 +231,7 @@
 <span class="frost" data-frost data-pt-skip aria-hidden="true"><span class="nda"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true"><rect x="2.6" y="6.1" width="8.8" height="6.4" rx="1.6"/><path d="M4.7 6.1V4.5a2.3 2.3 0 0 1 4.6 0v1.6"/></svg>NDA · показываем лично</span></span>
 </span>
 <span class="obj-tx">
-<span class="mono" style="color: #7FA8FF">Объект №02 · Инфраструктура · NDA</span>
+<span class="mono" style="color: #7FA8FF">Объект №11 · Инфраструктура · NDA</span>
 <span class="obj-h">Поток</span>
 <span class="obj-d">Сетевой сервис по подписке: сайт, личный кабинет, платежи и серверная инфраструктура.</span>
 <a href="#contact" class="card-link card-cta">Запросить показ →</a>
@@ -256,30 +257,40 @@
 <div class="wrap">
 <div class="blk fr ln row-h" data-blk data-fr-line="top">
 <span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;header.row&gt;<b data-wf-size></b></span></span>
-<span class="an" data-pt-skip style="top: -30px; right: 0">canvas 2d · makeFlow(cfg) · bezier + pulses</span>
+<span class="an" data-pt-skip style="top: -30px; right: 0">canvas 2d · makeFlow(cfg) · 2 cols · 16:10</span>
 <p class="mono k">02.2 / Автоматизация</p>
 <p class="row-t">Процессы, которые работают без людей.</p>
 </div>
-<div class="blk obj-grid" data-blk>
+<div class="blk obj-grid obj-grid-2" data-blk>
 <span class="wf" aria-hidden="true" data-pt-skip><span class="wf-l">&lt;div.automation&gt;<b data-wf-size></b></span></span>
 <div class="glass fr obj">
-<span class="flow-win fr" role="img" aria-label="Схема: Битрикс24, задачи → Webhook → n8n → AI, анализ → Telegram; из Telegram вопрос возвращается к AI">
-<canvas data-flow="b24-digest" aria-hidden="true"></canvas>
+<span class="flow-win fr" role="img" aria-label="Схема: форма на сайте → Webhook → n8n на сервере → лид в Битрикс24 и сообщение менеджеру в Telegram">
+<canvas data-flow="site-leads" aria-hidden="true"></canvas>
 </span>
 <span class="obj-tx">
-<span class="mono" style="color: #8ED8F8">Объект №04 · Автоматизация</span>
-<span class="obj-h">ИИ-разбор задач</span>
-<span class="obj-d">Каждое утро руководитель получает в Telegram разбор задач из Битрикс24 — и может задать боту вопрос по любой из них.</span>
+<span class="mono" style="color: #8ED8F8">Объект №04 · Битрикс24 · Telegram</span>
+<span class="obj-h">Заявки с&nbsp;сайта&nbsp;— в&nbsp;CRM и&nbsp;Telegram</span>
+<span class="obj-d">Каждая заявка сразу становится лидом в&nbsp;Битрикс24, а&nbsp;менеджер получает сообщение в&nbsp;Telegram. Ни&nbsp;одна не&nbsp;теряется.</span>
 </span>
 </div>
 <div class="glass fr obj">
-<span class="flow-win fr" role="img" aria-label="Схема: телефония → Битрикс24, запись → n8n → распознавание речи → AI, оценка → CRM, сделка">
-<canvas data-flow="call-audit" aria-hidden="true"></canvas>
+<span class="flow-win fr" role="img" aria-label="Схема: голосовое в Telegram → n8n на сервере → расшифровка речи → AI определяет исполнителя и срок → задача в Битрикс24 → ответ «готово» в Telegram">
+<canvas data-flow="voice-task" aria-hidden="true"></canvas>
 </span>
 <span class="obj-tx">
-<span class="mono" style="color: #7FA8FF">Объект №05 · Автоматизация</span>
-<span class="obj-h">ИИ-аудитор звонков</span>
-<span class="obj-d">Каждый звонок расшифровывается и оценивается по скрипту продаж, итог появляется в карточке сделки.</span>
+<span class="mono" style="color: #7FA8FF">Объект №05 · AI · Битрикс24</span>
+<span class="obj-h">Голосовое&nbsp;→ задача в&nbsp;Битрикс24</span>
+<span class="obj-d">Руководитель надиктовывает задачу в&nbsp;Telegram&nbsp;— она появляется в&nbsp;Битрикс24 с&nbsp;исполнителем и&nbsp;сроком.</span>
+</span>
+</div>
+<div class="glass fr obj">
+<span class="flow-win fr" role="img" aria-label="Схема: новый отзыв на Wildberries или Ozon → n8n на сервере → AI пишет черновик ответа → проверка в Telegram → ответ публикуется на маркетплейсе">
+<canvas data-flow="reviews" aria-hidden="true"></canvas>
+</span>
+<span class="obj-tx">
+<span class="mono" style="color: #B7A6F2">Объект №06 · AI · маркетплейсы</span>
+<span class="obj-h">Ответы на&nbsp;отзывы Wildberries и&nbsp;Ozon</span>
+<span class="obj-d">На&nbsp;каждый новый отзыв AI пишет ответ. Вы&nbsp;одобряете его в&nbsp;Telegram одной кнопкой&nbsp;— и&nbsp;он публикуется.</span>
 </span>
 </div>
 <a href="#contact" class="glass fr obj">
@@ -288,9 +299,9 @@
 <span class="mini-lab" data-flow-label data-pt-skip>[ ваш процесс ]</span>
 </span>
 <span class="obj-tx">
-<span class="mono" style="color: #B7A6F2">Объект №06 · Следующий</span>
+<span class="mono" style="color: #9FE5D1">Объект №07 · Следующий</span>
 <span class="obj-h">Ваш процесс</span>
-<span class="obj-d">Опишите рутину — соберём автоматизацию →</span>
+<span class="obj-d">Опишите рутину&nbsp;— соберём автоматизацию&nbsp;→</span>
 </span>
 </a>
 </div>
@@ -324,7 +335,7 @@
 <canvas data-flow="tg-crm" aria-hidden="true"></canvas>
 </span>
 <span class="obj-tx">
-<span class="mono" style="color: #8ED8F8">Объект №07 · Интеграция</span>
+<span class="mono" style="color: #8ED8F8">Объект №08 · Интеграция</span>
 <span class="obj-h">Заявки из Telegram</span>
 <span class="obj-d">Заявки из мини-приложения сразу попадают в CRM, а статус заказа возвращается клиенту.</span>
 </span>
@@ -334,7 +345,7 @@
 <canvas data-flow="ai-gateway" aria-hidden="true"></canvas>
 </span>
 <span class="obj-tx">
-<span class="mono" style="color: #7FA8FF">Объект №08 · Интеграция</span>
+<span class="mono" style="color: #7FA8FF">Объект №09 · Интеграция</span>
 <span class="obj-h">Единый AI-шлюз</span>
 <span class="obj-d">Все сервисы компании обращаются к нейросетям через один шлюз: ключи, лимиты и журнал в одном месте.</span>
 </span>
@@ -345,7 +356,7 @@
 <span class="mini-lab" data-flow-label data-pt-skip>[ ваша интеграция ]</span>
 </span>
 <span class="obj-tx">
-<span class="mono" style="color: #B7A6F2">Объект №09 · Следующий</span>
+<span class="mono" style="color: #B7A6F2">Объект №10 · Следующий</span>
 <span class="obj-h">Ваша интеграция</span>
 <span class="obj-d">Свяжем ваши системы между собой →</span>
 </span>
