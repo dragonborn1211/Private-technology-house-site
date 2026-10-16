@@ -102,9 +102,6 @@ body{margin:0;background:#0A121A}
 .obj-tx{display:flex;flex-direction:column;gap:8px;padding:0 10px}
 .obj-h{font-size:22px;font-weight:500;color:#EEF3F6}
 .obj-d{font-size:15px;line-height:1.55;color:#9DB0BC}
-/* подпись над названием карточки (главная, работы, готовые решения): читается сразу — Manrope 15/500, без капслока;
-   цвет — из инлайн-стиля карточки (TASK-structure.md) */
-.obj-tx > .mono{font-family:Manrope,'Segoe UI',system-ui,sans-serif;font-size:15px;font-weight:500;letter-spacing:0;text-transform:none;line-height:1.3}
 .pt a.card-cta{font-size:15px;font-weight:600;color:#BCD3DE}
 /* «адресная строка» над живым превью: три точки и домен; сайт под ней. Кликается вся карточка через .card-link */
 .site-bar{position:absolute;top:0;left:0;right:0;height:30px;z-index:1;display:flex;align-items:center;gap:6px;padding:0 14px;background:rgba(10,18,26,.72);border-bottom:1px solid rgba(188,211,222,.12);pointer-events:none}
@@ -115,6 +112,15 @@ body{margin:0;background:#0A121A}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .site-bar{opacity:0}
 .flow-win{position:relative;display:block;aspect-ratio:4/3;border-radius:18px;overflow:hidden;background-color:rgba(142,216,248,.04);border:1px solid rgba(188,211,222,.12)}
 .flow-win.next{border:1px dashed rgba(142,216,248,.45)}
+/* подпись карточки — плашкой в левом верхнем углу окна (схемы, сайта, демо; TASK-clarity.md, B2): под окном меньше
+   уровней текста. Появляется вместе со сборкой окна; цвет — --tc */
+.win-tag{position:absolute;left:12px;top:12px;z-index:2;display:inline-flex;align-items:center;gap:8px;max-width:calc(100% - 24px);padding:6px 12px;border-radius:999px;background:rgba(10,18,26,.78);border:1px solid color-mix(in srgb,var(--tc) 40%,transparent);font:500 13px/1.2 Manrope,system-ui,sans-serif;color:var(--tc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.win-tag::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.site > .win-tag{top:42px}
+.pt-on .sec .win-tag{transition:opacity .5s ease .25s,transform .5s cubic-bezier(.2,.7,.2,1) .25s}
+.pt-on .sec:not(.s-done) .win-tag{opacity:0;transform:translateY(-6px)}
+.pt-lite .win-tag{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(10,18,26,.92)}
+@media (prefers-reduced-motion:reduce){.pt-on .sec .win-tag{transition:none}}
 .flow-win canvas,.flow-lock canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block}
 .more{display:flex;justify-content:center;margin-top:48px}
 /* «Поток»: матовое стекло поверх световых потоков; наведение, фокус или тап (.is-open) его проясняют */
@@ -567,6 +573,16 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .pt a.obj-h{transition:color .3s ease}
 @media (max-width:1100px){.obj-grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:760px){.obj-grid-3{grid-template-columns:minmax(0,1fr)}.pt a.obj-all{min-height:140px}}
+/* «Нет нужного шаблона?» — акцентная карточка: мятная рамка со свечением и настоящая кнопка (TASK-clarity.md, B3).
+   Видимых карточек нечётное число — последняя [data-fill] на всю ширину (.is-wide ставит filter.js; без JS — обычная) */
+.obj-own{border-color:rgba(159,229,209,.4);box-shadow:inset 0 1px 0 rgba(159,229,209,.25),0 0 80px -40px #9FE5D1}
+.obj-cta{display:inline-flex;align-items:center;align-self:flex-start;height:48px;padding:0 22px;margin-top:6px;border-radius:999px;background:#EEF3F6;color:#0A121A;font:600 15px Manrope,system-ui,sans-serif;box-shadow:0 0 40px -8px rgba(142,216,248,.55)}
+@media (min-width:901px){
+  .obj.is-wide{grid-column:1 / -1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:16px 40px;padding:16px}
+  .obj.is-wide .flow-win{aspect-ratio:2 / 1}
+  .obj.is-wide .obj-tx{padding:0 24px 0 0;gap:14px}
+  .obj.is-wide .obj-h{font-size:clamp(28px,2.6vw,40px);font-weight:300;letter-spacing:-.03em}
+}
 /* окна-сайты в сетке в две колонки — тоже 16:10 (кейсы) */
 .obj-grid-2 .site{aspect-ratio:16 / 10;border-radius:20px}
 @media (max-width:760px){.obj-grid-2 .site{aspect-ratio:4 / 3}}
@@ -649,3 +665,13 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 @media (max-width:760px){.pr-head{flex-direction:column;align-items:flex-start;gap:12px}}
 /* сводка «Разово / Ежемесячно» на телефоне: «AI» не уходит на строку один (390 и 414 — одна строка) */
 @media (max-width:760px){.sv-fl{gap:0 12px}.pt .sv-fl a{gap:6px}}
+/* отклик на цели якоря (scroll.js, arrive; TASK-clarity.md, B1.2): рамка вспыхивает цветом направления и за 1.1 с гаснет к
+   своей тени (кадра 100 % нет — анимация возвращается к собственной тени элемента без скачка); у цели без рамки (секция,
+   строка группы) вспыхивает заголовок */
+@keyframes pt-arrive{0%{box-shadow:inset 0 1px 0 transparent,0 0 0 1px color-mix(in srgb,var(--c,#8ED8F8) 75%,transparent),0 0 70px -14px var(--c,#8ED8F8)}}
+@keyframes pt-arrive-t{0%,30%{color:var(--c,#8ED8F8)}}
+@keyframes pt-arrive-g{0%,30%{text-shadow:0 0 34px var(--c,#8ED8F8),0 0 8px var(--c,#8ED8F8)}}
+.pt-arrive{animation:pt-arrive 1.1s cubic-bezier(.2,.7,.2,1)}
+.pt-arrive :is(.sv-t,.obj-h,.sv-ph,.h2),.pt-arrive-x{animation:pt-arrive-t 1.1s ease}
+.gh-w.pt-arrive-x{animation:pt-arrive-g 1.1s ease}
+@media (prefers-reduced-motion:reduce){.pt-arrive,.pt-arrive *,.pt-arrive-x{animation:none!important}}

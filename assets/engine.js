@@ -441,6 +441,8 @@
         skipHero();
         window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(el).scrollMarginTop) || 0), behavior: 'instant' });
         rootRect(); request(to);
+        // после сборки цели — отклик на ней, как у якоря на этой же странице (scroll.js ждёт pt:secdone)
+        if (window.PTScroll && window.PTScroll.arrive) window.PTScroll.arrive(el);
         return true;
       }
       // Первый экран помечен собранным без сборки: включаем сетку, объект первого экрана сразу стоит на месте.
@@ -672,6 +674,14 @@
         sites.forEach(function (fr) { if (el.contains(fr) && !fr._armed) { fr._armed = true; if (fr._want) liveSite(fr, true); } });
         fitSites();
         scenes.forEach(function (sc) { if (el.contains(sc.cv)) sc.wake(); });
+        secDone(el);
+      }
+      // секция собрана — событие для отклика на цели якоря (scroll.js, arrive): цель в несобранной секции ждёт его
+      function secDone(el) { try { window.dispatchEvent(new CustomEvent('pt:secdone', { detail: el })); } catch (e) { /* старый браузер */ } }
+      // фильтр (assets/filter.js) показал карточки — их схемы собираются заново с первого узла
+      function onShown(e) {
+        var els = (e && e.detail) || [];
+        scenes.forEach(function (sc) { if (sc.restart && els.some(function (el) { return el.contains(sc.cv); })) sc.restart(); });
       }
       function render(n) {
         if (gl) {
@@ -736,7 +746,7 @@
         if (heroObj) heroObj.start(false);
         pultSkip(); log(s, '✓ ready');
         atRun(FAST_LD + 0.15, function () { phFade(BLD); });
-        atRun(FAST_LD + 0.35, function () { s.state = 'done'; setProg(); finish(s); });
+        atRun(FAST_LD + 0.35, function () { s.state = 'done'; setProg(); secDone(s.el); finish(s); });
         atRun(FAST_LD + 1.2, function () { root.classList.remove('pt-sweep'); if (beamEl) beamEl.classList.remove('run'); });
       }
       function runHero(s, replay) {
@@ -745,7 +755,7 @@
         var o = replay ? -0.6 : 0, K = replay ? PRESENT_K : HERO_K, LD = LINE * K;
         if (!replay) { burst(); log(s, 'boot · ' + fmtN() + ' particles'); }
         atRun((0.6 + o) * K, function () { root.classList.add('g-on'); measure(s); phGrid(s, ALL, false); log(s, '01 · grid.init(12)'); });
-        function done() { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (heroObj) { if (replay) heroObj.replay(); else heroObj.start(false); } if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); }
+        function done() { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (heroObj) { if (replay) heroObj.replay(); else heroObj.start(false); } if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); secDone(s.el); }
         if (INTRO_LINES) {
           // вертикальная линия рисует все рамки (каркас и стили — одна стадия), за ней частицы обводят блоки и рамки
           atRun((1.6 + o) * K, function () {
@@ -981,6 +991,7 @@
       window.addEventListener('pointerdown', onMove, { passive: true });
       window.addEventListener('pointerout', onOut);
       window.addEventListener('resize', onResize);
+      window.addEventListener('pt:shown', onShown);
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(onFonts);
       if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', onFonts);
       if (rm || MODE === 'instant') {
@@ -1024,6 +1035,7 @@
           window.removeEventListener('pointerdown', onMove);
           window.removeEventListener('pointerout', onOut);
           window.removeEventListener('resize', onResize);
+          window.removeEventListener('pt:shown', onShown);
           window.removeEventListener('wheel', onSkip); window.removeEventListener('touchmove', onSkip);
           window.removeEventListener('pointerdown', onSkip); window.removeEventListener('keydown', onSkip);
           if (document.fonts && document.fonts.removeEventListener) document.fonts.removeEventListener('loadingdone', onFonts);

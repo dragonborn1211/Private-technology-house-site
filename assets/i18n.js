@@ -321,10 +321,6 @@
     'Разделы сайта': 'Site sections',
     'Вопросы': 'FAQ',
     // главная: «02 / Кейсы», «03 / Готовые автоматизации»
-    'Шаблон · Битрикс24 · Telegram': 'Template · Bitrix24 · Telegram',
-    'Шаблон · AI · Битрикс24': 'Template · AI · Bitrix24',
-    'Шаблон · AI · маркетплейсы': 'Template · AI · marketplaces',
-    'Под ваш процесс': 'For your process',
     '[ ваш процесс ]': '[ your process ]',
     // услуги: тонкие заголовки групп, «Готовые шаблоны», ссылки на кейсы
     'Готовые шаблоны': 'Ready-made templates',
@@ -358,11 +354,8 @@
     'Задачи': 'Tasks',
     'Товары': 'Products',
     'Отчёты': 'Reports',
-    'Шаблон · сайт · AI': 'Template · website · AI',
     'Каталог из прайса': 'Catalog from a price list',
-    'Шаблон · AI · Авито': 'Template · AI · Avito',
     'Отвечает покупателям в чатах Авито круглосуточно и знает ваш каталог. Сложный вопрос передаёт менеджеру в Telegram.': 'Answers buyers in Avito chats around the clock and knows your catalog. Hard questions go to a manager in Telegram.',
-    'Шаблон · маркетплейсы · таблица': 'Template · marketplaces · spreadsheet',
     'Мониторинг цен конкурентов': 'Competitor price monitoring',
     'Подключить →': 'Connect →',
     'Работает у клиента: ИИ-разбор задач →': 'Running for a client: AI task digest →',
@@ -471,7 +464,6 @@
     'По утрам в Telegram приходит сводка по задачам Битрикс24 с выводами. Боту можно задать вопрос по любой задаче.': 'Every morning a summary of Bitrix24 tasks with conclusions arrives in Telegram. You can ask the bot about any task.',
     'Вы загружаете прайс в чат с агентом. Товары с описаниями и SEO появляются в каталоге сайта, отчёт приходит в Telegram.': 'You upload a price list to a chat with the agent. Products with descriptions and SEO appear in the website catalog, and the report arrives in Telegram.',
     'По утрам цены и остатки конкурентов собираются в таблицу, короткая сводка приходит в Telegram.': 'Every morning competitor prices and stock are collected into a spreadsheet, and a short summary arrives in Telegram.',
-    'Опишите рутину, и мы соберём автоматизацию под вас →': 'Describe the routine, and we will build an automation for you →',
     'Вопросы о подписке': 'Subscription FAQ',
     'Да. Шаблон служит отправной точкой: поля, сообщения и правила настраиваем под ваш процесс.': 'Yes. A template is a starting point: fields, messages and rules are tuned to your process.',
     'Зависит от шаблона и объёма. Назовём после короткого созвона, подписка оплачивается фиксированным платежом раз в месяц.': 'It depends on the template and the volume. We will name the price after a short call, and the subscription is a fixed monthly payment.',
@@ -604,7 +596,14 @@
     'Данные': 'Data',
     'выгружаем по запросу': 'exported on request',
     'Порядок работы': 'How a project goes',
-    'Что входит в услугу': 'What the service includes'
+    'Что входит в услугу': 'What the service includes',
+    // TASK-clarity.md, B2–B3: подписи в окне схемы (без «Шаблон ·»), «Нет нужного шаблона?»
+    'Битрикс24 · Telegram': 'Bitrix24 · Telegram',
+    'AI · маркетплейсы': 'AI · marketplaces',
+    'AI · Авито': 'AI · Avito',
+    'Маркетплейсы · таблица': 'Marketplaces · spreadsheet',
+    'Опишите рутину, которую делаете руками. Соберём сценарий под ваш процесс и будем за ним следить.': 'Describe the routine you do by hand. We will build a workflow for your process and keep an eye on it.',
+    'Описать процесс →': 'Describe your process →'
   };
   var ATTRS = ['aria-label', 'title', 'alt'];
 

@@ -770,7 +770,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
     await page.goto(BASE + 'index.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
     const m = await page.evaluate(() => {
       const o = document.querySelector('#objects'), a = document.querySelector('#automation'), nb = (t) => t.replace(/\s+/g, ' ').trim();
-      const cards = [...o.querySelectorAll('.obj-grid .obj')].map((c) => ({ k: nb((c.querySelector('.mono') || { textContent: '' }).textContent), t: nb((c.querySelector('.obj-h, .card-link') || { textContent: '' }).textContent), mini: !!c.querySelector('canvas[data-mini]') }));
+      const cards = [...o.querySelectorAll('.obj-grid .obj')].map((c) => ({ k: nb((c.querySelector('.win-tag') || { textContent: '' }).textContent), t: nb((c.querySelector('.obj-h, .card-link') || { textContent: '' }).textContent), mini: !!c.querySelector('canvas[data-mini]') }));
       return { h2: nb(o.querySelector('h2').textContent), cards, more: [...o.querySelectorAll('.more a')].map((x) => x.getAttribute('href') + ' ' + nb(x.textContent)).join(','),
         len: document.documentElement.scrollHeight / innerHeight, ah2: nb(a.querySelector('h2').textContent), aobj: /Объект №/.test(document.body.innerText),
         titles: [...a.querySelectorAll('a.obj-h')].map((x) => x.getAttribute('href')).join(','), amore: [...a.querySelectorAll('.more a')].map((x) => x.getAttribute('href') + ' ' + nb(x.textContent)).join(','),
@@ -843,17 +843,17 @@ console.log('\nкейсы и готовые автоматизации');
   let st = await state(page);
   const caseIds = st.vis;
   if (caseIds.join(',') !== 'case-resonara,case-antares,case-call-audit,case-b24-digest,case-catalog,case-agents' || st.always !== 'case-nda,case-demo' || st.pressed !== '' || st.btns !== 'all,sites,automation,ai') bad.push(`кейсы: ${JSON.stringify(st)}`);
-  const tpl = await page.evaluate(() => { const t = document.querySelector('template[data-hidden-cases]'); return t ? [...t.content.querySelectorAll('.obj')].map((c) => c.querySelector('canvas').dataset.flow + ':' + c.querySelector('.mono').textContent.trim()).join(',') : ''; });
+  const tpl = await page.evaluate(() => { const t = document.querySelector('template[data-hidden-cases]'); return t ? [...t.content.querySelectorAll('.obj')].map((c) => c.querySelector('canvas').dataset.flow + ':' + c.querySelector('.win-tag').textContent.trim()).join(',') : ''; });
   if (tpl !== 'tg-crm:Интеграция · Битрикс24,ai-gateway:Инфраструктура · Cloudflare') bad.push(`скрытые кейсы: ${tpl}`);
   const clash = await page.evaluate(() => ['sites', 'automation', 'ai', 'integrations'].filter((i) => document.getElementById(i)));
   if (clash.length) bad.push(`на cases.html есть id, совпадающие с фильтром: ${clash.join(', ')}`);
-  await page.click('[data-filter="ai"]'); await page.clock.runFor(300);
+  await page.click('[data-filter="ai"]'); await page.clock.runFor(800);
   st = await state(page);
   if (st.vis.join(',') !== 'case-call-audit,case-agents' || st.always !== 'case-nda,case-demo' || st.pressed !== 'ai' || st.hash !== '#ai') bad.push(`кейсы, фильтр «AI»: ${JSON.stringify(st)}`);
   bad.push(...(await flowsOk(page)).map((x) => 'после «AI» ' + x));
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(100); await page.clock.runFor(300);
   await page.screenshot({ path: path.join(shots, 'cases-ai-1440.png'), fullPage: true });
-  await page.click('[data-filter=""]'); await page.clock.runFor(300);
+  await page.click('[data-filter=""]'); await page.clock.runFor(800);
   st = await state(page);
   if (st.vis.length !== 6 || st.hash !== '') bad.push(`кейсы, «Все»: ${JSON.stringify(st)}`);
   page.errs.forEach((e) => bad.push('cases.html: ' + e));
@@ -863,7 +863,7 @@ console.log('\nкейсы и готовые автоматизации');
   await page.clock.runFor(4000);
   st = await state(page);
   if (st.vis.join(',') !== 'case-call-audit,case-agents' || st.pressed !== 'ai') bad.push(`cases.html#ai: ${JSON.stringify(st)}`);
-  await page.click('[data-filter="automation"]'); await page.clock.runFor(300);
+  await page.click('[data-filter="automation"]'); await page.clock.runFor(800);
   st = await state(page);
   if (st.vis.join(',') !== 'case-b24-digest,case-catalog' || st.hash !== '#automation') bad.push(`cases.html#ai → «Автоматизация»: ${JSON.stringify(st)}`);
   bad.push(...(await flowsOk(page)).map((x) => 'cases.html#ai → «Автоматизация» ' + x));
@@ -896,11 +896,11 @@ console.log('\nкейсы и готовые автоматизации');
   const links = cards.filter((c) => c.cases.length).map((c) => c.id + '→' + c.cases.join('')).join(',');
   if (links !== 'b24-report→case-b24-digest,catalog→case-catalog') bad.push(`«Работает у клиента»: ${links}`);
   if (cards.map((c) => c.flow).join(',') !== 'site-leads,voice-task,reviews,b24-digest,catalog,avito-bot,price-monitor') bad.push(`схемы шаблонов: ${cards.map((c) => c.flow).join(',')}`);
-  await page.click('[data-filter="reports"]'); await page.clock.runFor(300);
+  await page.click('[data-filter="reports"]'); await page.clock.runFor(800);
   st = await state(page);
   if (st.vis.join(',') !== 'b24-report,price-monitor' || st.always !== 'your-process' || st.hash !== '#f-reports') bad.push(`каталог, «Отчёты»: ${JSON.stringify(st)}`);
   bad.push(...(await flowsOk(page)).map((x) => 'каталог «Отчёты» ' + x));
-  await page.click('[data-filter=""]'); await page.clock.runFor(300);
+  await page.click('[data-filter=""]'); await page.clock.runFor(800);
   const faq = await page.evaluate(() => { const nb = (t) => t.replace(/\s+/g, ' ').trim(); const ld = [...document.querySelectorAll('script[type="application/ld+json"]')].map((x) => JSON.parse(x.textContent)); const f = ld.find((x) => x['@type'] === 'FAQPage'); return { types: ld.map((x) => x['@type']).join(','), ok: !!f && f.mainEntity.map((q) => nb(q.name) + '|' + nb(q.acceptedAnswer.text)).join('#') === [...document.querySelectorAll('.sv-q')].map((d) => nb(d.querySelector('summary').textContent) + '|' + nb(d.querySelector('p').textContent)).join('#'), n: f ? f.mainEntity.length : 0 }; });
   if (faq.types !== 'BreadcrumbList,FAQPage' || !faq.ok || faq.n !== 5) bad.push(`каталог, JSON-LD: ${JSON.stringify(faq)}`);
   if (/\d+\s*(дн|час|недел)|₽/.test(await page.evaluate(() => document.body.innerText))) bad.push('каталог: сроки или цены в тексте');
@@ -1073,11 +1073,11 @@ console.log('\nтексты и типографика (TASK-polish.md)');
     const page = await browser.newPage({ viewport: { width: w, height: 900 } });
     await page.goto(BASE + 'cases.html?intro=instant'); await page.waitForTimeout(500);
     for (const f of await page.evaluate(() => [...document.querySelectorAll('[data-filter]')].filter((b) => !b.hidden).map((b) => b.dataset.filter))) {
-      await page.click(`[data-filter="${f}"]`); await page.waitForTimeout(150);
+      await page.click(`[data-filter="${f}"]`); await page.waitForTimeout(900);
       const r = await page.evaluate(() => { const v = [...document.querySelectorAll('.obj-grid .obj')].filter((c) => c.getBoundingClientRect().height > 0); return { n: v.length, ids: v.map((c) => c.id) }; });
       if (r.n % 2 || !r.ids.includes('case-nda') || !r.ids.includes('case-demo')) bad.push(`cases ${w}, фильтр «${f || 'Все'}»: карточек ${r.n} (${r.ids.join(', ')})`);
     }
-    await page.click('[data-filter=""]'); await page.waitForTimeout(200);
+    await page.click('[data-filter=""]'); await page.waitForTimeout(900);
     await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
     const b = await page.evaluate(() => { const a = document.getElementById('case-nda').getBoundingClientRect(), d = document.getElementById('case-demo').getBoundingClientRect(); return { y: Math.min(a.top, d.top) + scrollY - 16, h: Math.max(a.bottom, d.bottom) - Math.min(a.top, d.top) + 32 }; });
     await page.screenshot({ path: path.join(shots, `cases-last-${w}.png`), fullPage: true, clip: { x: 0, y: Math.round(b.y), width: w, height: Math.round(b.h) } });
@@ -1149,8 +1149,8 @@ console.log('\nструктура: услуги, «Как работаем», с
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await page.goto(BASE + 'cases.html?intro=instant'); await page.waitForTimeout(500);
-    const k = await page.evaluate(() => { const cs = getComputedStyle(document.querySelector('#case-resonara .obj-tx > .mono')); return cs.fontFamily.split(',')[0] + ' ' + cs.fontSize + ' ' + cs.fontWeight + ' ' + cs.textTransform; });
-    if (!/Manrope 15px 500 none/.test(k)) bad.push(`подпись карточки: ${k}`);
+    const k = await page.evaluate(() => { const cs = getComputedStyle(document.querySelector('#case-resonara .site > .win-tag')); return cs.fontFamily.split(',')[0] + ' ' + cs.fontSize + ' ' + cs.fontWeight + ' ' + cs.textTransform; });
+    if (!/Manrope 13px 500 none/.test(k)) bad.push(`подпись карточки (плашка в окне): ${k}`);
     await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
     await page.locator('#case-resonara').screenshot({ path: path.join(shots, 'cases-resonara-1440.png') });
     await page.close();
@@ -1177,7 +1177,7 @@ console.log('\nструктура: услуги, «Как работаем», с
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
   if (['', 'services.html', 'cases.html', 'automations.html', 'process.html'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 5 || (sm.match(/hreflang="en"/g) || []).length !== 5) bad.push('sitemap.xml: не пять адресов с EN');
   if (bad.length) fail('структура: ' + bad.join('; '));
-  else console.log(`  ✓ data-pt-burst нет нигде; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — шесть направлений по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки Manrope 15/500; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — пять адресов`);
+  else console.log(`  ✓ data-pt-burst нет нигде; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — шесть направлений по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — пять адресов`);
 }
 // Ясность (TASK-clarity.md), часть A: на услугах «Разово» / «Ежемесячно» — крупные заголовки групп; в «Варианте 03» нет
 // пересказа сопровождения; «Как устроена подписка» — по три строки «Сайт / Сценарий / Агент» с <b>; блок порядка на
@@ -1225,6 +1225,106 @@ console.log('\nясность, часть A: заголовки групп ус�
   }
   if (bad.length) fail('ясность A: ' + bad.join('; '));
   else console.log('  ✓ «Разово» / «Ежемесячно» — крупные заголовки групп, «Вариант 03» без пересказа, подписка — «Сайт / Сценарий / Агент», «Порядок работы», «Нужно от вас» 14 / 15 px, на 390 и 414 сводка в одну строку и рисунок под названием');
+}
+// Ясность, B1–B3: фильтры с FLIP-анимацией (через 700 мс у видимых карточек нет transform, resize — один раз и после
+// анимаций; reduced motion — сразу; считаются только анимации фильтра — WAAPI, не CSS-переходы сборки); якорь на этой же странице и с другой — отклик на цели (.pt-arrive); подпись карточки —
+// плашкой .win-tag в окне (в .obj-tx подписи нет; в каталоге и «Готовых решениях» главной без «Шаблон»); «Нет нужного
+// шаблона?» — на всю ширину при нечётном числе видимых карточек.
+console.log('\nясность, B1–B3: фильтры и якоря с анимацией, подпись в окне, широкая карточка');
+{
+  const bad = [];
+  // замеры времени — в обычном headless-браузере: под SwiftShader (основной браузер проверки) страница рисуется рывками
+  // по 0.2–0.7 с, и анимация на 0.6 с там идёт секунды
+  const quick = await chromium.launch();
+  // отклики на целях якорей: класс pt-arrive / pt-arrive-x хоть раз появился — запоминаем id или класс цели
+  const arriveSpy = () => {
+    window.__arr = [];
+    new MutationObserver((ms) => ms.forEach((m) => { const t = m.target; if (t.classList && (t.classList.contains('pt-arrive') || t.classList.contains('pt-arrive-x'))) window.__arr.push(t.id || t.className.split(' ')[0]); }))
+      .observe(document, { subtree: true, attributes: true, attributeFilter: ['class'] });
+  };
+  // фильтр каталога: «Заявки» — анимация, итог, один resize после анимаций, широкая «Нет нужного шаблона?»; «Все» — обычная
+  {
+    const page = await quick.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(BASE + 'automations.html?intro=instant'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(600);
+    await page.evaluate(() => { document.querySelector('.fl').scrollIntoView(); window.__rz = []; window.addEventListener('resize', () => window.__rz.push(performance.now())); });
+    await page.waitForTimeout(200);
+    const t0 = await page.evaluate(() => { const t = performance.now(); document.querySelector('[data-filter="leads"]').click(); return t; });
+    await page.waitForTimeout(120);
+    const mid = await page.evaluate(() => document.getAnimations().filter((a) => a.constructor.name === 'Animation').length);
+    await page.waitForTimeout(580);
+    const r = await page.evaluate((t0) => {
+      const g = document.querySelector('.obj-grid'), vis = [...g.querySelectorAll('.obj')].filter((c) => !c.hidden), own = document.getElementById('your-process');
+      return { rz: window.__rz.map((t) => Math.round(t - t0)), tr: vis.filter((c) => getComputedStyle(c).transform !== 'none' || c.getAnimations().some((a) => a.constructor.name === 'Animation')).length,
+        vis: vis.map((c) => c.id).join(','), wide: own.classList.contains('is-wide'), ww: Math.round(own.getBoundingClientRect().width), gw: Math.round(g.getBoundingClientRect().width) };
+    }, t0);
+    if (!mid) bad.push('каталог: смена фильтра без анимации');
+    if (r.tr) bad.push(`каталог: через 700 мс у ${r.tr} карточек ещё transform`);
+    if (r.rz.length !== 1 || r.rz[0] < 480) bad.push(`каталог: resize ${r.rz.length} раз (${r.rz.join(', ')} мс после клика) — нужен один, после анимаций`);
+    if (r.vis !== 'site-leads,avito-bot,your-process' || !r.wide || Math.abs(r.ww - r.gw) > 2) bad.push(`каталог, «Заявки»: ${r.vis}, широкая ${r.wide} (${r.ww} из ${r.gw})`);
+    await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
+    await page.waitForTimeout(1500);
+    await page.locator('.obj-grid').screenshot({ path: path.join(shots, 'automations-leads-1440.png') });
+    await page.click('[data-filter=""]'); await page.waitForTimeout(900);
+    if (await page.evaluate(() => document.getElementById('your-process').classList.contains('is-wide'))) bad.push('каталог, «Все»: «Нет нужного шаблона?» осталась широкой');
+    // быстрые клики подряд: итог — последний фильтр, без зависших трансформаций
+    await page.click('[data-filter="tasks"]'); await page.waitForTimeout(60); await page.click('[data-filter="ai"]'); await page.waitForTimeout(40); await page.click('[data-filter="reports"]'); await page.waitForTimeout(900);
+    const q = await page.evaluate(() => ({ vis: [...document.querySelectorAll('.obj-grid .obj')].filter((c) => !c.hidden).map((c) => c.id).join(','), tr: [...document.querySelectorAll('.obj-grid .obj')].filter((c) => getComputedStyle(c).transform !== 'none' || getComputedStyle(c).opacity !== '1').length }));
+    if (q.vis !== 'b24-report,price-monitor,your-process' || q.tr) bad.push(`каталог, быстрые клики: ${JSON.stringify(q)}`);
+    await page.close();
+  }
+  // reduced motion: сразу, resize один
+  {
+    const ctx = await quick.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    const page = await ctx.newPage();
+    await page.goto(BASE + 'cases.html'); await page.waitForTimeout(400);
+    await page.evaluate(() => { window.__rz = 0; window.addEventListener('resize', () => window.__rz++); document.querySelector('[data-filter="ai"]').click(); });
+    const r = await page.evaluate(() => ({ rz: window.__rz, an: document.querySelector('.obj-grid').getAnimations({ subtree: true }).filter((a) => a.constructor.name === 'Animation').length, vis: [...document.querySelectorAll('.obj-grid .obj')].filter((c) => !c.hidden).length }));
+    if (r.rz !== 1 || r.an || r.vis !== 4) bad.push(`кейсы, reduced motion: ${JSON.stringify(r)}`);
+    await ctx.close();
+  }
+  // якорь на этой же странице: доезжает быстрее секунды и цель откликается; с другой страницы — отклик после сборки цели
+  {
+    const page = await quick.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.addInitScript(arriveSpy);
+    await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(500);
+    const t = await page.evaluate(async () => {
+      const t0 = performance.now(), el = document.getElementById('care');
+      document.querySelector('.sv-fl a[href="#care"]').click();
+      for (let k = 0; k < 120; k++) { await new Promise((r) => setTimeout(r, 25)); if (Math.abs(el.getBoundingClientRect().top - 88) < 2) return Math.round(performance.now() - t0); }
+      return -1;
+    });
+    await page.waitForTimeout(300);
+    const a = await page.evaluate(() => window.__arr);
+    if (t < 0 || t > 1000) bad.push(`услуги: якорь «Сопровождение» доехал за ${t} мс (не больше 950)`);
+    if (!a.includes('care')) bad.push(`услуги: у #care нет отклика по прибытии (${a.join(',')})`);
+    await page.evaluate(() => { window.__arr = []; document.querySelector('.sv-fw[href="#subscription"]').click(); }); await page.waitForTimeout(1300);
+    const b = await page.evaluate(() => window.__arr);
+    if (!b.includes('gh-w')) bad.push(`услуги: «Ежемесячно» — нет отклика заголовка группы (${b.join(',')})`);
+    await page.close();
+    const p2 = await quick.newPage({ viewport: { width: 1440, height: 900 } });
+    await p2.addInitScript(arriveSpy);
+    await p2.goto(BASE + 'automations.html?intro=fast#b24-report'); await p2.waitForTimeout(3500);
+    const c = await p2.evaluate(() => ({ arr: window.__arr, done: document.getElementById('b24-report').closest('[data-sec]').classList.contains('s-done') }));
+    if (!c.done || !c.arr.includes('b24-report')) bad.push(`automations.html#b24-report: собран ${c.done}, отклик ${c.arr.join(',')}`);
+    await p2.close();
+  }
+  // подписи карточек — в окне
+  for (const f of ['index.html', 'cases.html', 'automations.html']) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(BASE + f + '?intro=instant'); await page.waitForTimeout(300);
+    const r = await page.evaluate(() => {
+      const objs = [...document.querySelectorAll('.obj')].concat(...[...document.querySelectorAll('template')].map((t) => [...t.content.querySelectorAll('.obj')]));
+      const win = (c) => c.querySelector('.flow-win, .site, canvas[data-mini]');
+      return { no: objs.filter((c) => win(c) && c.id !== 'your-process' && !c.querySelector('.win-tag')).map((c) => c.id || (c.querySelector('.obj-h, .card-link') || {}).textContent),
+        mono: objs.filter((c) => c.querySelector('.obj-tx .mono')).length, outside: [...document.querySelectorAll('.win-tag')].filter((t) => !t.parentElement.matches('.flow-win, .site, .fr')).length,
+        tpl: [...document.querySelectorAll(location.pathname.endsWith('automations.html') ? '.win-tag' : '#automation .win-tag')].map((t) => t.textContent).filter((x) => /Шаблон/.test(x)) };
+    });
+    if (r.no.length || r.mono || r.outside || r.tpl.length) bad.push(`${f}: без плашки ${r.no.join(', ') || 0}, подписей в .obj-tx ${r.mono}, плашек вне окна ${r.outside}, «Шаблон» ${r.tpl.join(', ') || 0}`);
+    await page.close();
+  }
+  await quick.close();
+  if (bad.length) fail('ясность B1–B3: ' + bad.join('; '));
+  else console.log('  ✓ фильтр — FLIP за ~0.6 с, resize один и после анимаций, быстрые клики и reduced motion без зависаний; якорь доезжает быстрее секунды, цель откликается (и после перехода с другой страницы); подписи карточек — плашкой в окне, без «Шаблон»; «Нет нужного шаблона?» широкая при нечётном числе карточек');
 }
 srv.kill();
 

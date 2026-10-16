@@ -913,6 +913,12 @@
       if (env.rm) draw();
     }
     function sleep() { asleep = true; }
+    // фильтр показал карточку (assets/filter.js → pt:shown → движок): схема собирается заново с первого узла
+    function restart() {
+      if (!on || asleep) return;
+      fitCanvas(cv, st); rebuild();
+      if (env.rm) draw();
+    }
     // смена языка: схема рассыпается пылью и через 0.4 с собирается заново с подписями на новом языке
     function relang() {
       if (!on || !G) return;
@@ -923,7 +929,7 @@
       swapAt = 0.4;
     }
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (G) { G.layout(g, st.w, st.h, compact()); if (on && env.rm) draw(); } });
-    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, relang: relang };
+    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, relang: relang, restart: restart };
   }
 
   // ---------- «Поток»: световые ленты под матовым стеклом, при наведении — схема устройства ----------
