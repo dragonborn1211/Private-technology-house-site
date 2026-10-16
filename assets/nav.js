@@ -39,10 +39,10 @@
   window.addEventListener('pointerdown', unpin, { passive: true });
   window.addEventListener('keydown', function (e) { if (/^(Arrow(Up|Down)|Page(Up|Down)|Home|End| )$/.test(e.key)) unpin(); });
 
-  // активный раздел: пункт меню текущей секции — aria-current (секции «Работы» две: objects и automation)
+  // активный раздел: пункт меню текущей секции — aria-current
   var links = Array.prototype.slice.call(root.querySelectorAll('[data-nav]'));
   // «Процесс» живёт на странице услуг (пункт меню главной ведёт туда), «Цены» скрыты до утверждения цен
-  var KEY = { directions: 'directions', objects: 'objects', automation: 'objects', pricing: 'pricing' };
+  var KEY = { directions: 'directions', objects: 'objects', automation: 'automation', pricing: 'pricing' };
   var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')), inBand = [];
   function setActive() {
     var cur = null;
@@ -99,10 +99,10 @@
 
   // ---------- свёрнутый пульт не ложится на первый экран ----------
   // Кнопка ↻ стоит в левом нижнем углу. Если под ней панель объекта, кнопки или строка доверия (на странице услуг —
-  // «Два формата» со ссылками на направления; на телефоне и
+  // «Два формата» со ссылками на направления, в каталоге — шаги подключения; на телефоне и
   // средних ширинах так бывает), она прячется, пока их не прокрутят. На телефоне она есть только на первом экране:
   // ниже свёрнутый пульт ложился поверх карточек всех секций.
-  var guard = hero ? Array.prototype.slice.call(hero.querySelectorAll('[data-obj], .hero-act .btn, .hero-act .lnk, .trust, .sv-fmt')) : [];
+  var guard = hero ? Array.prototype.slice.call(hero.querySelectorAll('[data-obj], .hero-act .btn, .hero-act .lnk, .trust, .sv-fmt, .sv-step')) : [];
   var phone = window.matchMedia ? window.matchMedia('(max-width: 760px)') : null;
   function guardPult() {
     if (!pult) return;

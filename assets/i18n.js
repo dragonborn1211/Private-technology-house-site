@@ -15,7 +15,6 @@
 
     // первый экран
     'Разделы': 'Sections',
-    'Работы': 'Work',
     'Цены': 'Pricing',
     'Открыть меню': 'Open menu',
     'Закрыть меню': 'Close menu',
@@ -26,7 +25,6 @@
     'и автоматизация —': 'and automation —',
     'с холодной точностью.': 'with cold precision.',
     'Делаем сайты, связываем CRM, Битрикс24 и Telegram, автоматизируем заявки и отчёты. Под вашу задачу, без шаблонов — от первого экрана до сервера.': 'We build websites, connect CRM, Bitrix24 and Telegram, and automate leads and reports. Built for your task, no templates — from the first screen to the server.',
-    'Смотреть работы': 'View our work',
     // строка доверия: три пункта, каждый отдельным узлом
     'Смета и сроки — до старта': 'Estimate and timeline before we start',
     'Договор и NDA': 'Contract and NDA',
@@ -61,47 +59,29 @@
 
     // 01 — направления
     '01 / Услуги': '01 / Services',
-    'AI внутри процессов, а не на баннерах.': 'AI inside your processes, not on banners.',
 
-    // 02 — объекты
-    '02 / Работы': '02 / Work',
+    // 02 — кейсы на главной (и те же карточки на cases.html)
     'Вещи, которые': 'Things that',
     'работают.': 'work.',
     'Каждый проект — отдельный объект: со своей задачей, архитектурой и характером.': 'Every project is an object of its own — with its own task, architecture and character.',
-    '02.1 / Сайты': '02.1 / Websites',
-    'Сайты и веб-продукты под ключ.': 'Turnkey websites and web products.',
     'Превью сайта resonara.ru': 'resonara.ru site preview',
     'Превью сайта useantares.com': 'useantares.com site preview',
-    'Объект №01 · AI': 'Object №01 · AI',
     'AI-сервис: интерфейс, логика и инфраструктура.': 'AI service: interface, logic and infrastructure.',
-    'Объект №02 · Гостеприимство': 'Object №02 · Hospitality',
     'Частная обсерватория с гостевым домом: бронирование ночей и прогноз неба на сегодня.': 'A private observatory with a guest house: night bookings and tonight’s sky forecast.',
-    'Закрытый объект под NDA: световые потоки сходятся в одну точку, при наведении видна схема устройства': 'Closed object under NDA: streams of light converge into one point; on hover the system diagram appears',
-    'NDA · показываем лично': 'NDA · shown in person',
-    'Объект №11 · Инфраструктура · NDA': 'Object №11 · Infrastructure · NDA',
-    'Поток': 'Flow',
-    'Сетевой сервис по подписке: сайт, личный кабинет, платежи и серверная инфраструктура.': 'A subscription network service: website, customer account, payments and server infrastructure.',
     'Запросить показ →': 'Request a demo →',
     'Анимация: разные сайты по очереди собираются из частиц': 'Animation: different websites assemble from particles one after another',
     '[ ваш проект ]': '[ your project ]',
-    'Объект №03 · Следующий': 'Object №03 · Next',
     'Следующий объект': 'Next object',
     'Может быть вашим. Расскажите о задаче →': 'It could be yours. Tell us about your task →',
-    '02.2 / Автоматизация': '02.2 / Automation',
-    'Процессы, которые работают без людей.': 'Processes that run without people.',
     'Схема: Битрикс24, задачи → Webhook → n8n → AI, анализ → Telegram; из Telegram вопрос возвращается к AI': 'Diagram: Bitrix24 tasks → Webhook → n8n → AI analysis → Telegram; questions from Telegram go back to AI',
-    // карточки ряда (TASK-automation.md); прежние «ИИ-разбор задач» и «ИИ-аудитор звонков» — теперь кейсы на странице услуг,
-    // их переводы ниже остаются
+    // «03 / Готовые автоматизации» на главной и каталог automations.html; два кейса со схемами — тоже здесь
     'Схема: форма на сайте → Webhook → n8n на сервере → лид в Битрикс24 и сообщение менеджеру в Telegram': 'Diagram: website form → Webhook → n8n on our server → a lead in Bitrix24 and a Telegram message to the manager',
-    'Объект №04 · Битрикс24 · Telegram': 'Object №04 · Bitrix24 · Telegram',
     'Заявки с сайта — в CRM и Telegram': 'Website leads — into the CRM and Telegram',
     'Каждая заявка сразу становится лидом в Битрикс24, а менеджер получает сообщение в Telegram. Ни одна не теряется.': 'Every request instantly becomes a lead in Bitrix24, and the manager gets a Telegram message. None get lost.',
     'Схема: голосовое в Telegram → n8n на сервере → расшифровка речи → AI определяет исполнителя и срок → задача в Битрикс24 → ответ «готово» в Telegram': 'Diagram: a Telegram voice message → n8n on our server → speech to text → AI picks the assignee and deadline → a task in Bitrix24 → a “done” reply in Telegram',
-    'Объект №05 · AI · Битрикс24': 'Object №05 · AI · Bitrix24',
     'Голосовое → задача в Битрикс24': 'Voice message → task in Bitrix24',
     'Руководитель надиктовывает задачу в Telegram — она появляется в Битрикс24 с исполнителем и сроком.': 'The manager dictates a task in Telegram — it appears in Bitrix24 with an assignee and a deadline.',
     'Схема: новый отзыв на Wildberries или Ozon → n8n на сервере → AI пишет черновик ответа → проверка в Telegram → ответ публикуется на маркетплейсе': 'Diagram: a new Wildberries or Ozon review → n8n on our server → AI drafts a reply → approval in Telegram → the reply goes live on the marketplace',
-    'Объект №06 · AI · маркетплейсы': 'Object №06 · AI · marketplaces',
     'Ответы на отзывы Wildberries и Ozon': 'Replies to Wildberries and Ozon reviews',
     'На каждый новый отзыв AI пишет ответ. Вы одобряете его в Telegram одной кнопкой — и он публикуется.': 'AI drafts a reply to every new review. You approve it in Telegram with one tap — and it goes live.',
     'ИИ-разбор задач': 'AI task digest',
@@ -110,26 +90,15 @@
     'ИИ-аудитор звонков': 'AI call auditor',
     'Каждый звонок расшифровывается и оценивается по скрипту продаж, итог появляется в карточке сделки.': 'Every call is transcribed and scored against the sales script; the result appears in the deal card.',
     'Анимация: из типовых систем по очереди собираются разные цепочки автоматизации': 'Animation: different automation chains assemble from common systems one after another',
-    'Объект №07 · Следующий': 'Object №07 · Next',
     'Ваш процесс': 'Your process',
     'Опишите рутину — соберём автоматизацию →': 'Describe the routine — we’ll build the automation →',
-    'Все объекты →': 'All objects →',
-    // скрытый ряд «Интеграции» (<template>): переводы ждут его возвращения
-    '02.3 / Интеграции': '02.3 / Integrations',
-    'Системы, которые разговаривают друг с другом.': 'Systems that talk to each other.',
+    // скрытые кейсы cases.html (<template data-hidden-cases>): переводы ждут их показа
     'Схема: мини-приложение Telegram ⇄ API ⇄ CRM Битрикс24, из CRM уведомление менеджеру': 'Diagram: Telegram mini app ⇄ API ⇄ Bitrix24 CRM; the CRM notifies a manager',
-    'Объект №08 · Интеграция': 'Object №08 · Integration',
     'Заявки из Telegram': 'Leads from Telegram',
     'Заявки из мини-приложения сразу попадают в CRM, а статус заказа возвращается клиенту.': 'Leads from the mini app go straight to the CRM, and the order status goes back to the customer.',
     'Схема: сайт, CRM и бот ⇄ AI-шлюз на Cloudflare ⇄ модели A, B и C; под шлюзом логи и лимиты': 'Diagram: website, CRM and bot ⇄ AI gateway on Cloudflare ⇄ models A, B and C; logs and limits under the gateway',
-    'Объект №09 · Интеграция': 'Object №09 · Integration',
     'Единый AI-шлюз': 'Unified AI gateway',
     'Все сервисы компании обращаются к нейросетям через один шлюз: ключи, лимиты и журнал в одном месте.': 'Every company service reaches AI models through one gateway: keys, limits and logs in one place.',
-    'Анимация: случайные пары и тройки систем обмениваются данными в обе стороны': 'Animation: random pairs and triples of systems exchange data both ways',
-    '[ ваша интеграция ]': '[ your integration ]',
-    'Объект №10 · Следующий': 'Object №10 · Next',
-    'Ваша интеграция': 'Your integration',
-    'Свяжем ваши системы между собой →': 'We’ll connect your systems →',
 
     // 03 — процесс
     'Сопровождение': 'Support',
@@ -157,9 +126,7 @@
     'Отчёт раз в месяц': 'Monthly report',
 
     // 05 — контакт и футер
-    '03 / Контакт': '03 / Contact',
     '04 / Контакт': '04 / Contact',
-    '03 / Цены': '03 / Pricing',
     'Построим что-то': 'Let’s build something',
     'своё.': 'private.',
     'Расскажите о задаче — предложим решение, сроки и смету.': 'Tell us about your task — we’ll propose a solution, timeline and estimate.',
@@ -286,13 +253,9 @@
     'Входит': 'Included',
     // группа «Проекты»
     '01 / Проекты': '01 / Projects',
-    'Разово.': 'One-off.',
-    'Сдаём целиком.': 'Delivered in full.',
-    'Смета и сроки — до старта.': 'Estimate and timeline before we start.',
     'Срок': 'Timeline',
     'Стоимость': 'Price',
     'Формат': 'Format',
-    'после созвона': 'after a call',
     'по смете': 'per estimate',
     'Обсудить задачу': 'Discuss a task',
     // сайты
@@ -313,15 +276,11 @@
     'Переупаковываем существующий сайт: тот же смысл, другой уровень.': 'We repackage an existing site: same message, a different level.',
     'Второй язык': 'Second language',
     'Английская версия с переключением на лету — как на этом сайте.': 'A second language with on-the-fly switching — like on this site.',
-    'Resonara — открыть сайт': 'Resonara — open the website',
-    'Antares — открыть сайт': 'Antares — open the website',
-    'Следующий — ваш. Расскажите о задаче →': 'The next one is yours. Tell us about it →',
     // приложения
     'Приложения, которые хочется открывать.': 'Apps people want to open.',
     'Android, iOS и Telegram — от интерфейса до публикации в магазинах. Связываем с сайтом и CRM, чтобы заказы не терялись.': 'Android, iOS and Telegram — from interface to store release. Connected to your website and CRM so no order gets lost.',
     'Публикация': 'Store release',
     'Связь с CRM': 'CRM connection',
-    'Кейсы — показываем на созвоне': 'Case studies — shown on a call',
     'Обсудить приложение': 'Discuss an app',
     'Мобильное приложение': 'Mobile app',
     'Android и iOS из одной кодовой базы: быстрее запуск, проще поддержка.': 'Android and iOS from one codebase: faster launch, simpler support.',
@@ -347,9 +306,6 @@
     'Cloudflare: фильтрация атак, кэш и ускорение загрузки.': 'Cloudflare: attack filtering, caching and faster loading.',
     // группа «По подписке»
     '02 / По подписке': '02 / Subscription',
-    'Ежемесячно.': 'Monthly.',
-    'Работает всегда.': 'Always on.',
-    'Российские проекты — на серверах в России. Логика — наша, данные — ваши.': 'Russian projects run on servers in Russia. The logic is ours, the data is yours.',
     // сопровождение
     'Вы пишете, что поменять. Остальное — наше.': 'You tell us what to change. The rest is on us.',
     'Сайт живёт на нашем хостинге: следим, чтобы он открывался, обновляем и вносим правки. Программист в штате не нужен.': 'The site lives on our hosting: we keep it online, update it and make your edits. No in-house developer needed.',
@@ -383,12 +339,10 @@
     'Товары из прайсов и таблиц сами попадают в каталог сайта.': 'Products from price lists and spreadsheets land in your site catalog on their own.',
     'Любая связка по API': 'Any API connection',
     'Есть API или вебхук — соединим, хоть в обе стороны.': 'If there is an API or a webhook, we connect it — both ways if needed.',
-    // кейсы модуля (схемы; «ИИ-разбор задач» и его подписи — в разделе главной выше)
+    // кейс «Каталог на автопилоте» (cases.html и главная)
     'Схема: прайс в CSV → агент в LibreChat → n8n на сервере → AI пишет карточку и SEO → товар в каталоге сайта → отчёт в Telegram': 'Diagram: a CSV price list → an agent in LibreChat → n8n on our server → AI writes the product card and SEO → the product in the site catalog → a report in Telegram',
-    'Кейс · LibreChat · n8n': 'Case · LibreChat · n8n',
     'Каталог на автопилоте': 'Catalog on autopilot',
     'Менеджер загружает прайс в чат с агентом. Каждый товар получает описание и SEO, попадает в каталог сайта, а отчёт приходит в Telegram.': 'A manager uploads a price list to a chat with the agent. Every product gets a description and SEO, lands in the site catalog, and a report arrives in Telegram.',
-    'Кейс · Битрикс24 · Telegram': 'Case · Bitrix24 · Telegram',
     // AI
     'AI внутри процессов, а не на баннерах.': 'AI inside processes, not on banners.',
     'Нейросети, которые разгружают людей: отвечают клиентам, ищут по документам и разбирают звонки.': 'AI that takes load off people: it answers customers, searches your documents and reviews calls.',
@@ -400,10 +354,8 @@
     'Записи расшифровываются на нашем сервере, нейросеть оценивает разговор, итог — в CRM или Telegram.': 'Recordings are transcribed on our server, AI scores the conversation, and the result goes to CRM or Telegram.',
     'ИИ-продавец для Авито': 'AI sales agent for Avito',
     'Отвечает покупателям в чатах круглосуточно и знает ваш каталог.': 'Answers buyers in chats around the clock and knows your catalog.',
-    // кейсы модуля («ИИ-аудитор звонков» и его подписи — в разделе главной выше)
-    'Кейс · Битрикс24 · AI': 'Case · Bitrix24 · AI',
+    // кейс «Агенты для отделов» (cases.html)
     'Схема: продажи, бухгалтерия и поддержка ⇄ агенты в LibreChat ⇄ AI-шлюз на Cloudflare и база знаний': 'Diagram: sales, accounting and support ⇄ agents in LibreChat ⇄ an AI gateway on Cloudflare and a knowledge base',
-    'Кейс · LibreChat · AI-шлюз': 'Case · LibreChat · AI gateway',
     'Агенты для отделов': 'Agents for every department',
     'Продажи, бухгалтерия и поддержка спрашивают своих агентов в одном чате. Ответы — по вашим документам, а запросы к нейросетям идут через один шлюз: ключи и лимиты в одном месте.': 'Sales, accounting and support ask their own agents in one chat. Answers come from your documents, and every AI request goes through one gateway: keys and limits in one place.',
     // как работаем
@@ -464,7 +416,132 @@
     'Расскажите': 'Tell us',
     'о задаче.': 'about your task.',
     'Предложим решение, сроки и смету — после первого созвона.': 'We will propose a solution, timeline and estimate after the first call.',
-    'На главную': 'Back to home'
+    'На главную': 'Back to home',
+    // меню, подвал (TASK-pages.md)
+    'Кейсы': 'Cases',
+    'Автоматизации': 'Automations',
+    'Готовые автоматизации': 'Ready-made automations',
+    'Разделы сайта': 'Site sections',
+    'Вопросы': 'FAQ',
+    'Связь': 'Contact',
+    // главная: «02 / Кейсы», «03 / Готовые автоматизации»
+    'Смотреть кейсы': 'View cases',
+    '02 / Кейсы': '02 / Cases',
+    'Объект №01 · Сайт · AI': 'Object №01 · Website · AI',
+    'Объект №02 · Сайт · Гостеприимство': 'Object №02 · Website · Hospitality',
+    'Объект №03 · AI · Битрикс24': 'Object №03 · AI · Bitrix24',
+    'Объект №04 · Автоматизация · Битрикс24': 'Object №04 · Automation · Bitrix24',
+    'Объект №05 · Автоматизация · LibreChat · n8n': 'Object №05 · Automation · LibreChat · n8n',
+    'Объект №06 · AI · LibreChat': 'Object №06 · AI · LibreChat',
+    'Объект №07 · Интеграция · Битрикс24': 'Object №07 · Integration · Bitrix24',
+    'Объект №08 · Инфраструктура · Cloudflare': 'Object №08 · Infrastructure · Cloudflare',
+    'Объект · Следующий': 'Object · Next',
+    'Все кейсы →': 'All cases →',
+    '6 работ: сайты, автоматизация, AI': '6 projects: websites, automation, AI',
+    '03 / Готовые автоматизации': '03 / Ready-made automations',
+    'Запускаем': 'We launch',
+    'по шаблону.': 'from templates.',
+    'Даёте ключ или вебхук — подключаем на нашем сервере и следим. Оплата помесячно.': 'You give us a key or a webhook — we connect it on our server and keep watch. Billed monthly.',
+    'Шаблон · Битрикс24 · Telegram': 'Template · Bitrix24 · Telegram',
+    'Шаблон · AI · Битрикс24': 'Template · AI · Bitrix24',
+    'Шаблон · AI · маркетплейсы': 'Template · AI · marketplaces',
+    'Под ваш процесс': 'For your process',
+    '[ ваш процесс ]': '[ your process ]',
+    'Все шаблоны →': 'All templates →',
+    '04 / Цены': '04 / Pricing',
+    // услуги: тонкие заголовки групп, «Готовые шаблоны», ссылки на кейсы
+    'Разово. Смета и сроки — до старта.': 'One-off. Estimate and timeline before we start.',
+    'Ежемесячно. Российские проекты — на серверах в России.': 'Monthly. Russian projects run on servers in Russia.',
+    'Кейсы: сайты': 'Cases: websites',
+    'Кейсы: автоматизация': 'Cases: automation',
+    'Кейсы: AI': 'Cases: AI',
+    'Готовые шаблоны': 'Ready-made templates',
+    'Заявки с сайта → CRM': 'Website leads → CRM',
+    'Утренний разбор задач': 'Morning task review',
+    'Мониторинг цен': 'Price monitoring',
+    'Голосовое → задача': 'Voice message → task',
+    'Ответы на отзывы WB и Ozon': 'Replies to WB and Ozon reviews',
+    'Все шаблоны': 'All templates',
+    // кейсы (cases.html)
+    'Кейсы — сайты, автоматизация и AI | Private Technology House': 'Cases — websites, automation and AI | Private Technology House',
+    'Сайты, автоматизации и AI, которые уже работают у клиентов. Приложения и закрытые проекты показываем на созвоне.': 'Websites, automations and AI already running for our clients. Apps and projects under NDA we show on a call.',
+    'Сделано': 'Built',
+    'и работает.': 'and running.',
+    'Фильтр кейсов': 'Case filter',
+    'Все': 'All',
+    'Интеграции': 'Integrations',
+    'Такой же для вас — шаблон «Утренний разбор задач» →': 'Want the same? The “Morning task review” template →',
+    'Такой же для вас — шаблон «Каталог из прайса» →': 'Want the same? The “Catalog from a price list” template →',
+    '[ под NDA ]': '[ under NDA ]',
+    'Под NDA': 'Under NDA',
+    'Приложения и закрытые проекты': 'Apps and private projects',
+    'Android, iOS и внутренние системы клиентов — покажем на созвоне.': 'Android, iOS and clients’ internal systems — we’ll show them on a call.',
+    'Контакт': 'Contact',
+    // готовые автоматизации (automations.html)
+    'Готовые автоматизации — Битрикс24, Telegram, маркетплейсы, AI | Private Technology House': 'Ready-made automations — Bitrix24, Telegram, marketplaces, AI | Private Technology House',
+    'Запускаем по шаблону на нашем сервере: вы даёте ключ или вебхук — мы подключаем и следим. Оплата — помесячно.': 'We launch from a template on our server: you give us a key or a webhook — we connect it and keep watch. Billed monthly.',
+    'Готовые': 'Ready-made',
+    'автоматизации.': 'automations.',
+    'Как подключаем': 'How we connect',
+    'Доступ': 'Access',
+    'Вебхук Битрикс24, бот в Telegram или ключ кабинета маркетплейса.': 'A Bitrix24 webhook, a Telegram bot or a marketplace seller API key.',
+    'Подключение': 'Setup',
+    'Настраиваем шаблон под ваши поля, сообщения и правила.': 'We fit the template to your fields, messages and rules.',
+    'Работает': 'Running',
+    'Сценарий крутится на нашем сервере, мы за ним следим. Платите помесячно.': 'The workflow runs on our server and we look after it. You pay monthly.',
+    'Фильтр шаблонов': 'Template filter',
+    'Заявки': 'Leads',
+    'Задачи': 'Tasks',
+    'Товары': 'Products',
+    'Отчёты': 'Reports',
+    'Каждая заявка сразу становится лидом в Битрикс24, а менеджер получает сообщение в Telegram.': 'Every request instantly becomes a lead in Bitrix24, and the manager gets a Telegram message.',
+    'Каждое утро — сводка по задачам Битрикс24 с выводами в Telegram. Боту можно задать вопрос по любой задаче.': 'Every morning — a summary of your Bitrix24 tasks with conclusions in Telegram. You can ask the bot about any task.',
+    'Шаблон · сайт · AI': 'Template · website · AI',
+    'Каталог из прайса': 'Catalog from a price list',
+    'Загружаете прайс в чат с агентом — товары с описаниями и SEO появляются в каталоге сайта, отчёт приходит в Telegram.': 'Upload a price list to a chat with the agent — products with descriptions and SEO appear in the website catalog, and the report arrives in Telegram.',
+    'Шаблон · AI · Авито': 'Template · AI · Avito',
+    'Отвечает покупателям в чатах Авито круглосуточно и знает ваш каталог. Сложный вопрос передаёт менеджеру в Telegram.': 'Answers buyers in Avito chats around the clock and knows your catalog. Hard questions go to a manager in Telegram.',
+    'Шаблон · маркетплейсы · таблица': 'Template · marketplaces · spreadsheet',
+    'Мониторинг цен конкурентов': 'Competitor price monitoring',
+    'Каждое утро — цены и остатки конкурентов и маркетплейсов в таблице и короткая сводка в Telegram.': 'Every morning — competitor and marketplace prices and stock in a spreadsheet, plus a short summary in Telegram.',
+    'Нужно от вас: вебхук Битрикс24 и доступ к форме на сайте': 'You provide: a Bitrix24 webhook and access to the website form',
+    'Нужно от вас: вебхук Битрикс24 и список сотрудников': 'You provide: a Bitrix24 webhook and a staff list',
+    'Нужно от вас: API-ключи кабинетов Wildberries и Ozon': 'You provide: Wildberries and Ozon seller API keys',
+    'Нужно от вас: вебхук Битрикс24': 'You provide: a Bitrix24 webhook',
+    'Нужно от вас: доступ к сайту по API и прайс в CSV или Excel': 'You provide: API access to the website and a price list in CSV or Excel',
+    'Нужно от вас: доступ к API Авито и каталог товаров': 'You provide: Avito API access and a product catalog',
+    'Нужно от вас: список товаров и ссылки на конкурентов': 'You provide: a product list and links to competitors',
+    'Подключить →': 'Connect →',
+    'Работает у клиента: ИИ-разбор задач →': 'Running for a client: AI task digest →',
+    'Работает у клиента: Каталог на автопилоте →': 'Running for a client: Catalog on autopilot →',
+    'Нет нужного шаблона?': 'No template that fits?',
+    'Опишите рутину — соберём автоматизацию под вас →': 'Describe the routine — we’ll build an automation for you →',
+    'Схема: сообщение в чате Авито → n8n на сервере → AI отвечает по каталогу → ответ в чат Авито; сложный вопрос — менеджеру в Telegram': 'Diagram: a message in an Avito chat → n8n on our server → AI answers from the catalog → a reply in the Avito chat; a hard question goes to a manager in Telegram',
+    'Схема: каждое утро в 08:00 → n8n на сервере → цены конкурентов → строка в таблице → сводка в Telegram': 'Diagram: every morning at 08:00 → n8n on our server → competitor prices → a row in the spreadsheet → a summary in Telegram',
+    'о подписке.': 'about the subscription.',
+    'Что нужно от нас, чтобы подключить?': 'What do you need from us to connect?',
+    'Доступ к сервисам, которые связываем: вебхук Битрикс24, бот в Telegram, ключ кабинета маркетплейса. Остальное настраиваем сами.': 'Access to the services we connect: a Bitrix24 webhook, a Telegram bot, a marketplace seller API key. We set up the rest ourselves.',
+    'Где это работает?': 'Where does it run?',
+    'На нашем сервере в России. Мы следим, чтобы сценарий работал, и правим его, если у сервиса поменялся API.': 'On our server in Russia. We make sure the workflow keeps running and fix it if a service changes its API.',
+    'Можно доработать шаблон под нас?': 'Can the template be adapted to us?',
+    'Да. Шаблон — отправная точка: поля, сообщения и правила настраиваем под ваш процесс.': 'Yes. A template is a starting point: fields, messages and rules are tuned to your process.',
+    'Сколько стоит?': 'How much is it?',
+    'Зависит от шаблона и объёма. Назовём после короткого созвона; подписка — фиксированный платёж в месяц.': 'It depends on the template and the volume. We’ll name it after a short call; the subscription is a fixed monthly fee.',
+    'Что будет, если отказаться?': 'What happens if I cancel?',
+    'Сценарий останавливается вместе с подпиской; ваши данные выгрузим по запросу.': 'The workflow stops with the subscription; we export your data on request.',
+    // схемы каталога (scenes.js)
+    'Авито · чат': 'Avito · chat',
+    'Ответ по каталогу': 'Catalog-based reply',
+    'Авито · ответ': 'Avito · reply',
+    'Каждое утро · 08:00': 'Every morning · 08:00',
+    'Цены конкурентов': 'Competitor prices',
+    'Таблица · цены': 'Spreadsheet · prices',
+    'Telegram · сводка': 'Telegram · summary',
+    // 404
+    'Страница не найдена — 404 | Private Technology House': 'Page not found — 404 | Private Technology House',
+    'Такой страницы': 'No such',
+    'нет.': 'page.',
+    'Возможно, адрес изменился или в ссылке опечатка.': 'The address may have changed, or the link has a typo.'
   };
   var ATTRS = ['aria-label', 'title', 'alt'];
 
@@ -473,6 +550,14 @@
   function conv(s) {
     var v = EN[norm(s)];
     return v == null ? null : /^\s*/.exec(s)[0] + v + /\s*$/.exec(s)[0];
+  }
+  function ld(o) {
+    if (typeof o === 'string') { var v = EN[norm(o)]; return v == null ? o : v; }
+    if (Array.isArray(o)) return o.map(ld);
+    if (!o || typeof o !== 'object') return o;
+    var r = {};
+    for (var k in o) r[k] = /^(@|url$|item$|sameAs$)/.test(k) ? o[k] : ld(o[k]);
+    return r;
   }
   var I = {
     lang: 'ru',
@@ -499,6 +584,12 @@
           if ((v = conv(src)) != null) { (el.__ra = el.__ra || {})[a] = src; el.setAttribute(a, v); }
         });
       });
+      // разметка для поисковиков (JSON-LD): строки — по тому же словарю, адреса и типы как есть
+      Array.prototype.forEach.call(d.querySelectorAll('script[type="application/ld+json"]'), function (sc) {
+        if (sc.__ru == null) sc.__ru = sc.textContent;
+        if (!en) { sc.textContent = sc.__ru; return; }
+        try { sc.textContent = JSON.stringify(ld(JSON.parse(sc.__ru))); } catch (e) { /* не JSON — как есть */ }
+      });
       if (I._title == null) I._title = d.title;
       d.title = en ? (conv(I._title) || I._title) : I._title;
       Array.prototype.forEach.call(d.querySelectorAll('[data-lang]'), function (a) {
@@ -517,5 +608,17 @@
     }
   };
   window.PTI18N = I;
+  // английская версия не теряется при переходе по своим ссылкам (меню, подвал, «Все кейсы»): ?lang=en дописывается
+  // в адрес ссылки в момент нажатия и снимается сразу после — разметка остаётся русской, выбор нигде не хранится
+  function carry(e) {
+    if (I.lang !== 'en') return;
+    var a = e.target.closest && e.target.closest('a[href]');
+    if (!a || a.hasAttribute('data-lang') || a.origin !== location.origin || /(^|&)lang=/.test(a.search.slice(1)) || !/(\/|\.html)$/.test(a.pathname)) return;
+    var h = a.getAttribute('href');
+    a.search = (a.search ? a.search + '&' : '?') + 'lang=en';
+    setTimeout(function () { a.setAttribute('href', h); }, 0);
+  }
+  document.addEventListener('click', carry, true);
+  document.addEventListener('auxclick', carry, true);
   if (I.fromUrl() === 'en') I.apply('en');
 })();

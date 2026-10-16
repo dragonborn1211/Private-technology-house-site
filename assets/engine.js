@@ -30,7 +30,7 @@
       // burst — после сборки частицы разлетаются по экрану (первый экран и контакты); у остальных секций гаснут на месте
       var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')).map(function (el) { return { el: el, name: el.getAttribute('data-sec'), state: 'idle', geo: null, geoKey: '', replay: false, burst: el.hasAttribute('data-pt-burst') }; });
       var pultEl = root.querySelector('[data-pult]'), pultT = 0, pultShown = false, replaying = false;
-      var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, cur = null, io = null;
+      var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, cur = null, io = null, io2 = null;
       // «Тихие» зоны — текстовые блоки первого экрана (кикер, H1, лид, кнопки, строка доверия) и текст панели «Кодекс
       // студии» (вкладки сверху, подпись снизу): фоновая пыль на них не ложится ни при раскладке (gAmbient выбирает
       // точку заново), ни при дрейфе (такая точка не рисуется). Координаты — от корня, как у частиц; пересчёт при смене
@@ -990,8 +990,11 @@
       } else {
         if (!jumpStart()) request(hero);
         if ('IntersectionObserver' in window) {
-          io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { for (var i = 0; i < secs.length; i++) if (secs[i].el === e.target) request(secs[i]); } }); }, { rootMargin: '0px 0px -18% 0px', threshold: 0 });
+          var onSee = function (es) { es.forEach(function (e) { if (e.isIntersecting) { for (var i = 0; i < secs.length; i++) if (secs[i].el === e.target) request(secs[i]); } }); };
+          io = new IntersectionObserver(onSee, { rootMargin: '0px 0px -18% 0px', threshold: 0 });
           secs.forEach(function (s) { io.observe(s.el); });
+          // последняя секция (подвал) — без отступа снизу: она бывает ниже 18% окна и тогда никогда не попала бы в полосу
+          io2 = new IntersectionObserver(onSee, { threshold: 0 }); io2.observe(secs[secs.length - 1].el);
         } else secs.forEach(function (s) { request(s); });
         start();
       }
@@ -1003,7 +1006,7 @@
       return {
         setActive: function (v) { active = v; if (v) start(); },
         destroy: function () {
-          alive = false; timers.forEach(clearTimeout); clearInterval(typeT); clearTimeout(pultT); if (raf) cancelAnimationFrame(raf); if (io) io.disconnect();
+          alive = false; timers.forEach(clearTimeout); clearInterval(typeT); clearTimeout(pultT); if (raf) cancelAnimationFrame(raf); if (io) io.disconnect(); if (io2) io2.disconnect();
           btns.forEach(function (b) { b.removeEventListener('click', replay); });
           if (heroObj) heroObj.destroy();
           langLinks.forEach(function (a) { a.removeEventListener('click', onLang); });

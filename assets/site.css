@@ -90,7 +90,7 @@ body{margin:0;background:#0A121A}
 @media (prefers-reduced-motion:reduce){.pill-dot,.it{animation:none}.sec.s-skel .scan{animation:none}}
 /* «Объекты»: шапки рядов, сетка карточек, окна со схемами */
 .row-h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;margin:0 0 22px;padding-top:16px}
-.row-h p{margin:0}
+.row-h :is(p,h2){margin:0}
 .row-t{font-size:15px;line-height:1.5;color:#9DB0BC}
 .obj-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
 .obj{position:relative;display:flex;flex-direction:column;gap:18px;padding:14px 14px 24px;border-radius:26px}
@@ -279,7 +279,7 @@ body{margin:0;background:#0A121A}
 .menu-top{display:flex;align-items:center;justify-content:space-between;min-height:68px}
 .menu-nav{display:flex;flex-direction:column}
 .pt .menu-nav a{display:block;padding:12px 0;font-size:30px;font-weight:300;line-height:1.15;letter-spacing:-.02em;color:#BCD3DE;border-bottom:1px solid rgba(188,211,222,.1)}
-.pt .menu-nav a[aria-current="true"]{color:#EEF3F6}
+.pt .menu-nav a:is([aria-current="true"],[aria-current="page"]){color:#EEF3F6}
 .menu-cta{display:flex;flex-direction:column;gap:12px}
 .menu .lang{align-self:flex-start}
 html.pt-lock,html.pt-lock body{overflow:hidden}
@@ -339,7 +339,8 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .pt-on .sec .sv-dot{transition:opacity .9s ease,background-color .9s ease}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) :is(.svc-go,.sv-dot){opacity:0}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .svc::before,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .sv-mod::before{opacity:0}
-.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) :is(.svc-tags span,.sv-chips li){border-color:transparent;background-color:transparent}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) :is(.svc-tags span,.sv-chips li,.sv-tl a,.fl-b){border-color:transparent;background-color:transparent;box-shadow:none}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) :is(.sv-tl svg,.sv-go svg){opacity:0}
 @media (max-width:1100px){.svc{grid-column:span 6}.svc-xl{grid-column:span 12}}
 @media (max-width:900px){.svc-3 .svc{grid-column:span 12;min-height:0}}
 /* телефон: карточка — строкой, иконка слева, текст справа; стрелка не нужна — кликается вся карточка */
@@ -397,7 +398,6 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .pt a.sv-go:hover{color:var(--c)}
 .sv-go svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s cubic-bezier(.3,.7,.2,1)}
 .sv-go:hover svg{transform:translateX(3px)}
-.sv-meta .nda{align-self:flex-end}
 .sv-rows{position:relative;display:flex;flex-direction:column;align-self:start;margin:0;padding:0;list-style:none}
 .sv-rows li{position:relative;display:grid;grid-template-columns:minmax(0,14fr) minmax(0,22fr);gap:6px 28px;padding:19px 4px 19px 22px;border-bottom:1px solid rgba(188,211,222,.1)}
 .sv-rows li:first-child{border-top:1px solid rgba(188,211,222,.1)}
@@ -410,18 +410,6 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
    (раньше линия строки модуля ниже стояла на экране, пока сам модуль ещё не собран) */
 .pt-on .sec :is(.sv-rows li,.sv-meta,.sv-pf,.sv-qs,.sv-f + .sv-f){transition:border-color .9s ease}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) :is(.sv-rows li,.sv-meta,.sv-pf,.sv-qs,.sv-f + .sv-f){border-color:transparent}
-/* примеры в модуле «Сайты»: во всю ширину модуля — два снимка (assets/previews) и плитка «ваш проект» */
-.sv-ex{grid-column:1 / -1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.pt a.sv-shot{position:relative;display:block;aspect-ratio:2 / 1;border-radius:18px;overflow:hidden;background-color:rgba(142,216,248,.05);border:1px solid rgba(188,211,222,.14);transition:border-color .3s ease,background-color .9s ease}
-.pt a.sv-shot:hover{border-color:color-mix(in srgb,var(--c) 55%,transparent)}
-.sv-shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block;transition:opacity .9s ease,transform .6s cubic-bezier(.3,.7,.2,1)}
-.sv-shot:hover img{transform:scale(1.03)}
-.sv-shot b{position:absolute;left:12px;bottom:12px;padding:5px 10px;border-radius:999px;background:rgba(10,18,26,.82);border:1px solid rgba(188,211,222,.16);font:500 11px/1.2 'JetBrains Mono',monospace;letter-spacing:.02em;color:#BCD3DE}
-.pt a.sv-next{display:flex;flex-direction:column;justify-content:space-between;padding:18px 20px;border:1px dashed rgba(142,216,248,.45)}
-.sv-next .mono{color:#8ED8F8}
-.sv-nt{max-width:240px;font-size:16px;font-weight:500;line-height:1.4;color:#EEF3F6}
-.pt-on .sec:not(.s-done) .sv-shot img{opacity:0}
-.sv-nda{margin:0}
 /* «Как работаем»: пять шагов в ряд, номер в цвете шага */
 .sv-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:28px;margin:0;padding:0;list-style:none}
 .sv-step{display:flex;flex-direction:column;gap:12px;padding-top:22px}
@@ -467,14 +455,13 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .sv-rows li{grid-template-columns:minmax(0,1fr);padding:15px 0 15px 20px}
 .sv-rows li::before{top:26px}
 .sv-rn{font-size:16px}
-.sv-ex{grid-template-columns:1fr 1fr;gap:8px}.pt a.sv-shot{aspect-ratio:16 / 11;border-radius:14px}.pt a.sv-next{grid-column:1 / -1;aspect-ratio:auto;min-height:96px;padding:14px 16px}
 .sv-steps{grid-template-columns:minmax(0,1fr);gap:0}
 .sv-step{display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px 12px;padding:18px 0}
 .sv-sn{grid-row:1 / span 2;font-size:22px}
 .sv-path{padding:24px 20px 22px}
 .sv-q summary{font-size:16.5px;min-height:60px}
 }
-@media (prefers-reduced-motion:reduce){.svc,.svc-go,.sv-go svg,.sv-shot img,.sv-pl,.sv-pl::after{transition:none}.svc:hover{transform:none}}
+@media (prefers-reduced-motion:reduce){.svc,.svc-go,.sv-go svg,.sv-pl,.sv-pl::after{transition:none}.svc:hover{transform:none}}
 .pt .nav a[aria-current="page"]{color:#EEF3F6}
 
 /* ---------- рисунки направлений — чертежи линиями (вариант A, assets/glyphs.js): вместо иконок в квадратах у каждого
@@ -558,13 +545,70 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .obj-grid-2 .obj-d{max-width:540px;font-size:16px}
 @media (max-width:900px){.obj-grid-2{grid-template-columns:minmax(0,1fr)}}
 @media (max-width:760px){.obj-grid-2 .flow-win{aspect-ratio:4 / 3}.obj-grid-2 .obj-h{font-size:22px}.obj-grid-2 .obj-d{font-size:15px}}
-/* кейсы в модулях «Автоматизация» и «AI» страницы услуг: схемы makeFlow во всю ширину модуля, две в ряд */
-.sv-cases{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 20px;margin-top:4px}
-.sv-case{display:flex;flex-direction:column;gap:16px;min-width:0}
-.sv-cases .flow-win{aspect-ratio:16 / 9;border-radius:18px}
-.sv-cx{display:flex;flex-direction:column;gap:8px;margin:0;padding:0 4px}
-.sv-cx .mono{color:var(--c)}
-.sv-ch{font-size:20px;font-weight:400;line-height:1.25;letter-spacing:-.015em;color:#EEF3F6}
-.sv-cd{max-width:520px;font-size:15px;line-height:1.55;color:#9DB0BC}
-@media (max-width:900px){.sv-cases{grid-template-columns:minmax(0,1fr)}}
-@media (max-width:760px){.sv-cases{gap:24px}.sv-cases .flow-win{aspect-ratio:4 / 3;border-radius:14px}.sv-ch{font-size:18px}}
+
+/* ---------- кейсы, готовые автоматизации, подвал, 404 (TASK-pages.md) ---------- */
+/* скрытое фильтром (assets/filter.js) и [hidden] вообще: у карточек свой display, он перебивал бы атрибут */
+.pt [hidden]{display:none!important}
+/* «02 / Кейсы» на главной: три колонки, две строки; плитка «Все кейсы» — пунктирная, как «ваш проект» */
+.obj-grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.pt a.obj-all{justify-content:flex-end;min-height:180px;padding:28px 26px;border-radius:26px;border:1px dashed rgba(142,216,248,.45);background-color:rgba(142,216,248,.03)}
+.pt a.obj-all:hover{border-color:rgba(142,216,248,.8);background-color:rgba(142,216,248,.06)}
+.pt-on .sec.s-done a.obj-all.fr{transition:border-color .3s ease,background-color .3s ease}
+.obj-all .obj-h{font-size:clamp(26px,2.4vw,34px);font-weight:300;letter-spacing:-.03em}
+.pt a.obj-h{transition:color .3s ease}
+@media (max-width:1100px){.obj-grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:760px){.obj-grid-3{grid-template-columns:minmax(0,1fr)}.pt a.obj-all{min-height:140px}}
+/* окна-сайты в сетке в две колонки — тоже 16:10 (кейсы) */
+.obj-grid-2 .site{aspect-ratio:16 / 10;border-radius:20px}
+@media (max-width:760px){.obj-grid-2 .site{aspect-ratio:4 / 3}}
+/* карточка, на которую ведёт якорь (кейс, шаблон), не уходит под липкую шапку */
+.obj[id]{scroll-margin-top:88px}
+/* «Под NDA»: пунктирное окно, по центру плашка с замком */
+.flow-win.nda-win{display:flex;align-items:center;justify-content:center}
+/* фильтр кейсов и шаблонов: кнопки-«таблетки», нажатая — подсвечена */
+.fl{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 28px}
+.fl-b{appearance:none;margin:0;display:inline-flex;align-items:center;min-height:40px;padding:0 18px;border-radius:999px;border:1px solid rgba(188,211,222,.18);background-color:rgba(228,237,242,.02);font:500 14px/1 Manrope,system-ui,sans-serif;color:#9DB0BC;cursor:pointer;transition:border-color .3s ease,color .3s ease,background-color .3s ease,box-shadow .3s ease}
+.fl-b:hover{color:#EEF3F6;border-color:rgba(142,216,248,.45)}
+.fl-b[aria-pressed="true"]{color:#EEF3F6;border-color:rgba(142,216,248,.6);background-color:rgba(142,216,248,.1);box-shadow:0 0 22px -8px rgba(142,216,248,.6)}
+.pt-on .sec .fl-b{transition:border-color .9s ease,background-color .9s ease,box-shadow .9s ease,color .3s ease}
+.pt-on .sec.s-done .fl-b{transition:border-color .3s ease,color .3s ease,background-color .3s ease,box-shadow .3s ease}
+/* страница услуг: «Готовые шаблоны» — ссылки-«таблетки» со стрелкой; под ними «Все шаблоны» и «Кейсы: …» */
+.sv-tpl{display:flex;flex-direction:column;gap:12px;margin-top:24px}
+.sv-tpl > .mono{margin:0;color:#6F93A6}
+.sv-tl{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.pt .sv-tl a{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:0 14px;border-radius:999px;border:1px solid color-mix(in srgb,var(--c) 30%,rgba(188,211,222,.14));font-size:13px;font-weight:500;line-height:1.2;color:#BCD3DE;transition:border-color .3s ease,color .3s ease,background-color .3s ease}
+.pt-on .sec:not(.s-done) .sv-tl a{transition:border-color .9s ease,background-color .9s ease}
+.pt .sv-tl a:hover{border-color:color-mix(in srgb,var(--c) 70%,transparent);color:#EEF3F6;background-color:color-mix(in srgb,var(--c) 8%,transparent)}
+.sv-tl svg{flex:none;width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s cubic-bezier(.3,.7,.2,1),opacity .9s ease}
+.sv-tl a:hover svg{transform:translateX(2px)}
+.sv-links{display:flex;flex-wrap:wrap;gap:4px 32px;margin:22px 0 0}
+.sv-links .sv-go{margin:0}
+/* каталог шаблонов: что нужно от клиента, «Подключить» и ссылка на кейс */
+.tp-need{font:400 12px/1.55 'JetBrains Mono',monospace;letter-spacing:.01em;color:#8FAEC0}
+.tp-act{display:flex;flex-wrap:wrap;gap:0 24px;margin:-2px 0 -10px}
+.pt a.tp-go{display:inline-flex;align-items:center;min-height:44px;font-size:15px;font-weight:600;color:#BCD3DE;transition:color .3s ease}
+.pt a.tp-go:hover{color:#8ED8F8}
+/* шаги подключения под первым экраном каталога — три вместо пяти */
+.tp-steps{margin-top:clamp(40px,6vh,64px)}
+@media (min-width:1101px){.sv-steps.st3{grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}}
+/* 404 */
+.nf{flex:1;display:flex;flex-direction:column;justify-content:center;gap:24px;padding:24px 0 clamp(48px,10vh,120px)}
+.nf-act{gap:12px}
+/* подвал: слева бренд; в середине строки «Разделы» и «Связь» (подпись слева, ссылки в строку); справа язык и «Наверх» */
+.foot{position:relative;padding:0 0 clamp(28px,4vh,40px)}
+.foot-in{display:grid;grid-template-columns:minmax(200px,1fr) minmax(0,2fr) auto;grid-template-areas:"brand nav end" "brand tel end";gap:2px clamp(32px,5vw,72px);align-items:center;padding-top:28px}
+.foot-brand{grid-area:brand;align-self:start;padding-top:8px}
+.foot-nav{grid-area:nav}
+.foot-tel{grid-area:tel}
+.foot-name{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#EEF3F6}
+.foot-tag{margin:0;max-width:320px;font-size:13px;line-height:1.55;color:#8193A0}
+.foot-col{display:grid;grid-template-columns:84px minmax(0,1fr);align-items:baseline;column-gap:16px}
+.foot-col .mono{margin:0;color:#6F93A6}
+.foot-ln{display:flex;flex-wrap:wrap;gap:0 22px;margin:0}
+.pt .foot-ln a{display:inline-flex;align-items:center;min-height:36px;font-size:14px;color:#9DB0BC;transition:color .3s ease}
+.pt .foot-ln a:hover,.pt .foot-ln a[aria-current="page"]{color:#EEF3F6}
+.foot-end{grid-area:end;display:flex;align-items:center;gap:24px}
+.pt .foot-end .lnk{font-size:13px}
+@media (max-width:1100px){.foot-in{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand end" "nav nav" "tel tel";row-gap:4px}.foot-brand{padding:0 0 12px}}
+@media (max-width:760px){.foot-in{grid-template-columns:minmax(0,1fr);grid-template-areas:"brand" "nav" "tel" "end";row-gap:14px}.foot-brand{padding:0}.foot-col{grid-template-columns:minmax(0,1fr);row-gap:2px}.pt .foot-ln a{min-height:40px}}
+@media (prefers-reduced-motion:reduce){.sv-tl svg{transition:none}}

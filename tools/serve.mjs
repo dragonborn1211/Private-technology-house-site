@@ -1,5 +1,6 @@
 // Локальный просмотр сайта: node tools/serve.mjs [порт] → http://localhost:8080
-// Отдаёт index.html и assets/ — ровно то, что уходит на хостинг, — и локальные эталоны tools/ref/.
+// Отдаёт страницы корня и assets/ — ровно то, что уходит на хостинг, — и локальные эталоны tools/ref/. На несуществующий
+// адрес (в том числе вложенный: /cases/abc) — 404.html со статусом 404, как GitHub Pages.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -14,9 +15,12 @@ createServer(async (req, res) => {
   const file = path.resolve(root, rel);
   // tools/ref/ — эталоны (только локально, в .gitignore), на хостинг не идут
   const allowed = (path.dirname(file) === root && /\.(html|xml|txt)$/.test(file)) || file.startsWith(path.join(root, 'assets') + path.sep) || file.startsWith(path.join(root, 'tools', 'ref') + path.sep);
-  if (!allowed) { res.writeHead(404).end('not found'); return; }
   try {
+    if (!allowed) throw new Error('not allowed');
     const body = await readFile(file);
     res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' }).end(body);
-  } catch { res.writeHead(404).end('not found'); }
+  } catch {
+    const body = await readFile(path.join(root, '404.html')).catch(() => 'not found');
+    res.writeHead(404, { 'Content-Type': TYPES['.html'], 'Cache-Control': 'no-store' }).end(body);
+  }
 }).listen(port, () => console.log(`http://localhost:${port}`));

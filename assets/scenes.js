@@ -712,7 +712,7 @@
       { a: 'gw', b: 'crm', ev: '200 OK', k: 'r' },
       { a: 'gw', b: 'bot', ev: '200 OK', k: 'r' }
     ] },
-    // ряд «Автоматизация» на главной: шаблонные связки «откуда → n8n на сервере → куда»
+    // «Готовые автоматизации» на главной и в каталоге: шаблонные связки «откуда → n8n на сервере → куда»
     'site-leads': { src: ['form'], seq: true, nodes: [
       { id: 'form', name: 'Форма на сайте', role: 'trigger', x: 0.14, y: 0.5, mx: 0.18, my: 0.25 },
       { id: 'wh', name: 'Webhook', role: 'webhook', x: 0.375, y: 0.5, mx: 0.5, my: 0.25 },
@@ -755,7 +755,32 @@
       { a: 'n8n', b: 'wb', ev: 'publish', k: 'r' },
       { a: 'n8n', b: 'oz', ev: 'publish', k: 'r' }
     ] },
-    // кейсы на странице услуг (модули «Автоматизация» и «AI»); там же — b24-digest и call-audit, бывшие карточки главной
+    // каталог готовых автоматизаций (automations.html): ещё два шаблона
+    'avito-bot': { src: ['chat'], seq: true, nodes: [
+      { id: 'chat', name: 'Авито · чат', role: 'trigger', x: 0.13, y: 0.5, mx: 0.17, my: 0.25 },
+      { id: 'n8n', name: 'n8n · сервер', role: 'workflow', x: 0.38, y: 0.5, mx: 0.5, my: 0.25 },
+      { id: 'ai', name: 'Ответ по каталогу', role: 'ai', x: 0.63, y: 0.27, mx: 0.83, my: 0.25 },
+      { id: 'out', name: 'Авито · ответ', role: 'output', x: 0.88, y: 0.27, mx: 0.83, my: 0.76 },
+      { id: 'tg', name: 'Telegram · менеджеру', role: 'output', x: 0.76, y: 0.75, mx: 0.38, my: 0.76 }
+    ], edges: [
+      { a: 'chat', b: 'n8n', ev: 'message.new' },
+      { a: 'n8n', b: 'ai', ev: 'reply()' },
+      { a: 'ai', b: 'out', ev: 'messages.send' },
+      { a: 'n8n', b: 'tg', ev: 'sendMessage', p: 0.35 }
+    ] },
+    'price-monitor': { src: ['cron'], seq: true, nodes: [
+      { id: 'cron', name: 'Каждое утро · 08:00', role: 'trigger', x: 0.15, y: 0.27 },
+      { id: 'n8n', name: 'n8n · сервер', role: 'workflow', x: 0.5, y: 0.27 },
+      { id: 'src', name: 'Цены конкурентов', role: 'webhook', x: 0.85, y: 0.27 },
+      { id: 'tab', name: 'Таблица · цены', role: 'output', x: 0.85, y: 0.73 },
+      { id: 'tg', name: 'Telegram · сводка', role: 'output', x: 0.5, y: 0.73 }
+    ], edges: [
+      { a: 'cron', b: 'n8n', ev: 'schedule' },
+      { a: 'n8n', b: 'src', ev: 'fetch()' },
+      { a: 'src', b: 'tab', ev: 'row.append' },
+      { a: 'tab', b: 'tg', ev: 'sendMessage' }
+    ] },
+    // кейсы (cases.html; два — и в «Кейсах» на главной), b24-digest и catalog — ещё и шаблоны каталога
     'catalog': { src: ['csv'], seq: true, nodes: [
       { id: 'csv', name: 'Прайс · CSV', role: 'trigger', x: 0.15, y: 0.27 },
       { id: 'agent', name: 'LibreChat · агент', role: 'ai', x: 0.5, y: 0.27 },

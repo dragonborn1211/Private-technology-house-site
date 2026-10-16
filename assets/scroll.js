@@ -59,7 +59,11 @@
     }, { passive: false });
     document.addEventListener('click', function (e) {
       if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      var a = e.target.closest && e.target.closest('a[href^="#"]'), id = a ? a.getAttribute('href').slice(1) : '';
+      // якорь на этой же странице: «#process» или с именем файла — «services.html#process» в подвале страницы услуг
+      var a = e.target.closest && e.target.closest('a[href*="#"]'), id = '';
+      if (a && a.hash.length > 1 && !a.target && a.pathname === location.pathname && a.search === location.search) {
+        try { id = decodeURIComponent(a.hash.slice(1)); } catch (er) { id = ''; }
+      }
       var el = id && document.getElementById(id);
       if (!el) return;
       e.preventDefault();
