@@ -1400,11 +1400,13 @@ console.log('\nясность, B7 / B9: цвет на «Что делаем», �
     if (r.lc.join(' | ') !== 'Проект:rgb(142, 216, 248) | Подписка:rgb(159, 229, 209)') bad.push(`услуги, лид: ${r.lc.join(' | ')}`);
     if (r.pf !== '111111') bad.push(`услуги: подписи карточек «Когда сайт готов» / «Как устроена подписка» не цветом карточки (${r.pf})`);
     await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
-    // снимки по прямоугольнику (locator.screenshot под SwiftShader не дожидается «стабильного» элемента)
+    // снимки видимой области по прямоугольнику: locator.screenshot под SwiftShader не дожидается «стабильного» элемента, а
+    // снимок всей длинной страницы с размытыми стёклами не укладывался в 30 с
     for (const [sel, name] of [['.sv-head', 'services-color-top-1440.png'], ['#sites', 'services-color-sites-1440.png']]) {
-      const b = await page.evaluate((q) => { const e = document.querySelector(q); e.scrollIntoView({ block: 'center' }); const r = e.getBoundingClientRect(); return { x: r.left, y: r.top + scrollY, width: r.width, height: r.height }; }, sel);
+      await page.evaluate((q) => document.querySelector(q).scrollIntoView({ block: 'center', behavior: 'instant' }), sel);
       await page.waitForTimeout(300);
-      await page.screenshot({ path: path.join(shots, name), fullPage: true, clip: b });
+      const b = await page.evaluate((q) => { const r = document.querySelector(q).getBoundingClientRect(); return { x: Math.max(0, r.left), y: Math.max(0, r.top), width: Math.min(r.width, innerWidth), height: Math.min(r.height, innerHeight - Math.max(0, r.top)) }; }, sel);
+      await page.screenshot({ path: path.join(shots, name), clip: b, timeout: 60000 });
     }
     await page.close();
   }
@@ -1478,6 +1480,39 @@ console.log('\nясность, B10 / B11: «Как работаем», кноп�
   }
   if (bad.length) fail('ясность B10 / B11: ' + bad.slice(0, 14).join('; ') + (bad.length > 14 ? ` …ещё ${bad.length - 14}` : ''));
   else console.log('  ✓ «Как работаем» — четыре секции, #apps и #ai живы; кнопки действия — в Telegram с черновиком (RU / EN, и после смены языка); на телефоне «Что входит» — две строки и «Ещё N»; «Готовые решения» везде');
+}
+// Слабые телефоны (просьба владельца: «на дешёвых телефонах лагает самая первая анимация»): ранняя оценка на вступлении —
+// при CPU ×6 (эмуляция дешёвого телефона, 390×844, DPR 3) облегчение включается ещё до стадии рамок (до 0.8 с от старта
+// сборки), при обычной скорости — нет; на старте сборки нет чередования «замер, запись» (lineDelays, updateSizes).
+console.log('\nслабые телефоны: ранняя оценка на вступлении');
+{
+  const bad = [], info = [];
+  const quick = await chromium.launch();
+  for (const rate of [6, 1]) {
+    const ctx = await quick.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+    const page = await ctx.newPage(); const cdp = await ctx.newCDPSession(page);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate });
+    // момент, когда первый экран дошёл до стадии рамок, и момент включения облегчения
+    await page.addInitScript(() => {
+      window.__t = {};
+      new MutationObserver(() => {
+        const r = document.getElementById('pt-site'), h = document.querySelector('[data-sec="hero"]'), now = performance.now();
+        if (r && r.classList.contains('pt-lite') && !window.__t.lite) window.__t.lite = now;
+        if (h && h.classList.contains('s-skel') && !window.__t.skel) window.__t.skel = now;
+      }).observe(document, { subtree: true, attributes: true, attributeFilter: ['class'] });
+    });
+    await page.goto(BASE + 'index.html'); await page.waitForTimeout(rate > 1 ? 9000 : 5000);
+    const r = await page.evaluate(() => ({ ...window.__t, ss: sessionStorage.getItem('pt-lite') }));
+    if (rate > 1 && !(r.lite && r.skel && r.lite < r.skel && +r.ss >= 1)) bad.push(`CPU ×${rate}: облегчение ${Math.round(r.lite) || 'нет'} мс, стадия рамок ${Math.round(r.skel) || 'нет'} мс`);
+    if (rate === 1 && (r.lite || r.ss)) bad.push(`CPU ×1: облегчение включилось (${Math.round(r.lite)} мс, уровень ${r.ss})`);
+    info.push(`×${rate}: ${r.ss ? 'уровень ' + r.ss + ' за ' + Math.round(r.skel - r.lite) + ' мс до рамок' : 'без облегчения'}`);
+    await ctx.close();
+  }
+  await quick.close();
+  const eng = readFileSync(path.join(root, 'assets', 'engine.js'), 'utf8');
+  if (!/function probeStart\(/.test(eng) || /\w\.toLocaleString\(/.test(eng)) bad.push('engine.js: нет ранней оценки или остался toLocaleString');
+  if (bad.length) fail('слабые телефоны: ' + bad.join('; '));
+  else console.log(`  ✓ ранняя оценка на вступлении: ${info.join(', ')}`);
 }
 srv.kill();
 

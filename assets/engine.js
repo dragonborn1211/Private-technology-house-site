@@ -586,7 +586,8 @@
       function probeFrame(now, raw) {
         if (!probe || now < probe.from) return;
         if (raw > 0 && raw < 1) probe.w.push(raw);
-        if (now < probe.to) return;
+        // на очень медленном устройстве к концу окна кадров меньше четырёх — добираем ещё до 1.5 с
+        if (now < probe.to || (probe.w.length < 4 && now < probe.to + 1500)) return;
         var w = probe.w; probe = null;
         if (w.length < 4) return;
         w.sort(function (a, b) { return a - b; });
