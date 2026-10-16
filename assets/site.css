@@ -601,6 +601,11 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 /* шаги подключения под первым экраном каталога — три вместо пяти */
 .tp-steps{margin-top:clamp(40px,6vh,64px)}
 @media (min-width:1101px){.sv-steps.st3{grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}}
+@media (min-width:1101px){.sv-steps.st4{grid-template-columns:repeat(4,minmax(0,1fr));gap:36px}}
+/* страница услуг: компактная шапка внутри группы («Когда сайт готов», «Как устроена подписка») и ссылка в тексте карточки */
+.sv-subh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;margin:0 0 22px}
+.sv-subh .sv-t{margin:0}
+.sv-pd a{color:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(142,216,248,.5)}
 /* 404 */
 .nf{flex:1;display:flex;flex-direction:column;justify-content:center;gap:24px;padding:24px 0 clamp(48px,10vh,120px)}
 .nf-act{gap:12px}
