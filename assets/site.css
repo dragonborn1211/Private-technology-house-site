@@ -626,3 +626,13 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 @media (max-width:1100px){.foot-in{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand end" "nav nav" "tel tel";row-gap:4px}.foot-brand{padding:0 0 12px}}
 @media (max-width:760px){.foot-in{grid-template-columns:minmax(0,1fr);grid-template-areas:"brand" "nav" "tel" "end";row-gap:14px}.foot-brand{padding:0}.pt .foot-ln a{min-height:40px}}
 @media (prefers-reduced-motion:reduce){.sv-tl svg{transition:none}}
+/* «Как работаем» (process.html): шапка направления — название крупно слева, формат и рисунок справа; внизу «Нужно от вас»
+   и ссылки */
+.pr-head{align-items:center;margin-bottom:28px}
+.pr-head .sv-t{order:-1;margin:0}
+.pr-head .sv-lab{gap:12px}
+.pr-head .sv-lab .mono{color:var(--c)}
+.pr-foot{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:12px 32px;margin-top:28px}
+.pr-foot .tp-need{max-width:620px;font-size:15px;margin:0}
+.pr-foot .sv-links{margin:0}
+@media (max-width:760px){.pr-foot{flex-direction:column;align-items:flex-start}.pr-head .sv-lab .glyph-mini{width:72px}}

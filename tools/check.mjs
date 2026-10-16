@@ -53,6 +53,9 @@
 // ≤ 5,2 / 8,5 экрана), в заголовках нет служебных подписей каркаса (они в атрибутах, aria-hidden), курсив с переливом только
 // в h1, без номеров разделов, моно ≤ 20 % на главной, тире ≤ 1,5 на 100 слов, без штампов; демо-сайты сменяют друг друга;
 // на cases.html рядов из одной карточки нет.
+// Структура (TASK-structure.md): меню «Что делаем · Работы · Готовые решения · Как работаем» (с 1200 px в шапке, ниже —
+// кнопка меню), страница process.html, новый порядок услуг, сборка без разлёта в конце (data-pt-burst нет), повторный переход
+// в вкладке — темп ×0.75 (data-repeat), подпись над названием карточки — Manrope 15/500.
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
@@ -237,7 +240,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     if (!/Сайты, интеграции ?и автоматизация/.test(lx.h1)) bad.push(`H1 «${lx.h1}»`);
     if (!lx.nbsp) bad.push('в H1 нет неразрывных пробелов');
     if (lx.trust !== 3) bad.push(`строка доверия: пунктов ${lx.trust}`);
-    if (lx.nav !== 'Услуги,Кейсы,Автоматизации,Процесс') bad.push(`меню: ${lx.nav}`);
+    if (lx.nav !== 'Что делаем,Работы,Готовые решения,Как работаем') bad.push(`меню: ${lx.nav}`);
     if (lx.name !== 'Холодный расчёт' || lx.aria !== 'Хрустальный ферзь') bad.push(`подпись панели «${lx.name}», aria-label «${lx.aria}»`);
     if (bad.length) fail('шапка и первый экран: ' + bad.join('; '));
     else console.log('  ✓ ссылки и тексты: Telegram → t.me/dragonborne0, нет href="#", H1, строка доверия, меню, подпись панели');
@@ -480,7 +483,7 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
       pricing: !!document.querySelector('[data-sec="pricing"]'), tpl: !!(document.querySelector('template[data-hidden-section="pricing"]') || { content: document.createDocumentFragment() }).content.querySelector('[data-sec="pricing"]'),
       pricingLinks: all('a[href="#pricing"]').length, dead: all('a[href$="objects.html"]').length, canonical: (document.querySelector('link[rel="canonical"]') || {}).href || '',
       glyphs: d.querySelectorAll('a.svc .glyph').length, icons: all('.svc-ic').length, process: !!document.querySelector('[data-sec="process"]'),
-      procLinks: all('a').filter((a) => a.textContent.trim() === 'Процесс').map((a) => a.getAttribute('href')), contact: document.querySelector('#contact .mono.k').textContent.trim() };
+      procLinks: all('a').filter((a) => a.textContent.trim() === 'Как работаем').map((a) => a.getAttribute('href')), contact: document.querySelector('#contact .mono.k').textContent.trim() };
   });
   const bad = [];
   if (r.cards.length !== 6 || r.cards.some((h) => !/^services\.html#/.test(h) || !ids.has(h.split('#')[1]))) bad.push(`карточки: ${r.cards.join(', ')}`);
@@ -492,16 +495,16 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
   if (r.dead) bad.push(`ссылок на objects.html: ${r.dead}`);
   if (r.canonical !== 'https://privatechouse.ru/') bad.push(`canonical «${r.canonical}»`);
   if (r.glyphs !== 6 || r.icons) bad.push(`рисунков в карточках ${r.glyphs}, иконок в квадратах ${r.icons}`);
-  if (r.process || r.procLinks.length !== 4 || r.procLinks.some((h) => h !== 'services.html#process') || r.contact !== 'Контакт') bad.push(`«Процесс»: секция ${r.process}, ссылки ${r.procLinks.join(', ')}, контакт «${r.contact}»`);
+  if (r.process || r.procLinks.length !== 4 || r.procLinks.some((h) => h !== 'process.html') || r.contact !== 'Контакт') bad.push(`«Как работаем»: секция ${r.process}, ссылки ${r.procLinks.join(', ')}, контакт «${r.contact}»`);
   const sv = readFileSync(path.join(root, 'services.html'), 'utf8');
-  if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 6 || /svc-ic/.test(sv) || (sv.match(/<a href="#process"[^>]*>Процесс<\/a>/g) || []).length !== 3) bad.push('страница услуг: шесть мини-рисунков, нет иконок, «Процесс» → #process');
+  if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 6 || /svc-ic/.test(sv) || (sv.match(/<a href="process\.html"[^>]*>Как работаем<\/a>/g) || []).length !== 3) bad.push('страница услуг: шесть мини-рисунков, нет иконок, «Как работаем» → process.html');
   for (const f of readdirSync(path.join(root, 'assets')).filter((x) => x.endsWith('.js'))) if (/addEventListener\(\s*['"](before)?unload['"]/.test(readFileSync(path.join(root, 'assets', f), 'utf8'))) bad.push(`${f}: unload / beforeunload отключает кэш «Назад»`);
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8'), rb = readFileSync(path.join(root, 'robots.txt'), 'utf8');
-  if (['', 'services.html', 'cases.html', 'automations.html'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 4 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
+  if (['', 'services.html', 'cases.html', 'automations.html', 'process.html'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 5 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
   if (!/User-agent: \*/.test(rb) || !/Sitemap: https:\/\/privatechouse\.ru\/sitemap\.xml/.test(rb)) bad.push('robots.txt');
   await page.close();
   if (bad.length) fail('главная: ' + bad.join('; '));
-  else console.log('  ✓ «Делаем один раз. Держим всегда.»: шесть карточек с рисунками на существующие якоря services.html, «Все услуги», без старых пунктов и иконок в квадратах; «Цены» в <template>; «Процесс» → services.html#process (три меню и подвал), контакт без номера; нет objects.html и unload; canonical, sitemap.xml, robots.txt');
+  else console.log('  ✓ «Делаем один раз. Держим всегда.»: шесть карточек с рисунками на существующие якоря services.html, «Все услуги», без старых пунктов и иконок в квадратах; «Цены» в <template>; «Как работаем» → process.html (три меню и подвал), контакт без номера; нет objects.html и unload; canonical, sitemap.xml, robots.txt');
 }
 
 // Страница услуг: как главная — сборка всех секций на трёх ширинах RU и двух EN, ошибки консоли, кириллица в EN.
@@ -552,7 +555,7 @@ for (const [w, h, tag, lang] of [[1440, 900, 's1440', 'ru'], [1700, 930, 's1700'
       const ld = [...document.querySelectorAll('script[type="application/ld+json"]')].map((sc) => { try { return JSON.parse(sc.textContent); } catch (e) { return { error: e.message }; } });
       const faq = ld.find((x) => x['@type'] === 'FAQPage'), org = ld.find((x) => x['@type'] === 'Organization'), nb = (t) => t.replace(/\s+/g, ' ').trim();
       const qs = faq ? faq.mainEntity.map((q) => nb(q.name)) : [], sums = [...document.querySelectorAll('.sv-q summary')].map((x) => nb(x.textContent));
-      return { missing, errs: ld.filter((x) => x.error).length, types: ld.map((x) => x['@type']).join(','), offers: org && org.hasOfferCatalog ? org.hasOfferCatalog.itemListElement.length : 0, faqOk: qs.length === 6 && qs.join('|') === sums.join('|'), qs: qs.length, sums: sums.length };
+      return { missing, errs: ld.filter((x) => x.error).length, types: ld.map((x) => x['@type']).join(','), offers: org && org.hasOfferCatalog ? org.hasOfferCatalog.itemListElement.length : 0, faqOk: qs.length === 5 && qs.join('|') === sums.join('|'), qs: qs.length, sums: sums.length };
     });
     if (st.missing.length) bad.push(`якоря без цели: ${st.missing.join(', ')}`);
     if (st.errs || st.types !== 'BreadcrumbList,Organization,FAQPage' || st.offers !== 6 || !st.faqOk) bad.push(`JSON-LD: ошибок ${st.errs}, типы ${st.types}, услуг ${st.offers}, вопросы ${st.qs} / ${st.sums}, совпадают ${st.faqOk}`);
@@ -680,7 +683,7 @@ console.log('\nавтоматизация: «Готовые автоматиза
 // Страницы (TASK-pages.md): новые страницы открываются через tools/serve.mjs — так же, как на хостинге (404.html — на
 // любой несуществующий адрес, пути от корня).
 console.log('\nстраницы: меню, подвал, «Поток»');
-const PAGES = ['index.html', 'services.html', 'cases.html', 'automations.html', '404.html'];
+const PAGES = ['index.html', 'services.html', 'cases.html', 'automations.html', 'process.html', '404.html'];
 const srv = spawn(process.execPath, [path.join(here, 'serve.mjs'), '8097'], { stdio: 'pipe' });
 await new Promise((r) => srv.stdout.once('data', r));
 const BASE = 'http://localhost:8097/';
@@ -691,19 +694,20 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
 {
   const bad = [];
   const MENU = {
-    'index.html': ['#directions', '#objects', '#automation', 'services.html#process'],
-    'services.html': ['services.html', 'cases.html', 'automations.html', '#process'],
-    'cases.html': ['services.html', 'cases.html', 'automations.html', 'services.html#process'],
-    'automations.html': ['services.html', 'cases.html', 'automations.html', 'services.html#process'],
-    '404.html': ['/services.html', '/cases.html', '/automations.html', '/services.html#process'] };
-  const CUR = { 'services.html': 0, 'cases.html': 1, 'automations.html': 2 };
+    'index.html': ['#directions', '#objects', '#automation', 'process.html'],
+    'services.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
+    'cases.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
+    'automations.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
+    'process.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
+    '404.html': ['/services.html', '/cases.html', '/automations.html', '/process.html'] };
+  const CUR = { 'services.html': 0, 'cases.html': 1, 'automations.html': 2, 'process.html': 3 };
   for (const f of PAGES) {
     const navs = [...src[f].matchAll(/<nav class="(nav|menu-nav)" aria-label="Разделы">([\s\S]*?)<\/nav>/g)];
     if (navs.length !== 3) bad.push(`${f}: меню ${navs.length} из 3`);
     for (const [, kind, body] of navs) {
       const as = [...body.matchAll(/<a href="([^"]+)"([^>]*)>([^<]+)<\/a>/g)];
       const got = as.map((m) => m[1]).join(','), names = as.map((m) => m[3]).join(','), cur = as.findIndex((m) => /aria-current="page"/.test(m[2]));
-      if (got !== MENU[f].join(',') || names !== 'Услуги,Кейсы,Автоматизации,Процесс') bad.push(`${f} ${kind}: ${names} → ${got}`);
+      if (got !== MENU[f].join(',') || names !== 'Что делаем,Работы,Готовые решения,Как работаем') bad.push(`${f} ${kind}: ${names} → ${got}`);
       if (cur !== (f in CUR ? CUR[f] : -1)) bad.push(`${f} ${kind}: текущий пункт ${cur}`);
     }
     for (const w of ['flow-lock', 'Поток', 'Сетевой сервис', 'data-hidden-section="integrations"']) if (src[f].includes(w)) bad.push(`${f}: «${w}»`);
@@ -714,21 +718,23 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
   const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|^#top$|^$/.test(h));
   const sid = idsOf('services.html');
   fl.forEach((h) => { const [pg, id] = h.split('#'); if (!PAGES.includes(pg) || (id && !(pg === 'services.html' ? sid : idsOf(pg)).has(id))) bad.push(`подвал: ссылка ${h} ведёт в никуда`); });
-  if (fl.join(',') !== 'services.html,cases.html,automations.html,services.html#process,services.html#faq' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
+  if (fl.join(',') !== 'services.html,cases.html,automations.html,process.html,services.html#faq' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
   // меню на 1024–1280 — одна строка и не наезжает на логотип и кнопки (RU и EN)
-  for (const f of ['index.html', 'cases.html', 'automations.html']) for (const lang of ['', '?lang=en']) for (const w of [1024, 1100, 1280]) {
+  for (const f of ['index.html', 'cases.html', 'process.html']) for (const lang of ['', '?lang=en']) for (const w of [1024, 1199, 1200, 1280]) {
     const page = await browser.newPage({ viewport: { width: w, height: 800 } });
     await page.goto(BASE + f + lang); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(250);
     const r = await page.evaluate(() => [...document.querySelectorAll('.hero-hdr, .topbar-in')].map((h) => {
       const n = h.querySelector('.nav'), nr = n.getBoundingClientRect(), lt = h.querySelector('.logo-t').getBoundingClientRect(), ar = h.querySelector('.hdr-act').getBoundingClientRect();
-      const tops = new Set([...n.querySelectorAll('a')].map((a) => Math.round(a.getBoundingClientRect().top)));
-      return getComputedStyle(n).display === 'none' ? 'ok' : tops.size === 1 && nr.left - lt.right >= 12 && ar.left - nr.right >= 12 ? 'ok' : `строк ${tops.size}, зазоры ${Math.round(nr.left - lt.right)} / ${Math.round(ar.left - nr.right)}`;
+      const as = [...n.querySelectorAll('a')], tops = new Set(as.map((a) => Math.round(a.getBoundingClientRect().top))), hi = Math.max(...as.map((a) => a.getBoundingClientRect().height));
+      const shown = getComputedStyle(n).display !== 'none', btn = getComputedStyle(h.querySelector('.menu-btn')).display !== 'none';
+      if (!shown) return btn && innerWidth < 1200 ? 'ok' : 'меню скрыто, кнопки меню нет';
+      return innerWidth >= 1200 && tops.size === 1 && hi < 30 && nr.left - lt.right >= 12 && ar.left - nr.right >= 12 ? 'ok' : `строк ${tops.size}, высота пункта ${Math.round(hi)}, зазоры ${Math.round(nr.left - lt.right)} / ${Math.round(ar.left - nr.right)}`;
     }).filter((x) => x !== 'ok'));
     r.forEach((x) => bad.push(`${f}${lang} ${w}: меню ${x}`));
     await page.close();
   }
   if (bad.length) fail('меню и подвал: ' + bad.join('; '));
-  else console.log('  ✓ меню: четыре пункта в трёх местах каждой страницы, адреса по ТЗ, текущая — aria-current; на 1024–1280 в одну строку; подвал одинаковый на всех страницах, ссылки на существующие якоря; «Потока» и скрытых «Интеграций» нет');
+  else console.log('  ✓ меню: четыре пункта в трёх местах каждой страницы, адреса по ТЗ, текущая — aria-current; с 1200 px в одну строку без переносов внутри пунктов (ниже — кнопка меню); подвал одинаковый на всех страницах, ссылки на существующие якоря; «Потока» и скрытых «Интеграций» нет');
 }
 
 // услуги: без кейсов, схем и «Стоимость: после созвона»; ссылки «Кейсы: …» и «Готовые шаблоны»; длина
@@ -768,17 +774,18 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
       return { h2: nb(o.querySelector('h2').textContent), cards, more: [...o.querySelectorAll('.more a')].map((x) => x.getAttribute('href') + ' ' + nb(x.textContent)).join(','),
         len: document.documentElement.scrollHeight / innerHeight, ah2: nb(a.querySelector('h2').textContent), aobj: /Объект №/.test(document.body.innerText),
         titles: [...a.querySelectorAll('a.obj-h')].map((x) => x.getAttribute('href')).join(','), amore: [...a.querySelectorAll('.more a')].map((x) => x.getAttribute('href') + ' ' + nb(x.textContent)).join(','),
+        dk: nb(document.querySelector('#directions .mono.k').textContent), dmore: [...document.querySelectorAll('#directions .more a')].map((x) => x.getAttribute('href') + ' ' + nb(x.textContent)).join(','),
         btn: nb(document.querySelector('.hero-act .lnk').textContent) + ' → ' + document.querySelector('.hero-act .lnk').getAttribute('href'),
         contact: nb(document.querySelector('#contact .mono.k').textContent) + ' / ' + nb(document.querySelector('#contact h2').textContent),
         price: nb(document.querySelector('template[data-hidden-section="pricing"]').content.querySelector('h2').textContent) };
     });
     lens[w] = m.len;
     if (w === 1440) {
-      if (m.h2 !== 'Кейсы' || m.cards.map((c) => c.k).join(' | ') !== 'Сайт · AI | AI · Битрикс24 | Демо · ваш проект' || !m.cards[2].mini || m.more !== 'cases.html Все кейсы →') bad.push(`главная «Кейсы»: ${m.h2}; ${m.cards.map((c) => c.k + ' ' + c.t + (c.mini ? ' (демо)' : '')).join(' | ')}; ${m.more}`);
+      if (m.h2 !== 'Работы' || m.cards.map((c) => c.k).join(' | ') !== 'Сайт · AI | AI · Битрикс24 | Демо · ваш проект' || !m.cards[2].mini || m.more !== 'cases.html Все работы →') bad.push(`главная «Работы»: ${m.h2}; ${m.cards.map((c) => c.k + ' ' + c.t + (c.mini ? ' (демо)' : '')).join(' | ')}; ${m.more}`);
       m.cards.slice(0, 2).forEach((c) => { if (!src['cases.html'].replace(/&nbsp;/g, ' ').includes('>' + c.t + '<')) bad.push(`главная: кейса «${c.t}» нет на cases.html`); });
-      if (m.ah2 !== 'Готовые автоматизации' || m.aobj || m.titles !== 'automations.html#site-leads,automations.html#voice-task' || m.amore !== 'automations.html Все шаблоны →') bad.push(`главная «Готовые автоматизации»: «${m.ah2}», «Объект №» ${m.aobj}, заголовки ${m.titles}, ${m.amore}`);
+      if (m.ah2 !== 'Готовые решения' || m.aobj || m.titles !== 'automations.html#site-leads,automations.html#voice-task' || m.amore !== 'automations.html Все решения →' || m.dmore !== 'services.html Все направления →' || m.dk !== 'Что делаем') bad.push(`главная «Готовые решения» и «Что делаем»: ${m.dk}, ${m.dmore}, «${m.ah2}», «Объект №» ${m.aobj}, заголовки ${m.titles}, ${m.amore}`);
       m.titles.split(',').forEach((x) => { if (!aid.has(x.split('#')[1])) bad.push(`главная: ${x} — нет такой карточки`); });
-      if (m.btn !== 'Смотреть кейсы → #objects') bad.push(`кнопка первого экрана: ${m.btn}`);
+      if (m.btn !== 'Смотреть работы → #objects') bad.push(`кнопка первого экрана: ${m.btn}`);
       if (m.contact !== 'Контакт / Расскажите о задаче' || m.price !== 'Цены') bad.push(`контакт «${m.contact}», «Цены» «${m.price}»`);
     }
     if (m.len > (w === 1440 ? 5.2 : 8.5)) bad.push(`главная ${w}: ${m.len.toFixed(2)} экрана (не больше ${w === 1440 ? 5.2 : 8.5})`);
@@ -933,7 +940,7 @@ console.log('\nкейсы и готовые автоматизации');
 }
 
 // новые страницы, как страница услуг: секции собираются на трёх ширинах RU и двух EN, ошибок нет, кириллицы в EN нет
-for (const f of ['cases.html', 'automations.html']) for (const [w, h, lang] of [[1440, 900, 'ru'], [1700, 930, 'ru'], [390, 844, 'ru'], [1440, 900, 'en'], [390, 844, 'en']]) {
+for (const f of ['cases.html', 'automations.html', 'process.html']) for (const [w, h, lang] of [[1440, 900, 'ru'], [1700, 930, 'ru'], [390, 844, 'ru'], [1440, 900, 'en'], [390, 844, 'en']]) {
   const page = await browser.newPage({ viewport: { width: w, height: h } });
   const errs = [], bad = [];
   page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
@@ -1005,7 +1012,7 @@ console.log('\n404');
 console.log('\nтексты и типографика (TASK-polish.md)');
 {
   const bad = [], stat = [];
-  for (const [f, url] of [['index.html', 'index.html'], ['services.html', 'services.html'], ['cases.html', 'cases.html'], ['automations.html', 'automations.html'], ['404.html', 'nonexistent/deep/path']]) for (const lang of ['', '?lang=en']) {
+  for (const [f, url] of [['index.html', 'index.html'], ['services.html', 'services.html'], ['cases.html', 'cases.html'], ['automations.html', 'automations.html'], ['process.html', 'process.html'], ['404.html', 'nonexistent/deep/path']]) for (const lang of ['', '?lang=en']) {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + url + lang); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
@@ -1086,6 +1093,91 @@ console.log('\nтексты и типографика (TASK-polish.md)');
   }
   if (bad.length) fail('тексты и типографика: ' + bad.join('; '));
   else console.log(`  ✓ заголовки без служебных подписей, .an / .wf — в атрибутах и aria-hidden (в EN не переводятся), курсив только в h1, кикеров с номером нет, штампов нет; ${stat.join('; ')}; на cases.html рядов из одной карточки нет`);
+}
+// Структура (TASK-structure.md): data-pt-burst нет ни в одном HTML (конец сборки — тихий); услуги — новый порядок секций,
+// «Когда сайт готов» и «Как устроена подписка» по три карточки, раздела «После запуска» нет, вопросов пять; process.html —
+// шесть направлений по пять шагов, одно «Нужно от вас», ссылки на существующие якоря, ≤ 6 / 10 экранов; повторный переход
+// в вкладке — data-repeat (не на первой странице и не с ?intro=); sitemap — пять адресов; снимки.
+console.log('\nструктура: услуги, «Как работаем», сборка без разлёта, повторный переход');
+{
+  const bad = [], info = [];
+  readdirSync(root).filter((f) => f.endsWith('.html')).forEach((f) => { if (/data-pt-burst/.test(readFileSync(path.join(root, f), 'utf8'))) bad.push(`${f}: data-pt-burst`); });
+  // услуги
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(300);
+    const r = await page.evaluate(() => ({ order: [...document.querySelectorAll('[data-sec]')].map((s) => s.dataset.sec).join(','),
+      after: document.querySelectorAll('#after .sv-path').length, subs: document.querySelectorAll('#sub-how .sv-path').length,
+      h2: [...document.querySelectorAll('h2')].map((h) => h.textContent.trim()), q: document.querySelectorAll('.sv-q').length,
+      quit: /отказаться от\s+подписки/.test([...document.querySelectorAll('.sv-q summary')].map((x) => x.textContent).join(' ')),
+      proc: [...document.querySelectorAll('[data-sec="process"] a')].filter((a) => a.getAttribute('href') === 'process.html').length,
+      steps: document.querySelectorAll('[data-sec="process"] .sv-step').length, care: !!document.querySelector('#after a[href="#care"]'),
+      sm: ['after', 'sub-how', 'process'].map((i) => getComputedStyle(document.getElementById(i).querySelector('[style*="scroll-margin-top"]') || document.getElementById(i)).scrollMarginTop).join(',') }));
+    if (r.order !== 'hero,process,sites,apps,servers,after,care,automation,ai,subs,faq,contact,foot') bad.push(`услуги: порядок ${r.order}`);
+    if (r.after !== 3 || r.subs !== 3 || r.h2.includes('После запуска') || r.q !== 5 || r.quit || r.proc !== 1 || r.steps !== 4 || !r.care || r.sm !== '88px,88px,88px') bad.push(`услуги: ${JSON.stringify({ after: r.after, subs: r.subs, q: r.q, quit: r.quit, proc: r.proc, steps: r.steps, care: r.care, sm: r.sm })}`);
+    await page.close();
+  }
+  // «Как работаем»
+  const pid = idsOf('process.html');
+  for (const [w, h, lim] of [[1440, 900, 6], [390, 844, 10]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
+    const page = await ctx.newPage();
+    await page.goto(BASE + 'process.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
+    const r = await page.evaluate(() => {
+      const ids = ['sites', 'apps', 'servers', 'care', 'automation', 'ai'];
+      return { dirs: ids.map((i) => { const s = document.getElementById(i); return s ? `${i}:${s.querySelectorAll('.sv-step').length}:${s.querySelectorAll('.tp-need').length}:${s.querySelector('h2') ? 1 : 0}` : i + ':нет'; }).join(' '),
+        links: [...document.querySelectorAll('a[href]')].map((a) => a.getAttribute('href')).filter((x) => !/^(https?:|#top$|\?lang|\.\/)/.test(x) && !/\?lang=/.test(x)),
+        len: document.documentElement.scrollHeight / innerHeight, cur: [...document.querySelectorAll('[aria-current="page"]')].map((a) => a.textContent.trim()).join(','),
+        h1: document.querySelector('h1').textContent.replace(/\s+/g, ' ').trim() };
+    });
+    if (w === 1440) {
+      if (r.dirs !== 'sites:5:1:1 apps:5:1:1 servers:5:1:1 care:5:1:1 automation:5:1:1 ai:5:1:1') bad.push(`process.html: направления ${r.dirs}`);
+      if (r.h1 !== 'Как мы работаем.' || !/Как работаем/.test(r.cur)) bad.push(`process.html: H1 «${r.h1}», текущий пункт ${r.cur}`);
+      r.links.forEach((x) => {
+        const [pg, id] = x.split('#');
+        const ok = !pg ? pid.has(id) : pg === 'automations.html' && /^f-/.test(id || '') ? true : PAGES.includes(pg) && (!id || idsOf(pg).has(id));
+        if (!ok) bad.push(`process.html: ссылка ${x} — нет цели`);
+      });
+    }
+    if (r.len > lim) bad.push(`process.html ${w}: ${r.len.toFixed(2)} экрана (не больше ${lim})`);
+    info.push(`process ${w}: ${r.len.toFixed(2)}`);
+    await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
+    await fullShot(page, path.join(shots, `process-${w}.png`));
+    await ctx.close();
+  }
+  // карточка Resonara на «Работах» — подпись над названием крупнее (Manrope 15/500)
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(BASE + 'cases.html?intro=instant'); await page.waitForTimeout(500);
+    const k = await page.evaluate(() => { const cs = getComputedStyle(document.querySelector('#case-resonara .obj-tx > .mono')); return cs.fontFamily.split(',')[0] + ' ' + cs.fontSize + ' ' + cs.fontWeight + ' ' + cs.textTransform; });
+    if (!/Manrope 15px 500 none/.test(k)) bad.push(`подпись карточки: ${k}`);
+    await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
+    await page.locator('#case-resonara').screenshot({ path: path.join(shots, 'cases-resonara-1440.png') });
+    await page.close();
+  }
+  // повторный переход в одной вкладке: первая страница — полный темп, вторая — data-repeat; с ?intro= — без ускорения.
+  // Кадры конца сборки первого экрана главной: сразу после «✓ ready» и через 2 с (частицы гаснут на месте, без разлёта)
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
+    await page.clock.pauseAt(new Date('2026-01-01T12:00:01Z'));
+    await page.goto(BASE + 'index.html');
+    const rep = () => page.evaluate(() => document.getElementById('pt-site').hasAttribute('data-repeat'));
+    const r0 = await rep();
+    await page.clock.runFor(2700); await page.waitForTimeout(150);
+    const ready = await page.evaluate(() => /ready/.test(document.querySelector('[data-pt-step]').textContent));
+    await page.screenshot({ path: path.join(shots, 'd1440-end-ready.png') });
+    await page.clock.runFor(2000); await page.waitForTimeout(150);
+    await page.screenshot({ path: path.join(shots, 'd1440-end-2s.png') });
+    await page.goto(BASE + 'services.html'); await page.clock.runFor(100); const r1 = await rep();
+    await page.goto(BASE + 'cases.html?intro=full'); await page.clock.runFor(100); const r2 = await rep();
+    if (r0 || !r1 || r2 || !ready) bad.push(`повторный переход: главная ${r0}, услуги ${r1}, ?intro=full ${r2}; «ready» к 2.7 с ${ready}`);
+    await page.close();
+  }
+  const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
+  if (['', 'services.html', 'cases.html', 'automations.html', 'process.html'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 5 || (sm.match(/hreflang="en"/g) || []).length !== 5) bad.push('sitemap.xml: не пять адресов с EN');
+  if (bad.length) fail('структура: ' + bad.join('; '));
+  else console.log(`  ✓ data-pt-burst нет нигде; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — шесть направлений по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки Manrope 15/500; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — пять адресов`);
 }
 srv.kill();
 
@@ -1266,12 +1358,12 @@ console.log(`\nрежимы сборки: полная / быстрая / сра
     const c = { m: await mode(), all: await doneAll(page) };
     return f.m === 'fast' && f.h1 && b.all && c.m === 'instant' && c.all ? '' : JSON.stringify({ f, b, c });
   });
-  await scene('«Процесс» с главной → услуги, не под шапкой', 'index.html', '', async (page) => {
+  await scene('«Как работаем» с главной → process.html', 'index.html', '', async (page) => {
     await page.clock.runFor(6500);
-    await page.click('.hero-hdr .nav a[href="services.html#process"]'); await page.waitForURL(/services\.html#process/);
-    await page.clock.runFor(3000); await page.waitForTimeout(100);
-    const r = await page.evaluate(() => ({ done: document.querySelector('[data-sec="process"]').classList.contains('s-done'), h2: Math.round(document.querySelector('[data-sec="process"] h2').getBoundingClientRect().top) }));
-    return r.done && r.h2 >= 64 && r.h2 < 900 ? '' : JSON.stringify(r);
+    await page.click('.hero-hdr .nav a[href="process.html"]'); await page.waitForURL(/process\.html/);
+    await page.clock.runFor(4000); await page.waitForTimeout(100);
+    const r = await page.evaluate(() => ({ done: document.querySelector('[data-sec="hero"]').classList.contains('s-done'), rep: document.getElementById('pt-site').hasAttribute('data-repeat'), h1: document.querySelector('h1').textContent.replace(/\s+/g, ' ').trim() }));
+    return r.done && r.rep && r.h1 === 'Как мы работаем.' ? '' : JSON.stringify(r);
   });
   for (const m of ['full', 'fast', 'instant']) await scene(`?intro=${m}`, `index.html?intro=${m}`, `sessionStorage.setItem('pt-seen', '["index"]')`, async (page, mode) => { await page.clock.runFor(100); const got = await mode(); return got === m ? '' : got; });
   await scene('хранилище запрещено → полная', 'index.html', `Object.defineProperty(window, 'localStorage', { get() { throw new Error('denied'); } }); Object.defineProperty(window, 'sessionStorage', { get() { throw new Error('denied'); } });`, async (page, mode) => { await page.clock.runFor(4000); const r = { m: await mode(), hero: await page.evaluate(() => document.querySelector('[data-sec="hero"]').classList.contains('s-done')) }; return r.m === 'full' && r.hero ? '' : JSON.stringify(r); });
@@ -1285,7 +1377,7 @@ console.log(`\nрежимы сборки: полная / быстрая / сра
 console.log('\nраскладка на промежуточных ширинах (главная, услуги, кейсы, каталог; RU / EN, шапка и липкая шапка)');
 {
   const bad = [];
-  for (const pg of ['index.html', 'services.html', 'cases.html', 'automations.html']) for (const lang of ['ru', 'en']) for (const w of [320, 360, 375, 390, 414, 430, 768, 820, 1024, 1150, 1280, 1440, 1920]) {
+  for (const pg of ['index.html', 'services.html', 'cases.html', 'automations.html', 'process.html']) for (const lang of ['ru', 'en']) for (const w of [320, 360, 375, 390, 414, 430, 768, 820, 1024, 1150, 1280, 1440, 1920]) {
     const page = await browser.newPage({ viewport: { width: w, height: 900 } });
     await page.goto('file://' + path.join(root, pg) + (lang === 'en' ? '?lang=en' : ''));
     await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);

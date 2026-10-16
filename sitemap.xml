@@ -24,4 +24,10 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/automations.html?lang=en"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/automations.html"/>
   </url>
+  <url>
+    <loc>https://privatechouse.ru/process.html</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/process.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/process.html?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/process.html"/>
+  </url>
 </urlset>
