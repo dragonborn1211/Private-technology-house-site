@@ -497,7 +497,7 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
   if (r.glyphs !== 6 || r.icons) bad.push(`рисунков в карточках ${r.glyphs}, иконок в квадратах ${r.icons}`);
   if (r.process || r.procLinks.length !== 4 || r.procLinks.some((h) => h !== 'process.html') || r.contact !== 'Контакт') bad.push(`«Как работаем»: секция ${r.process}, ссылки ${r.procLinks.join(', ')}, контакт «${r.contact}»`);
   const sv = readFileSync(path.join(root, 'services.html'), 'utf8');
-  if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 6 || /svc-ic/.test(sv) || (sv.match(/<a href="process\.html"[^>]*>Как работаем<\/a>/g) || []).length !== 3) bad.push('страница услуг: шесть мини-рисунков, нет иконок, «Как работаем» → process.html');
+  if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 6 || /svc-ic/.test(sv) || (sv.match(/<a href="process\.html"[^>]*>Как работаем<\/a>/g) || []).length !== 4) bad.push('страница услуг: шесть мини-рисунков, нет иконок, «Как работаем» → process.html (три меню и подвал)');
   for (const f of readdirSync(path.join(root, 'assets')).filter((x) => x.endsWith('.js'))) if (/addEventListener\(\s*['"](before)?unload['"]/.test(readFileSync(path.join(root, 'assets', f), 'utf8'))) bad.push(`${f}: unload / beforeunload отключает кэш «Назад»`);
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8'), rb = readFileSync(path.join(root, 'robots.txt'), 'utf8');
   if (['', 'services.html', 'cases.html', 'automations.html', 'process.html'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 5 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
@@ -742,7 +742,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
 {
   const bad = [], aid = idsOf('automations.html'), cid = idsOf('cases.html');
   const filtersC = new Set([...src['cases.html'].matchAll(/data-filter="([a-z]+)"/g)].map((m) => m[1]));
-  for (const [w, h, lim] of [[1440, 900, 7.0], [390, 844, 13.5]]) {
+  for (const [w, h, lim] of [[1440, 900, 7.5], [390, 844, 14.5]]) {   // TASK-structure.md: +«Как устроена подписка»
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + 'services.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
