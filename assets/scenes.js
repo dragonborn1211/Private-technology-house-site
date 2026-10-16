@@ -490,8 +490,10 @@
         n.lines = wrapName(g, n.name, maxW);
         var tw = 0;
         n.lines.forEach(function (l) { tw = Math.max(tw, g.measureText(l).width); });
-        n.role2 = compact ? '' : n.role;
-        if (n.role2) { g.font = '500 ' + G.rfs + 'px "JetBrains Mono", monospace'; tw = Math.max(tw, g.measureText(n.role2).width * (big ? 1.1 : 1)); }
+        // подпись роли — по-русски (ROLE_RU), в английской версии через словарь: trigger, webhook…; ширина плашки — по строке,
+        // которая будет нарисована (крупный режим — прописными с разрядкой 1 px)
+        n.role2 = compact ? '' : tr(ROLE_RU[n.role] || n.role);
+        if (n.role2) { var rs = big ? n.role2.toUpperCase() : n.role2; g.font = '500 ' + G.rfs + 'px "JetBrains Mono", monospace'; tw = Math.max(tw, g.measureText(rs).width + (big ? rs.length : 0)); }
         n.w = Math.ceil(tw + 2 * px); n.h = Math.ceil(2 * py + n.lines.length * lh + (n.role2 ? G.rh : 0));
         // mx / my — раскладка узкого окна (телефон); tx / ty — средней ширины (крупный шрифт, окно 400–519 px): там плашки
         // уже крупные, а окно ещё узкое, и короткие связи не вмещали подписи событий. Нет полей — узел стоит по x / y
@@ -823,6 +825,8 @@
   var P_SRC = ['Сайт', 'Форма', 'Авито', 'Почта', 'Telegram', 'Звонок'], P_MID = ['Webhook', 'n8n', 'AI'], P_DST = ['Telegram', 'Почта', 'Таблица', 'Битрикс24', 'CRM'];
   var ROLE = { Webhook: 'webhook', n8n: 'workflow', AI: 'ai', CRM: 'workflow', 'Битрикс24': 'workflow' };
   var EVT = { Webhook: 'POST /hook', n8n: 'workflow.run', AI: 'classify()', CRM: 'lead.create', 'Таблица': 'row.append', Telegram: 'sendMessage', 'Почта': 'mail.send', 'Склад': 'stock.update', 'Битрикс24': 'crm.lead.add' };
+  // подписи ролей узлов на плашках схем (в словаре i18n — обратно на английский)
+  var ROLE_RU = { trigger: 'источник', webhook: 'вебхук', workflow: 'сценарий', ai: 'AI', output: 'результат' };
   function pickOne(list, used) { var l = list.filter(function (x) { return used.indexOf(x) < 0; }); return l[(Math.random() * l.length) | 0]; }
   function chainSpec(names, duplex) {
     var n = names.length, X = n === 2 ? [0.27, 0.73] : n === 3 ? [0.17, 0.5, 0.83] : null, nodes = [], edges = [];

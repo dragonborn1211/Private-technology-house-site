@@ -145,7 +145,8 @@
       function updateSizes(el) {
         Array.prototype.forEach.call(el.querySelectorAll('[data-blk]'), function (b) {
           var t = b.querySelector('[data-wf-size]'); if (!t) return;
-          t.textContent = Math.round(b.offsetWidth) + '×' + Math.round(b.offsetHeight);
+          // размер — в атрибут (CSS выводит его в ::after): служебная подпись не становится текстом страницы
+          t.setAttribute('data-wf-size', Math.round(b.offsetWidth) + '×' + Math.round(b.offsetHeight));
         });
       }
       function collectWords(el) {
@@ -395,7 +396,7 @@
           M[i] = 1; A[i] = 0; P[i * 2] = -999; P[i * 2 + 1] = -999; SZ[i] = 1.4;
           ALL.push(i); BLD.push(i);
         }
-        if (countEl) countEl.textContent = fmtN();
+        if (countEl) countEl.setAttribute('data-an', 'webgl · ' + fmtN() + ' particles');
       }
       // Если вспышки первого экрана не было (например, после перезагрузки в середине страницы первый экран пропущен),
       // частицы невидимо раскладываются по текущему экрану. Иначе сборка тянула бы их из угла за экраном.
