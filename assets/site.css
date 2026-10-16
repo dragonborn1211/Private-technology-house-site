@@ -690,3 +690,26 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .sv-pf{color:var(--c,#8FAEC0)}
 /* лид первого экрана услуг: «Проект» и «Подписка» — цветами «Разово» и «Ежемесячно» (они же в заголовках групп) */
 .lead .lc{font-weight:500;color:var(--c)}
+/* «Как работаем»: якорь направления, вошедшего в общую секцию (process.html#apps, #ai) — у шапки секции */
+.pr-alias{display:block;height:0;scroll-margin-top:88px}
+/* услуги на телефоне: в «Что входит» две строки, остальные — под кнопкой «Ещё N ↓» (TASK-clarity.md, B11.2; nav.js) */
+.sv-more{display:none}
+@media (max-width:760px){
+  .sv-rows:not(.is-open) li:nth-child(n+3){display:none}
+  .pt .sv-more{appearance:none;display:inline-flex;align-items:center;gap:8px;min-height:44px;margin:4px 0 -8px;padding:0;border:0;background:none;font:600 15px Manrope,system-ui,sans-serif;color:var(--c);cursor:pointer}
+  .sv-more i{font-style:normal;transition:transform .3s ease}
+  .sv-more[aria-expanded="true"] i{transform:rotate(180deg)}
+  .sv-more[aria-expanded="true"] .sv-more-o,.sv-more[aria-expanded="false"] .sv-more-c{display:none}
+  /* скрытые строки движок не собирал: при раскрытии — своё короткое проявление, а не общий переход сборки */
+  .pt-on .sec .sv-rows li:nth-child(n+3) .ptx,.pt-on .sec .sv-more .ptx{transition:opacity .25s ease}
+}
+@media (prefers-reduced-motion:reduce){.sv-more i{transition:none}}
+/* «Как работаем» на телефоне — плотнее: шапка, шаги и «Нужно от вас» ближе друг к другу (≤ 6,5 экрана на 390) */
+@media (max-width:760px){.pr-head{margin-bottom:20px}.pr-foot{margin-top:20px}}
+/* «Когда сайт готов» и «Как устроена подписка» на телефоне — лентой: карточки рядом и листаются пальцем, соседняя
+   выглядывает справа. Стопкой шесть карточек занимали 2,8 экрана, и услуги выходили 12 экранов вместо 10,8 (TASK-clarity.md) */
+@media (max-width:760px){
+  .sv-paths{display:flex;gap:12px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scroll-padding-inline:var(--pad);margin:0 calc(-1 * var(--pad));padding:12px var(--pad) 18px;scrollbar-width:none}
+  .sv-paths::-webkit-scrollbar{display:none}
+  .sv-path{flex:0 0 min(84%,330px);scroll-snap-align:start}
+}

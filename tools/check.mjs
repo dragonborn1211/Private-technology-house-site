@@ -229,7 +229,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
       const as = [...document.querySelectorAll('[data-sec="hero"] a, [data-topbar] a, [data-menu] a, [data-sec="contact"] a')];
       const tg = [...document.querySelectorAll('#pt-site a[href*="t.me"]')];
       return { hash: as.filter((a) => a.getAttribute('href') === '#').length, tg: tg.length,
-        tgBad: tg.filter((a) => a.getAttribute('href') !== 'https://t.me/dragonborne0' || a.target !== '_blank' || !/noopener/.test(a.rel)).length,
+        tgBad: tg.filter((a) => !(a.hasAttribute('data-tg') ? /^https:\/\/t\.me\/dragonborne0\?text=\S+$/ : /^https:\/\/t\.me\/dragonborne0$/).test(a.getAttribute('href')) || a.target !== '_blank' || !/noopener/.test(a.rel)).length,
         h1: nb(document.querySelector('h1').textContent), trust: document.querySelectorAll('.trust .trust-i').length,
         nav: [...document.querySelectorAll('[data-sec="hero"] .nav a')].map((a) => nb(a.textContent)).join(','), nbsp: /\u00a0/.test(document.querySelector('h1').textContent),
         name: document.querySelector('[data-captitle]').textContent, aria: document.querySelector('[data-obj]').getAttribute('aria-label') };
@@ -742,7 +742,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
 {
   const bad = [], aid = idsOf('automations.html'), cid = idsOf('cases.html');
   const filtersC = new Set([...src['cases.html'].matchAll(/data-filter="([a-z]+)"/g)].map((m) => m[1]));
-  for (const [w, h, lim] of [[1440, 900, 7.5], [390, 844, 14.5]]) {   // TASK-structure.md: +«Как устроена подписка»
+  for (const [w, h, lim] of [[1440, 900, 7.5], [390, 844, 10.8]]) {   // TASK-clarity.md: на телефоне «Что входит» свёрнуто
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + 'services.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
@@ -756,7 +756,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
     if (r.cost !== 'care:фиксированная') bad.push(`услуги: «Стоимость» — ${r.cost}`);
     if (r.cases !== 'sites,automation,ai' || r.cases.split(',').some((c) => !filtersC.has(c))) bad.push(`услуги: «Кейсы: …» → ${r.cases}`);
     const tp = r.tpl.split(',').map((x) => x.split('#')[1]);
-    if (tp.join(',') !== 'site-leads,b24-report,price-monitor,voice-task,reviews,avito-bot' || tp.some((x) => !aid.has(x)) || r.all !== 2) bad.push(`услуги: «Готовые шаблоны» ${r.tpl}, «Все шаблоны» ${r.all}`);
+    if (tp.join(',') !== 'site-leads,b24-report,price-monitor,voice-task,reviews,avito-bot' || tp.some((x) => !aid.has(x)) || r.all !== 2) bad.push(`услуги: «Готовые решения» ${r.tpl}, «Все готовые решения» ${r.all}`);
     if (r.rows !== 2) bad.push('услуги: заголовки групп #projects / #subscription — не тонкие строки с отступом 88 px');
     if (w === 1440) console.log(`  · услуги: ${r.len.toFixed(2)} экрана на 1440`); else console.log(`  · услуги: ${r.len.toFixed(2)} экрана на 390`);
     await ctx.close();
@@ -890,7 +890,7 @@ console.log('\nкейсы и готовые автоматизации');
   st = await state(page);
   const T = ['site-leads', 'voice-task', 'reviews', 'b24-report', 'catalog', 'avito-bot', 'price-monitor'];
   if (st.vis.join(',') !== T.join(',') || st.always !== 'your-process' || st.btns !== 'all,leads,tasks,goods,reports,ai') bad.push(`каталог: ${JSON.stringify(st)}`);
-  const cards = await page.evaluate(() => [...document.querySelectorAll('[data-cat]')].map((c) => ({ id: c.id, flow: c.querySelector('canvas[data-flow]').dataset.flow, need: /^Нужно от\s+вас: \S/.test(c.querySelector('.tp-need').textContent), go: !!c.querySelector('a.tp-go[href="#contact"]'), cases: [...c.querySelectorAll('a[href^="cases.html#"]')].map((a) => a.getAttribute('href').split('#')[1]), obj: /Объект №/.test(c.textContent) })));
+  const cards = await page.evaluate(() => [...document.querySelectorAll('[data-cat]')].map((c) => ({ id: c.id, flow: c.querySelector('canvas[data-flow]').dataset.flow, need: /^Нужно от\s+вас: \S/.test(c.querySelector('.tp-need').textContent), go: !!c.querySelector('a.tp-go[data-tg^="Хочу подключить «"]'), cases: [...c.querySelectorAll('a[href^="cases.html#"]')].map((a) => a.getAttribute('href').split('#')[1]), obj: /Объект №/.test(c.textContent) })));
   const cid = idsOf('cases.html');
   cards.forEach((c) => { if (!c.need || !c.go || c.obj || c.cases.some((x) => !cid.has(x))) bad.push(`шаблон ${c.id}: «Нужно от вас» ${c.need}, «Подключить» ${c.go}, «Объект №» ${c.obj}, кейсы ${c.cases.join(',')}`); });
   const links = cards.filter((c) => c.cases.length).map((c) => c.id + '→' + c.cases.join('')).join(',');
@@ -1096,7 +1096,8 @@ console.log('\nтексты и типографика (TASK-polish.md)');
 }
 // Структура (TASK-structure.md): data-pt-burst нет ни в одном HTML (конец сборки — тихий); услуги — новый порядок секций,
 // «Когда сайт готов» и «Как устроена подписка» по три карточки, раздела «После запуска» нет, вопросов пять; process.html —
-// шесть направлений по пять шагов, одно «Нужно от вас», ссылки на существующие якоря, ≤ 6 / 10 экранов; повторный переход
+// четыре секции по пять шагов (#apps и #ai — метки в общих секциях), одно «Нужно от вас», ссылки на существующие якоря,
+// ≤ 3,2 / 6,5 экрана; повторный переход
 // в вкладке — data-repeat (не на первой странице и не с ?intro=); sitemap — пять адресов; снимки.
 console.log('\nструктура: услуги, «Как работаем», сборка без разлёта, повторный переход');
 {
@@ -1120,19 +1121,20 @@ console.log('\nструктура: услуги, «Как работаем», с
   }
   // «Как работаем»
   const pid = idsOf('process.html');
-  for (const [w, h, lim] of [[1440, 900, 6], [390, 844, 10]]) {
+  for (const [w, h, lim] of [[1440, 900, 3.2], [390, 844, 6.5]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + 'process.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
     const r = await page.evaluate(() => {
-      const ids = ['sites', 'apps', 'servers', 'care', 'automation', 'ai'];
+      const ids = ['sites', 'servers', 'care', 'automation'];
       return { dirs: ids.map((i) => { const s = document.getElementById(i); return s ? `${i}:${s.querySelectorAll('.sv-step').length}:${s.querySelectorAll('.tp-need').length}:${s.querySelector('h2') ? 1 : 0}` : i + ':нет'; }).join(' '),
         links: [...document.querySelectorAll('a[href]')].map((a) => a.getAttribute('href')).filter((x) => !/^(https?:|#top$|\?lang|\.\/)/.test(x) && !/\?lang=/.test(x)),
         len: document.documentElement.scrollHeight / innerHeight, cur: [...document.querySelectorAll('[aria-current="page"]')].map((a) => a.textContent.trim()).join(','),
-        h1: document.querySelector('h1').textContent.replace(/\s+/g, ' ').trim() };
+        h1: document.querySelector('h1').textContent.replace(/\s+/g, ' ').trim(), alias: ['apps', 'ai'].map((i) => { const e = document.getElementById(i); return e ? i + '>' + e.closest('[data-sec]').id : i + ':нет'; }).join(' '),
+        secs: document.querySelectorAll('[data-sec^="p-"]').length };
     });
     if (w === 1440) {
-      if (r.dirs !== 'sites:5:1:1 apps:5:1:1 servers:5:1:1 care:5:1:1 automation:5:1:1 ai:5:1:1') bad.push(`process.html: направления ${r.dirs}`);
+      if (r.dirs !== 'sites:5:1:1 servers:5:1:1 care:5:1:1 automation:5:1:1' || r.secs !== 4 || r.alias !== 'apps>sites ai>automation') bad.push(`process.html: направления ${r.dirs}, секций ${r.secs}, якоря ${r.alias}`);
       if (r.h1 !== 'Как мы работаем.' || !/Как работаем/.test(r.cur)) bad.push(`process.html: H1 «${r.h1}», текущий пункт ${r.cur}`);
       r.links.forEach((x) => {
         const [pg, id] = x.split('#');
@@ -1178,7 +1180,7 @@ console.log('\nструктура: услуги, «Как работаем», с
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
   if (['', 'services.html', 'cases.html', 'automations.html', 'process.html'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 5 || (sm.match(/hreflang="en"/g) || []).length !== 5) bad.push('sitemap.xml: не пять адресов с EN');
   if (bad.length) fail('структура: ' + bad.join('; '));
-  else console.log(`  ✓ разлёта (data-pt-burst) нет нигде, у подвала — мягкий выдох; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — шесть направлений по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — пять адресов`);
+  else console.log(`  ✓ разлёта (data-pt-burst) нет нигде, у подвала — мягкий выдох; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — четыре секции по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — пять адресов`);
 }
 // Ясность (TASK-clarity.md), часть A: на услугах «Разово» / «Ежемесячно» — крупные заголовки групп; в «Варианте 03» нет
 // пересказа сопровождения; «Как устроена подписка» — по три строки «Сайт / Сценарий / Агент» с <b>; блок порядка на
@@ -1407,6 +1409,74 @@ console.log('\nясность, B7 / B9: цвет на «Что делаем», �
   if (bad.length) fail('ясность B7 / B9: ' + bad.join('; '));
   else console.log('  ✓ условия, главная ссылка модуля и подписи карточек — цветом направления, «Проект» / «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», тёмный и светлый чередуются');
 }
+// Ясность, B10 / B11: «Как работаем» — четыре секции, сводка из четырёх ссылок; кнопки действия — сразу в Telegram с
+// черновиком (t.me/dragonborne0?text=…; в EN — по-английски, и после смены языка на лету); на телефоне «Что входит»
+// свёрнуто до двух строк (кнопка «Ещё N» раскрывает), на десктопе всё видно; «Готовые решения» — одно название везде.
+console.log('\nясность, B10 / B11: «Как работаем», кнопки в Telegram, «Что входит» на телефоне, одни слова');
+{
+  const bad = [], tgText = (h) => { try { return new URL(h).searchParams.get('text') || ''; } catch (e) { return ''; } };
+  // кнопки действия на всех страницах: адрес с черновиком; RU — «Здравствуйте!», EN — «Hello!» и без кириллицы
+  for (const f of PAGES) for (const lang of ['', '&lang=en']) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(BASE + (f === '404.html' ? 'nonexistent/x' : f) + '?intro=instant' + lang); await page.waitForTimeout(200);
+    const r = await page.evaluate(() => [...document.querySelectorAll('[data-tg]')].map((a) => a.getAttribute('href')));
+    if (!r.length) bad.push(`${f}: нет кнопок [data-tg]`);
+    r.forEach((h) => {
+      const t = tgText(h);
+      if (!h.startsWith('https://t.me/dragonborne0?text=') || (lang ? !/^Hello! \S/.test(t) || /[А-Яа-яЁё]/.test(t) : !/^Здравствуйте! \S/.test(t))) bad.push(`${f}${lang}: ${t.slice(0, 50) || h}`);
+    });
+    await page.close();
+  }
+  // смена языка на лету — черновики пересобираются
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(400);
+    await page.click('.hero-hdr [data-lang="en"]'); await page.waitForTimeout(3500);
+    const t = tgText(await page.evaluate(() => document.querySelector('#sites a.sv-go[data-tg]').getAttribute('href')));
+    if (t !== "Hello! I'd like to discuss a website.") bad.push(`смена языка: черновик «${t}»`);
+    await page.close();
+  }
+  // «Как работаем»: четыре секции, сводка — четыре ссылки на них
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(BASE + 'process.html?intro=instant'); await page.waitForTimeout(200);
+    const r = await page.evaluate(() => ({ secs: [...document.querySelectorAll('[data-sec^="p-"]')].map((s) => s.id + ':' + s.querySelectorAll('.sv-step').length).join(','),
+      fmt: [...document.querySelectorAll('.sv-fl a')].map((a) => a.getAttribute('href')).join(','), apps: !!document.getElementById('apps'), ai: !!document.getElementById('ai') }));
+    if (r.secs !== 'sites:5,servers:5,care:5,automation:5' || r.fmt !== '#sites,#servers,#care,#automation' || !r.apps || !r.ai) bad.push(`process.html: ${JSON.stringify(r)}`);
+    await page.close();
+  }
+  // «Что входит»: на телефоне две строки и «Ещё N», по нажатию — все; на десктопе всё видно, кнопки нет
+  for (const w of [390, 1440]) {
+    const page = await browser.newPage({ viewport: { width: w, height: 900 } });
+    await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(400);
+    const r = await page.evaluate(() => [...document.querySelectorAll('.sv-rows')].map((u) => {
+      const b = document.querySelector(`[aria-controls="${u.id}"]`), n = u.children.length;
+      return { id: u.id, n, vis: [...u.children].filter((li) => li.offsetHeight).length, btn: b && b.offsetHeight ? [...b.querySelectorAll('span')].filter((x) => x.offsetWidth).map((x) => x.textContent).join('') + ' ' + b.querySelector('i').textContent : '' };
+    }));
+    r.forEach((x) => {
+      if (w === 390 && (x.vis !== 2 || x.btn !== `Ещё ${x.n - 2} ↓`)) bad.push(`услуги 390, ${x.id}: видно ${x.vis} из ${x.n}, кнопка «${x.btn}»`);
+      if (w === 1440 && (x.vis !== x.n || x.btn)) bad.push(`услуги 1440, ${x.id}: видно ${x.vis} из ${x.n}, кнопка «${x.btn}»`);
+    });
+    if (w === 390) {
+      await page.click('#sites .sv-more'); await page.waitForTimeout(500);
+      const o = await page.evaluate(() => ({ e: document.querySelector('#sites .sv-more').getAttribute('aria-expanded'), vis: [...document.querySelectorAll('#rows-sites li')].filter((li) => li.offsetHeight).length, op: getComputedStyle(document.querySelector('#rows-sites li:last-child .sv-rn')).opacity }));
+      if (o.e !== 'true' || o.vis !== 5 || o.op !== '1') bad.push(`услуги 390: после «Ещё» ${JSON.stringify(o)}`);
+    }
+    await page.close();
+  }
+  // одни слова: «Готовые решения» над плашками в модулях услуг и H1 каталога
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(200);
+    const a = await page.evaluate(() => [...document.querySelectorAll('.sv-tpl > .mono')].map((m) => m.textContent.trim()).join(','));
+    await page.goto(BASE + 'automations.html?intro=instant'); await page.waitForTimeout(200);
+    const h = await page.evaluate(() => document.querySelector('h1').textContent.replace(/\s+/g, ' ').trim());
+    if (a !== 'Готовые решения,Готовые решения' || h !== 'Готовые решения.') bad.push(`названия: над плашками «${a}», H1 каталога «${h}»`);
+    await page.close();
+  }
+  if (bad.length) fail('ясность B10 / B11: ' + bad.slice(0, 14).join('; ') + (bad.length > 14 ? ` …ещё ${bad.length - 14}` : ''));
+  else console.log('  ✓ «Как работаем» — четыре секции, #apps и #ai живы; кнопки действия — в Telegram с черновиком (RU / EN, и после смены языка); на телефоне «Что входит» — две строки и «Ещё N»; «Готовые решения» везде');
+}
 srv.kill();
 
 // Чистка страницы услуг: чипы-дубли, ряд переходов, карточка форматов со ссылками, сроки и повторы в текстах; снимки.
@@ -1614,6 +1684,7 @@ console.log('\nраскладка на промежуточных ширинах
       const W = innerWidth, res = [];
       document.querySelectorAll('#pt-site .sec a, #pt-site .sec button, #pt-site .sec h1, #pt-site .sec h2, #pt-site .sec h3, #pt-site .sec p, #pt-site .sec li, [data-topbar] a, [data-topbar] button').forEach((el) => {
         if (el.closest('template, [data-menu], .site-view, .an, .wf')) return;
+        const sx = el.closest('.sv-paths'); if (sx && getComputedStyle(sx).overflowX === 'auto') return;
         const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') return;
         const r = el.getBoundingClientRect(); if (!r.width) return;
         if (r.right > W + 1 || r.left < -1) res.push(`«${(el.textContent.trim() || el.getAttribute('aria-label') || el.tagName).slice(0, 24)}» ${Math.round(r.left)}..${Math.round(r.right)}`);

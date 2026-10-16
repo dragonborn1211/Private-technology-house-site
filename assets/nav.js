@@ -97,6 +97,40 @@
     if (wide.addEventListener) wide.addEventListener('change', onWide); else if (wide.addListener) wide.addListener(onWide);
   }
 
+  // ---------- кнопки действия — сразу в Telegram с готовым черновиком (TASK-clarity.md, B11.1) ----------
+  // У ссылки [data-tg] в разметке — чат без текста (так она работает и без JS) и черновик в data-tg; здесь адрес
+  // собирается как t.me/<имя>?text=<привет + черновик> на языке страницы и пересобирается при смене языка (pt:lang)
+  var tgs = Array.prototype.slice.call(root.querySelectorAll('[data-tg]'));
+  function tgLinks() {
+    var I = window.PTI18N, en = !!(I && I.lang === 'en');
+    tgs.forEach(function (a) {
+      var t = (a.getAttribute('data-tg') || '').replace(/\s+/g, ' ').trim();
+      a.href = 'https://t.me/dragonborne0?text=' + encodeURIComponent((en ? 'Hello!' : 'Здравствуйте!') + ' ' + (I ? I.t(t) : t));
+    });
+  }
+  document.addEventListener('pt:lang', tgLinks);
+  tgLinks();
+
+  // ---------- услуги на телефоне: в «Что входит» две строки, остальные — под кнопкой (TASK-clarity.md, B11.2) ----------
+  // CSS прячет строки с третьей (только до 760 px); кнопка раскрывает и сворачивает список, высота меняется за 300 мс
+  var rmq = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+  Array.prototype.forEach.call(root.querySelectorAll('.sv-more'), function (b) {
+    var ul = document.getElementById(b.getAttribute('aria-controls')), anim = null;
+    if (!ul) return;
+    b.addEventListener('click', function () {
+      var open = b.getAttribute('aria-expanded') !== 'true', h0 = ul.getBoundingClientRect().height;
+      if (anim) { anim.cancel(); anim = null; }
+      b.setAttribute('aria-expanded', open ? 'true' : 'false');
+      ul.classList.toggle('is-open', open);
+      if (rmq && rmq.matches || !ul.animate) return;
+      var h1 = ul.getBoundingClientRect().height;
+      // сворачивание: строки прячутся, когда высота доехала
+      if (!open) ul.classList.add('is-open');
+      anim = ul.animate([{ height: h0 + 'px', overflow: 'hidden' }, { height: h1 + 'px', overflow: 'hidden' }], { duration: 300, easing: 'cubic-bezier(.2,.7,.2,1)' });
+      anim.onfinish = function () { anim = null; if (!open) ul.classList.remove('is-open'); };
+    });
+  });
+
   // ---------- свёрнутый пульт не ложится на первый экран ----------
   // Кнопка ↻ стоит в левом нижнем углу. Если под ней панель объекта, кнопки или строка доверия (на странице услуг —
   // «Два формата» со ссылками на направления, в каталоге — шаги подключения; на телефоне и
