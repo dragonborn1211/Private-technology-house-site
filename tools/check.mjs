@@ -1101,7 +1101,8 @@ console.log('\nтексты и типографика (TASK-polish.md)');
 console.log('\nструктура: услуги, «Как работаем», сборка без разлёта, повторный переход');
 {
   const bad = [], info = [];
-  readdirSync(root).filter((f) => f.endsWith('.html')).forEach((f) => { if (/data-pt-burst/.test(readFileSync(path.join(root, f), 'utf8'))) bad.push(`${f}: data-pt-burst`); });
+  // разлёта нет ни у одной секции; у подвала — мягкий выдох data-pt-burst="soft" (TASK-clarity.md, B8)
+  readdirSync(root).filter((f) => f.endsWith('.html')).forEach((f) => { if (/data-pt-burst(?!="soft")/.test(readFileSync(path.join(root, f), 'utf8').replace(/<footer data-sec="foot" class="sec foot" data-pt-burst="soft">/, ''))) bad.push(`${f}: data-pt-burst`); });
   // услуги
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -1177,7 +1178,7 @@ console.log('\nструктура: услуги, «Как работаем», с
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
   if (['', 'services.html', 'cases.html', 'automations.html', 'process.html'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 5 || (sm.match(/hreflang="en"/g) || []).length !== 5) bad.push('sitemap.xml: не пять адресов с EN');
   if (bad.length) fail('структура: ' + bad.join('; '));
-  else console.log(`  ✓ data-pt-burst нет нигде; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — шесть направлений по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — пять адресов`);
+  else console.log(`  ✓ разлёта (data-pt-burst) нет нигде, у подвала — мягкий выдох; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — шесть направлений по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — пять адресов`);
 }
 // Ясность (TASK-clarity.md), часть A: на услугах «Разово» / «Ежемесячно» — крупные заголовки групп; в «Варианте 03» нет
 // пересказа сопровождения; «Как устроена подписка» — по три строки «Сайт / Сценарий / Агент» с <b>; блок порядка на
@@ -1325,6 +1326,41 @@ console.log('\nясность, B1–B3: фильтры и якоря с аним
   await quick.close();
   if (bad.length) fail('ясность B1–B3: ' + bad.join('; '));
   else console.log('  ✓ фильтр — FLIP за ~0.6 с, resize один и после анимаций, быстрые клики и reduced motion без зависаний; якорь доезжает быстрее секунды, цель откликается (и после перехода с другой страницы); подписи карточек — плашкой в окне, без «Шаблон»; «Нет нужного шаблона?» широкая при нечётном числе карточек');
+}
+// Ясность, B4 / B5 / B8: курсор подсвечивает частицы (слабый толчок, закручивание, R 110, на телефоне выключен); пульт после
+// сборки первого экрана укатывается в левый угол (сжатие плашки clip-path, затем сдвиг и поворот кнопки); подвал всех шести
+// страниц — data-pt-burst="soft" (мягкий выдох phPuff), у остальных секций атрибута нет.
+console.log('\nясность, B4 / B5 / B8: свет курсора, пульт укатывается, выдох в конце страницы');
+{
+  const bad = [];
+  const eng = readFileSync(path.join(root, 'assets', 'engine.js'), 'utf8');
+  if (!/R = mob \? 0 : 110/.test(eng) || !/\* 0\.35 \* f/.test(eng) || /\* 1\.6 \* f/.test(eng)) bad.push('engine.js: курсор всё ещё выметает частицы (нужны R 110, толчок 0.35, на телефоне 0)');
+  if (!/function phPuff\(/.test(eng) || !/s\.burst === 'soft'\) phPuff/.test(eng)) bad.push('engine.js: нет phPuff или финал подвала не через него');
+  for (const f of PAGES) {
+    const h = src[f], all = (h.match(/data-pt-burst/g) || []).length, soft = (h.match(/<footer data-sec="foot" class="sec foot" data-pt-burst="soft">/g) || []).length;
+    if (all !== 1 || soft !== 1) bad.push(`${f}: data-pt-burst ${all}, у подвала soft ${soft}`);
+  }
+  // пульт: в обычном headless-браузере (под SwiftShader кадры рывками)
+  const quick = await chromium.launch();
+  const page = await quick.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(BASE + 'index.html');
+  const r = await page.evaluate(() => new Promise((res) => {
+    const p = document.querySelector('[data-pult]'), bar = p.querySelector('.pult-bar'), mini = p.querySelector('.pult-mini'), seen = { clip: 0, move: 0, rot: 0 }, t0 = performance.now();
+    let x0 = null;
+    const f = () => {
+      bar.getAnimations().forEach((a) => { if (a.effect.getKeyframes().some((k) => k.clipPath)) seen.clip = 1; });
+      p.getAnimations().forEach((a) => { if (a.effect.getKeyframes().some((k) => /translateX/.test(k.transform || ''))) { seen.move = 1; if (x0 == null) x0 = Math.round(p.getBoundingClientRect().left); } });
+      mini.getAnimations().forEach((a) => { if (a.effect.getKeyframes().some((k) => /rotate\((\d{3,})/.test(k.transform || ''))) seen.rot = 1; });
+      if (seen.move && !p.getAnimations().length && !mini.getAnimations().length) res({ ...seen, x0, left: Math.round(p.getBoundingClientRect().left), cls: p.className, tr: getComputedStyle(mini).transform });
+      else if (performance.now() - t0 > 9000) res({ ...seen, x0, cls: p.className, timeout: 1 });
+      else requestAnimationFrame(f);
+    };
+    requestAnimationFrame(f);
+  }));
+  if (!r.clip || !r.move || !r.rot || r.timeout || !/is-mini/.test(r.cls) || r.left !== 18 || r.tr !== 'none' || !(r.x0 > 300)) bad.push(`пульт не укатился в угол: ${JSON.stringify(r)}`);
+  await page.close(); await quick.close();
+  if (bad.length) fail('ясность B4 / B5 / B8: ' + bad.join('; '));
+  else console.log(`  ✓ курсор — свет (R 110, толчок 0.35, закручивание, на телефоне нет); пульт сжимается и укатывается в угол (от ${r.x0} px до 18, с поворотом); у подвала шести страниц — мягкий выдох, у остальных секций финал тихий`);
 }
 srv.kill();
 

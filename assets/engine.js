@@ -27,9 +27,10 @@
       var langLinks = Array.prototype.slice.call(root.querySelectorAll('[data-lang]')), beamEl = root.querySelector('[data-lang-beam]');
       var COL = { frost: [238, 243, 246], glass: [188, 211, 222], skel: [96, 124, 142], accent: [142, 216, 248] };
       var DUST = [[142, 216, 248], [127, 168, 255], [183, 166, 242], [159, 229, 209], [230, 236, 241]];
-      // burst (data-pt-burst) — после сборки частицы разлетаются по экрану. Сейчас атрибута нет ни у одной секции (просьба
-      // владельца, TASK-structure.md): все заканчиваются тихо — частицы гаснут на месте (phSettle). Вернуть разлёт — атрибутом
-      var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')).map(function (el) { return { el: el, name: el.getAttribute('data-sec'), state: 'idle', geo: null, geoKey: '', replay: false, burst: el.hasAttribute('data-pt-burst') }; });
+      // burst (data-pt-burst) — финал сборки секции. Без атрибута — тихий: частицы гаснут на месте (phSettle; так у всех
+      // секций, кроме подвала, TASK-structure.md). "soft" — мягкий «выдох» (phPuff): только у подвала, акцент «страница
+      // кончилась» (TASK-clarity.md, B8). Пустое значение — прежний сильный разлёт по экрану (phAmbient), оставлен на будущее
+      var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')).map(function (el) { return { el: el, name: el.getAttribute('data-sec'), state: 'idle', geo: null, geoKey: '', replay: false, burst: el.getAttribute('data-pt-burst') }; });
       var pultEl = root.querySelector('[data-pult]'), pultT = 0, pultShown = false, replaying = false;
       var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, cur = null, io = null, io2 = null;
       // «Тихие» зоны — текстовые блоки первого экрана (кикер, H1, лид, кнопки, строка доверия) и текст панели «Кодекс
@@ -122,19 +123,47 @@
       // она сворачивается в кнопку ↻ в левом нижнем углу (CSS: .is-left, .is-mini). «Пересобрать блок» снова её
       // разворачивает, после пересборки она сворачивается. Сборка секций при прокрутке пульт не разворачивает.
       // свернуть (true) — кнопка ↻ слева внизу; открыть (false) — плашка с логом над свёрнутой кнопкой (.is-open)
-      function pultMini(v) {
+      // roll — первое сворачивание (pultLater, pultSkip): плашка не исчезает, а укатывается кнопкой в угол (rollPult)
+      var pultRoll = null;
+      function pultMini(v, roll) {
         if (!pultEl) return;
-        if (v) { pultEl.classList.add('is-left', 'is-mini'); pultEl.classList.remove('is-open'); }
+        if (pultRoll) { var pr = pultRoll; pultRoll = null; pr(); }
+        if (v) {
+          if (roll && !rm && pultEl.animate && !pultEl.classList.contains('is-mini')) { rollPult(); return; }
+          pultEl.classList.add('is-left', 'is-mini'); pultEl.classList.remove('is-open');
+        }
         else if (pultEl.classList.contains('is-mini')) pultEl.classList.add('is-open');
+      }
+      // Одно движение (TASK-clarity.md, B5): текст плашки гаснет, плашка сжимается к центру в круг 44 px (200 мс); пульт
+      // встаёт свёрнутым в угол, и кнопка катится туда от центра плашки, как колесо радиусом 22 px (700 мс): сдвиг
+      // translateX(dx) → 0 и поворот dx / 22 рад → 0 — влево против часовой; ↻ и кольцо крутятся вместе с кнопкой.
+      // Повторная сборка разворачивает пульт как раньше, без качения. Прервали (↻, пересборка) — сразу в итог
+      function rollPult() {
+        var bar = pultEl.querySelector('.pult-bar'), mini = pultEl.querySelector('.pult-mini'), anims = [], t = 0;
+        function fold() { pultEl.classList.add('is-left', 'is-mini'); pultEl.classList.remove('is-open'); }
+        function end() { clearTimeout(t); anims.forEach(function (a) { a.cancel(); }); anims = []; }
+        if (!bar || !mini) { fold(); return; }
+        var br = bar.getBoundingClientRect(), cx = br.left + br.width / 2, sx = Math.max(0, br.width / 2 - 22), sy = Math.max(0, (br.height - 44) / 2);
+        anims.push(bar.animate([{ clipPath: 'inset(0px 0px round 999px)' }, { clipPath: 'inset(' + sy.toFixed(1) + 'px ' + sx.toFixed(1) + 'px round 999px)' }], { duration: 200, easing: 'ease-in', fill: 'forwards' }));
+        Array.prototype.forEach.call(bar.children, function (k) { anims.push(k.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 140, easing: 'ease-in', fill: 'forwards' })); });
+        pultRoll = function () { end(); fold(); };
+        t = setTimeout(function () {
+          end(); fold();
+          var mr = mini.getBoundingClientRect(), dx = cx - (mr.left + mr.width / 2), ez = 'cubic-bezier(.25,.8,.25,1)';
+          anims = [pultEl.animate([{ transform: 'translateX(' + dx.toFixed(1) + 'px)' }, { transform: 'none' }], { duration: 700, easing: ez }),
+            mini.animate([{ transform: 'rotate(' + (dx / 22 * 57.3).toFixed(1) + 'deg)' }, { transform: 'rotate(0deg)' }], { duration: 700, easing: ez })];
+          pultRoll = end;
+          t = setTimeout(function () { if (pultRoll === end) pultRoll = null; anims = []; }, 720);
+        }, 200);
       }
       // Через 2 с свернуть. После первой сборки первого экрана — сразу, даже если секции ждут в очереди (их первая
       // сборка видна только кольцом на кнопке). После «Пересобрать блок» — когда пересборка закончится.
       function pultLater() {
         clearTimeout(pultT);
-        pultT = setTimeout(function () { if (!alive) return; if (replaying && (running || queue.length)) { pultLater(); return; } replaying = false; pultShown = true; pultMini(true); }, 2000);
+        pultT = setTimeout(function () { if (!alive) return; if (replaying && (running || queue.length)) { pultLater(); return; } replaying = false; pultShown = true; pultMini(true, true); }, 2000);
       }
       // первый экран собран без показа (перезагрузка в середине страницы) — пульт сразу свёрнут
-      function pultSkip() { if (!pultShown && !replaying) { pultShown = true; clearTimeout(pultT); pultMini(true); } }
+      function pultSkip() { if (!pultShown && !replaying) { pultShown = true; clearTimeout(pultT); pultMini(true, true); } }
       function at(sec, fn) { timers.push(setTimeout(function () { if (alive) fn(); }, Math.max(0, sec) * 1000)); }
       function rootRect() { var r = root.getBoundingClientRect(); rootLeft = r.left; rootTop = r.top; return r; }
       function setStage(s, st) { var c = s.el.classList; c.remove('s-wire', 's-skel', 's-text', 's-done'); if (st) c.add('s-' + st); }
@@ -391,6 +420,27 @@
           SW[i] = now + 1300 + Math.random() * 700;
         }
       }
+      // Мягкий «выдох» в конце страницы (подвал, data-pt-burst="soft"): частицы с букв и рамок не гаснут на месте, а
+      // расходятся недалеко от подвала — от его середины наружу, с разбросом ±35°, на 40–160 px (телефон 25–90), по
+      // вертикали ×0.6 (облако приплюснутое) — и тают; 30 % на миг светятся. Через 1.2 с — как тихий финал: уже невидимые
+      // уезжают в пыль. Примерно четверть прежнего разлёта: облако не выходит за подвал и полосу над ним.
+      function phPuff(idx, s) {
+        var now = performance.now(), g = s.geo && s.geo.box, cx = W / 2, cy = g ? g.y + g.h / 2 : -rootTop + VH * 0.85;
+        var lo = mob ? 25 : 40, hi = mob ? 90 : 160, lit = [];
+        for (var k = 0; k < idx.length; k++) {
+          var i = idx[k], p = i * 2, c = i * 3;
+          if (SW[i]) { T[p] = NT[p]; T[p + 1] = NT[p + 1]; CT[c] = NC[c]; CT[c + 1] = NC[c + 1]; CT[c + 2] = NC[c + 2]; SZ[i] = NS[i]; M[i] = NM[i]; SW[i] = 0; }
+          if (M[i] || A[i] < 0.05) continue;
+          var ang = Math.atan2(P[p + 1] - cy, P[p] - cx) + (Math.random() - 0.5) * 1.22, len = lo + Math.random() * (hi - lo);
+          NT[p] = P[p] + Math.cos(ang) * len; NT[p + 1] = P[p + 1] + Math.sin(ang) * len * 0.6;
+          NC[c] = CT[c]; NC[c + 1] = CT[c + 1]; NC[c + 2] = CT[c + 2]; NS[i] = SZ[i]; NM[i] = 0;
+          if (Math.random() < 0.3) { NA[i] = 0.5; lit.push(i); } else NA[i] = 0;
+          SW[i] = now + Math.random() * 120; AT[i] = A[i];
+        }
+        // короткое свечение — и тоже тают
+        at(0.45, function () { if (running) return; for (var q = 0; q < lit.length; q++) { if (SW[lit[q]]) NA[lit[q]] = 0; else AT[lit[q]] = 0; } });
+        at(1.2, function () { if (running) return; phSettle(idx); });
+      }
       function alloc() {
         N = gl ? (mob ? 14000 : 26000) : (mob ? 3000 : 6000);
         P = new Float32Array(N * 2); V = new Float32Array(N * 2); T = new Float32Array(N * 2); NT = new Float32Array(N * 2);
@@ -540,7 +590,10 @@
         }
         var shift = lastTop == null ? 0 : lastTop - rootTop; lastTop = rootTop;
         var f = Math.min(3, dt * 60), damp = Math.pow(0.855, f), k = 0.015 * f, dd = Math.pow(0.975, f);
-        var mx = mouse.cx - rootLeft, my = mouse.cy - rootTop, R = mob ? 60 : 90, R2 = R * R;
+        // курсор — «свет» (TASK-clarity.md, B4): слабый толчок от курсора и закручивание вокруг него — частицы обтекают его и
+        // не улетают (раньше толчок ×1.6 выметал пыль, и вокруг мыши оставалось пустое пятно); свободная пыль в круге ярче и
+        // чуть крупнее. На телефоне курсора нет — эффекта нет
+        var mx = mouse.cx - rootLeft, my = mouse.cy - rootTop, R = mob ? 0 : 110, R2 = R * R;
         var ca = Math.min(1, dt * 3.5), aa = Math.min(1, dt * 3), ts = now * 0.00035, vt = -rootTop, n = 0;
         // первый экран собран и не пересобирается — свободные точки пыли в его текстовых блоках не рисуем
         var calmOn = hero.state === 'done' && calmZones().length > 0;
@@ -588,7 +641,8 @@
             vx += (Math.random() - 0.5) * 0.025 * f; vy += (Math.random() - 0.5) * 0.025 * f;
           }
           var ex = x - mx, ey = y - my, e2 = ex * ex + ey * ey;
-          if (e2 < R2) { var ed = Math.sqrt(e2) || 1, es = (1 - ed / R) * 1.6 * f; vx += ex / ed * es; vy += ey / ed * es; }
+          var lt = 0;
+          if (e2 < R2) { var ed = Math.sqrt(e2) || 1, es = (1 - ed / R) * 0.35 * f, sv = (1 - ed / R) * 0.5 * f; vx += ex / ed * es - ey / ed * sv; vy += ey / ed * es + ex / ed * sv; if (M[i]) lt = 1 - ed / R; }
           x += vx * f; y += vy * f;
           if (M[i] && now > burstEnd) { if (x < -4) x += W + 8; else if (x > W + 4) x -= W + 8; if (y < vt - 30) y += VH + 60; else if (y > vt + VH + 30) y -= VH + 60; }
           P[p] = x; P[p + 1] = y; V[p] = vx; V[p + 1] = vy;
@@ -598,7 +652,8 @@
           if (A[i] < 0.01 || sy < -8 || sy > VH + 8 || sx < -8 || sx > W + 8) continue;
           if (calmOn && M[i] && inCalm(x, y)) continue;
           var b = n * 7; n++;
-          BUF[b] = sx; BUF[b + 1] = sy; BUF[b + 2] = C[c]; BUF[b + 3] = C[c + 1]; BUF[b + 4] = C[c + 2]; BUF[b + 5] = A[i]; BUF[b + 6] = SZ[i];
+          BUF[b] = sx; BUF[b + 1] = sy; BUF[b + 2] = C[c]; BUF[b + 3] = C[c + 1]; BUF[b + 4] = C[c + 2];
+          BUF[b + 5] = lt ? Math.min(0.9, A[i] * (1 + 1.4 * lt)) : A[i]; BUF[b + 6] = lt ? SZ[i] * (1 + 0.25 * lt) : SZ[i];
         }
         drawSmoke(dt, f);
         for (var si = 0; si < scenes.length; si++) scenes[si].tick(dt);
@@ -706,7 +761,7 @@
       function start() { if (raf || !alive || !active || rm) return; prev = performance.now(); raf = requestAnimationFrame(loop); }
       function finish(s) {
         running = null;
-        if (!queue.length) { if (!s || s.burst) phAmbient(BLD, false); else phSettle(BLD); }
+        if (!queue.length) { if (s && s.burst === 'soft') phPuff(BLD, s); else if (!s || s.burst != null) phAmbient(BLD, false); else phSettle(BLD); }
         pump();
       }
       // Пропуск сборки по действию пользователя: текст и рамки проявляются сразу, частицы уходят в финал.
