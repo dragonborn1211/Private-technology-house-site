@@ -104,7 +104,9 @@
 
       function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
       function tr(s) { return window.PTI18N ? window.PTI18N.t(s) : s; }
-      function fmtN() { try { return N.toLocaleString('ru-RU'); } catch (e) { return String(N); } }
+      // разряды — неразрывным пробелом, как toLocaleString('ru-RU'), но без него: первый вызов поднимает ICU (~0.1 с на
+      // слабом телефоне, прямо на старте сборки)
+      function fmtN() { return String(N).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0'); }
       function parseColor(s) { var m = /rgba?\(([^)]+)\)/.exec(s || ''); if (!m) return COL.accent; var p = m[1].split(',').map(parseFloat); if (p.length > 3 && p[3] < 0.05) return COL.accent; return [p[0] | 0, p[1] | 0, p[2] | 0]; }
       function typeLabel(s) {
         if (!stepEl) return;
@@ -165,7 +167,13 @@
       // первый экран собран без показа (перезагрузка в середине страницы) — пульт сразу свёрнут
       function pultSkip() { if (!pultShown && !replaying) { pultShown = true; clearTimeout(pultT); pultMini(true, true); } }
       function at(sec, fn) { timers.push(setTimeout(function () { if (alive) fn(); }, Math.max(0, sec) * 1000)); }
-      function rootRect() { var r = root.getBoundingClientRect(); rootLeft = r.left; rootTop = r.top; return r; }
+      // Положение корня. getBoundingClientRect заставляет браузер досчитать стили и раскладку, если их что-то сбило, — в
+      // кадре это лишний пересчёт всей страницы (на слабом телефоне — заметная доля кадра). Полный замер — на стадиях,
+      // старте и ресайзе; в кадре — от прокрутки (rootFast): корень стоит в начале документа, его место в документе
+      // (rootDoc) меняется только вместе с раскладкой
+      var rootDoc = 0;
+      function rootRect() { var r = root.getBoundingClientRect(); rootLeft = r.left; rootTop = r.top; rootDoc = r.top + (window.scrollY || 0); return r; }
+      function rootFast() { rootTop = rootDoc - (window.scrollY || 0); }
       function setStage(s, st) { var c = s.el.classList; c.remove('s-wire', 's-skel', 's-text', 's-done'); if (st) c.add('s-' + st); }
       function markText() {
         secs.forEach(function (s) {
@@ -179,11 +187,14 @@
         });
       }
       function updateSizes(el) {
+        // размер — в атрибут (CSS выводит его в ::after): служебная подпись не становится текстом страницы. Сначала все
+        // замеры, потом все записи: запись атрибута сбивает раскладку, и чередование «замер, запись» пересчитывало всю
+        // страницу на каждом блоке
+        var w = [];
         Array.prototype.forEach.call(el.querySelectorAll('[data-blk]'), function (b) {
-          var t = b.querySelector('[data-wf-size]'); if (!t) return;
-          // размер — в атрибут (CSS выводит его в ::after): служебная подпись не становится текстом страницы
-          t.setAttribute('data-wf-size', Math.round(b.offsetWidth) + '×' + Math.round(b.offsetHeight));
+          var t = b.querySelector('[data-wf-size]'); if (t) w.push([t, Math.round(b.offsetWidth) + '×' + Math.round(b.offsetHeight)]);
         });
+        w.forEach(function (x) { if (x[0].getAttribute('data-wf-size') !== x[1]) x[0].setAttribute('data-wf-size', x[1]); });
       }
       function collectWords(el) {
         var out = [], tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null), n, rg = document.createRange(), cache = new Map();
@@ -217,13 +228,16 @@
         return L.map(function (l) { return { x: l.x1, w: l.x2 - l.x1, cy: l.y + l.h * 0.56, bh: Math.max(3, l.fs * 0.4) }; });
       }
       function glyphs(words) {
-        var xs = [], ys = [], cr = [], cg = [], cb = [], big = [], small = [];
+        var big = [], small = [];
         words.forEach(function (w) { (w.st.fs >= 30 ? big : small).push(w); });
         // Слова рисуются не на месте (холст размером со всю секцию почти пустой: дорого выделять, читать и
         // перебирать), а плотно, «полками», в компактный атлас. Каждая найденная точка переносится обратно
         // в координаты своего слова на странице. Запас px — под курсивный вынос.
+        // Перебор пикселей — по 32-битным словам (альфа — старший байт), точки — сразу в типизированные массивы размером
+        // с верхнюю оценку: без push в обычные массивы и копии в конце. Тот же набор точек вдвое-втрое быстрее — растр
+        // считается на стадии текста первого экрана, и на слабом телефоне он давал рывок
         function pass(ws, step) {
-          if (!ws.length) return;
+          if (!ws.length) return { n: 0, x: new Float32Array(0), y: new Float32Array(0), r: new Uint8Array(0), g: new Uint8Array(0), b: new Uint8Array(0) };
           var AW = 1024, gap = 4, cx = 0, cy = 0, shelf = 0, cells = [];
           ws.forEach(function (wd) { AW = Math.max(AW, Math.ceil(wd.w + 4 + wd.st.fs * 0.3) + 4); });
           ws.forEach(function (wd) {
@@ -247,20 +261,22 @@
             if (nat || !st.ls) og.fillText(wd.t, bx, by);
             else { for (var ci = 0; ci < wd.t.length; ci++) { og.fillText(wd.t[ci], bx, by); bx += og.measureText(wd.t[ci]).width + st.ls; } }
           });
-          var d = og.getImageData(0, 0, w, h).data;
+          var d = og.getImageData(0, 0, w, h).data, d32 = new Uint32Array(d.buffer, d.byteOffset, d.length >> 2), cap = 0, n = 0;
+          cells.forEach(function (cl) { cap += Math.ceil(cl.bw / step) * Math.ceil(cl.bh / step); });
+          var X = new Float32Array(cap), Y = new Float32Array(cap), R = new Uint8Array(cap), G = new Uint8Array(cap), B = new Uint8Array(cap);
           cells.forEach(function (cl) {
             var ox = cl.wd.x - cl.px - cl.ax, oy = cl.wd.y - 2 - cl.ay, xe = Math.min(w, cl.ax + cl.bw), ye = Math.min(h, cl.ay + cl.bh);
             for (var y = cl.ay; y < ye; y += step) {
               var row = y * w;
               for (var x = cl.ax; x < xe; x += step) {
-                var k = (row + x) * 4;
-                if (d[k + 3] > 110) { xs.push(ox + x + Math.random() * step); ys.push(oy + y + Math.random() * step); cr.push(d[k]); cg.push(d[k + 1]); cb.push(d[k + 2]); }
+                var q = row + x;
+                if ((d32[q] >>> 24) > 110) { var k = q << 2; X[n] = ox + x + Math.random() * step; Y[n] = oy + y + Math.random() * step; R[n] = d[k]; G[n] = d[k + 1]; B[n] = d[k + 2]; n++; }
               }
             }
           });
+          return { n: n, x: X.subarray(0, n), y: Y.subarray(0, n), r: R.subarray(0, n), g: G.subarray(0, n), b: B.subarray(0, n) };
         }
-        function pack() { var o = { n: xs.length, x: Float32Array.from(xs), y: Float32Array.from(ys), r: Uint8Array.from(cr), g: Uint8Array.from(cg), b: Uint8Array.from(cb) }; xs = []; ys = []; cr = []; cg = []; cb = []; return o; }
-        pass(big, 2); var B = pack(); pass(small, 1); var S = pack();
+        var B = pass(big, 2), S = pass(small, 1);
         return { n: B.n + S.n, big: B, small: S };
       }
       function frameRects(el) {
@@ -471,12 +487,12 @@
       // прервали); lineDelays — элемент проявляется, когда до него доходит линия: задержка по его положению (--ld).
       function line(el, sec) { if (!el) return; el.style.setProperty('--beam', sec + 's'); el.classList.remove('run'); void el.offsetWidth; el.classList.add('run'); }
       function linesOff() { heroSweep = null; root.classList.remove('pt-sweep'); if (!INTRO_LINES) return; if (beamEl) beamEl.classList.remove('run'); if (beamH) beamH.classList.remove('run'); }
+      // Сначала все замеры, потом все записи --ld: запись стиля сбивает раскладку, и чередование «замер, запись» пересчитывало
+      // всю страницу на каждом элементе — рывок ровно в момент старта линии (на слабом телефоне — десятые доли секунды)
       function lineDelays(sel, axis, sec) {
-        var vw = Math.max(1, window.innerWidth);
-        Array.prototype.forEach.call(hero.el.querySelectorAll(sel), function (el) {
-          var r = el.getBoundingClientRect(), u = axis === 'x' ? r.left / vw : r.top / Math.max(1, VH);
-          el.style.setProperty('--ld', (clamp(u, 0, 1) * sec).toFixed(3) + 's');
-        });
+        var vw = Math.max(1, window.innerWidth), els = hero.el.querySelectorAll(sel), v = [];
+        for (var k = 0; k < els.length; k++) { var r = els[k].getBoundingClientRect(); v.push((clamp(axis === 'x' ? r.left / vw : r.top / Math.max(1, VH), 0, 1) * sec).toFixed(3) + 's'); }
+        for (k = 0; k < els.length; k++) els[k].style.setProperty('--ld', v[k]);
       }
       // Переход по якорю с другой страницы (services.html#apps): секции выше цели сразу готовы — как уже прокрученные, —
       // страница стоит у цели (с учётом scroll-margin-top), и цель собирается первой. Раньше сначала собирался
@@ -561,6 +577,22 @@
       // видеокарты, ~6 к/с) облегчённый режим не включался никогда. Первые 3 с после старта не считаем.
       // Уровень помнится до конца сессии.
       var qSlow = 0;
+      // Ранняя оценка (TASK: на дешёвых телефонах лагала первая анимация). watchQuality ждёт 3 с и два окна по 2 с, то есть
+      // облегчение включалось не раньше 7-й секунды — уже после вступления. Пока идёт вспышка и сетка первого экрана (до
+      // стадии рамок: стекла и размытия ещё нет), меряем кадры: медиана дольше 34 мс (меньше ~30 к/с) — сразу уровень 1
+      // (без размытия стекла и дымного следа), дольше 50 мс (меньше 20 к/с) — уровень 2 (частицы в 1×). Анимация та же.
+      var probe = null;
+      function probeStart(K) { if (rm || lite >= 2) return; var t = performance.now(); probe = { from: t + 120, to: t + 1000 * 1.6 * K * 0.94, w: [] }; }
+      function probeFrame(now, raw) {
+        if (!probe || now < probe.from) return;
+        if (raw > 0 && raw < 1) probe.w.push(raw);
+        if (now < probe.to) return;
+        var w = probe.w; probe = null;
+        if (w.length < 4) return;
+        w.sort(function (a, b) { return a - b; });
+        var med = w[w.length >> 1], want = med > 0.05 ? 2 : med > 0.034 ? 1 : 0;
+        if (want > lite) setLite(want);
+      }
       function watchQuality(now, raw) {
         if (raw > 1 || document.hidden) { qT = 0; qW.length = 0; return; }
         if (lite >= 2 || now - bootAt < 3000) return;
@@ -579,10 +611,10 @@
       }
       function frame(now) {
         var raw = Math.max(0, (now - prev) / 1000), dt = Math.min(0.05, raw); prev = now;
-        if (!rm) watchQuality(now, raw);
+        if (!rm) { probeFrame(now, raw); watchQuality(now, raw); }
         // мягкая прокрутка (assets/scroll.js) сдвигает страницу до замера: частицы не отстают от контента
         if (window.PTScroll) window.PTScroll.tick(now);
-        rootRect();
+        rootFast();
         if (running && queue.length && now > abortAt) {
           abortAt = now + 200;
           var rr = running.el.getBoundingClientRect();
@@ -808,7 +840,7 @@
         if (MODE === 'fast' && !replay) { runHeroFast(s); return; }
         runId++; running = s; s.state = 'run'; s.replay = false; measure(s);
         var o = replay ? -0.6 : 0, K = replay ? PRESENT_K : HERO_K, LD = LINE * K;
-        if (!replay) { burst(); log(s, 'boot · ' + fmtN() + ' particles'); }
+        if (!replay) { burst(); log(s, 'boot · ' + fmtN() + ' particles'); probeStart(K); }
         atRun((0.6 + o) * K, function () { root.classList.add('g-on'); measure(s); phGrid(s, ALL, false); log(s, '01 · grid.init(12)'); });
         function done() { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (heroObj) { if (replay) heroObj.replay(); else heroObj.start(false); } if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); secDone(s.el); }
         if (INTRO_LINES) {
@@ -1017,7 +1049,7 @@
       }
       function onOut(e) { if (!e.relatedTarget) { mouse.cx = -1e5; mouse.cy = -1e5; lastPX = lastPY = null; } }
       function reapply() { if (cur && running === cur.s) { measure(cur.s); cur.f(cur.s, cur.idx, true); } }
-      function onResize() { layoutGen++; layout(); reapply(); if (rm) { snap(); frame(performance.now()); } }
+      function onResize() { layoutGen++; layout(); rootRect(); reapply(); if (rm) { snap(); frame(performance.now()); } }
       // Догрузка шрифтов только сбрасывает кэш замеров: следующая стадия возьмёт свежую геометрию. Мгновенный
       // перезапуск текущей стадии (reapply) давал рывок всех частиц, если шрифт приходил посреди сборки.
       function onFonts() { layoutGen++; }
