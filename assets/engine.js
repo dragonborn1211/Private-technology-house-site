@@ -27,7 +27,8 @@
       var langLinks = Array.prototype.slice.call(root.querySelectorAll('[data-lang]')), beamEl = root.querySelector('[data-lang-beam]');
       var COL = { frost: [238, 243, 246], glass: [188, 211, 222], skel: [96, 124, 142], accent: [142, 216, 248] };
       var DUST = [[142, 216, 248], [127, 168, 255], [183, 166, 242], [159, 229, 209], [230, 236, 241]];
-      // burst — после сборки частицы разлетаются по экрану (первый экран и контакты); у остальных секций гаснут на месте
+      // burst (data-pt-burst) — после сборки частицы разлетаются по экрану. Сейчас атрибута нет ни у одной секции (просьба
+      // владельца, TASK-structure.md): все заканчиваются тихо — частицы гаснут на месте (phSettle). Вернуть разлёт — атрибутом
       var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')).map(function (el) { return { el: el, name: el.getAttribute('data-sec'), state: 'idle', geo: null, geoKey: '', replay: false, burst: el.hasAttribute('data-pt-burst') }; });
       var pultEl = root.querySelector('[data-pult]'), pultT = 0, pultShown = false, replaying = false;
       var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, cur = null, io = null, io2 = null;
@@ -58,7 +59,7 @@
       // Вступление первого экрана (просьба владельца). INTRO_LINES — две быстрые линии «рисуют» первый экран:
       // вертикальная (тот же луч, что при смене языка) слева направо рисует все рамки — каркас и стили одной стадией,
       // горизонтальная сверху вниз — текст; за линией волной летят частицы и проявляется то, до чего она дошла (CSS
-      // --ld). Потом частицы долю секунды держат буквы и разлетаются (finish). false — прежние стадии и линия-сканер
+      // --ld). Потом частицы долю секунды держат буквы и гаснут на месте (finish). false — прежние стадии и линия-сканер
       // .scan. BURST_FULL — вспышка при загрузке разлетается на весь экран; false — прежний сгусток в
       // центре. LINE — проход линии при темпе 1, с (умножается на HERO_K / PRESENT_K). heroSweep — волна частиц первого
       // экрана в такт с линией (sweep).
@@ -93,6 +94,12 @@
         return 'full';
       })();
       root.setAttribute('data-intro', MODE);
+      // Повторный переход в этой вкладке (вторая и следующие страницы, обновление): та же полная сборка, темп ×REPEAT_K
+      // (просьба владельца: «чуть-чуть» быстрее). ?intro=… — без ускорения, чтобы проверки шли в одном темпе.
+      // «Пересобрать блок» (PRESENT_K) не меняется. Выше этой строки от HERO_K / SEC_K зависит только runK — пересчитан.
+      var REPEAT_K = 0.75, REPEAT = false;
+      try { REPEAT = sessionStorage.getItem('pt-nav') === '1'; sessionStorage.setItem('pt-nav', '1'); } catch (e) { /* хранилище запрещено — полный темп */ }
+      if (REPEAT && MODE === 'full' && !/[?&]intro=/.test(location.search)) { HERO_K *= REPEAT_K; SEC_K *= REPEAT_K; runK = SEC_K; root.setAttribute('data-repeat', ''); }
 
       function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
       function tr(s) { return window.PTI18N ? window.PTI18N.t(s) : s; }
@@ -371,7 +378,7 @@
         fill(idx, [{ w: 1, f: function (o) { gAmbient(o); o.m = 0; o.a = Math.random() < (mob ? DUSTM : DUSTA) ? 0.34 : 0; } }], { instant: inst, axis: 'x', spread: 0, rnd: inst ? 0 : 0.5 });
         at(inst ? 0 : 1.6, function () { if (running) return; for (var k = 0; k < idx.length; k++) { var i = idx[k]; if (SW[i]) NM[i] = 1; else M[i] = 1; } });
       }
-      // Тихий финал сборки (секции без data-pt-burst): частицы догасают на месте, а уже невидимыми
+      // Тихий финал сборки — теперь у всех секций (data-pt-burst нет нигде): частицы догасают на месте, а уже невидимыми
       // переезжают в случайные точки экрана (TP — телепорт при переключении). Пыль там проявляется без разлёта.
       function phSettle(idx) {
         var now = performance.now();
@@ -718,7 +725,7 @@
       function atRun(sec, fn) { var my = runId; at(sec, function () { if (my === runId) fn(); }); }
       // Быстрая сборка первого экрана (fast): без вспышки и двух линий — один луч слева направо (FAST_LD), за ним по --ld
       // всё проявляется сразу в финальном виде (s-done и .pt-sweep: задержка по положению, текст — 0.35 с); частицы из
-      // невидимой раскладки волной за лучом ложатся на буквы, на долю секунды держат их и разлетаются. По сути — смена
+      // невидимой раскладки волной за лучом ложатся на буквы, на долю секунды держат их и гаснут на месте. По сути — смена
       // языка из пустого состояния. Объект первого экрана стартует сразу. Пульт сразу свёрнут.
       function runHeroFast(s) {
         runId++; running = s; s.state = 'run'; s.replay = false;
@@ -750,7 +757,7 @@
             lineDelays('.ptx, .obj-ct, .obj-cap', 'y', LD); heroSweep = { axis: 'y', spread: LD }; line(beamH, LD);
             setStage(s, 'text'); measure(s); phText(s, ALL, false); heroSweep = null; log(s, '03 · type.crystallize()');
           });
-          // частицы долю секунды держат буквы — и разлетаются
+          // частицы долю секунды держат буквы — и гаснут на месте
           atRun((4.2 + o) * K, done);
           atRun((4.75 + o) * K, function () { finish(s); });
           return;
