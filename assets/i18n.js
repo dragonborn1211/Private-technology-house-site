@@ -27,7 +27,6 @@
     // строка доверия: три пункта, каждый отдельным узлом
     'Договор и NDA': 'Contract and NDA',
     'Поддержка после запуска': 'Support after launch',
-    'Процесс': 'Process',
     'Язык сайта': 'Site language',
     'Обсудить проект': 'Start a project',
     'Обсудить проект →': 'Start a project →',
@@ -200,10 +199,8 @@
     'Автоматизация и интеграции': 'Automation and integrations',
     'AI-ассистенты': 'AI assistants',
     'Агенты для отделов, базы знаний, разбор звонков, бот для Авито.': 'Agents for every department, knowledge bases, call reviews, an Avito sales bot.',
-    'Все услуги →': 'All services →',
 
     // ---------- страница услуг services.html ----------
-    'Услуги — сайты-презентации, приложения, автоматизация и AI | Private Technology House': 'Services — presentation websites, apps, automation and AI | Private Technology House',
     'Навигационная цепочка': 'Breadcrumb',
     'Главная': 'Home',
     'Что мы строим': 'What we build',
@@ -331,39 +328,27 @@
     // контакт
     'На главную': 'Back to home',
     // меню, подвал (TASK-pages.md)
-    'Кейсы': 'Cases',
-    'Автоматизации': 'Automations',
-    'Готовые автоматизации': 'Ready-made automations',
     'Разделы сайта': 'Site sections',
     'Вопросы': 'FAQ',
     // главная: «02 / Кейсы», «03 / Готовые автоматизации»
-    'Смотреть кейсы': 'View cases',
-    'Все кейсы →': 'All cases →',
     'Шаблон · Битрикс24 · Telegram': 'Template · Bitrix24 · Telegram',
     'Шаблон · AI · Битрикс24': 'Template · AI · Bitrix24',
     'Шаблон · AI · маркетплейсы': 'Template · AI · marketplaces',
     'Под ваш процесс': 'For your process',
     '[ ваш процесс ]': '[ your process ]',
-    'Все шаблоны →': 'All templates →',
     // услуги: тонкие заголовки групп, «Готовые шаблоны», ссылки на кейсы
     'Разово. Смета и сроки — до старта.': 'One-off. Estimate and timeline before we start.',
     'Ежемесячно. Российские проекты — на серверах в России.': 'Monthly. Russian projects run on servers in Russia.',
-    'Кейсы: сайты': 'Cases: websites',
-    'Кейсы: автоматизация': 'Cases: automation',
-    'Кейсы: AI': 'Cases: AI',
     'Готовые шаблоны': 'Ready-made templates',
     'Заявки с сайта → CRM': 'Website leads → CRM',
     'Утренний разбор задач': 'Morning task review',
     'Мониторинг цен': 'Price monitoring',
     'Голосовое → задача': 'Voice message → task',
     'Ответы на отзывы WB и Ozon': 'Replies to WB and Ozon reviews',
-    'Все шаблоны': 'All templates',
     // кейсы (cases.html)
-    'Кейсы — сайты, автоматизация и AI | Private Technology House': 'Cases — websites, automation and AI | Private Technology House',
     'Сайты, автоматизации и AI, которые уже работают у клиентов. Приложения и закрытые проекты показываем на созвоне.': 'Websites, automations and AI already running for our clients. Apps and projects under NDA we show on a call.',
     'Сделано': 'Built',
     'и работает.': 'and running.',
-    'Фильтр кейсов': 'Case filter',
     'Все': 'All',
     'Интеграции': 'Integrations',
     '[ под NDA ]': '[ under NDA ]',
@@ -371,7 +356,6 @@
     'Приложения и закрытые проекты': 'Apps and private projects',
     'Контакт': 'Contact',
     // готовые автоматизации (automations.html)
-    'Готовые автоматизации — Битрикс24, Telegram, маркетплейсы, AI | Private Technology House': 'Ready-made automations — Bitrix24, Telegram, marketplaces, AI | Private Technology House',
     'Готовые': 'Ready-made',
     'автоматизации.': 'automations.',
     'Как подключаем': 'How we connect',
@@ -443,7 +427,6 @@
     'Интеграция · Битрикс24': 'Integration · Bitrix24',
     'Инфраструктура · Cloudflare': 'Infrastructure · Cloudflare',
     'Звонки расшифровываются и оцениваются по скрипту продаж. Итог появляется в карточке сделки.': 'Calls are transcribed and scored against the sales script. The result appears in the deal card.',
-    'Запускаем по шаблону. Вы даёте ключ или вебхук, мы подключаем на своём сервере и следим. Оплата помесячно.': 'We launch from a template. You give us a key or a webhook, we connect it on our server and keep an eye on it. Billed monthly.',
     'Заявка с сайта сразу становится лидом в Битрикс24, а менеджер получает сообщение в Telegram.': 'A website request instantly becomes a lead in Bitrix24, and the manager gets a Telegram message.',
     'Руководитель надиктовывает задачу в Telegram, и она появляется в Битрикс24 с исполнителем и сроком.': 'A manager dictates a task in Telegram, and it appears in Bitrix24 with an assignee and a deadline.',
     'Расскажите о задаче': 'Tell us about your task',
@@ -511,7 +494,24 @@
     'источник': 'trigger',
     'вебхук': 'webhook',
     'сценарий': 'workflow',
-    'результат': 'output'
+    'результат': 'output',
+    // TASK-structure.md: меню «Что делаем · Работы · Готовые решения · Как работаем»
+    'Что делаем': 'What we do',
+    'Работы': 'Work',
+    'Готовые решения': 'Ready-made solutions',
+    'Все направления →': 'All services →',
+    'Все работы →': 'All work →',
+    'Все решения →': 'All solutions →',
+    'Все готовые решения': 'All ready-made solutions',
+    'Работы: сайты': 'Work: websites',
+    'Работы: автоматизация': 'Work: automation',
+    'Работы: AI': 'Work: AI',
+    'Фильтр работ': 'Filter work',
+    'Смотреть работы': 'View our work',
+    'Автоматизации по шаблону. Вы даёте ключ или вебхук, мы подключаем на своём сервере и следим. Оплата помесячно.': 'Automations from a template. You give us a key or a webhook, we connect it on our server and keep an eye on it. Billed monthly.',
+    'Что делаем — сайты, приложения, серверы, автоматизация и AI | Private Technology House': 'What we do — websites, apps, servers, automation and AI | Private Technology House',
+    'Работы — сайты, автоматизация и AI | Private Technology House': 'Work — websites, automation and AI | Private Technology House',
+    'Готовые решения: автоматизации для Битрикс24, Telegram, маркетплейсов и AI | Private Technology House': 'Ready-made solutions: automations for Bitrix24, Telegram, marketplaces and AI | Private Technology House'
   };
   var ATTRS = ['aria-label', 'title', 'alt'];
 

@@ -102,6 +102,9 @@ body{margin:0;background:#0A121A}
 .obj-tx{display:flex;flex-direction:column;gap:8px;padding:0 10px}
 .obj-h{font-size:22px;font-weight:500;color:#EEF3F6}
 .obj-d{font-size:15px;line-height:1.55;color:#9DB0BC}
+/* подпись над названием карточки (главная, работы, готовые решения): читается сразу — Manrope 15/500, без капслока;
+   цвет — из инлайн-стиля карточки (TASK-structure.md) */
+.obj-tx > .mono{font-family:Manrope,'Segoe UI',system-ui,sans-serif;font-size:15px;font-weight:500;letter-spacing:0;text-transform:none;line-height:1.3}
 .pt a.card-cta{font-size:15px;font-weight:600;color:#BCD3DE}
 /* «адресная строка» над живым превью: три точки и домен; сайт под ней. Кликается вся карточка через .card-link */
 .site-bar{position:absolute;top:0;left:0;right:0;height:30px;z-index:1;display:flex;align-items:center;gap:6px;padding:0 14px;background:rgba(10,18,26,.72);border-bottom:1px solid rgba(188,211,222,.12);pointer-events:none}
@@ -232,11 +235,11 @@ body{margin:0;background:#0A121A}
 /* ---------- шапка: логотип, меню, действия (первый экран и липкая шапка) ---------- */
 .logo{display:flex;align-items:center;gap:12px;min-width:0;min-height:44px;flex:0 1 auto}
 .logo-d{display:block;width:11px;height:11px;border:1.5px solid #8ED8F8;transform:rotate(45deg);box-shadow:0 0 12px rgba(142,216,248,.45)}
-.logo-t{font-size:11px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#EEF3F6}
+.logo-t{font-size:11px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#EEF3F6;white-space:nowrap}
 /* короткая форма логотипа: на узких экранах длинное название с разрядкой не оставляло места кнопке меню */
 .logo-s{display:none;font-size:11px;font-weight:600;letter-spacing:.3em;text-transform:uppercase;color:#EEF3F6}
 @media (max-width:420px){.logo-t{display:none}.logo-s{display:inline}}
-.nav{display:flex;gap:28px;font-size:14px;color:#9DB0BC}
+.nav{display:flex;gap:28px;font-size:14px;color:#9DB0BC;white-space:nowrap}
 .pt .nav a{transition:color .3s ease}
 .pt .nav a:hover,.pt .nav a[aria-current="true"]{color:#EEF3F6}
 .hero-hdr{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 0}
@@ -258,10 +261,11 @@ body{margin:0;background:#0A121A}
 .cross i{top:50%;margin-top:-.75px}
 .cross i:first-child{transform:rotate(45deg)}
 .cross i:last-child{transform:rotate(-45deg)}
-/* кнопка меню: на планшетах и узких ноутбуках (до 1023 px) меню разделов в шапке не помещается — вместо него кнопка
-   меню; на телефоне в шапке остаются только логотип, Telegram и меню */
+/* кнопка меню: на планшетах и ноутбуках до 1199 px меню разделов в шапке не помещается (с пунктами «Что делаем · Работы ·
+   Готовые решения · Как работаем» на 1024–1100 переносились и пункты, и логотип) — вместо него кнопка меню; на телефоне в
+   шапке остаются только логотип, Telegram и меню */
 .menu-btn{display:none!important}
-@media (max-width:1023px){.hero-hdr .nav,.topbar .nav{display:none}.menu-btn{display:inline-flex!important}}
+@media (max-width:1199px){.hero-hdr .nav,.topbar .nav{display:none}.menu-btn{display:inline-flex!important}}
 /* ---------- первый экран: колонка, кнопки, строка доверия ---------- */
 .hero-row{flex:1;display:flex;flex-wrap:wrap;gap:40px 64px;align-items:stretch;padding:clamp(8px,3vh,32px) 0 clamp(28px,5vh,52px)}
 .hero-col{flex:1.05 1 460px;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:24px}

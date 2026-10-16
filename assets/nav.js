@@ -58,7 +58,7 @@
     secs.forEach(function (s) { io.observe(s); });
   }
 
-  // ---------- меню на телефоне и планшете (до 1023 px) ----------
+  // ---------- меню на телефоне, планшете и узком ноутбуке (до 1199 px) ----------
   // Открывается кнопкой [data-menu-open] (в шапке первого экрана и в липкой). Фокус уходит в меню и не выходит из него;
   // Esc, кнопка закрытия и клик по пункту закрывают, фокус возвращается на кнопку. Пока меню открыто, страница стоит.
   var openers = Array.prototype.slice.call(root.querySelectorAll('[data-menu-open]')), closer = menu && menu.querySelector('[data-menu-close]'), opener = null, isOpen = false;
@@ -93,7 +93,7 @@
   // пункт меню: закрыть до того, как scroll.js поведёт страницу к секции (его обработчик — на document, он позже)
   if (menu) Array.prototype.forEach.call(menu.querySelectorAll('[data-menu-link]'), function (a) { a.addEventListener('click', function () { pinned = true; close(); }); });
   if (window.matchMedia) {
-    var wide = window.matchMedia('(min-width: 1024px)'), onWide = function (e) { if (e.matches) close(false); };
+    var wide = window.matchMedia('(min-width: 1200px)'), onWide = function (e) { if (e.matches) close(false); };
     if (wide.addEventListener) wide.addEventListener('change', onWide); else if (wide.addListener) wide.addListener(onWide);
   }
 
