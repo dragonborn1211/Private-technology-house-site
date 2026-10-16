@@ -1761,6 +1761,9 @@ console.log('\nпервый экран: шапка, заголовок, пане
       if (r.obj > h + 1) bad.push(`${tag}: панель ниже первого экрана (низ ${Math.round(r.obj)})`);
       if (w !== 1920) {
         await run(2500);
+        // пульт укатывается в угол анимацией (TASK-clarity.md, B5): она идёт в реальном времени, а часы проверки виртуальные —
+        // ждём, пока кнопка доедет, иначе курсор наводится туда, где её уже нет
+        for (let k = 0; k < 40 && await page.evaluate(() => document.querySelector('[data-pult]').getAnimations({ subtree: true }).some((a) => a.constructor.name === 'Animation' && a.playState === 'running')); k++) await page.waitForTimeout(50);
         const b = await page.evaluate(() => { const r = document.querySelector('.pult-mini').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; });
         await page.mouse.move(b[0], b[1]); await page.waitForTimeout(120);
         const hv = await page.evaluate(() => {

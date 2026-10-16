@@ -144,7 +144,9 @@
     if (pult.classList.contains('is-mini')) {
       // меряем свёрнутую кнопку 44×44 от левого нижнего угла: если курсор над ней, она развёрнута в плашку, и по
       // плашке выходило бы «легла на контент» — кнопка пряталась сразу после пересборки и не возвращалась
-      var b = pult.getBoundingClientRect(), p = { left: b.left, right: b.left + 44, top: b.bottom - 44, bottom: b.bottom };
+      // место кнопки — без трансформации: при первом сворачивании она катится в угол (engine.js, rollPult), и по
+      // getBoundingClientRect выходило бы «стоит по центру внизу» — кнопка пряталась и не возвращалась до прокрутки
+      var bl = pult.offsetLeft, bb = pult.offsetTop + pult.offsetHeight, p = { left: bl, right: bl + 44, top: bb - 44, bottom: bb };
       // телефон: только пока под кнопкой сам первый экран. Первый экран страницы услуг короче окна, и раньше (правило
       // «первый экран целиком ушёл вверх») ↻ ложилась на заголовок и текст следующей секции
       if (phone && phone.matches && hero && hero.getBoundingClientRect().bottom < p.bottom) off = true;
