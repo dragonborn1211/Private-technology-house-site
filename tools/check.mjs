@@ -131,6 +131,8 @@ const textSnap = () => [...document.querySelectorAll('.sec .ptx')].map((el) => e
 const hiddenVisible = () => [...document.querySelectorAll('.sec.s-done .ptx')].filter((el) => { const r = el.getBoundingClientRect(); return el.offsetParent && r.bottom > 0 && r.top < innerHeight && getComputedStyle(el).opacity !== '1'; }).length;
 const notDoneVisible = () => [...document.querySelectorAll('[data-sec]')].filter((s) => { const r = s.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight && !s.classList.contains('s-done'); }).map((s) => s.getAttribute('data-sec'));
 
+// фильтр карточек анимируется (FLIP, ~0.6 с; под SwiftShader — дольше): ждём, пока доедут его анимации (WAAPI, не CSS-переходы)
+const filterIdle = (page) => page.waitForFunction(() => !document.getAnimations().some((a) => a.constructor.name === 'Animation' && a.playState === 'running'), null, { timeout: 8000 }).catch(() => {});
 // Снимок всей страницы кусками по 2000 px, склейка на холсте в самой странице: длинную страницу (телефон, ~12 000 px)
 // Chromium снимает целиком с повтором — вторая половина снимка повторяет первую.
 async function fullShot(page, file) {
@@ -1073,11 +1075,11 @@ console.log('\nтексты и типографика (TASK-polish.md)');
     const page = await browser.newPage({ viewport: { width: w, height: 900 } });
     await page.goto(BASE + 'cases.html?intro=instant'); await page.waitForTimeout(500);
     for (const f of await page.evaluate(() => [...document.querySelectorAll('[data-filter]')].filter((b) => !b.hidden).map((b) => b.dataset.filter))) {
-      await page.click(`[data-filter="${f}"]`); await page.waitForTimeout(900);
+      await page.click(`[data-filter="${f}"]`); await page.waitForTimeout(250); await filterIdle(page);
       const r = await page.evaluate(() => { const v = [...document.querySelectorAll('.obj-grid .obj')].filter((c) => c.getBoundingClientRect().height > 0); return { n: v.length, ids: v.map((c) => c.id) }; });
       if (r.n % 2 || !r.ids.includes('case-nda') || !r.ids.includes('case-demo')) bad.push(`cases ${w}, фильтр «${f || 'Все'}»: карточек ${r.n} (${r.ids.join(', ')})`);
     }
-    await page.click('[data-filter=""]'); await page.waitForTimeout(900);
+    await page.click('[data-filter=""]'); await page.waitForTimeout(250); await filterIdle(page);
     await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
     const b = await page.evaluate(() => { const a = document.getElementById('case-nda').getBoundingClientRect(), d = document.getElementById('case-demo').getBoundingClientRect(); return { y: Math.min(a.top, d.top) + scrollY - 16, h: Math.max(a.bottom, d.bottom) - Math.min(a.top, d.top) + 32 }; });
     await page.screenshot({ path: path.join(shots, `cases-last-${w}.png`), fullPage: true, clip: { x: 0, y: Math.round(b.y), width: w, height: Math.round(b.h) } });
