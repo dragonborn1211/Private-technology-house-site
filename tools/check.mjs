@@ -1362,6 +1362,51 @@ console.log('\nясность, B4 / B5 / B8: свет курсора, пульт
   if (bad.length) fail('ясность B4 / B5 / B8: ' + bad.join('; '));
   else console.log(`  ✓ курсор — свет (R 110, толчок 0.35, закручивание, на телефоне нет); пульт сжимается и укатывается в угол (от ${r.x0} px до 18, с поворотом); у подвала шести страниц — мягкий выдох, у остальных секций финал тихий`);
 }
+// Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
+// «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.
+console.log('\nясность, B7 / B9: цвет на «Что делаем», демо-сайты');
+{
+  const bad = [];
+  const sc = readFileSync(path.join(root, 'assets', 'scenes.js'), 'utf8');
+  const tpl = [...sc.slice(sc.indexOf('var TPL = ['), sc.indexOf('TPL.forEach')).matchAll(/\{ name: '([^']+)', bg: '(#[0-9A-Fa-f]{6})'/g)].map((m) => {
+    const n = parseInt(m[2].slice(1), 16), lum = 0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255);
+    return { name: m[1], dark: lum < 128 };
+  });
+  if (tpl.length !== 5 || tpl[0].name !== 'Северный юрист' || tpl.some((t, i) => t.dark !== (i % 2 === 0)) || !tpl.some((t) => t.name === 'Посёлок «Сосны»')) bad.push(`демо-сайты: ${tpl.map((t) => t.name + (t.dark ? ' (тёмный)' : ' (светлый)')).join(', ')}`);
+  for (const f of ['index.html', 'cases.html']) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
+    await page.goto(BASE + f + '?intro=instant'); await page.clock.runFor(1500);
+    const nm = await page.evaluate(() => document.querySelector('[data-mini-label]').textContent.split(' · ')[0]);
+    if (nm !== 'Северный юрист') bad.push(`${f}: первым собирается «${nm}»`);
+    await page.close();
+  }
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(400);
+    const r = await page.evaluate(() => {
+      const rgb = (hex) => `rgb(${parseInt(hex.slice(1, 3), 16)}, ${parseInt(hex.slice(3, 5), 16)}, ${parseInt(hex.slice(5, 7), 16)})`;
+      const c = (el) => getComputedStyle(el).getPropertyValue('--c').trim();
+      const mods = [...document.querySelectorAll('.sv-mod')].filter((m) => getComputedStyle(m.querySelector('.sv-meta dd')).color !== rgb(c(m)) || getComputedStyle(m.querySelector('.sv-info a.sv-go')).color !== rgb(c(m))).map((m) => m.id);
+      const lc = [...document.querySelectorAll('.sv-head .lead .lc')].map((b) => b.textContent + ':' + getComputedStyle(b).color);
+      const pf = [...document.querySelectorAll('#after .sv-pf, #sub-how .sv-pf')].map((p) => getComputedStyle(p).color === rgb(c(p.closest('.sv-path'))) ? 1 : 0).join('');
+      return { mods, lc, pf };
+    });
+    if (r.mods.length) bad.push(`услуги: условия и ссылка не цветом направления в ${r.mods.join(', ')}`);
+    if (r.lc.join(' | ') !== 'Проект:rgb(142, 216, 248) | Подписка:rgb(159, 229, 209)') bad.push(`услуги, лид: ${r.lc.join(' | ')}`);
+    if (r.pf !== '111111') bad.push(`услуги: подписи карточек «Когда сайт готов» / «Как устроена подписка» не цветом карточки (${r.pf})`);
+    await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
+    // снимки по прямоугольнику (locator.screenshot под SwiftShader не дожидается «стабильного» элемента)
+    for (const [sel, name] of [['.sv-head', 'services-color-top-1440.png'], ['#sites', 'services-color-sites-1440.png']]) {
+      const b = await page.evaluate((q) => { const e = document.querySelector(q); e.scrollIntoView({ block: 'center' }); const r = e.getBoundingClientRect(); return { x: r.left, y: r.top + scrollY, width: r.width, height: r.height }; }, sel);
+      await page.waitForTimeout(300);
+      await page.screenshot({ path: path.join(shots, name), fullPage: true, clip: b });
+    }
+    await page.close();
+  }
+  if (bad.length) fail('ясность B7 / B9: ' + bad.join('; '));
+  else console.log('  ✓ условия, главная ссылка модуля и подписи карточек — цветом направления, «Проект» / «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», тёмный и светлый чередуются');
+}
 srv.kill();
 
 // Чистка страницы услуг: чипы-дубли, ряд переходов, карточка форматов со ссылками, сроки и повторы в текстах; снимки.

@@ -675,3 +675,18 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .pt-arrive :is(.sv-t,.obj-h,.sv-ph,.h2),.pt-arrive-x{animation:pt-arrive-t 1.1s ease}
 .gh-w.pt-arrive-x{animation:pt-arrive-g 1.1s ease}
 @media (prefers-reduced-motion:reduce){.pt-arrive,.pt-arrive *,.pt-arrive-x{animation:none!important}}
+/* больше цвета на «Что делаем» (TASK-clarity.md, B7): цвет направления — на условиях, действиях и заголовках групп; описания,
+   строки услуг и вопросы не красим, иначе цвет перестанет что-то значить. Модуль: свечение своего цвета из левого
+   верхнего угла и тонкая цветная кромка сверху */
+.sv-mod::before{background-image:radial-gradient(60% 80% at 0% 0%,color-mix(in srgb,var(--c) 20%,transparent),transparent 72%),radial-gradient(40% 60% at 100% 100%,color-mix(in srgb,var(--c) 7%,transparent),transparent 70%)}
+.sv-mod{box-shadow:inset 0 1px 0 color-mix(in srgb,var(--c) 45%,transparent),0 30px 60px -30px rgba(0,0,0,.55)}
+.sv-meta dd{color:var(--c)}
+.sv-meta dt{color:#8FAEC0}
+.pt .sv-info a.sv-go{color:var(--c)}
+.sv-chips li{border-color:color-mix(in srgb,var(--c) 42%,transparent);background-color:color-mix(in srgb,var(--c) 7%,transparent);color:#DCE7EE}
+.sv-rows li::before{width:10px;height:2px;top:29px}
+@media (max-width:760px){.sv-rows li::before{top:25px}}
+.sv-sn{text-shadow:0 0 18px color-mix(in srgb,var(--c) 45%,transparent)}
+.sv-pf{color:var(--c,#8FAEC0)}
+/* лид первого экрана услуг: «Проект» и «Подписка» — цветами «Разово» и «Ежемесячно» (они же в заголовках групп) */
+.lead .lc{font-weight:500;color:var(--c)}

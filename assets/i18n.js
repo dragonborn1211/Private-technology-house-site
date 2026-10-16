@@ -415,7 +415,6 @@
     'Точную смету называем после разбора задачи. Здесь ориентиры.': 'We give an exact estimate once we have looked into the task. These are guidelines.',
     // услуги
     'Сайты-презентации, приложения для Android, iOS и Telegram, серверы, сопровождение, автоматизация и AI-ассистенты. Проект делаем разово, поддержку ведём по подписке.': 'Presentation websites, Android, iOS and Telegram apps, servers, website care, automation and AI assistants. Projects are one-off, support is by subscription.',
-    'Шесть направлений в двух форматах. Проект делаем разово и сдаём целиком, код ваш. Подписка ежемесячная: всё работает на наших серверах, мы за это отвечаем.': 'Six areas in two formats. A project is one-off and handed over in full, and the code is yours. A subscription is monthly: everything runs on our servers, and we are accountable for it.',
     'Компания, продукт и команда в одной сильной подаче.': 'The company, product and team in one strong presentation.',
     'Переделываем существующий сайт под новый уровень компании.': 'We rework an existing site to match where the company is now.',
     'Английская версия с переключением на лету, как на этом сайте.': 'An English version with on-the-fly switching, like on this site.',
@@ -603,7 +602,20 @@
     'AI · Авито': 'AI · Avito',
     'Маркетплейсы · таблица': 'Marketplaces · spreadsheet',
     'Опишите рутину, которую делаете руками. Соберём сценарий под ваш процесс и будем за ним следить.': 'Describe the routine you do by hand. We will build a workflow for your process and keep an eye on it.',
-    'Описать процесс →': 'Describe your process →'
+    'Описать процесс →': 'Describe your process →',
+    // TASK-clarity.md, B7: лид услуг разбит на узлы — «Проект» и «Подписка» цветами форматов
+    'Шесть направлений в двух форматах.': 'Six areas in two formats.',
+    'Проект': 'A project',
+    'делаем разово и сдаём целиком, код ваш.': 'is one-off and handed over in full, and the code is yours.',
+    'Подписка': 'A subscription',
+    'ежемесячная: всё работает на наших серверах, мы за это отвечаем.': 'is monthly: everything runs on our servers, and we are accountable for it.',
+    // B9: демо-сайт «Посёлок «Сосны»» (мини-сцена)
+    'Посёлок «Сосны»': 'Pines Village',
+    'Жить': 'Live',
+    'среди сосен.': 'in the pines.',
+    'СОСНЫ': 'PINES',
+    'Участки': 'Plots',
+    'Выбрать участок': 'Choose a plot'
   };
   var ATTRS = ['aria-label', 'title', 'alt'];
 
