@@ -1179,6 +1179,53 @@ console.log('\nструктура: услуги, «Как работаем», с
   if (bad.length) fail('структура: ' + bad.join('; '));
   else console.log(`  ✓ data-pt-burst нет нигде; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — шесть направлений по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки Manrope 15/500; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — пять адресов`);
 }
+// Ясность (TASK-clarity.md), часть A: на услугах «Разово» / «Ежемесячно» — крупные заголовки групп; в «Варианте 03» нет
+// пересказа сопровождения; «Как устроена подписка» — по три строки «Сайт / Сценарий / Агент» с <b>; блок порядка на
+// услугах — «Порядок работы»; «Нужно от вас» в каталоге 14 px, на process.html 15; шапка направления на телефоне —
+// рисунок под названием у всех; сводка «Разово / Ежемесячно» на 390 и 414 — направления в одну строку.
+console.log('\nясность, часть A: заголовки групп услуг, подписка, «Порядок работы», мелочи');
+{
+  const bad = [];
+  {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(BASE + 'services.html?intro=instant'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
+    const r = await page.evaluate(() => ({
+      gh: ['projects', 'subscription'].map((i) => { const w = document.querySelector(`#${i} .gh-w`); return w ? w.textContent.trim() + ':' + Math.round(parseFloat(getComputedStyle(w).fontSize)) : i + ':нет'; }),
+      oldRow: [...document.querySelectorAll('h2.mono')].map((h) => h.textContent.trim()),
+      after: document.getElementById('after').textContent.replace(/\s+/g, ' '),
+      subs: [...document.querySelectorAll('#sub-how .sv-path')].map((p) => [...p.querySelectorAll('.list li')].map((li) => (li.querySelector('b') || {}).textContent || '-').join('/')),
+      proc: document.querySelector('#process h2').textContent.trim() }));
+    if (r.gh.join(',') !== 'Разово:72,Ежемесячно:72') bad.push(`услуги: заголовки групп ${r.gh.join(', ')}`);
+    if (r.oldRow.length) bad.push(`услуги: остались мелкие заголовки групп ${r.oldRow.join(', ')}`);
+    if (/Хостинг в\s+России и\s+SSL|Техническая часть 152/.test(r.after)) bad.push('услуги: «Вариант 03» пересказывает сопровождение');
+    if (r.subs.join(' | ') !== 'Сайт/Сценарий/Агент | Сайт/Сценарий/Агент | Сайт/Сценарий/Данные') bad.push(`услуги: «Как устроена подписка» ${r.subs.join(' | ')}`);
+    if (r.proc !== 'Порядок работы') bad.push(`услуги: блок порядка — «${r.proc}»`);
+    await page.close();
+  }
+  // «Нужно от вас»: каталог 14 px, «Как работаем» 15 px
+  for (const [f, sel, px] of [['automations.html', '#site-leads .tp-need', '14px'], ['process.html', '.pr-foot .tp-need', '15px']]) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await page.goto(BASE + f + '?intro=instant'); await page.waitForTimeout(200);
+    const fs = await page.evaluate((s) => getComputedStyle(document.querySelector(s)).fontSize, sel);
+    if (fs !== px) bad.push(`${f}: «Нужно от вас» ${fs} (нужно ${px})`);
+    await page.close();
+  }
+  // телефон: шапки направлений на process.html — рисунок под названием; сводка форматов — строка направлений одна
+  for (const w of [390, 414]) {
+    const page = await browser.newPage({ viewport: { width: w, height: 844 } });
+    for (const f of ['services.html', 'process.html']) {
+      await page.goto(BASE + f + '?intro=instant'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(200);
+      const r = await page.evaluate(() => ({
+        rows: [...document.querySelectorAll('.sv-fl')].map((n) => new Set([...n.querySelectorAll('a')].map((a) => Math.round(a.getBoundingClientRect().top))).size),
+        heads: [...document.querySelectorAll('.pr-head')].map((h) => { const t = h.querySelector('.sv-t').getBoundingClientRect(), g = h.querySelector('.sv-lab').getBoundingClientRect(); return g.top >= t.bottom - 1 ? 1 : 0; }) }));
+      if (r.rows.some((n) => n !== 1)) bad.push(`${f} ${w}: строки направлений в сводке ${r.rows.join(',')}`);
+      if (r.heads.some((x) => !x)) bad.push(`${f} ${w}: рисунок не под названием в шапках ${r.heads.join('')}`);
+    }
+    await page.close();
+  }
+  if (bad.length) fail('ясность A: ' + bad.join('; '));
+  else console.log('  ✓ «Разово» / «Ежемесячно» — крупные заголовки групп, «Вариант 03» без пересказа, подписка — «Сайт / Сценарий / Агент», «Порядок работы», «Нужно от вас» 14 / 15 px, на 390 и 414 сводка в одну строку и рисунок под названием');
+}
 srv.kill();
 
 // Чистка страницы услуг: чипы-дубли, ряд переходов, карточка форматов со ссылками, сроки и повторы в текстах; снимки.

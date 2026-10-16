@@ -593,7 +593,7 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .sv-links{display:flex;flex-wrap:wrap;gap:4px 32px;margin:22px 0 0}
 .sv-links .sv-go{margin:0}
 /* каталог шаблонов: что нужно от клиента, «Подключить» и ссылка на кейс */
-.tp-need{font:400 13px/1.55 Manrope,system-ui,sans-serif;color:#9DB0BC}
+.tp-need{font:400 14px/1.55 Manrope,system-ui,sans-serif;color:#9DB0BC}
 .tp-need b{font-weight:500;color:#BCD3DE}
 .tp-act{display:flex;flex-wrap:wrap;gap:0 24px;margin:-2px 0 -10px}
 .pt a.tp-go{display:inline-flex;align-items:center;min-height:44px;font-size:15px;font-weight:600;color:#BCD3DE;transition:color .3s ease}
@@ -606,6 +606,15 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .sv-subh{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;margin:0 0 22px}
 .sv-subh .sv-t{margin:0}
 .sv-pd a{color:inherit;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(142,216,248,.5)}
+/* страница услуг: заголовки групп «Разово» / «Ежемесячно» — крупно, тем же приёмом, что в сводке первого экрана
+   (TASK-clarity.md, A1); подпись группы мелко рядом */
+.gh{margin:0;display:flex;align-items:baseline;gap:6px 18px;flex-wrap:wrap}
+.gh-w{font:italic 500 clamp(44px,5vw,72px)/1 'Cormorant Garamond',Georgia,serif;letter-spacing:-.01em;color:var(--c);text-shadow:0 0 30px color-mix(in srgb,var(--c) 30%,transparent)}
+.gh-m{font:500 12px/1.4 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8FAEC0}
+.row-h.gx{padding-top:28px;margin-bottom:28px;align-items:flex-end}
+.row-h.gx .row-t{font-size:16px}
+/* «Как устроена подписка»: строки «Сайт / Сценарий / Агент» вровень во всех трёх карточках */
+.sv-path .list b{font-weight:500;color:#EEF3F6;margin-right:3px}
 /* 404 */
 .nf{flex:1;display:flex;flex-direction:column;justify-content:center;gap:24px;padding:24px 0 clamp(48px,10vh,120px)}
 .nf-act{gap:12px}
@@ -636,3 +645,7 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .pr-foot .tp-need{max-width:620px;font-size:15px;margin:0}
 .pr-foot .sv-links{margin:0}
 @media (max-width:760px){.pr-foot{flex-direction:column;align-items:flex-start}.pr-head .sv-lab .glyph-mini{width:72px}}
+/* на телефоне шапка направления одна у всех: рисунок под названием (TASK-clarity.md, A4) */
+@media (max-width:760px){.pr-head{flex-direction:column;align-items:flex-start;gap:12px}}
+/* сводка «Разово / Ежемесячно» на телефоне: «AI» не уходит на строку один (390 и 414 — одна строка) */
+@media (max-width:760px){.sv-fl{gap:0 12px}.pt .sv-fl a{gap:6px}}
