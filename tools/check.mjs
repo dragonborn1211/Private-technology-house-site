@@ -1580,7 +1580,7 @@ console.log('\nревью, 4: тексты');
   if (!/<span class="cx-w">Защита<\/span><\/span><span class="usp-n" hidden>Защита данных<\/span>/.test(src['index.html'])) bad.push('вкладка 04 «Кодекса»');
   for (const [k, v] of [['Защита данных', 'Data protection'], ['Защита', 'Security'], ['Шесть направлений в двух форматах.', 'Six services, two formats.'], ['Ваш сайт — следующий', 'Your site could be next'], [D, 'Websites, apps, Bitrix24 and Telegram integrations, automation and AI assistants. Estimate before we start, the code is yours.']])
     if (!I.includes(`'${k}': '${v.replace(/'/g, "\\'")}'`)) bad.push(`EN: ${k} → ${v}`);
-  if (/accountable|responsible for it/.test(I) || (I.match(/and it\\'s on us\./g) || []).length !== 3) bad.push('EN: «…and it\'s on us.» не в трёх местах');
+  if (/accountable|responsible for it/.test(I) || (I.match(/and it\\'s on us\./g) || []).length !== 2) bad.push('EN: «…and it\'s on us.» не в двух местах (третья строка ушла с группами главной)');
   if (bad.length) fail('ревью, 4: ' + bad.join('; '));
   else console.log('  ✓ «AI» вместо «ИИ», описания главной и каталога, лид каталога, «Формат: разово» у приложений, без «Стоимости», теги автоматизации — с чем соединяем, демо-карточка, «Защита данных», английский');
 }
@@ -1644,7 +1644,9 @@ console.log('\nкто делает: карточка в контакте, «О �
     if (f === '404.html') { if (/id="about"/.test(h)) bad.push('404.html: карточка «Кто делает»'); continue; }
     const who = (/<aside class="blk glass fr who" data-blk id="about"[\s\S]*?<\/aside>/.exec(c) || [''])[0];
     if (!who || !/<div class="ct-grid">/.test(c)) { bad.push(`${f}: нет карточки #about в #contact`); continue; }
-    if ((who.match(/<li>/g) || []).length !== 3 || !/<p class="who-n" id="who-n">Даниил Давыдовский<\/p>/.test(who) || !/class="who-ph mono"[^>]*><b>Д<\/b>/.test(who) || /\[|ЗАПОЛНИТЬ|Каждый проект/.test(who)) bad.push(`${f}: карточка «Кто делает» — ${who.slice(0, 80)}`);
+    if ((who.match(/<li>/g) || []).length !== 3 || !/<p class="who-n" id="who-n">Даниил Давыдовский<\/p>/.test(who) || !/class="who-ph mono"[^>]*><b>Д<\/b>/.test(who) || /\[|ЗАПОЛНИТЬ|Каждый проект/.test(who)) bad.push(`${f}: карточка основателя — ${who.slice(0, 80)}`);
+    // TASK-founder.md: не «работаю один» — основатель студии, голос «мы»
+    if (!/<p class="who-k mono">Основатель студии<\/p>/.test(who) || /веду сам|держу сам|Без(&nbsp;| )менеджеров|Мой налог|Кто делает/.test(h)) bad.push(`${f}: карточка говорит «работаю один»`);
   }
   const quick = await chromium.launch();
   for (const [w, h, q] of [[1440, 900, ''], [390, 844, ''], [1440, 900, '&lang=en']]) {
@@ -1656,17 +1658,18 @@ console.log('\nкто делает: карточка в контакте, «О �
     });
     if (w === 1440 && (!r.right || r.w > 421)) bad.push(`1440${q}: карточка не справа (${JSON.stringify(r)})`);
     if (w === 390 && !r.below) bad.push(`390: карточка не под кнопкой (${JSON.stringify(r)})`);
-    if (q && (r.n !== 'Daniil Davydovsky' || r.k !== 'Who builds it' || r.mono !== 'D')) bad.push(`EN: ${JSON.stringify(r)}`);
+    if (q && (r.n !== 'Daniil Davydovsky' || r.k !== 'Founder' || r.mono !== 'D')) bad.push(`EN: ${JSON.stringify(r)}`);
     await page.close();
   }
   await quick.close();
   if (bad.length) fail('кто делает: ' + bad.join('; '));
   else console.log('  ✓ карточка #about в контакте пяти страниц (справа на 1440, под кнопкой на 390, по-английски в EN), «О студии» последним пунктом подвала');
 }
-// Реквизиты и политика (TASK-about-analytics.md, раздел 2): в подвале всех страниц (и политики) под .foot-tag — строка
-// «Самозанятый <ФИО> · ИНН <ИНН> · Политика конфиденциальности · Настройки cookie» (кнопка [data-ck-open] скрыта без JS);
-// заглушек [ЗАПОЛНИТЬ] / [ФИО] / [ИНН] нет нигде; privacy.html отдаёт 200, без engine.js, scenes.js, i18n.js, data-sec и
-// переключателя языка, заголовок «Политика конфиденциальности», колонка до 720 px, текст 16 px; в sitemap — без EN.
+// Реквизиты и политика (TASK-about-analytics.md, раздел 2; TASK-founder.md): в подвале всех страниц (и политики) под .foot-tag —
+// одна ссылка «Политика конфиденциальности», без ФИО, ИНН и кнопки [data-ck-open]; «ИНН», «самозанят…», полное ФИО — только в
+// политике (оператора ПД закон требует назвать), она — от лица «Оператора», без «я» / «мне»; в ней кнопка «Настройки cookie»
+// (скрыта без JS, вместо неё фраза в <noscript>); заглушек [ЗАПОЛНИТЬ] / [ФИО] / [ИНН] нет нигде; privacy.html отдаёт 200, без
+// engine.js, scenes.js, i18n.js, data-sec и переключателя языка, «Политика конфиденциальности», колонка до 720 px, текст 16 px.
 console.log('\nреквизиты и политика конфиденциальности');
 {
   const bad = [];
@@ -1675,8 +1678,12 @@ console.log('\nреквизиты и политика конфиденциаль
   for (const [f, h] of Object.entries(all)) {
     if (/\[(ЗАПОЛНИТЬ|ФИО|ИНН|Имя)/.test(h)) bad.push(`${f}: заглушка данных владельца`);
     const pre = f === '404.html' ? '/' : '';
-    if (!h.includes(`<p class="foot-req">Самозанятый Давыдовский Даниил Дмитриевич · ИНН&nbsp;027816319319 · <a href="${pre}privacy.html">Политика конфиденциальности</a><span class="foot-ckw" hidden> · <button type="button" class="foot-ck" data-ck-open>Настройки cookie</button></span></p>`)) bad.push(`${f}: строка реквизитов в подвале`);
+    if (!h.includes(`<p class="foot-req"><a href="${pre}privacy.html">Политика конфиденциальности</a></p>`)) bad.push(`${f}: ссылка на политику в подвале`);
+    const ft = (/<footer[\s\S]*?<\/footer>/.exec(h) || [''])[0];
+    if (/data-ck-open/.test(ft)) bad.push(`${f}: «Настройки cookie» в подвале`);
+    if (f !== 'privacy.html' && /ИНН|[Сс]амозанят|Давыдовский Даниил Дмитриевич/.test(h)) bad.push(`${f}: ФИО / ИНН / «самозанятый» вне политики`);
   }
+  if (!/Оператор&nbsp;— Давыдовский Даниил Дмитриевич, ИНН 027816319319 \(далее&nbsp;— «Оператор»\)/.test(pv) || /[Сс]амозанят|«я»| мне |[Яя]&nbsp;|\bя\b/.test(pv.replace(/<!--[\s\S]*?-->/g, '')) || !/<span class="pv-ck" hidden>[^<]*<button type="button" class="pv-ckb" data-ck-open>Настройки cookie<\/button>[^<]*<\/span><noscript>[^<]*очистите cookie сайта в(&nbsp;| )настройках браузера/.test(pv)) bad.push('privacy.html: оператор, «я» / «самозанятый» или «Настройки cookie»');
   if (/engine\.js|scenes\.js|i18n\.js|data-sec=|data-lang=|data-pt-canvas/.test(pv.replace(/<!--[\s\S]*?-->/g, '')) || !/<h1>Политика конфиденциальности<\/h1>/.test(pv) || /name="robots"/.test(pv)) bad.push('privacy.html: движок, словарь, переключатель языка, noindex или нет заголовка');
   const r = await fetch(BASE + 'privacy.html'); if (r.status !== 200) bad.push(`privacy.html: ${r.status}`);
   const quick = await chromium.launch();
@@ -1691,7 +1698,7 @@ console.log('\nреквизиты и политика конфиденциаль
   }
   await quick.close();
   if (bad.length) fail('реквизиты и политика: ' + bad.join('; '));
-  else console.log('  ✓ строка реквизитов в подвале всех страниц (ФИО, ИНН, политика, «Настройки cookie»), заглушек нет; privacy.html — 200, без движка и EN, колонка 720 px, текст 16 / 1.7, h2 22 px');
+  else console.log('  ✓ в подвале — только ссылка на политику; ФИО и ИНН — только в политике, от лица «Оператора», «Настройки cookie» в ней; privacy.html — 200, без движка и EN, колонка 720 px, текст 16 / 1.7, h2 22 px');
 }
 // Cookie и Метрика (TASK-about-analytics.md, раздел 3–4): consent.js последним на всех страницах; первый заход — до клика нет
 // запросов к mc.yandex.ru и cookie _ym*, плашка появляется после сборки первого экрана (не раньше); «Отклонить» — после
@@ -1738,8 +1745,9 @@ console.log('\ncookie и Метрика');
     if (shown) await page.click('.ck .n');
     await page.reload(); await page.waitForTimeout(5500);
     if (await page.$('.ck') || mc.length) bad.push(`после «Отклонить»: плашка ${!!(await page.$('.ck'))}, запросов ${mc.length}`);
-    // «Настройки cookie» открывает плашку снова
-    const reopen = await page.evaluate(() => { const b = document.querySelector('[data-ck-open]'); if (!b || b.closest('[hidden]')) return 'скрыта'; b.click(); return document.querySelector('.ck') ? 'ok' : 'нет'; });
+    // «Настройки cookie» — в политике (TASK-founder.md): после скрипта видна, клик открывает плашку снова
+    await page.goto(BASE + 'privacy.html'); await page.waitForTimeout(600);
+    const reopen = await page.evaluate(() => { const b = document.querySelector('[data-ck-open]'); if (document.querySelector('.ck')) return 'плашка уже открыта'; if (!b || b.closest('[hidden]') || !b.offsetParent) return 'скрыта'; b.click(); return document.querySelector('.ck') ? 'ok' : 'нет'; });
     if (reopen !== 'ok') bad.push(`«Настройки cookie»: ${reopen}`);
     await ctx.close();
   }

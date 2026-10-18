@@ -2,7 +2,7 @@
 // посетителе, поэтому загружается только после «Принять»; «Отклонить» рядом и того же веса. Выбор — localStorage['pt-consent']
 // ('yes' / 'no'); хранилище недоступно — плашка на каждой странице, Метрики без «Принять» нет. Плашка — после сборки первого
 // экрана (pt:secdone первого экрана или 4 с, что раньше), не поверх вступления; reduced motion и страница без движка
-// (privacy.html) — сразу. «Настройки cookie» в подвале ([data-ck-open], без JS скрыта) открывают её снова. Метрика грузится тоже
+// (privacy.html) — сразу. «Настройки cookie» в политике ([data-ck-open], без JS скрыта) открывают её снова. Метрика грузится тоже
 // после первого экрана и в простое браузера: вебвизор не пишет самую тяжёлую часть анимации, кадры вступления не отнимаются.
 // Цели — только при загруженной Метрике: tg (ссылка в Telegram), filter (кнопка фильтра), replay (↻), lang_en (переход на EN).
 // Подключается последним на всех страницах.
@@ -14,8 +14,8 @@
   function get() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
   function put(v) { try { localStorage.setItem(KEY, v); } catch (e) { /* хранилище запрещено — спросим на следующей странице */ } }
 
-  // «Настройки cookie» в подвале — без скрипта не нужна
-  Array.prototype.forEach.call(document.querySelectorAll('.foot-ckw'), function (el) { el.hidden = false; });
+  // «Настройки cookie» (в политике, раздел 6) — без скрипта не нужна, там вместо неё фраза в <noscript>
+  Array.prototype.forEach.call(document.querySelectorAll('.foot-ckw, .pv-ck'), function (el) { el.hidden = false; });
 
   // первый экран собран
   function whenReady(fn) { if (ready) fn(); else wait.push(fn); }
