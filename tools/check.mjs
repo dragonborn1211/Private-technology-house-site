@@ -1443,6 +1443,47 @@ console.log('\nфоновая пыль и взрыв подвала');
   if (bad.length) fail('пыль и взрыв: ' + bad.join('; '));
   else console.log('  ✓ ' + info.join('; '));
 }
+// Ревью (TASK-review.md), раздел 1 — первые секунды: до вспышки пульт невидим (visibility: hidden), со вспышкой — виден;
+// подпись — «Собрать заново»; объект первого экрана запускается на стадии рамок (.obj-go у секции до s-done, холсты видны);
+// заливка главной кнопки первого экрана проявляется вместе с её текстом (90 % — не дальше 150 мс друг от друга).
+console.log('\nревью, 1: первые секунды');
+{
+  const bad = [];
+  for (const f of PAGES) {
+    const h = src[f];
+    if (/Пересобрать блок/.test(h) || !/class="pult-btn" data-pt-replay>Собрать заново</.test(h) || !/aria-label="Собрать этот блок заново"/.test(h)) bad.push(`${f}: подпись пульта не «Собрать заново»`);
+  }
+  const quick = await chromium.launch();
+  const page = await quick.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.addInitScript(() => {
+    window.__r = []; let t0 = 0;
+    const f = () => {
+      const p = document.querySelector('[data-pult]'), r = document.getElementById('pt-site'), hs = document.querySelector('[data-sec="hero"]'), b = hs && hs.querySelector('.hero-act a.btn-p'), sp = b && b.querySelector('span'), gl = hs && hs.querySelector('canvas[data-gl]');
+      if (p && r) {
+        const bg = b ? getComputedStyle(b).backgroundColor : '', a = /rgba\([^)]*?,\s*([\d.]+)\)$/.exec(bg);
+        if (!t0 && r.classList.contains('pt-on')) t0 = performance.now();
+        window.__r.push({ t: t0 ? Math.round(performance.now() - t0) : -1, on: r.classList.contains('pt-on'), vis: getComputedStyle(p).visibility, cls: hs.className, fill: a ? +a[1] : (bg.startsWith('rgb(') ? 1 : 0), txt: sp ? +getComputedStyle(sp).opacity : 0, gl: gl ? +getComputedStyle(gl).opacity : 0 });
+      }
+      if (window.__r.length < 600) requestAnimationFrame(f);
+    };
+    requestAnimationFrame(f);
+  });
+  await page.goto(BASE + 'index.html');
+  await page.waitForFunction(() => document.querySelector('[data-sec="hero"]').classList.contains('s-done'), null, { timeout: 15000 });
+  await page.waitForTimeout(800);
+  const r = await page.evaluate(() => window.__r);
+  const before = r.filter((x) => !x.on), after = r.filter((x) => x.on);
+  if (before.some((x) => x.vis !== 'hidden')) bad.push('пульт виден до вспышки');
+  if (!after.length || after[after.length - 1].vis !== 'visible') bad.push('после вспышки пульт не виден');
+  const go = r.find((x) => /obj-go/.test(x.cls) && !/s-done/.test(x.cls) && x.gl > 0.05);
+  if (!go) bad.push('объект первого экрана не виден до s-done (запускается после текста)');
+  const t90 = (k) => { const x = after.find((y) => y[k] >= 0.9); return x ? x.t : -1; };
+  const tf = t90('fill'), tt = t90('txt');
+  if (tf < 0 || tt < 0 || Math.abs(tf - tt) > 150) bad.push(`заливка главной кнопки ${tf} мс, её текст ${tt} мс`);
+  await quick.close();
+  if (bad.length) fail('ревью, 1: ' + bad.join('; '));
+  else console.log(`  ✓ пульт скрыт до вспышки, подпись «Собрать заново»; объект виден с ${go.t} мс (стадия рамок, до s-done); заливка кнопки ${tf} мс, её текст ${tt} мс`);
+}
 // Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
 // «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.
 console.log('\nясность, B7 / B9: цвет на «Что делаем», демо-сайты');

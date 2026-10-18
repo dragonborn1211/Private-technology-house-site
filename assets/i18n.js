@@ -109,7 +109,8 @@
     'Почта': 'Email',
     'Наверх ↑': 'Back to top ↑',
     '© 2026 · Холодная точность. Приватность в основе.': '© 2026 · Cold precision. Private by design.',
-    'Пересобрать блок': 'Rebuild block',
+    'Собрать заново': 'Rebuild',
+    'Собрать этот блок заново': 'Rebuild this block',
 
     // сцены (scenes.js): демо-сайты «ваш проект»
     'Кофейня «Зерно»': 'Grain Coffee',

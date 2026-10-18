@@ -53,6 +53,11 @@
       // Объект первого экрана — пять принципов студии (assets/hero-objects.js, свой WebGL-холст в секции).
       // Движок только запускает его в конце сборки первого экрана; без модуля сайт работает как раньше.
       var heroObj = null;
+      // objStart — запустить объект один раз: повторный start() начинает полёт заново. На вступлении его запускает стадия рамок
+      // (TASK-review.md 1.3: к моменту, когда читается H1, ферзь уже узнаваем; раньше панель «Кодекс студии» стояла пустой, пока
+      // собирался текст), пропуск сборки и skipHero — если ещё не запущен. heroRp — идёт «Пересобрать блок» первого экрана.
+      var objOn = false, heroRp = false;
+      function objStart(instant) { if (!heroObj || objOn) return; objOn = true; heroObj.start(instant); }
       // Темп сборки: HERO_K — множитель таймингов первого экрана (1 — исходные 5.8 с; 0.5 — буквы на 1.85 с, текст на
       // 2.6 с: по ТЗ шапки первый экран должен читаться к ~2 с), SEC_K — остальных секций (1 — исходные 3.1 с), одинаковый
       // для всех секций, страниц и режимов. Был 0.9; владелец попросил секции на обеих страницах как быстрая сборка при
@@ -190,7 +195,8 @@
       var rootDoc = 0;
       function rootRect() { var r = root.getBoundingClientRect(); rootLeft = r.left; rootTop = r.top; rootDoc = r.top + (window.scrollY || 0); return r; }
       function rootFast() { rootTop = rootDoc - (window.scrollY || 0); }
-      function setStage(s, st) { var c = s.el.classList; c.remove('s-wire', 's-skel', 's-text', 's-done'); if (st) c.add('s-' + st); }
+      // .obj-go — объект первого экрана запущен до s-done (холсты видны раньше, site.css); снимается с готовой или погашенной секцией
+      function setStage(s, st) { var c = s.el.classList; c.remove('s-wire', 's-skel', 's-text', 's-done'); if (st) c.add('s-' + st); if (st !== 'skel' && st !== 'text') c.remove('obj-go'); }
       function markText() {
         secs.forEach(function (s) {
           var tw = document.createTreeWalker(s.el, NodeFilter.SHOW_TEXT, null), n;
@@ -507,6 +513,7 @@
       // Если вспышки первого экрана не было (например, после перезагрузки в середине страницы первый экран пропущен),
       // частицы невидимо раскладываются по текущему экрану. Иначе сборка тянула бы их из угла за экраном.
       function seed() {
+        root.classList.add('pt-booted');
         if (booted) return;
         booted = true; rootRect();
         for (var i = 0; i < N; i++) {
@@ -552,10 +559,12 @@
       // Первый экран помечен собранным без сборки: включаем сетку, объект первого экрана сразу стоит на месте.
       function skipHero() {
         seed(); root.classList.add('g-on');
-        if (heroObj) heroObj.start(true);
+        objStart(true);
         pultSkip();
       }
+      // pt-booted — пульт можно показывать (TASK-review.md 1.1: до вспышки посетитель видел чёрный экран и кнопку пульта)
       function burst() {
+        root.classList.add('pt-booted');
         booted = true;
         var hr = hero.el.getBoundingClientRect(), cx = W / 2, cy = hr.top - rootTop + Math.min(VH, hr.height) * 0.46;
         // BURST_FULL: круглая вспышка растёт и к стадии сетки (0.6 · HERO_K с) накрывает весь экран — круг радиусом в
@@ -870,7 +879,7 @@
         if (pend) { pend(); phFade(BLD); log(s, '✓ ready'); setProg(); if (!queue.length) phSettle(BLD); pump(); return; }
         setStage(s, 'done'); s.state = 'done'; s.replay = false;
         phFade(BLD);
-        if (s === hero) { linesOff(); root.classList.add('g-on'); if (heroObj) heroObj.start(false); if (!pultShown && !replaying) pultLater(); }
+        if (s === hero) { linesOff(); root.classList.add('g-on'); if (heroRp) { if (heroObj) heroObj.replay(); } else objStart(false); if (!pultShown && !replaying) pultLater(); }
         log(s, '✓ ready'); setProg(); wakeSites(s.el);
         finish(s);
       }
@@ -894,7 +903,7 @@
         lineDelays('*', 'x', FAST_LD); root.classList.add('pt-sweep');
         heroSweep = { axis: 'x', spread: FAST_LD }; line(beamEl, FAST_LD);
         setStage(s, 'done'); phText(s, BLD, false); heroSweep = null;
-        if (heroObj) heroObj.start(false);
+        objStart(false);
         pultSkip(true); log(s, '✓ ready');
         atRun(FAST_LD + 0.15, function () { phFade(BLD); });
         atRun(FAST_LD + 0.35, function () { s.state = 'done'; setProg(); secDone(s.el); finish(s); });
@@ -902,20 +911,24 @@
       }
       function runHero(s, replay) {
         if (MODE === 'fast' && !replay) { runHeroFast(s); return; }
-        runId++; running = s; s.state = 'run'; s.replay = false; measure(s);
+        runId++; running = s; s.state = 'run'; s.replay = false; heroRp = !!replay; measure(s);
         var o = replay ? -0.6 : 0, K = replay ? PRESENT_K : HERO_K, LD = LINE * K;
         if (!replay) { burst(); log(s, 'boot · ' + fmtN() + ' particles'); probeStart(K); }
         atRun((0.6 + o) * K, function () { root.classList.add('g-on'); measure(s); phGrid(s, BLD, false); log(s, '01 · grid.init(12)'); });
-        function done() { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (heroObj) { if (replay) heroObj.replay(); else heroObj.start(false); } if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); secDone(s.el); }
+        function done() { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (replay) { if (heroObj) heroObj.replay(); } else objStart(false); if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); secDone(s.el); }
+        // объект — на стадии рамок, когда линия прошла середину экрана и рамка панели уже нарисована (TASK-review.md 1.3)
+        function objGo() { if (replay) return; s.el.classList.add('obj-go'); objStart(false); }
         if (INTRO_LINES) {
           // вертикальная линия рисует все рамки (каркас и стили — одна стадия), за ней частицы обводят блоки и рамки
           atRun((1.6 + o) * K, function () {
             lineDelays('.wf, .fr, .an, .hero-obj, .nb .ar, .logo-d, .ico svg, .burger', 'x', LD); heroSweep = { axis: 'x', spread: LD }; line(beamEl, LD);
             setStage(s, 'skel'); measure(s); phWire(s, BLD, false); heroSweep = null; log(s, '02 · frames.draw()');
           });
+          atRun((1.6 + o) * K + LD * 0.5, objGo);
           // горизонтальная линия — текст: за ней частицы ложатся на буквы и проявляется настоящий текст
           atRun((2.65 + o) * K, function () {
-            lineDelays('.ptx, .obj-ct, .obj-cap', 'y', LD); heroSweep = { axis: 'y', spread: LD }; line(beamH, LD);
+            // главная кнопка — с текстом: её заливка проявляется по той же линии (site.css, TASK-review.md 1.4)
+            lineDelays('.ptx, .obj-ct, .obj-cap, a.btn-p.fr', 'y', LD); heroSweep = { axis: 'y', spread: LD }; line(beamH, LD);
             setStage(s, 'text'); measure(s); phText(s, BLD, false); heroSweep = null; log(s, '03 · type.crystallize()');
           });
           // частицы долю секунды держат буквы — и гаснут на месте
@@ -923,7 +936,7 @@
           atRun((4.75 + o) * K, function () { finish(s); });
           return;
         }
-        atRun((1.6 + o) * K, function () { setStage(s, 'wire'); measure(s); phWire(s, BLD, false); log(s, '02 · layout.measure()'); });
+        atRun((1.6 + o) * K, function () { setStage(s, 'wire'); measure(s); phWire(s, BLD, false); log(s, '02 · layout.measure()'); objGo(); });
         atRun((2.65 + o) * K, function () { setStage(s, 'skel'); phSkel(s, BLD, false); log(s, '03 · styles.apply(glacier)'); });
         atRun((3.7 + o) * K, function () { setStage(s, 'text'); measure(s); phText(s, BLD, false); log(s, '04 · type.crystallize()'); });
         atRun((5.25 + o) * K, done);
@@ -1150,13 +1163,13 @@
         // местах, сцены и рисунки играют; прокрутку (назад, обновление) браузер восстанавливает сам — якорем не трогаем
         root.classList.add('g-on');
         secs.forEach(function (s) { setStage(s, 'done'); s.state = 'done'; wakeSites(s.el); });
-        if (heroObj) heroObj.start(true);
+        objStart(true);
         if (rm) { snap(); frame(performance.now()); }
         else {
           seed(); start();
           requestAnimationFrame(function () { requestAnimationFrame(function () { root.classList.remove('pt-instant'); }); });
         }
-        setProg(); typeLabel('✓ ready'); pultShown = true; pultMini(true);
+        setProg(); typeLabel('✓ ready'); pultShown = true; pultMini(true); root.classList.add('pt-booted');
       } else {
         if (!jumpStart()) request(hero);
         if ('IntersectionObserver' in window) {
