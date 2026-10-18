@@ -17,7 +17,7 @@
       var W = 1, VH = 1, dpr = 1, mob = false, N = 0, alive = true, active = true, raf = 0, prev = performance.now();
       var rootTop = 0, rootLeft = 0, lastTop = null;
       var mouse = { cx: -1e5, cy: -1e5 };
-      var P, V, T, NT, C, CT, NC, A, AT, NA, SZ, NS, SW, M, NM, SP, TP, BUF, ALL = [], BLD = [];
+      var P, V, T, NT, C, CT, NC, A, AT, NA, SZ, NS, SW, M, NM, SP, TP, BUF, BLD = [];
       var layoutGen = 0, lzT = [0, 0, 0, 0], lzQ = 0;
       var prog = null, buf = null, U = {};
       var SMK = 520, sX = new Float32Array(SMK), sY = new Float32Array(SMK), sVX = new Float32Array(SMK), sVY = new Float32Array(SMK), sL = new Float32Array(SMK), sM = new Float32Array(SMK), sC = new Float32Array(SMK), sI = 0, lastPX = null, lastPY = null;
@@ -28,8 +28,8 @@
       var COL = { frost: [238, 243, 246], glass: [188, 211, 222], skel: [96, 124, 142], accent: [142, 216, 248] };
       var DUST = [[142, 216, 248], [127, 168, 255], [183, 166, 242], [159, 229, 209], [230, 236, 241]];
       // burst (data-pt-burst) — финал сборки секции. Без атрибута — тихий: частицы гаснут на месте (phSettle; так у всех
-      // секций, кроме подвала, TASK-structure.md). "soft" — мягкий «выдох» (phPuff): только у подвала, акцент «страница
-      // кончилась» (TASK-clarity.md, B8). Пустое значение — прежний сильный разлёт по экрану (phAmbient), оставлен на будущее
+      // секций, кроме подвала, TASK-structure.md). "pop" — небольшой взрыв (phPop): только у подвала, акцент «страница
+      // кончилась». Пустое значение — прежний сильный разлёт по экрану (phAmbient), оставлен на будущее
       var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')).map(function (el) { return { el: el, name: el.getAttribute('data-sec'), state: 'idle', geo: null, geoKey: '', replay: false, burst: el.getAttribute('data-pt-burst') }; });
       var pultEl = root.querySelector('[data-pult]'), pultT = 0, pultShown = false, replaying = false;
       var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, cur = null, io = null, io2 = null;
@@ -40,8 +40,12 @@
       var calmEls = Array.prototype.filter.call(hero.el.querySelectorAll('[data-blk]'), function (b) { return !b.matches('[data-obj], header'); })
         .concat(Array.prototype.slice.call(hero.el.querySelectorAll('[data-obj] .obj-top, [data-obj] .obj-cw')));
       var calm = [], calmGen = -1;
-      // доля видимых точек пыли после сборки
-      var DUSTA = 0.035, DUSTM = 0.015;
+      // Фоновая пыль (просьба владельца: «чтобы всегда на заднем фоне были частицы; при анимации их чуть меньше, после каждой —
+      // обратно»). Свой запас точек AMB — доля DUSTA / DUSTM от всех частиц (столько пыли было видно после сборки и раньше), в
+      // сборке он не участвует: секции собирают остальные (BLD), и пыль не пропадает на каждой сборке. Пока идёт сборка (первый
+      // экран, секция, «Пересобрать блок», смена языка), видна доля DUST_BUSY пыли, остальная гаснет; после — снова вся (dustSet
+      // из frame). DUSTV — яркость точки пыли.
+      var DUSTA = 0.035, DUSTM = 0.015, DUST_BUSY = 0.6, DUSTV = 0.34, AMB = [], dustLvl = -1, dustT = 0;
       // Объект первого экрана — пять принципов студии (assets/hero-objects.js, свой WebGL-холст в секции).
       // Движок только запускает его в конце сборки первого экрана; без модуля сайт работает как раньше.
       var heroObj = null;
@@ -66,7 +70,7 @@
       // экрана в такт с линией (sweep).
       var INTRO_LINES = true, BURST_FULL = true, LINE = 1.0, heroSweep = null, burstEnd = 0, beamH = root.querySelector('[data-scan-beam]');
       if (INTRO_LINES) root.classList.add('pt-lines');
-      try { lite = +sessionStorage.getItem('pt-lite') || 0; } catch (e) {}
+      try { lite = +sessionStorage.getItem('pt-q') || 0; } catch (e) {}
       if (lite >= 2) dprCap = 1;
       // Режим сборки (TASK-glyphs-transitions.md, раздел 3). full — первое знакомство с сайтом или прошло больше 30 дней
       // с последней полной сборки: вспышка, две линии, сборка частицами. fast — страница сайта, которую в этой вкладке ещё
@@ -80,9 +84,12 @@
       // reduced motion), хранилища не трогаем. Включить — true.
       var AUTO_MODE = false;
       var FAST_LD = 0.6, PAGE = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/, '');
-      // Повторный заход в этой вкладке (вторая и следующие страницы, обновление, «назад»): sessionStorage['pt-nav']
+      // Повторный заход в этой вкладке (вторая и следующие страницы, обновление, «назад»): sessionStorage['pt-visit'] — время
+      // прошлой страницы. Перерыв больше 30 минут — снова первый заход: телефон держит вкладку днями, и полную сборку там больше
+      // не было бы видно. Ключ сменён (был pt-nav, вместе с ним pt-lite → pt-q) — сброс по просьбе владельца: «будто я первый
+      // раз на сайт зашёл», во всех открытых вкладках следующий заход — полный.
       var REPEAT = false;
-      try { REPEAT = sessionStorage.getItem('pt-nav') === '1'; sessionStorage.setItem('pt-nav', '1'); } catch (e) { /* хранилище запрещено — полная */ }
+      try { var tv = +sessionStorage.getItem('pt-visit') || 0; REPEAT = tv > 0 && Date.now() - tv < 30 * 60e3; sessionStorage.setItem('pt-visit', String(Date.now())); } catch (e) { /* хранилище запрещено — полная */ }
       var MODE = (function () {
         var q = /[?&]intro=(full|fast|instant)(?:&|$)/.exec(location.search);
         if (rm) return 'rm';
@@ -425,11 +432,11 @@
         cur = null;
       }
       function phAmbient(idx, inst) {
-        fill(idx, [{ w: 1, f: function (o) { gAmbient(o); o.m = 0; o.a = Math.random() < (mob ? DUSTM : DUSTA) ? 0.34 : 0; } }], { instant: inst, axis: 'x', spread: 0, rnd: inst ? 0 : 0.5 });
+        fill(idx, [{ w: 1, f: function (o) { gAmbient(o); o.m = 0; o.a = 0; } }], { instant: inst, axis: 'x', spread: 0, rnd: inst ? 0 : 0.5 });
         at(inst ? 0 : 1.6, function () { if (running) return; for (var k = 0; k < idx.length; k++) { var i = idx[k]; if (SW[i]) NM[i] = 1; else M[i] = 1; } });
       }
-      // Тихий финал сборки — теперь у всех секций (data-pt-burst нет нигде): частицы догасают на месте, а уже невидимыми
-      // переезжают в случайные точки экрана (TP — телепорт при переключении). Пыль там проявляется без разлёта.
+      // Тихий финал сборки — у всех секций, кроме подвала: частицы догасают на месте, а уже невидимыми переезжают в случайные
+      // точки экрана (TP — телепорт при переключении) и ждут следующей сборки. Видимая пыль — свой запас AMB (dustSet).
       function phSettle(idx) {
         var now = performance.now();
         for (var k = 0; k < idx.length; k++) {
@@ -437,29 +444,33 @@
           if (SW[i]) { T[p] = NT[p]; T[p + 1] = NT[p + 1]; CT[c] = NC[c]; CT[c + 1] = NC[c + 1]; CT[c + 2] = NC[c + 2]; AT[i] = NA[i]; SZ[i] = NS[i]; M[i] = NM[i]; }
           gAmbient(tmp);
           NT[p] = tmp.x; NT[p + 1] = tmp.y; NC[c] = tmp.r / 255; NC[c + 1] = tmp.g / 255; NC[c + 2] = tmp.b / 255;
-          NA[i] = Math.random() < (mob ? DUSTM : DUSTA) ? 0.34 : 0; NS[i] = tmp.s; NM[i] = 1; TP[i] = 1;
+          NA[i] = 0; NS[i] = tmp.s; NM[i] = 1; TP[i] = 1;
           SW[i] = now + 1300 + Math.random() * 700;
         }
       }
-      // Мягкий «выдох» в конце страницы (подвал, data-pt-burst="soft"): частицы с букв и рамок не гаснут на месте, а
-      // расходятся недалеко от подвала — от его середины наружу, с разбросом ±35°, на 40–160 px (телефон 25–90), по
-      // вертикали ×0.6 (облако приплюснутое) — и тают; 30 % на миг светятся. Через 1.2 с — как тихий финал: уже невидимые
-      // уезжают в пыль. Примерно четверть прежнего разлёта: облако не выходит за подвал и полосу над ним.
-      function phPuff(idx, s) {
-        var now = performance.now(), g = s.geo && s.geo.box, cx = W / 2, cy = g ? g.y + g.h / 2 : -rootTop + VH * 0.85;
-        var lo = mob ? 25 : 40, hi = mob ? 90 : 160, lit = [];
+      // Небольшой взрыв в конце страницы (подвал всех страниц, data-pt-burst="pop"; просьба владельца: «небольшой взрыв, не как
+      // до этого, а попроще»). Прежний «выдох» вёл частицы с букв пружиной к точкам рядом и гасил по пути — они таяли раньше,
+      // чем успевали разойтись, и его не было видно. Теперь — вспышка при загрузке в миниатюре: частицы подвала гаснут на месте,
+      // а POPN из них вспыхивают в середине подвала и разлетаются кругом (свободно, скорость затухает сама) радиусом POPR,
+      // через 0.25 с начинают гаснуть, к ~1 с их нет. Пока летят, за край экрана не переносятся (burstEnd). Через 1.2 с — тихий
+      // финал (phSettle).
+      function phPop(idx, s) {
+        var now = performance.now(), g = s.geo && s.geo.box, cx = g ? g.x + g.w / 2 : W / 2, cy = g ? g.y + g.h / 2 : -rootTop + VH * 0.85;
+        var POPN = mob ? 1300 : 2600, POPR = mob ? 120 : 200, reach = (1 - Math.pow(0.975, 45)) / 0.025, out = [];
+        burstEnd = Math.max(burstEnd, now + 1600);
         for (var k = 0; k < idx.length; k++) {
           var i = idx[k], p = i * 2, c = i * 3;
           if (SW[i]) { T[p] = NT[p]; T[p + 1] = NT[p + 1]; CT[c] = NC[c]; CT[c + 1] = NC[c + 1]; CT[c + 2] = NC[c + 2]; SZ[i] = NS[i]; M[i] = NM[i]; SW[i] = 0; }
-          if (M[i] || A[i] < 0.05) continue;
-          var ang = Math.atan2(P[p + 1] - cy, P[p] - cx) + (Math.random() - 0.5) * 1.22, len = lo + Math.random() * (hi - lo);
-          NT[p] = P[p] + Math.cos(ang) * len; NT[p + 1] = P[p + 1] + Math.sin(ang) * len * 0.6;
-          NC[c] = CT[c]; NC[c + 1] = CT[c + 1]; NC[c + 2] = CT[c + 2]; NS[i] = SZ[i]; NM[i] = 0;
-          if (Math.random() < 0.3) { NA[i] = 0.5; lit.push(i); } else NA[i] = 0;
-          SW[i] = now + Math.random() * 120; AT[i] = A[i];
+          AT[i] = NA[i] = 0;
         }
-        // короткое свечение — и тоже тают
-        at(0.45, function () { if (running) return; for (var q = 0; q < lit.length; q++) { if (SW[lit[q]]) NA[lit[q]] = 0; else AT[lit[q]] = 0; } });
+        for (k = 0; k < POPN && k < idx.length; k++) {
+          var j = idx[(Math.random() * idx.length) | 0], q = j * 2, r = j * 3, a = Math.random() * 6.2832, rr = Math.random() * 5;
+          var d = POPR * Math.sqrt(Math.random()) * (0.85 + Math.random() * 0.3) / reach, col = Math.random() < 0.25 ? COL.frost : DUST[(Math.random() * DUST.length) | 0];
+          P[q] = cx + Math.cos(a) * rr; P[q + 1] = cy + Math.sin(a) * rr; V[q] = Math.cos(a) * d; V[q + 1] = Math.sin(a) * d * 0.85;
+          C[r] = CT[r] = NC[r] = col[0] / 255; C[r + 1] = CT[r + 1] = NC[r + 1] = col[1] / 255; C[r + 2] = CT[r + 2] = NC[r + 2] = col[2] / 255;
+          A[j] = 0.9; AT[j] = NA[j] = 0.6; SZ[j] = NS[j] = 1.5 + Math.random() * 1.2; M[j] = NM[j] = 1; TP[j] = 0; out.push(j);
+        }
+        at(0.25, function () { if (running) return; for (var q = 0; q < out.length; q++) AT[out[q]] = NA[out[q]] = 0; });
         at(1.2, function () { if (running) return; phSettle(idx); });
       }
       function alloc() {
@@ -468,11 +479,13 @@
         C = new Float32Array(N * 3); CT = new Float32Array(N * 3); NC = new Float32Array(N * 3);
         A = new Float32Array(N); AT = new Float32Array(N); NA = new Float32Array(N); SZ = new Float32Array(N); NS = new Float32Array(N);
         SW = new Float64Array(N); M = new Uint8Array(N); NM = new Uint8Array(N); SP = new Float32Array(N); TP = new Uint8Array(N);
-        BUF = new Float32Array((N + SMK) * 7); ALL = []; BLD = [];
+        BUF = new Float32Array((N + SMK) * 7); BLD = []; AMB = [];
+        // последние na точек — фоновая пыль, остальные собирают секции
+        var na = Math.round(N * (mob ? DUSTM : DUSTA));
         for (var i = 0; i < N; i++) {
           SP[i] = Math.random() < 0.5 ? -1 : 1;
           M[i] = 1; A[i] = 0; P[i * 2] = -999; P[i * 2 + 1] = -999; SZ[i] = 1.4;
-          ALL.push(i); BLD.push(i);
+          (i < N - na ? BLD : AMB).push(i);
         }
         if (countEl) countEl.setAttribute('data-an', 'webgl · ' + fmtN() + ' particles');
       }
@@ -487,7 +500,12 @@
           C[c] = CT[c] = NC[c] = col[0] / 255; C[c + 1] = CT[c + 1] = NC[c + 1] = col[1] / 255; C[c + 2] = CT[c + 2] = NC[c + 2] = col[2] / 255;
           A[i] = AT[i] = NA[i] = 0; SZ[i] = NS[i] = 1.5; M[i] = NM[i] = 1; SW[i] = 0; TP[i] = 0;
         }
+        // пыль — как точки gAmbient (цвет, размер); проявляется в ближайшем кадре (dustSet)
+        for (var k = 0; k < AMB.length; k++) { var j = AMB[k], q = j * 3; gAmbient(tmp); C[q] = CT[q] = NC[q] = tmp.r / 255; C[q + 1] = CT[q + 1] = NC[q + 1] = tmp.g / 255; C[q + 2] = CT[q + 2] = NC[q + 2] = tmp.b / 255; SZ[j] = NS[j] = tmp.s; }
+        dustLvl = -1;
       }
+      // фоновая пыль: full — видна вся; иначе каждая точка остаётся с вероятностью DUST_BUSY, остальные гаснут (и потом проявляются)
+      function dustSet(full) { for (var k = 0; k < AMB.length; k++) { var i = AMB[k]; AT[i] = NA[i] = full || Math.random() < DUST_BUSY ? DUSTV : 0; } }
       // Линии вступления. line — запустить луч на sec секунд; linesOff — погасить (сборку первого экрана довели или
       // прервали); lineDelays — элемент проявляется, когда до него доходит линия: задержка по его положению (--ld).
       function line(el, sec) { if (!el) return; el.style.setProperty('--beam', sec + 's'); el.classList.remove('run'); void el.offsetWidth; el.classList.add('run'); }
@@ -541,6 +559,8 @@
           A[i] = 0.95; AT[i] = NA[i] = 0.55; SZ[i] = NS[i] = 2 + Math.random() * 1.4; M[i] = NM[i] = 1; SW[i] = 0;
           T[p] = NT[p] = P[p]; T[p + 1] = NT[p + 1] = P[p + 1];
         }
+        // пыль разлетается со вспышкой и остаётся на экране, когда остальные уходят в сетку (dustSet в ближайшем кадре)
+        dustLvl = -1;
       }
       function snap() {
         for (var i = 0; i < N; i++) {
@@ -613,7 +633,7 @@
         lite = n; root.classList.toggle('pt-lite', n >= 1);
         if (n >= 1 && sctx) { sL.fill(0); sctx.setTransform(1, 0, 0, 1, 0, 0); sctx.clearRect(0, 0, smk.width, smk.height); smokeLive = false; }
         if (n >= 2 && dprCap !== 1) { dprCap = 1; layout(); }
-        try { sessionStorage.setItem('pt-lite', String(n)); } catch (e) {}
+        try { sessionStorage.setItem('pt-q', String(n)); } catch (e) {}
       }
       function frame(now) {
         var raw = Math.max(0, (now - prev) / 1000), dt = Math.min(0.05, raw); prev = now;
@@ -627,6 +647,10 @@
           if (rr.bottom < 0 || rr.top > VH) abortRun();
         }
         var shift = lastTop == null ? 0 : lastTop - rootTop; lastTop = rootTop;
+        // фоновая пыль: пока идёт сборка (и 0.4 с после — между секциями в очереди не мигает) — реже, потом снова вся
+        if (running) dustT = now;
+        var dl = now - dustT < 400 ? 0 : 1;
+        if (booted && dl !== dustLvl) { dustLvl = dl; dustSet(dl === 1); }
         var f = Math.min(3, dt * 60), damp = Math.pow(0.855, f), k = 0.015 * f, dd = Math.pow(0.975, f);
         // курсор — «свет» (TASK-clarity.md, B4): слабый толчок от курсора и закручивание вокруг него — частицы обтекают его и
         // не улетают (раньше толчок ×1.6 выметал пыль, и вокруг мыши оставалось пустое пятно); свободная пыль в круге ярче и
@@ -799,7 +823,7 @@
       function start() { if (raf || !alive || !active || rm) return; prev = performance.now(); raf = requestAnimationFrame(loop); }
       function finish(s) {
         running = null;
-        if (!queue.length) { if (s && s.burst === 'soft') phPuff(BLD, s); else if (!s || s.burst != null) phAmbient(BLD, false); else phSettle(BLD); }
+        if (!queue.length) { if (s && s.burst === 'pop') phPop(BLD, s); else if (!s || s.burst != null) phAmbient(BLD, false); else phSettle(BLD); }
         pump();
       }
       // Пропуск сборки по действию пользователя: текст и рамки проявляются сразу, частицы уходят в финал.
@@ -835,7 +859,7 @@
         seed(); root.classList.add('g-on'); measure(s);
         lineDelays('*', 'x', FAST_LD); root.classList.add('pt-sweep');
         heroSweep = { axis: 'x', spread: FAST_LD }; line(beamEl, FAST_LD);
-        setStage(s, 'done'); phText(s, ALL, false); heroSweep = null;
+        setStage(s, 'done'); phText(s, BLD, false); heroSweep = null;
         if (heroObj) heroObj.start(false);
         pultSkip(true); log(s, '✓ ready');
         atRun(FAST_LD + 0.15, function () { phFade(BLD); });
@@ -847,27 +871,27 @@
         runId++; running = s; s.state = 'run'; s.replay = false; measure(s);
         var o = replay ? -0.6 : 0, K = replay ? PRESENT_K : HERO_K, LD = LINE * K;
         if (!replay) { burst(); log(s, 'boot · ' + fmtN() + ' particles'); probeStart(K); }
-        atRun((0.6 + o) * K, function () { root.classList.add('g-on'); measure(s); phGrid(s, ALL, false); log(s, '01 · grid.init(12)'); });
+        atRun((0.6 + o) * K, function () { root.classList.add('g-on'); measure(s); phGrid(s, BLD, false); log(s, '01 · grid.init(12)'); });
         function done() { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (heroObj) { if (replay) heroObj.replay(); else heroObj.start(false); } if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); secDone(s.el); }
         if (INTRO_LINES) {
           // вертикальная линия рисует все рамки (каркас и стили — одна стадия), за ней частицы обводят блоки и рамки
           atRun((1.6 + o) * K, function () {
             lineDelays('.wf, .fr, .an, .hero-obj, .nb .ar, .logo-d, .ico svg, .burger', 'x', LD); heroSweep = { axis: 'x', spread: LD }; line(beamEl, LD);
-            setStage(s, 'skel'); measure(s); phWire(s, ALL, false); heroSweep = null; log(s, '02 · frames.draw()');
+            setStage(s, 'skel'); measure(s); phWire(s, BLD, false); heroSweep = null; log(s, '02 · frames.draw()');
           });
           // горизонтальная линия — текст: за ней частицы ложатся на буквы и проявляется настоящий текст
           atRun((2.65 + o) * K, function () {
             lineDelays('.ptx, .obj-ct, .obj-cap', 'y', LD); heroSweep = { axis: 'y', spread: LD }; line(beamH, LD);
-            setStage(s, 'text'); measure(s); phText(s, ALL, false); heroSweep = null; log(s, '03 · type.crystallize()');
+            setStage(s, 'text'); measure(s); phText(s, BLD, false); heroSweep = null; log(s, '03 · type.crystallize()');
           });
           // частицы долю секунды держат буквы — и гаснут на месте
           atRun((4.2 + o) * K, done);
           atRun((4.75 + o) * K, function () { finish(s); });
           return;
         }
-        atRun((1.6 + o) * K, function () { setStage(s, 'wire'); measure(s); phWire(s, ALL, false); log(s, '02 · layout.measure()'); });
-        atRun((2.65 + o) * K, function () { setStage(s, 'skel'); phSkel(s, ALL, false); log(s, '03 · styles.apply(glacier)'); });
-        atRun((3.7 + o) * K, function () { setStage(s, 'text'); measure(s); phText(s, ALL, false); log(s, '04 · type.crystallize()'); });
+        atRun((1.6 + o) * K, function () { setStage(s, 'wire'); measure(s); phWire(s, BLD, false); log(s, '02 · layout.measure()'); });
+        atRun((2.65 + o) * K, function () { setStage(s, 'skel'); phSkel(s, BLD, false); log(s, '03 · styles.apply(glacier)'); });
+        atRun((3.7 + o) * K, function () { setStage(s, 'text'); measure(s); phText(s, BLD, false); log(s, '04 · type.crystallize()'); });
         atRun((5.25 + o) * K, done);
         atRun((5.8 + o) * K, function () { finish(s); });
       }
@@ -923,7 +947,7 @@
           if (v >= VH * 0.12) list.push(x); else if (v > 0) minor.push(x);
         });
         if (!list.length) return;
-        var s = list[0], idx = s === hero ? ALL : BLD, every = list.concat(minor);
+        var s = list[0], idx = BLD, every = list.concat(minor);
         runId++; running = s; replaying = true; clearTimeout(pultT); pultMini(false);
         every.forEach(function (x) { x.state = 'run'; });
         // прервали до постановки в очередь — все задетые секции сразу собраны (иначе гасли насовсем)
@@ -1095,7 +1119,7 @@
         if (heroObj) heroObj.start(true);
         if (rm) { snap(); frame(performance.now()); }
         else {
-          seed(); phAmbient(ALL, true); start();
+          seed(); start();
           requestAnimationFrame(function () { requestAnimationFrame(function () { root.classList.remove('pt-instant'); }); });
         }
         setProg(); typeLabel('✓ ready'); pultShown = true; pultMini(true);

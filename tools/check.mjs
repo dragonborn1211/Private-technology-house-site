@@ -468,7 +468,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     else console.log('  ✓ «Пересобрать блок», прерванный кликом, ничего не оставляет пустым');
   }
   // обычный прогон (быстрые кадры): облегчённый режим не включился
-  if (!rm) { const lite = await page.evaluate(() => sessionStorage.getItem('pt-lite')); if (lite) fail(`облегчённый режим включился в обычном прогоне: pt-lite = ${lite}`); }
+  if (!rm) { const lite = await page.evaluate(() => sessionStorage.getItem('pt-q')); if (lite) fail(`облегчённый режим включился в обычном прогоне: pt-q = ${lite}`); }
   if (errs.length) { errs.forEach((e) => fail(e)); } else console.log('  ✓ ошибок в консоли нет');
   await page.close();
 }
@@ -1106,8 +1106,8 @@ console.log('\nтексты и типографика (TASK-polish.md)');
 console.log('\nструктура: услуги, «Как работаем», сборка без разлёта, повторный переход');
 {
   const bad = [], info = [];
-  // разлёта нет ни у одной секции; у подвала — мягкий выдох data-pt-burst="soft" (TASK-clarity.md, B8)
-  readdirSync(root).filter((f) => f.endsWith('.html')).forEach((f) => { if (/data-pt-burst(?!="soft")/.test(readFileSync(path.join(root, f), 'utf8').replace(/<footer data-sec="foot" class="sec foot" data-pt-burst="soft">/, ''))) bad.push(`${f}: data-pt-burst`); });
+  // разлёта нет ни у одной секции; у подвала — небольшой взрыв data-pt-burst="pop"
+  readdirSync(root).filter((f) => f.endsWith('.html')).forEach((f) => { if (/data-pt-burst/.test(readFileSync(path.join(root, f), 'utf8').replace(/<footer data-sec="foot" class="sec foot" data-pt-burst="pop">/, ''))) bad.push(`${f}: data-pt-burst`); });
   // услуги
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -1335,16 +1335,16 @@ console.log('\nясность, B1–B3: фильтры и якоря с аним
 }
 // Ясность, B4 / B5 / B8: курсор подсвечивает частицы (слабый толчок, закручивание, R 110, на телефоне выключен); пульт после
 // сборки первого экрана укатывается в левый угол (сжатие плашки clip-path, затем сдвиг и поворот кнопки); подвал всех шести
-// страниц — data-pt-burst="soft" (мягкий выдох phPuff), у остальных секций атрибута нет.
-console.log('\nясность, B4 / B5 / B8: свет курсора, пульт укатывается, выдох в конце страницы');
+// страниц — data-pt-burst="pop" (небольшой взрыв phPop, был мягкий выдох — его не было видно), у остальных секций атрибута нет.
+console.log('\nясность, B4 / B5 / B8: свет курсора, пульт укатывается, взрыв в конце страницы');
 {
   const bad = [];
   const eng = readFileSync(path.join(root, 'assets', 'engine.js'), 'utf8');
   if (!/R = mob \? 0 : 110/.test(eng) || !/\* 0\.35 \* f/.test(eng) || /\* 1\.6 \* f/.test(eng)) bad.push('engine.js: курсор всё ещё выметает частицы (нужны R 110, толчок 0.35, на телефоне 0)');
-  if (!/function phPuff\(/.test(eng) || !/s\.burst === 'soft'\) phPuff/.test(eng)) bad.push('engine.js: нет phPuff или финал подвала не через него');
+  if (!/function phPop\(/.test(eng) || !/s\.burst === 'pop'\) phPop/.test(eng) || /phPuff/.test(eng)) bad.push('engine.js: нет phPop или финал подвала не через него');
   for (const f of PAGES) {
-    const h = src[f], all = (h.match(/data-pt-burst/g) || []).length, soft = (h.match(/<footer data-sec="foot" class="sec foot" data-pt-burst="soft">/g) || []).length;
-    if (all !== 1 || soft !== 1) bad.push(`${f}: data-pt-burst ${all}, у подвала soft ${soft}`);
+    const h = src[f], all = (h.match(/data-pt-burst/g) || []).length, pop = (h.match(/<footer data-sec="foot" class="sec foot" data-pt-burst="pop">/g) || []).length;
+    if (all !== 1 || pop !== 1) bad.push(`${f}: data-pt-burst ${all}, у подвала pop ${pop}`);
   }
   // пульт: в обычном headless-браузере (под SwiftShader кадры рывками)
   const quick = await chromium.launch();
@@ -1366,7 +1366,66 @@ console.log('\nясность, B4 / B5 / B8: свет курсора, пульт
   if (!r.clip || !r.move || !r.rot || r.timeout || !/is-mini/.test(r.cls) || r.left !== 18 || r.tr !== 'none' || !(r.x0 > 300)) bad.push(`пульт не укатился в угол: ${JSON.stringify(r)}`);
   await page.close(); await quick.close();
   if (bad.length) fail('ясность B4 / B5 / B8: ' + bad.join('; '));
-  else console.log(`  ✓ курсор — свет (R 110, толчок 0.35, закручивание, на телефоне нет); пульт сжимается и укатывается в угол (от ${r.x0} px до 18, с поворотом); у подвала шести страниц — мягкий выдох, у остальных секций финал тихий`);
+  else console.log(`  ✓ курсор — свет (R 110, толчок 0.35, закручивание, на телефоне нет); пульт сжимается и укатывается в угол (от ${r.x0} px до 18, с поворотом); у подвала шести страниц — взрыв, у остальных секций финал тихий`);
+}
+// Фоновая пыль и взрыв подвала (просьба владельца: «всегда на заднем фоне частицы; при анимации чуть меньше, после каждой —
+// обратно»; «на футере небольшой взрыв, попроще»). У пыли свой запас AMB: после сборки на экране почти вся (≥ 85 %), пока
+// собирается секция — реже (45–80 %), после — снова ≥ 85 %. Подвал кончается взрывом phPop: частицы вылетают из середины
+// подвала, облако растёт и за ~1 с гаснет. Счёт — через отладочный крючок: проверка дописывает его в копию engine.js, и
+// страница грузит её вместо настоящей (обычный headless-браузер: под SwiftShader кадры рывками).
+console.log('\nфоновая пыль и взрыв подвала');
+{
+  const bad = [], info = [];
+  let eng = readFileSync(path.join(root, 'assets', 'engine.js'), 'utf8');
+  const at = '      return {\n        setActive';
+  if (!eng.includes(at) || !/var AMB = \[\]|AMB = \[\]/.test(eng)) bad.push('engine.js: нет запаса пыли AMB или места для отладочного крючка');
+  else {
+    // dust — видимые точки пыли на экране; pop — свободные видимые частицы сборки (бывают только во вспышке и во взрыве), их центр и разброс
+    eng = eng.replace(at, `      window.__dbg = function () { var v = 0, n = 0, sx = 0, sy = 0, sd = 0, nb = N - AMB.length;
+        for (var i = 0; i < N; i++) { var x = P[i * 2], y = P[i * 2 + 1] + rootTop;
+          if (i >= nb) { if (A[i] > 0.05 && y > 0 && y < VH && x > 0 && x < W) v++; } else if (M[i] && A[i] > 0.08) { n++; sx += x; sy += y; } }
+        if (n) { sx /= n; sy /= n; for (i = 0; i < nb; i++) if (M[i] && A[i] > 0.08) sd += Math.hypot(P[i * 2] - sx, P[i * 2 + 1] + rootTop - sy); sd /= n; }
+        return { dust: v / Math.max(1, AMB.length), pop: n, px: sx, py: sy, pd: sd, W: W };
+      };\n` + at);
+    const quick = await chromium.launch();
+    for (const [w, h] of [[1440, 900], [390, 844]]) {
+      const ctx = await quick.newContext({ viewport: { width: w, height: h }, isMobile: w < 760, hasTouch: w < 760 });
+      const page = await ctx.newPage();
+      await page.route('**/assets/engine.js', (r) => r.fulfill({ body: eng, contentType: 'application/javascript' }));
+      await page.goto(BASE + 'index.html');
+      await page.waitForFunction(() => document.querySelector('[data-sec="hero"]').classList.contains('s-done'), null, { timeout: 15000 });
+      await page.waitForTimeout(2200);
+      const d0 = await page.evaluate(() => window.__dbg().dust);
+      // секция ниже: доля пыли, пока собирается, и через 2 с после
+      const sec = await page.evaluate(() => new Promise((res) => {
+        const s = document.querySelectorAll('[data-sec]')[1]; window.scrollTo({ top: s.getBoundingClientRect().top + scrollY - 40, behavior: 'instant' });
+        let lo = 1; const t0 = performance.now();
+        const f = () => { lo = Math.min(lo, window.__dbg().dust); if (performance.now() - t0 < 1800) requestAnimationFrame(f); else setTimeout(() => res({ lo, after: window.__dbg().dust, done: s.classList.contains('s-done') }), 2000); };
+        requestAnimationFrame(f);
+      }));
+      // подвал: взрыв из его середины, облако растёт и гаснет
+      const pop = await page.evaluate(() => new Promise((res) => {
+        window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+        const foot = document.querySelector('[data-sec="foot"]'); let t1 = 0, max = 0, d1 = 0, d2 = 0, cx = 0, cy = 0, end = 0; const t0 = performance.now();
+        const f = () => {
+          const d = window.__dbg(), now = performance.now();
+          if (!t1 && d.pop > 50 && foot.classList.contains('s-done')) { t1 = now; d1 = d.pd; const r = foot.getBoundingClientRect(); cx = d.px - (r.left + r.width / 2); cy = d.py - (r.top + r.height / 2); }
+          if (t1) { max = Math.max(max, d.pop); if (!d2 && now - t1 > 400) d2 = d.pd; if (!end && now - t1 > 300 && d.pop === 0) end = Math.round(now - t1); }
+          if (end || now - t0 > 12000) res({ max, d1: Math.round(d1), d2: Math.round(d2), cx: Math.round(cx), cy: Math.round(cy), end, after: d.dust }); else requestAnimationFrame(f);
+        };
+        requestAnimationFrame(f);
+      }));
+      const tag = w + ' px';
+      if (d0 < 0.85) bad.push(`${tag}: после первого экрана видно ${Math.round(d0 * 100)} % пыли`);
+      if (!sec.done || sec.lo > 0.8 || sec.lo < 0.45 || sec.after < 0.85) bad.push(`${tag}: пыль на сборке секции — минимум ${Math.round(sec.lo * 100)} %, после ${Math.round(sec.after * 100)} %`);
+      if (pop.max < (w < 760 ? 500 : 1000) || !pop.end || pop.end > 1500 || !(pop.d2 > pop.d1 * 1.4) || Math.abs(pop.cx) > 60 || Math.abs(pop.cy) > 60) bad.push(`${tag}: взрыв подвала ${JSON.stringify(pop)}`);
+      info.push(`${tag}: пыль ${Math.round(d0 * 100)} % → на сборке ${Math.round(sec.lo * 100)} % → ${Math.round(sec.after * 100)} %; взрыв ${pop.max} частиц, облако ${pop.d1} → ${pop.d2} px, погас за ${pop.end} мс`);
+      await ctx.close();
+    }
+    await quick.close();
+  }
+  if (bad.length) fail('пыль и взрыв: ' + bad.join('; '));
+  else console.log('  ✓ ' + info.join('; '));
 }
 // Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
 // «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.
@@ -1504,7 +1563,7 @@ console.log('\nслабые телефоны: ранняя оценка на в�
       }).observe(document, { subtree: true, attributes: true, attributeFilter: ['class'] });
     });
     await page.goto(BASE + 'index.html'); await page.waitForTimeout(rate > 1 ? 9000 : 5000);
-    const r = await page.evaluate(() => ({ ...window.__t, ss: sessionStorage.getItem('pt-lite') }));
+    const r = await page.evaluate(() => ({ ...window.__t, ss: sessionStorage.getItem('pt-q') }));
     if (rate > 1 && !(r.lite && r.skel && r.lite < r.skel && +r.ss >= 1)) bad.push(`CPU ×${rate}: облегчение ${Math.round(r.lite) || 'нет'} мс, стадия рамок ${Math.round(r.skel) || 'нет'} мс`);
     if (rate === 1 && (r.lite || r.ss)) bad.push(`CPU ×1: облегчение включилось (${Math.round(r.lite)} мс, уровень ${r.ss})`);
     info.push(`×${rate}: ${r.ss ? 'уровень ' + r.ss + ' за ' + Math.round(r.skel - r.lite) + ' мс до рамок' : 'без облегчения'}`);
@@ -1553,7 +1612,7 @@ console.log('\nстраница услуг без повторов');
 }
 
 // Облегчённый режим: кадры ~150 мс (настоящий rAF вызывается из setTimeout 140 мс; часы — настоящие, без page.clock,
-// чтобы кадры и окна watchQuality шли в реальном времени) — через ≤ 20 с у корня .pt-lite, sessionStorage pt-lite ≥ 1,
+// чтобы кадры и окна watchQuality шли в реальном времени) — через ≤ 20 с у корня .pt-lite, sessionStorage pt-q ≥ 1,
 // размытие со стёкол снято. Обычный прогон (быстрые кадры) облегчение не включает.
 console.log('\nоблегчённый режим');
 {
@@ -1566,7 +1625,7 @@ console.log('\nоблегчённый режим');
   const t0 = Date.now(); let st = null;
   while (Date.now() - t0 < 20000) {
     await page.waitForTimeout(500);
-    st = await page.evaluate(() => ({ lite: document.getElementById('pt-site').classList.contains('pt-lite'), ss: sessionStorage.getItem('pt-lite'), bar: getComputedStyle(document.querySelector('.topbar')).backdropFilter, glass: getComputedStyle(document.querySelector('.glass')).backdropFilter }));
+    st = await page.evaluate(() => ({ lite: document.getElementById('pt-site').classList.contains('pt-lite'), ss: sessionStorage.getItem('pt-q'), bar: getComputedStyle(document.querySelector('.topbar')).backdropFilter, glass: getComputedStyle(document.querySelector('.glass')).backdropFilter }));
     if (st.lite) break;
   }
   const sec = ((Date.now() - t0) / 1000).toFixed(1);
@@ -1574,7 +1633,7 @@ console.log('\nоблегчённый режим');
   errs.forEach((e) => bad.push(e));
   await ctx.close();
   if (bad.length) fail('облегчённый режим при кадрах ~150 мс: ' + bad.join('; '));
-  else console.log(`  ✓ при кадрах ~150 мс облегчение включилось за ${sec} с: .pt-lite, pt-lite = ${st.ss}, у липкой шапки и стекла размытия нет`);
+  else console.log(`  ✓ при кадрах ~150 мс облегчение включилось за ${sec} с: .pt-lite, pt-q = ${st.ss}, у липкой шапки и стекла размытия нет`);
 }
 
 // Рисунки направлений (вариант A — чертежи линиями): после сборки секции прорисованы (is-on, линии дорисованы, есть
