@@ -496,6 +496,11 @@
     'Самозанятый Давыдовский Даниил Дмитриевич · ИНН 027816319319 ·': 'Self-employed Daniil Dmitrievich Davydovsky · Tax ID 027816319319 ·',
     'Политика конфиденциальности': 'Privacy policy (in Russian)',
     'Настройки cookie': 'Cookie settings',
+    // плашка cookie (assets/consent.js, раздел 3)
+    'Сайт использует cookie и Яндекс Метрику, чтобы понимать, какие страницы полезны. Подробнее — в': 'The site uses cookies and Yandex Metrica to see which pages are useful. Details are in the',
+    'политике конфиденциальности': 'privacy policy (in Russian)',
+    'Принять': 'Accept',
+    'Отклонить': 'Decline',
     'Все готовые решения': 'All ready-made solutions',
     'Работы: сайты': 'Work: websites',
     'Работы: автоматизация': 'Work: automation',

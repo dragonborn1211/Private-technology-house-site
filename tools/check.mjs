@@ -1693,6 +1693,96 @@ console.log('\nреквизиты и политика конфиденциаль
   if (bad.length) fail('реквизиты и политика: ' + bad.join('; '));
   else console.log('  ✓ строка реквизитов в подвале всех страниц (ФИО, ИНН, политика, «Настройки cookie»), заглушек нет; privacy.html — 200, без движка и EN, колонка 720 px, текст 16 / 1.7, h2 22 px');
 }
+// Cookie и Метрика (TASK-about-analytics.md, раздел 3–4): consent.js последним на всех страницах; первый заход — до клика нет
+// запросов к mc.yandex.ru и cookie _ym*, плашка появляется после сборки первого экрана (не раньше); «Отклонить» — после
+// перезагрузки плашки нет, запросов нет; «Принять» — после первого экрана запрос mc.yandex.ru/metrika/tag.js; при 'yes' клик по
+// Telegram — reachGoal('tg', …) (заглушка window.ym); YM_ID = 0 — плашки нет; EN — плашка по-английски; privacy.html — плашка
+// сразу; на главной — yandex-verification. Метрику по-настоящему не грузим: запросы перехватываются.
+console.log('\ncookie и Метрика');
+{
+  const bad = [];
+  for (const f of PAGES) { const sc = [...src[f].matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]); if (!/assets\/consent\.js$/.test(sc[sc.length - 1] || '')) bad.push(`${f}: consent.js не последним`); }
+  if (!/<meta name="viewport"[^>]*>\n<meta name="yandex-verification" content="e874bedbdb6c48e1">/.test(src['index.html'])) bad.push('index.html: нет yandex-verification');
+  const cjs = readFileSync(path.join(root, 'assets', 'consent.js'), 'utf8');
+  if (!/var YM_ID = [1-9]\d+;/.test(cjs) || /['"]<noscript/.test(cjs)) bad.push('consent.js: номер счётчика или noscript-пиксель');
+  const quick = await chromium.launch();
+  const mk = async (opts = {}) => {
+    const ctx = await quick.newContext({ viewport: { width: 1440, height: 900 } });
+    const mc = [];
+    await ctx.route('**/mc.yandex.ru/**', (r) => { mc.push(r.request().url()); r.fulfill({ status: 200, contentType: 'application/javascript', body: '' }); });
+    if (opts.js) await ctx.route('**/assets/consent.js', (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body: opts.js }));
+    await ctx.addInitScript((o) => {
+      if (o.consent) try { localStorage.setItem('pt-consent', o.consent); } catch (e) { /* нет хранилища */ }
+      if (o.stub) window.ym = function () { (window.__ym = window.__ym || []).push([].slice.call(arguments)); };
+      window.__ck = {}; const t0 = performance.now();
+      new MutationObserver(() => {
+        const h = document.querySelector('[data-sec="hero"]');
+        if (h && h.classList.contains('s-done') && !window.__ck.hero) window.__ck.hero = performance.now() - t0;
+        if (document.querySelector('.ck') && !window.__ck.ck) window.__ck.ck = performance.now() - t0;
+      }).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+    }, opts);
+    return { ctx, page: await ctx.newPage(), mc };
+  };
+  const ckWait = (page, ms = 7000) => page.waitForSelector('.ck', { timeout: ms }).then(() => true, () => false);
+  // первый заход, «Отклонить»
+  {
+    const { ctx, page, mc } = await mk();
+    await page.goto(BASE + 'index.html');
+    const shown = await ckWait(page);
+    const t = await page.evaluate(() => window.__ck), cookies = (await ctx.cookies()).filter((c) => /^_ym/.test(c.name));
+    if (!shown) bad.push('первый заход: плашки нет');
+    else if (!(t.hero > 0 && t.ck >= t.hero)) bad.push(`плашка раньше сборки первого экрана: ${JSON.stringify(t)}`);
+    if (mc.length || cookies.length) bad.push(`до согласия: запросов к Метрике ${mc.length}, cookie _ym ${cookies.length}`);
+    const txt = shown ? await page.evaluate(() => document.querySelector('.ck').textContent) : '';
+    if (shown && !/Принять/.test(txt)) bad.push(`текст плашки: ${txt}`);
+    if (shown) await page.click('.ck .n');
+    await page.reload(); await page.waitForTimeout(5500);
+    if (await page.$('.ck') || mc.length) bad.push(`после «Отклонить»: плашка ${!!(await page.$('.ck'))}, запросов ${mc.length}`);
+    // «Настройки cookie» открывает плашку снова
+    const reopen = await page.evaluate(() => { const b = document.querySelector('[data-ck-open]'); if (!b || b.closest('[hidden]')) return 'скрыта'; b.click(); return document.querySelector('.ck') ? 'ok' : 'нет'; });
+    if (reopen !== 'ok') bad.push(`«Настройки cookie»: ${reopen}`);
+    await ctx.close();
+  }
+  // «Принять» — Метрика после первого экрана
+  {
+    const { ctx, page, mc } = await mk();
+    await page.goto(BASE + 'index.html');
+    if (await ckWait(page)) { await page.click('.ck .y'); await page.waitForTimeout(3500); }
+    if (!mc.some((u) => /mc\.yandex\.ru\/metrika\/tag\.js/.test(u))) bad.push(`после «Принять» нет запроса tag.js (${mc.join(', ') || 'запросов нет'})`);
+    if (await page.evaluate(() => localStorage.getItem('pt-consent')) !== 'yes') bad.push('после «Принять» выбор не запомнен');
+    await ctx.close();
+  }
+  // 'yes': цель tg по клику на Telegram
+  {
+    const { ctx, page } = await mk({ consent: 'yes', stub: true });
+    // Метрика — после первого экрана и в простое браузера (requestIdleCallback, не дольше 3 с)
+    await page.goto(BASE + 'index.html'); await page.waitForTimeout(7000);
+    const calls = await page.evaluate(() => { document.addEventListener('click', (e) => e.preventDefault()); document.querySelector('#contact a[href*="t.me/dragonborne0"]').click(); return (window.__ym || []).map((c) => c[1] + ':' + (c[2] || '') + ':' + JSON.stringify(c[3] || {})); });
+    if (!calls.some((c) => /^init:/.test(c)) || !calls.some((c) => /^reachGoal:tg:\{"place":"contact","text":"Хочу обсудить проект\."\}/.test(c))) bad.push(`цели: ${calls.join(' | ')}`);
+    if (await page.$('.ck')) bad.push('при согласии плашка показана');
+    await ctx.close();
+  }
+  // YM_ID = 0 — плашки нет
+  {
+    const { ctx, page } = await mk({ js: cjs.replace(/var YM_ID = \d+;/, 'var YM_ID = 0;') });
+    await page.goto(BASE + 'index.html');
+    if (await ckWait(page, 5500)) bad.push('YM_ID = 0: плашка показана');
+    await ctx.close();
+  }
+  // EN; privacy.html — сразу
+  {
+    const { ctx, page } = await mk();
+    await page.goto(BASE + 'index.html?lang=en');
+    const en = (await ckWait(page)) ? await page.evaluate(() => document.querySelector('.ck').textContent) : '';
+    if (!/Accept/.test(en) || /[А-Яа-яЁё]/.test(en)) bad.push(`EN: плашка «${en}»`);
+    await page.goto(BASE + 'privacy.html');
+    if (!(await ckWait(page, 1500))) bad.push('privacy.html: плашки нет сразу');
+    await ctx.close();
+  }
+  await quick.close();
+  if (bad.length) fail('cookie и Метрика: ' + bad.join('; '));
+  else console.log('  ✓ до согласия нет Метрики и cookie _ym, плашка после первого экрана, «Отклонить» запоминается, «Настройки cookie» открывают снова, «Принять» грузит tag.js, цель tg с местом и текстом, YM_ID = 0 — без плашки, EN — по-английски, политика — сразу; yandex-verification на главной');
+}
 // Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
 // «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.
 console.log('\nясность, B7 / B9: цвет на «Что делаем», демо-сайты');
