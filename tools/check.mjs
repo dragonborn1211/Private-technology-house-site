@@ -161,7 +161,20 @@ async function objBox(page) {
     const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const x2 = c.getContext('2d'); x2.drawImage(img, 0, 0);
     const d = x2.getImageData(0, 0, c.width, c.height).data, W = c.width, H = c.height, rows = new Array(H).fill(0);
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = (y * W + x) * 4; if (d[i] * 0.3 + d[i + 1] * 0.5 + d[i + 2] * 0.2 > 105) rows[y]++; }
-    return [rows.findIndex((v) => v >= 3), H - 1 - [...rows].reverse().findIndex((v) => v >= 3)];
+    // границы — по строкам, где ярких точек ≥ 3; одиночные искры у края (ход ферзя, перелёт частиц) — не объект: кусок за пустой
+    // полосой от 16 строк, в котором меньше 40 ярких точек, отбрасываем. Раньше такая искра под доской на миг заходила в полосу
+    // подписи и роняла проверку в зависимости от фазы хода (сам объект кончался на ~50 px выше)
+    let a = rows.findIndex((v) => v >= 3), z = H - 1 - [...rows].reverse().findIndex((v) => v >= 3);
+    const trim = (from, dir) => {
+      let y = from, sum = 0, gap = 0;
+      for (; y >= 0 && y < H; y += dir) { if (rows[y]) { gap = 0; sum += rows[y]; } else if (++gap >= 16) break; }
+      if (gap < 16 || sum >= 40) return from;
+      for (; y >= 0 && y < H && rows[y] < 3; y += dir);
+      return y >= 0 && y < H ? y : from;
+    };
+    for (let k = 0; k < 3 && a >= 0; k++) { const t = trim(a, 1); if (t === a) break; a = t; }
+    for (let k = 0; k < 3 && z >= 0; k++) { const t = trim(z, -1); if (t === z) break; z = t; }
+    return [a, z];
   }, png);
   await page.evaluate(() => document.querySelectorAll('.obj-top, .obj-foot, [data-pt-canvas]').forEach((e) => { e.style.visibility = ''; }));
   return { box: [0, b[0] + 6, 0, b[1] + 6], top: g.top, cap: g.cap };
@@ -693,7 +706,8 @@ const PAGES = ['index.html', 'services.html', 'cases.html', 'automations.html', 
 const srv = spawn(process.execPath, [path.join(here, 'serve.mjs'), '8097'], { stdio: 'pipe' });
 await new Promise((r) => srv.stdout.once('data', r));
 const BASE = 'http://localhost:8097/';
-const src = Object.fromEntries(PAGES.map((f) => [f, readFileSync(path.join(root, f), 'utf8')]));
+// переводы строк — к \n: в клоне на Windows (core.autocrlf) файлы приходят с CRLF, а проверки ищут разметку построчно
+const src = Object.fromEntries(PAGES.map((f) => [f, readFileSync(path.join(root, f), 'utf8').replace(/\r\n/g, '\n')]));
 const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
 // меню: шапка первого экрана, липкая шапка, меню телефона — четыре пункта, текущая страница — aria-current="page";
 // подвал: один footer.foot, разметка совпадает (без aria-current, адресов RU / EN и «/» в начале адресов у 404)
@@ -1382,7 +1396,7 @@ console.log('\nясность, B4 / B5 / B8: свет курсора, пульт
 console.log('\nфоновая пыль и взрыв подвала');
 {
   const bad = [], info = [];
-  let eng = readFileSync(path.join(root, 'assets', 'engine.js'), 'utf8');
+  let eng = readFileSync(path.join(root, 'assets', 'engine.js'), 'utf8').replace(/\r\n/g, '\n');
   const at = '      return {\n        setActive';
   if (!eng.includes(at) || !/var AMB = \[\]|AMB = \[\]/.test(eng)) bad.push('engine.js: нет запаса пыли AMB или места для отладочного крючка');
   else if (/inCalm\(x, y\)\) continue/.test(eng)) bad.push('engine.js: пыль над текстом первого экрана не рисуется (дыра посреди экрана)');
