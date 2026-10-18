@@ -82,16 +82,43 @@
   // ---------- кнопки действия — сразу в Telegram с готовым черновиком (TASK-clarity.md, B11.1) ----------
   // У ссылки [data-tg] в разметке — чат без текста (так она работает и без JS) и черновик в data-tg; здесь адрес
   // собирается как t.me/<имя>?text=<привет + черновик> на языке страницы и пересобирается при смене языка (pt:lang)
-  var tgs = Array.prototype.slice.call(root.querySelectorAll('[data-tg]'));
+  // WhatsApp [data-wa] — так же: wa.me/<номер>?text=<привет + черновик>
+  var tgs = Array.prototype.slice.call(root.querySelectorAll('[data-tg]')), was = Array.prototype.slice.call(root.querySelectorAll('[data-wa]'));
   function tgLinks() {
     var I = window.PTI18N, en = !!(I && I.lang === 'en');
-    tgs.forEach(function (a) {
-      var t = (a.getAttribute('data-tg') || '').replace(/\s+/g, ' ').trim();
-      a.href = 'https://t.me/dragonborne0?text=' + encodeURIComponent((en ? 'Hello!' : 'Здравствуйте!') + ' ' + (I ? I.t(t) : t));
-    });
+    function msg(a, k) { var t = (a.getAttribute(k) || '').replace(/\s+/g, ' ').trim(); return encodeURIComponent((en ? 'Hello!' : 'Здравствуйте!') + ' ' + (I ? I.t(t) : t)); }
+    tgs.forEach(function (a) { a.href = 'https://t.me/dragonborne0?text=' + msg(a, 'data-tg'); });
+    was.forEach(function (a) { a.href = 'https://wa.me/79090243995?text=' + msg(a, 'data-wa'); });
   }
   document.addEventListener('pt:lang', tgLinks);
   tgLinks();
+
+  // ---------- «Обсудить проект» — список каналов связи [data-cm] (просьба владельца) ----------
+  // Кнопка открывает список (Telegram, MAX, WhatsApp, телефон), закрывают: пункт, клик мимо, Esc (фокус — на кнопку), прокрутка
+  var cms = Array.prototype.slice.call(root.querySelectorAll('[data-cm]'));
+  function cmSet(cm, v) {
+    var b = cm.querySelector('.cm-btn'), p = cm.querySelector('.cm-pop');
+    if (!b || !p || p.hidden === !v) return;
+    p.hidden = !v; b.setAttribute('aria-expanded', v ? 'true' : 'false'); cm.classList.toggle('is-open', v);
+  }
+  function cmClose(keep) { cms.forEach(function (cm) { if (cm !== keep) cmSet(cm, false); }); }
+  cms.forEach(function (cm) {
+    var b = cm.querySelector('.cm-btn'), p = cm.querySelector('.cm-pop');
+    if (!b || !p) return;
+    b.addEventListener('click', function () {
+      var open = p.hidden; cmClose(cm); cmSet(cm, open);
+      if (open && b.matches(':focus-visible')) { var a = p.querySelector('a'); if (a) a.focus(); }
+    });
+    p.addEventListener('click', function (e) { if (e.target.closest('a')) cmSet(cm, false); });
+  });
+  if (cms.length) {
+    document.addEventListener('click', function (e) { if (!e.target.closest || !e.target.closest('[data-cm]')) cmClose(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      cms.forEach(function (cm) { var p = cm.querySelector('.cm-pop'); if (p && !p.hidden) { cmSet(cm, false); cm.querySelector('.cm-btn').focus(); } });
+    });
+    window.addEventListener('scroll', function () { cmClose(); }, { passive: true });
+  }
 
   // ---------- услуги на телефоне: в «Что входит» две строки, остальные — под кнопкой (TASK-clarity.md, B11.2) ----------
   // CSS прячет строки с третьей (только до 760 px); кнопка раскрывает и сворачивает список, высота меняется за 300 мс

@@ -1793,30 +1793,47 @@ console.log('\ncookie и Метрика');
   if (bad.length) fail('cookie и Метрика: ' + bad.join('; '));
   else console.log('  ✓ до согласия нет Метрики и cookie _ym, плашка после первого экрана, «Отклонить» запоминается, «Настройки cookie» открывают снова, «Принять» грузит tag.js, цели tg (место и текст), max, wa и phone, YM_ID = 0 — без плашки, EN — по-английски, политика — сразу; yandex-verification на главной');
 }
-// Связь в подвале — иконки (просьба владельца): вместо строки «Telegram · @dragonborne0» три кнопки .ico со своими SVG —
-// Telegram (t.me/dragonborne0), Max (max.ru), WhatsApp (wa.me/79090243995) и телефон (tel:+79090243995); у каждой aria-label; на
-// всех страницах. Знак MAX —
-// ещё и в обеих шапках, после Telegram.
-console.log('\nсвязь в подвале: иконки');
+// Связь (просьбы владельца): в подвале — иконки Telegram (t.me/dragonborne0), MAX (max.ru), WhatsApp (wa.me/79090243995) и
+// телефон (tel:+79090243995) — 44 px, с подписями; в обеих шапках «Обсудить проект» — список [data-cm] из тех же четырёх каналов
+// (Telegram и WhatsApp — с черновиком), открывается кнопкой, закрывается Esc (фокус — на кнопку), в окне; в меню — MAX, WhatsApp,
+// «Позвонить». Иконки — Tabler (лицензия в assets/icons), знак MAX — присланный владельцем, assets/icons/max.svg (4 раза).
+console.log('\nсвязь: подвал, «Обсудить проект», меню');
 {
   const bad = [];
+  if (!existsSync(path.join(root, 'assets', 'icons', 'max.svg')) || !existsSync(path.join(root, 'assets', 'icons', 'LICENSE-tabler.txt'))) bad.push('нет assets/icons/max.svg или лицензии Tabler');
   const pv = readFileSync(path.join(root, 'privacy.html'), 'utf8').replace(/\r\n/g, '\n');
   for (const [f, h] of Object.entries({ ...src, 'privacy.html': pv })) {
     const ic = (/<p class="foot-ico">([\s\S]*?)<\/p>/.exec(h) || [])[1] || '';
-    const a = [...ic.matchAll(/<a href="([^"]+)"[^>]*class="ico fr" aria-label="([^"]+)"[^>]*><svg[\s\S]*?<\/svg><\/a>/g)].map((m) => [m[1], m[2]]);
-    if (a.length !== 4 || !/^https:\/\/t\.me\/dragonborne0$/.test(a[0][0]) || !/^https:\/\/(web\.)?max\.ru\//.test(a[1][0]) || a[2][0] !== 'https://wa.me/79090243995' || a[3][0] !== 'tel:+79090243995' || /Telegram · @dragonborne0/.test(h)) bad.push(`${f}: ${JSON.stringify(a)}`);
-    // MAX — и в шапке первого экрана, и в липкой (сразу после Telegram), и в подвале; знак — глиф логотипа контуром
-    const mx = [...h.matchAll(/<a href="https:\/\/max\.ru\/[^"]+" target="_blank" rel="noopener" class="ico( fr)?" aria-label="Написать в Max"[^>]*><svg[^>]*viewBox="110 110 780 780"[^>]*stroke="currentColor"/g)].length;
-    if (mx !== 3) bad.push(`${f}: значков MAX ${mx} (нужно 3: две шапки и подвал)`);
+    const a = [...ic.matchAll(/<a href="([^"]+)"[^>]*class="ico fr" aria-label="([^"]+)"[^>]*><(svg|img)/g)].map((m) => m[1]);
+    if (a.join(' ').replace(/max\.ru\/\S+/, 'max.ru/…') !== 'https://t.me/dragonborne0 https://max.ru/… https://wa.me/79090243995 tel:+79090243995' || /Telegram · @dragonborne0/.test(h)) bad.push(`${f}: подвал ${JSON.stringify(a)}`);
+    const cms = [...h.matchAll(/<div class="cm" data-cm>[\s\S]*?<\/div>\n<\/div>/g)].map((m) => m[0]);
+    if (cms.length !== 2 || cms.some((c) => !/data-tg="Хочу обсудить проект\."/.test(c) || !/href="https:\/\/max\.ru\//.test(c) || !/href="https:\/\/wa\.me\/79090243995" target="_blank" rel="noopener" data-wa=/.test(c) || !/href="tel:\+79090243995"/.test(c))) bad.push(`${f}: списков «Обсудить проект» ${cms.length} или в них не все каналы`);
+    if ((h.match(/<img class="ic-max" src="\/?assets\/icons\/max\.svg"/g) || []).length !== 4) bad.push(`${f}: знак MAX не в четырёх местах`);
+    if (/class="ico( fr)?" aria-label="Написать в (Telegram|Max)"/.test(h.replace(/<p class="foot-ico">[\s\S]*?<\/p>/, ''))) bad.push(`${f}: в шапке остались отдельные иконки`);
   }
   const quick = await chromium.launch();
-  const page = await quick.newPage({ viewport: { width: 390, height: 844 } });
-  await page.goto(BASE + 'index.html?intro=instant&lang=en'); await page.waitForTimeout(400);
-  const r = await page.evaluate(() => [...document.querySelectorAll('.foot-ico a')].map((a) => { const b = a.getBoundingClientRect(); return { l: a.getAttribute('aria-label'), w: Math.round(b.width), h: Math.round(b.height), svg: !!a.querySelector('svg') }; }));
-  if (r.length !== 4 || r.some((x) => /[А-Яа-яЁё]/.test(x.l) || x.w < 44 || x.h < 44 || !x.svg)) bad.push(`EN / зоны нажатия: ${JSON.stringify(r)}`);
+  for (const [w, h, q] of [[1440, 900, ''], [390, 844, ''], [390, 844, '&lang=en']]) {
+    const page = await quick.newPage({ viewport: { width: w, height: h } });
+    await page.goto(BASE + 'index.html?intro=instant' + q); await page.waitForTimeout(500);
+    const ft = await page.evaluate(() => [...document.querySelectorAll('.foot-ico a')].map((a) => { const b = a.getBoundingClientRect(); return { l: a.getAttribute('aria-label'), w: Math.round(b.width), h: Math.round(b.height) }; }));
+    if (ft.length !== 4 || ft.some((x) => x.w < 44 || x.h < 44 || (q && /[А-Яа-яЁё]/.test(x.l)))) bad.push(`${w}${q}: подвал ${JSON.stringify(ft)}`);
+    const btn = '.hero-hdr .cm-btn';
+    await page.click(btn); await page.waitForTimeout(250);
+    const op = await page.evaluate(() => {
+      const p = document.querySelector('.hero-hdr .cm-pop'), r = p.getBoundingClientRect(), as = [...p.querySelectorAll('a')];
+      return { open: !p.hidden, exp: document.querySelector('.hero-hdr .cm-btn').getAttribute('aria-expanded'), inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0, n: as.length, tg: as[0].href, wa: as[2].href, cyr: as.some((a) => /[А-Яа-яЁё]/.test(a.textContent)), small: as.filter((a) => a.getBoundingClientRect().height < 44).length, bw: Math.round(document.querySelector('.hero-hdr .cm-btn').getBoundingClientRect().width) };
+    });
+    if (!op.open || op.exp !== 'true' || !op.inView || op.n !== 4 || op.small) bad.push(`${w}${q}: список не открылся как надо ${JSON.stringify(op)}`);
+    if (!/^https:\/\/t\.me\/dragonborne0\?text=/.test(op.tg) || !new RegExp(`^https://wa\\.me/79090243995\\?text=${q ? 'Hello' : '%D0%97'}`).test(op.wa)) bad.push(`${w}${q}: черновики ${op.tg} | ${op.wa}`);
+    if (w < 760 && op.bw !== 44) bad.push(`${w}: на телефоне кнопка «Обсудить проект» не круглая (${op.bw} px)`);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(150);
+    const cl = await page.evaluate(() => ({ hidden: document.querySelector('.hero-hdr .cm-pop').hidden, focus: document.activeElement === document.querySelector('.hero-hdr .cm-btn') }));
+    if (!cl.hidden || !cl.focus) bad.push(`${w}${q}: Esc ${JSON.stringify(cl)}`);
+    await page.close();
+  }
   await quick.close();
-  if (bad.length) fail('связь в подвале: ' + bad.join('; '));
-  else console.log('  ✓ в подвале всех страниц — иконки Telegram, MAX, WhatsApp и телефон (44 px; MAX и в обеих шапках, с подписями, в EN по-английски)');
+  if (bad.length) fail('связь: ' + bad.join('; '));
+  else console.log('  ✓ подвал — Telegram, MAX, WhatsApp, телефон (44 px); «Обсудить проект» в обеих шапках — список из четырёх каналов с черновиками, в окне, Esc закрывает; на телефоне — круглая кнопка; знак MAX — файл владельца в цветах сайта');
 }
 // Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
 // «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.
