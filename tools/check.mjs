@@ -1484,6 +1484,52 @@ console.log('\nревью, 1: первые секунды');
   if (bad.length) fail('ревью, 1: ' + bad.join('; '));
   else console.log(`  ✓ пульт скрыт до вспышки, подпись «Собрать заново»; объект виден с ${go.t} мс (стадия рамок, до s-done); заливка кнопки ${tf} мс, её текст ${tt} мс`);
 }
+// Ревью, разделы 2–3: шрифты со своего сервера — ни одного запроса к googleapis / gstatic, Manrope 300 и Cormorant italic
+// загрузились из assets/fonts; иконки сайта и превью ссылки — у всех страниц иконки и theme-color, у всех, кроме 404, og:*
+// (og:title = <title>, og:description = description, og:url = canonical); /favicon.svg, /favicon.ico, /apple-touch-icon.png,
+// /assets/og.jpg и иконки 192 / 512 отдают 200; в EN og:title и og:description переведены, og:locale — en_US.
+console.log('\nревью, 2–3: свои шрифты, иконка сайта, превью ссылки');
+{
+  const bad = [], info = [];
+  for (const f of PAGES) {
+    const h = src[f], head = h.slice(0, h.indexOf('</head>'));
+    if (/googleapis|gstatic/.test(h)) bad.push(`${f}: ссылка на Google Fonts`);
+    const pre = [...head.matchAll(/<link rel="preload" href="([^"]+)" as="font" type="font\/woff2" crossorigin>/g)].map((m) => m[1].replace(/^\//, ''));
+    if (pre.join() !== 'assets/fonts/manrope-cyrillic-300-normal.woff2,assets/fonts/manrope-cyrillic-400-normal.woff2') bad.push(`${f}: preload шрифтов ${pre.join(', ') || 'нет'}`);
+    for (const re of [/<link rel="icon" href="\/?favicon\.svg" type="image\/svg\+xml">/, /<link rel="icon" href="\/?favicon\.ico" sizes="any">/, /<link rel="apple-touch-icon" href="\/?apple-touch-icon\.png">/, /<meta name="theme-color" content="#0A121A">/]) if (!re.test(head)) bad.push(`${f}: нет ${re.source.slice(0, 40)}`);
+    const og = (k) => (new RegExp(`<meta property="og:${k}" content="([^"]*)">`).exec(head) || [])[1];
+    if (f === '404.html') { if (/og:/.test(head)) bad.push('404.html: og:* не нужны'); continue; }
+    const t = (/<title>(.*?)<\/title>/.exec(head) || [])[1], d = (/<meta name="description" content="([^"]*)">/.exec(head) || [])[1], c = (/<link rel="canonical" href="([^"]*)">/.exec(head) || [])[1];
+    if (og('title') !== t || og('description') !== d || og('url') !== c || og('image') !== 'https://privatechouse.ru/assets/og.jpg' || og('image:width') !== '1200' || og('image:height') !== '630' || og('type') !== 'website' || og('locale') !== 'ru_RU' || !/<meta name="twitter:card" content="summary_large_image">/.test(head)) bad.push(`${f}: og:* не совпадают с title / description / canonical`);
+  }
+  for (const u of ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png', 'assets/og.jpg', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png']) {
+    const r = await fetch(BASE + u); if (r.status !== 200) bad.push(`/${u}: ${r.status}`);
+  }
+  const quick = await chromium.launch();
+  for (const f of PAGES) {
+    for (const q of f === '404.html' ? [''] : ['', '?lang=en']) {
+      const page = await quick.newPage({ viewport: { width: 1440, height: 900 } });
+      const ext = [], fonts = [];
+      page.on('request', (r) => { const u = r.url(); if (/googleapis|gstatic/.test(u)) ext.push(u); if (/\.woff2(\?|$)/.test(u)) fonts.push(u); });
+      await page.goto(BASE + (f === '404.html' ? 'nonexistent/deep/path' : f) + q);
+      const r = await page.evaluate(async () => {
+        await document.fonts.ready;
+        await Promise.all([document.fonts.load('300 16px Manrope', 'Аб'), document.fonts.load('italic 500 16px "Cormorant Garamond"', 'Аб'), document.fonts.load('400 16px "JetBrains Mono"', 'Аб')]);
+        const og = (k) => { const m = document.querySelector(`meta[property="og:${k}"]`); return m ? m.content : null; };
+        return { m3: document.fonts.check('300 16px Manrope', 'Аб'), cg: document.fonts.check('italic 500 16px "Cormorant Garamond"', 'Аб'), jb: document.fonts.check('400 16px "JetBrains Mono"', 'Аб'), t: og('title'), d: og('description'), loc: og('locale') };
+      });
+      if (ext.length) bad.push(`${f}${q}: запросы к Google — ${ext.length}`);
+      if (!r.m3 || !r.cg || !r.jb) bad.push(`${f}${q}: шрифты не загрузились (${JSON.stringify(r)})`);
+      if (fonts.some((u) => !/\/assets\/fonts\//.test(u))) bad.push(`${f}${q}: шрифт не из assets/fonts`);
+      if (q && (/[А-Яа-яЁё]/.test(r.t + r.d) || r.loc !== 'en_US')) bad.push(`${f}${q}: og:* не переведены (${r.t} / ${r.loc})`);
+      if (f === 'index.html' && !q) info.push(`главная: ${fonts.length} файлов шрифтов из assets/fonts`);
+      await page.close();
+    }
+  }
+  await quick.close();
+  if (bad.length) fail('ревью, 2–3: ' + bad.join('; '));
+  else console.log(`  ✓ запросов к Google нет, шрифты из assets/fonts (${info.join('; ')}), preload — Manrope 300 / 400 cyrillic; иконки, theme-color и og:* на местах (404 — без og), файлы отдают 200, в EN og:* переведены`);
+}
 // Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
 // «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.
 console.log('\nясность, B7 / B9: цвет на «Что делаем», демо-сайты');

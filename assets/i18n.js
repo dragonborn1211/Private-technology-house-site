@@ -658,7 +658,8 @@
         var src = n.__ru != null ? n.__ru : n.nodeValue;
         if ((v = conv(src)) != null) { n.__ru = src; if (n.nodeValue !== v) n.nodeValue = v; }
       }
-      Array.prototype.forEach.call(d.querySelectorAll('[aria-label],[title],[alt],meta[name="description"]'), function (el) {
+      // превью ссылки (og:title / og:description) — те же строки, что <title> и description
+      Array.prototype.forEach.call(d.querySelectorAll('[aria-label],[title],[alt],meta[name="description"],meta[property="og:title"],meta[property="og:description"]'), function (el) {
         var list = el.tagName === 'META' ? ['content'] : ATTRS;
         list.forEach(function (a) {
           if (!el.hasAttribute(a)) return;
@@ -674,6 +675,7 @@
         if (!en) { sc.textContent = sc.__ru; return; }
         try { sc.textContent = JSON.stringify(ld(JSON.parse(sc.__ru))); } catch (e) { /* не JSON — как есть */ }
       });
+      var loc = d.querySelector('meta[property="og:locale"]'); if (loc) loc.setAttribute('content', en ? 'en_US' : 'ru_RU');
       if (I._title == null) I._title = d.title;
       d.title = en ? (conv(I._title) || I._title) : I._title;
       Array.prototype.forEach.call(d.querySelectorAll('[data-lang]'), function (a) {
