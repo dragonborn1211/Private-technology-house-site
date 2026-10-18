@@ -469,16 +469,18 @@
           SW[i] = now + 1300 + Math.random() * 700;
         }
       }
-      // Небольшой взрыв в конце страницы (подвал всех страниц, data-pt-burst="pop"; просьба владельца: «небольшой взрыв, не как
-      // до этого, а попроще»). Прежний «выдох» вёл частицы с букв пружиной к точкам рядом и гасил по пути — они таяли раньше,
-      // чем успевали разойтись, и его не было видно. Теперь — вспышка при загрузке в миниатюре: частицы подвала гаснут на месте,
-      // а POPN из них вспыхивают в середине верхней линии подвала (граница с контактом) и разлетаются вверх и в стороны
-      // (свободно, скорость затухает сама; вертикаль — только вверх, ×0.6), радиусом POPR: облако идёт над пустым местом между
-      // кнопкой контакта и подвалом, а не поверх ссылок подвала (TASK-review.md, раздел 8). Через 0.25 с начинают гаснуть, к
-      // ~1 с их нет. Пока летят, за край экрана не переносятся (burstEnd). Через 1.2 с — тихий финал (phSettle).
+      // Взрыв в конце страницы (подвал всех страниц, data-pt-burst="pop"). Просьба владельца: «взрыв по всему футеру, не
+      // концентрируй все частицы в одной области, пусть разлетаются». Частицы подвала гаснут на месте, а POPN из них вспыхивают
+      // на буквах подвала — по всей его ширине (точки растра букв; если букв нет — по всему блоку) — и разлетаются во все
+      // стороны, как вспышка при загрузке: свободно, скорость затухает сама, на POPR (вниз — ×0.7: под подвалом мало места).
+      // Через 0.25 с начинают гаснуть, к ~1 с их нет. Пока летят, за край экрана не переносятся (burstEnd). Через 1.2 с — тихий
+      // финал (phSettle). Раньше было из одной точки: из середины подвала (облако закрывало ссылки), потом — из середины его
+      // верхней линии полукуполом (TASK-review.md, раздел 8).
       function phPop(idx, s) {
-        var now = performance.now(), g = s.geo && s.geo.box, cx = g ? g.x + g.w / 2 : W / 2, cy = g ? g.y : -rootTop + VH * 0.8;
-        var POPN = mob ? 1300 : 2600, POPR = mob ? 120 : 200, reach = (1 - Math.pow(0.975, 45)) / 0.025, out = [];
+        var now = performance.now(), g = s.geo && s.geo.box, G = null;
+        if (s.geo) { ensureGl(s); G = s.geo.gl; }
+        var POPN = mob ? 2000 : 4000, POPR = mob ? 110 : 170, reach = (1 - Math.pow(0.975, 45)) / 0.025, out = [];
+        var pb = G && G.n ? (G.small.n ? (G.big.n ? G.big.n / G.n : 0) : 1) : 0;
         burstEnd = Math.max(burstEnd, now + 1600);
         for (var k = 0; k < idx.length; k++) {
           var i = idx[k], p = i * 2, c = i * 3;
@@ -486,11 +488,14 @@
           AT[i] = NA[i] = 0;
         }
         for (k = 0; k < POPN && k < idx.length; k++) {
-          var j = idx[(Math.random() * idx.length) | 0], q = j * 2, r = j * 3, a = Math.random() * 6.2832, rr = Math.random() * 5;
-          var d = POPR * Math.sqrt(Math.random()) * (0.85 + Math.random() * 0.3) / reach, col = Math.random() < 0.25 ? COL.frost : DUST[(Math.random() * DUST.length) | 0];
-          P[q] = cx + Math.cos(a) * rr; P[q + 1] = cy - Math.abs(Math.sin(a)) * rr; V[q] = Math.cos(a) * d; V[q + 1] = -Math.abs(Math.sin(a)) * d * 0.6;
+          var j = idx[(Math.random() * idx.length) | 0], q = j * 2, r = j * 3, a = Math.random() * 6.2832, x, y;
+          if (G && G.n) { var gg = Math.random() < pb ? G.big : G.small, n = (Math.random() * gg.n) | 0; x = gg.x[n]; y = gg.y[n]; }
+          else if (g) { x = g.x + Math.random() * g.w; y = g.y + Math.random() * g.h; }
+          else { x = Math.random() * W; y = -rootTop + VH * (0.8 + Math.random() * 0.2); }
+          var d = POPR * Math.sqrt(Math.random()) * (0.85 + Math.random() * 0.3) / reach, sy = Math.sin(a), col = Math.random() < 0.3 ? COL.frost : DUST[(Math.random() * DUST.length) | 0];
+          P[q] = x; P[q + 1] = y; V[q] = Math.cos(a) * d; V[q + 1] = sy * d * (sy > 0 ? 0.7 : 1);
           C[r] = CT[r] = NC[r] = col[0] / 255; C[r + 1] = CT[r + 1] = NC[r + 1] = col[1] / 255; C[r + 2] = CT[r + 2] = NC[r + 2] = col[2] / 255;
-          A[j] = 0.9; AT[j] = NA[j] = 0.6; SZ[j] = NS[j] = 1.5 + Math.random() * 1.2; M[j] = NM[j] = 1; TP[j] = 0; out.push(j);
+          A[j] = 0.9; AT[j] = NA[j] = 0.6; SZ[j] = NS[j] = 1.4 + Math.random() * 1.1; M[j] = NM[j] = 1; TP[j] = 0; out.push(j);
         }
         at(0.25, function () { if (running) return; for (var q = 0; q < out.length; q++) AT[out[q]] = NA[out[q]] = 0; });
         at(1.2, function () { if (running) return; phSettle(idx); });
