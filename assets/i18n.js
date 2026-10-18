@@ -487,6 +487,8 @@
     'Договор и NDA': 'Contract and NDA',
     'Работаем по договору. NDA подписываем по запросу, до начала работ.': 'We work under a contract. NDA on request, before work starts.',
     'О студии': 'About',
+    // связь в подвале — иконки
+    'Написать в Max': 'Message us on Max',
     // ссылка на политику в подвале; сама политика — только по-русски
     'Политика конфиденциальности': 'Privacy policy (in Russian)',
     // плашка cookie (assets/consent.js, раздел 3)

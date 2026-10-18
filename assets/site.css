@@ -217,20 +217,18 @@ body{margin:0;background:#0A121A}
 .obj-top{position:absolute;top:18px;left:22px;right:22px;z-index:5;display:flex;flex-direction:column;gap:10px}
 .obj-k{display:flex;align-items:center;gap:10px;margin:0;color:#BCD3DE;letter-spacing:.18em}
 .obj-k b{flex:none;width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc)}
-.cx{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.cx{display:grid;grid-template-columns:repeat(5,minmax(max-content,1fr));gap:10px}
 .cx-i{appearance:none;border:0;background:transparent;margin:0;padding:8px 0 10px;min-height:44px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:9px;font:inherit;color:inherit}
 /* полоска вкладки — рамка .fr с data-fr-line="top": частицы обводят её при сборке, она проявляется вместе с рамками */
 .cx-bar{display:block;position:relative;height:2px;border-radius:2px;background-color:rgba(188,211,222,.14);overflow:hidden}
 .cx-bar i{position:absolute;inset:0;background:var(--c);transform:scaleX(0);transform-origin:left;box-shadow:0 0 10px var(--c)}
-/* вкладки набраны основным шрифтом сайта, как меню шапки; номер — табличные цифры в цвете принципа */
-.cx-l{display:flex;align-items:baseline;gap:7px;font:500 14px/1 Manrope,system-ui,sans-serif;letter-spacing:0;white-space:nowrap}
-.cx-n{font-weight:600;font-variant-numeric:tabular-nums lining-nums;font-feature-settings:'tnum' 1,'lnum' 1;color:color-mix(in srgb,var(--c) 70%,transparent)}
+/* вкладки набраны основным шрифтом сайта, как меню шапки; номеров нет (просьба владельца) — только слово, цвет принципа —
+   у полоски. Приглушение неактивных — через цвет: opacity у текста занята сборкой (.ptx) */
+.cx-l{display:flex;align-items:baseline;font:500 14px/1 Manrope,system-ui,sans-serif;letter-spacing:0;white-space:nowrap}
 .cx-w{color:#8193A0}
 .cx-i:hover .cx-w{color:#BCD3DE}
-.cx-i[aria-current="step"] .cx-n{color:var(--c);text-shadow:0 0 12px var(--c)}
 .cx-i[aria-current="step"] .cx-w{color:#EEF3F6}
-/* у неактивного номера прозрачность — через цвет: opacity у текста занята сборкой (.ptx) */
-.pt-on .sec .cx-n,.pt-on .sec .cx-w{transition:opacity .9s ease,color .3s ease,text-shadow .3s ease}
+.pt-on .sec .cx-w{transition:opacity .9s ease,color .3s ease}
 .obj-foot{position:absolute;left:24px;right:16px;bottom:16px;z-index:5;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;pointer-events:none}
 .obj-foot button{pointer-events:auto}
 /* подпись: заголовок и описание активного принципа — один блок, гаснет и появляется целиком (.is-swap, модуль) */
@@ -265,8 +263,10 @@ body{margin:0;background:#0A121A}
    .obj-go — холсты видны раньше s-done; снимается с готовой или погашенной секцией (смена языка, «Собрать заново») */
 .pt-on .sec.obj-go canvas[data-gl],.pt-on .sec.obj-go canvas[data-ov]{opacity:1}
 /* слова на вкладках прячутся по ширине панели, а не окна: в узкой панели — только номера, полное название — в подписи */
-@container (max-width:540px){.cx-w{display:none}}
-@media (max-width:760px){.ps{left:auto;bottom:auto;top:50%;right:calc(100% + 66px);transform:translateY(-50%)}.cx{gap:6px}.cx-w{display:none}.obj-foot{flex-direction:column;align-items:stretch;left:16px;right:12px;bottom:12px;gap:10px}.obj-cw{max-width:none}.nav2{align-self:flex-end}.obj-ct{font-size:26px}.obj-cap{-webkit-line-clamp:3;line-clamp:3}}
+/* узкая панель (телефон, окно ~1100–1180 px): слова мельче; не влезают (320 px, длинные английские) — ряд листается вбок, модуль
+   подкручивает его к активной вкладке. Отступ сверху — чтобы прокрутка не срезала свечение полоски */
+@container (max-width:540px){.cx{gap:12px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding-top:6px;margin-top:-6px}.cx::-webkit-scrollbar{display:none}.cx-l{font-size:13px}}
+@media (max-width:760px){.ps{left:auto;bottom:auto;top:50%;right:calc(100% + 66px);transform:translateY(-50%)}.obj-foot{flex-direction:column;align-items:stretch;left:16px;right:12px;bottom:12px;gap:10px}.obj-cw{max-width:none}.nav2{align-self:flex-end}.obj-ct{font-size:26px}.obj-cap{-webkit-line-clamp:3;line-clamp:3}}
 /* без анимации: автосмены нет — кольцо до неё и «пауза» не нужны */
 @media (prefers-reduced-motion:reduce){.hero-obj,.pt-on .sec .hero-obj.fr,.obj-cw,.nb .ar{transition:none}.rg .rv,.ps{display:none}}
 /* ---------- шапка: логотип, меню, действия (первый экран и липкая шапка) ---------- */
@@ -692,6 +692,10 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .foot-brand{grid-area:brand;align-self:start;padding-top:8px}
 .foot-nav{grid-area:nav}
 .foot-tel{grid-area:tel}
+/* связь в подвале — иконки (просьба владельца): Telegram, Max, телефон; кнопки как в шапке, проявляются с рамками подвала */
+.foot-ico{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 0}
+.pt-on .sec .foot-ico svg{transition:opacity .9s ease}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .foot-ico svg{opacity:0}
 .foot-name{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#EEF3F6}
 .foot-tag{margin:0;max-width:320px;font-size:13px;line-height:1.55;color:#8193A0}
 /* ссылка на политику в подвале (TASK-founder.md: ФИО и ИНН — только в самой политике, «Настройки cookie» — в ней же) */

@@ -276,7 +276,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
       const o = document.querySelector('[data-obj]').getBoundingClientRect(), tabs = [...document.querySelectorAll('[data-usp]')];
       return { dots: document.querySelectorAll('[data-objdot]').length, gl: !!document.querySelector('[data-sec="hero"] canvas[data-gl]'), usp: tabs.length,
         out: tabs.filter((t) => { const r = t.getBoundingClientRect(); return r.left < o.left || r.right > o.right || r.top < o.top || r.bottom > o.bottom; }).length,
-        font: getComputedStyle(document.querySelector('.cx-l')).fontFamily, num: getComputedStyle(document.querySelector('.cx-n')).fontVariantNumeric,
+        font: getComputedStyle(document.querySelector('.cx-l')).fontFamily, num: document.querySelectorAll('.cx-n').length,
         words: [...document.querySelectorAll('.cx-w')].filter((x) => getComputedStyle(x).display !== 'none').length, wide: o.width >= 540,
         clip: [...document.querySelectorAll('.cx-l')].filter((l) => l.scrollWidth > l.clientWidth + 1).length };
     });
@@ -315,7 +315,8 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     await run(900); res.push(await idx(page));
     const order = ['04 / 05', '05 / 05', '04 / 05', '04 / 05', '05 / 05', '01 / 05', '01 / 05', '02 / 05'];
     if (hx.dots || !hx.gl || hx.usp !== 5 || hx.out) bad.push(`точек ${hx.dots}, canvas[data-gl] ${hx.gl}, вкладок ${hx.usp}, вне панели ${hx.out}`);
-    if (!/Manrope/.test(hx.font) || !/tabular-nums/.test(hx.num)) bad.push(`шрифт вкладок «${hx.font}», цифры «${hx.num}»`);
+    // номеров на вкладках нет (просьба владельца) — только слово
+    if (!/Manrope/.test(hx.font) || hx.num) bad.push(`шрифт вкладок «${hx.font}», номеров ${hx.num}`);
     if (!hx.wide || hx.words !== 5 || hx.clip) bad.push(`на 1440 слова вкладок: видно ${hx.words}, обрезано ${hx.clip}`);
     if (res.join() !== order.join()) bad.push(`порядок: ${res.join(' · ')} (ждали ${order.join(' · ')})`);
     if (bad.length) fail('панель «Кодекс студии»: ' + bad.join('; '));
@@ -735,7 +736,7 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
   const foot = (f) => { const m = src[f].match(/<footer[\s\S]*?<\/footer>/g) || []; return m.length === 1 && /<footer[^>]*class="[^"]*\bfoot\b/.test(m[0]) ? m[0].replace(/ aria-current="page"/g, '').replace(/(<a href=")[^"]*(" hreflang=)/g, '$1$2').replace(/href="\//g, 'href="') : `(подвалов ${m.length})`; };
   const f0 = foot('index.html');
   PAGES.forEach((f) => { if (foot(f) !== f0) bad.push(`${f}: подвал отличается от главной`); });
-  const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|^#top$|^#about$|^privacy\.html$|^$/.test(h));
+  const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|max\.ru|^tel:|^#top$|^#about$|^privacy\.html$|^$/.test(h));
   const sid = idsOf('services.html');
   fl.forEach((h) => { const [pg, id] = h.split('#'); if (!PAGES.includes(pg) || (id && !(pg === 'services.html' ? sid : idsOf(pg)).has(id))) bad.push(`подвал: ссылка ${h} ведёт в никуда`); });
   if (fl.join(',') !== 'services.html,cases.html,automations.html,process.html,services.html#faq' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
@@ -1791,6 +1792,27 @@ console.log('\ncookie и Метрика');
   if (bad.length) fail('cookie и Метрика: ' + bad.join('; '));
   else console.log('  ✓ до согласия нет Метрики и cookie _ym, плашка после первого экрана, «Отклонить» запоминается, «Настройки cookie» открывают снова, «Принять» грузит tag.js, цель tg с местом и текстом, YM_ID = 0 — без плашки, EN — по-английски, политика — сразу; yandex-verification на главной');
 }
+// Связь в подвале — иконки (просьба владельца): вместо строки «Telegram · @dragonborne0» три кнопки .ico со своими SVG —
+// Telegram (t.me/dragonborne0), Max (max.ru) и телефон (tel:+7…, когда будет номер); у каждой aria-label; на всех страницах.
+console.log('\nсвязь в подвале: иконки');
+{
+  const bad = [];
+  const pv = readFileSync(path.join(root, 'privacy.html'), 'utf8').replace(/\r\n/g, '\n');
+  for (const [f, h] of Object.entries({ ...src, 'privacy.html': pv })) {
+    const ic = (/<p class="foot-ico">([\s\S]*?)<\/p>/.exec(h) || [])[1] || '';
+    const a = [...ic.matchAll(/<a href="([^"]+)"[^>]*class="ico fr" aria-label="([^"]+)"[^>]*><svg[\s\S]*?<\/svg><\/a>/g)].map((m) => [m[1], m[2]]);
+    // телефон — когда владелец пришлёт номер (третья иконка необязательна)
+    if (a.length < 2 || a.length > 3 || !/^https:\/\/t\.me\/dragonborne0$/.test(a[0][0]) || !/^https:\/\/(web\.)?max\.ru\//.test(a[1][0]) || (a[2] && !/^tel:\+\d{11,12}$/.test(a[2][0])) || /Telegram · @dragonborne0/.test(h)) bad.push(`${f}: ${JSON.stringify(a)}`);
+  }
+  const quick = await chromium.launch();
+  const page = await quick.newPage({ viewport: { width: 390, height: 844 } });
+  await page.goto(BASE + 'index.html?intro=instant&lang=en'); await page.waitForTimeout(400);
+  const r = await page.evaluate(() => [...document.querySelectorAll('.foot-ico a')].map((a) => { const b = a.getBoundingClientRect(); return { l: a.getAttribute('aria-label'), w: Math.round(b.width), h: Math.round(b.height), svg: !!a.querySelector('svg') }; }));
+  if (r.length < 2 || r.some((x) => /[А-Яа-яЁё]/.test(x.l) || x.w < 44 || x.h < 44 || !x.svg)) bad.push(`EN / зоны нажатия: ${JSON.stringify(r)}`);
+  await quick.close();
+  if (bad.length) fail('связь в подвале: ' + bad.join('; '));
+  else console.log('  ✓ в подвале всех страниц — иконки Telegram, Max (и телефон, если есть) (44 px, с подписями, в EN по-английски)');
+}
 // Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
 // «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.
 console.log('\nясность, B7 / B9: цвет на «Что делаем», демо-сайты');
@@ -2148,7 +2170,7 @@ console.log('\nраскладка на промежуточных ширинах
       const W = innerWidth, res = [];
       document.querySelectorAll('#pt-site .sec a, #pt-site .sec button, #pt-site .sec h1, #pt-site .sec h2, #pt-site .sec h3, #pt-site .sec p, #pt-site .sec li, [data-topbar] a, [data-topbar] button').forEach((el) => {
         if (el.closest('template, [data-menu], .site-view, .an, .wf')) return;
-        const sx = el.closest('.sv-paths'); if (sx && getComputedStyle(sx).overflowX === 'auto') return;
+        const sx = el.closest('.sv-paths, .cx'); if (sx && getComputedStyle(sx).overflowX === 'auto') return;
         const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') return;
         const r = el.getBoundingClientRect(); if (!r.width) return;
         if (r.right > W + 1 || r.left < -1) res.push(`«${(el.textContent.trim() || el.getAttribute('aria-label') || el.tagName).slice(0, 24)}» ${Math.round(r.left)}..${Math.round(r.right)}`);
@@ -2157,7 +2179,8 @@ console.log('\nраскладка на промежуточных ширинах
       const obj = document.querySelector('[data-obj]');
       if (obj) {
         const pw = obj.getBoundingClientRect().width, words = [...document.querySelectorAll('.cx-w')].filter((x) => getComputedStyle(x).display !== 'none').length;
-        if (pw < 540 ? words : words !== 5) res.push(`панель ${Math.round(pw)} px: видно слов на вкладках ${words}`);
+        // номеров на вкладках нет — слова видны всегда (на узкой панели ряд листается вбок)
+        if (words !== 5 || document.querySelectorAll('.cx-n').length) res.push(`панель ${Math.round(pw)} px: видно слов на вкладках ${words}`);
         const clip = [...document.querySelectorAll('.cx-l')].filter((l) => l.scrollWidth > l.clientWidth + 1).length;
         if (clip) res.push(`вкладок, где подпись шире вкладки: ${clip}`);
       }
