@@ -851,3 +851,28 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
   .sv-paths::-webkit-scrollbar{display:none}
   .sv-path{flex:0 0 min(84%,330px);scroll-snap-align:start}
 }
+/* ---------- наведение (просьба владельца: «всем кнопкам и ссылкам — подсветку при наведении, перелив градиента; сейчас тухло») ----------
+   Одна система в палитре сайта. Текстовые ссылки — текст переливается градиентом палитры (иконки-стрелки в них — мятные).
+   Контурные кнопки, иконки-кнопки, фильтры, «таблетки», карточки-ссылки — рамка-перелив (::after с маской, без смены фона и
+   размытия под ней) и мягкое свечение. Белые главные кнопки — пульсирующее свечение. Пункты списка «Обсудить проект» — подложка
+   и перелив подписи. Наведение — только у устройств с мышью (hover: hover), фокус с клавиатуры — то же самое. Reduced motion —
+   цвет без движения */
+:root{--pt-grad:linear-gradient(90deg,#8ED8F8,#7FA8FF,#B7A6F2,#9FE5D1,#8ED8F8)}
+@keyframes pt-flow{from{background-position:0 0}to{background-position:-200% 0}}
+@keyframes pt-pulse{0%,100%{box-shadow:0 0 0 0 rgba(142,216,248,.6),0 0 34px -4px rgba(142,216,248,.7)}50%{box-shadow:0 0 0 9px rgba(142,216,248,0),0 0 56px -2px rgba(183,166,242,.8)}}
+.pt :is(a,button).btn-g,.pt .ico,.pt .fl-b,.pt .sv-tl a,.pt a.obj-all,.ck-b .n{position:relative}
+.pt :is(a,button).btn-g::after,.pt .ico::after,.pt .fl-b::after,.pt .sv-tl a::after,.pt a.obj-all::after,.nb::after,.ck-b .n::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:var(--pt-grad);background-size:200% 100%;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;opacity:0;transition:opacity .3s ease;pointer-events:none}
+@media (hover:hover){
+.pt .nav a:hover,.pt .menu-nav a:hover,.pt .foot-ln a:hover,.pt .crumbs a:hover,.pt a.lnk:hover,.pt a.card-link:hover,.pt a.tp-go:hover,.pt a.sv-go:hover,.pt .sv-fl a:hover,.pt a.sv-fw:hover,.foot-req a:hover,.doc-in :is(p,li) a:hover,.ck p a:hover{background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent!important;animation:pt-flow 2.4s linear infinite}
+.pt .nav a:hover svg,.pt .menu-nav a:hover svg,.pt .foot-ln a:hover svg,.pt .crumbs a:hover svg,.pt a.lnk:hover svg,.pt a.card-link:hover svg,.pt a.tp-go:hover svg,.pt a.sv-go:hover svg,.pt .sv-fl a:hover svg,.pt a.sv-fw:hover svg,.foot-req a:hover svg,.doc-in :is(p,li) a:hover svg,.ck p a:hover svg{color:#9FE5D1}
+.pt :is(a,button).btn-g:hover::after,.pt .ico:hover::after,.pt .fl-b:hover::after,.pt .sv-tl a:hover::after,.pt a.obj-all:hover::after,.nb:hover::after,.ck-b .n:hover::after{opacity:1;animation:pt-flow 2.4s linear infinite}
+.pt :is(a,button).btn-g:hover,.pt .ico:hover,.pt .fl-b:hover,.pt .sv-tl a:hover,.pt a.obj-all:hover,.ck-b .n:hover{box-shadow:0 0 28px -8px rgba(142,216,248,.55)}
+.pt :is(a,button).btn-p:hover,.ck-b .y:hover{animation:pt-pulse 1.8s ease-in-out infinite}
+.pt .cm-pop a:hover span{background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent!important;animation:pt-flow 2.4s linear infinite}
+}
+.pt .nav a:focus-visible,.pt .menu-nav a:focus-visible,.pt .foot-ln a:focus-visible,.pt .crumbs a:focus-visible,.pt a.lnk:focus-visible,.pt a.card-link:focus-visible,.pt a.tp-go:focus-visible,.pt a.sv-go:focus-visible,.pt .sv-fl a:focus-visible,.pt a.sv-fw:focus-visible,.foot-req a:focus-visible,.doc-in :is(p,li) a:focus-visible,.ck p a:focus-visible{background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent!important;animation:pt-flow 2.4s linear infinite}
+.pt .nav a:focus-visible svg,.pt .menu-nav a:focus-visible svg,.pt .foot-ln a:focus-visible svg,.pt .crumbs a:focus-visible svg,.pt a.lnk:focus-visible svg,.pt a.card-link:focus-visible svg,.pt a.tp-go:focus-visible svg,.pt a.sv-go:focus-visible svg,.pt .sv-fl a:focus-visible svg,.pt a.sv-fw:focus-visible svg,.foot-req a:focus-visible svg,.doc-in :is(p,li) a:focus-visible svg,.ck p a:focus-visible svg{color:#9FE5D1}
+.pt :is(a,button).btn-g:focus-visible::after,.pt .ico:focus-visible::after,.pt .fl-b:focus-visible::after,.pt .sv-tl a:focus-visible::after,.pt a.obj-all:focus-visible::after,.nb:focus-visible::after,.ck-b .n:focus-visible::after{opacity:1;animation:pt-flow 2.4s linear infinite}
+.pt :is(a,button).btn-p:focus-visible{animation:pt-pulse 1.8s ease-in-out infinite}
+.pt .cm-pop a:focus-visible span{background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent!important;animation:pt-flow 2.4s linear infinite}
+@media (prefers-reduced-motion:reduce){.pt .nav a,.pt .menu-nav a,.pt .foot-ln a,.pt .crumbs a,.pt a.lnk,.pt a.card-link,.pt a.tp-go,.pt a.sv-go,.pt .sv-fl a,.pt a.sv-fw,.foot-req a,.doc-in :is(p,li) a,.ck p a,.pt :is(a,button).btn-g::after,.pt .ico::after,.pt .fl-b::after,.pt .sv-tl a::after,.pt a.obj-all::after,.nb::after,.ck-b .n::after,.pt :is(a,button).btn-p,.pt .cm-pop a span{animation:none!important}}
