@@ -4,7 +4,8 @@
   var root = document.getElementById('pt-site');
   if (!root) return;
   var de = document.documentElement, bar = root.querySelector('[data-topbar]'), menu = root.querySelector('[data-menu]');
-  var hero = root.querySelector('[data-sec="hero"]'), pult = root.querySelector('[data-pult]');
+  // граница липкой шапки — первый экран; на странице без движка (privacy.html) — блок шапки [data-top]
+  var hero = root.querySelector('[data-sec="hero"], [data-top]'), pult = root.querySelector('[data-pult]');
 
   // ---------- липкая шапка ----------
   // Пока первый экран в кадре — скрыта. Ниже: прокрутка вверх показывает, вниз прячет. После перехода по якорю

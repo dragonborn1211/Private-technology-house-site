@@ -694,6 +694,21 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .foot-tel{grid-area:tel}
 .foot-name{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#EEF3F6}
 .foot-tag{margin:0;max-width:320px;font-size:13px;line-height:1.55;color:#8193A0}
+/* реквизиты (TASK-about-analytics.md, раздел 2): самозанятый, ИНН, политика, настройки cookie */
+.foot-req{margin:6px 0 0;max-width:340px;font-size:12.5px;line-height:1.6;color:#6F93A6}
+.foot-req a,.foot-req button{font:inherit;color:#8FAEC0;background:none;border:0;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(143,174,192,.4)}
+.foot-req a:hover,.foot-req button:hover{color:#EEF3F6}
+/* страница для чтения (privacy.html): без движка частиц, одна колонка до 720 px */
+.doc{padding:clamp(32px,6vh,72px) 0 clamp(72px,10vh,120px)}
+.doc-in{max-width:720px}
+.doc-in h1{margin:22px 0 10px;font-weight:300;font-size:clamp(36px,5vw,64px);line-height:1.05;letter-spacing:-.04em;color:#EEF3F6}
+.doc-ed{margin:0 0 36px;font-size:14px;color:#8FAEC0}
+.doc-in h2{margin:40px 0 12px;font-size:22px;font-weight:500;letter-spacing:-.01em;color:#EEF3F6}
+.doc-in p,.doc-in li{font-size:16px;line-height:1.7;color:#BCD3DE}
+.doc-in p{margin:0 0 12px}
+.doc-in ul{margin:0 0 12px;padding-left:22px}
+.doc-in li{margin:0 0 6px}
+.doc-in :is(p,li) a{color:#8ED8F8;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(142,216,248,.45)}
 /* «Кто делает» (TASK-about-analytics.md, раздел 1): карточка справа от «Расскажите о задаче» на всех страницах, кроме 404;
    на ≤ 1000 px — под кнопкой. Монограмма — пока нет фото (data-pt-skip: градиентный текст из частиц собрался бы одним цветом,
    проявляется с s-done) */

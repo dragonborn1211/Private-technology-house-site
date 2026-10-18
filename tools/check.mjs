@@ -735,7 +735,7 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
   const foot = (f) => { const m = src[f].match(/<footer[\s\S]*?<\/footer>/g) || []; return m.length === 1 && /<footer[^>]*class="[^"]*\bfoot\b/.test(m[0]) ? m[0].replace(/ aria-current="page"/g, '').replace(/(<a href=")[^"]*(" hreflang=)/g, '$1$2').replace(/href="\//g, 'href="') : `(подвалов ${m.length})`; };
   const f0 = foot('index.html');
   PAGES.forEach((f) => { if (foot(f) !== f0) bad.push(`${f}: подвал отличается от главной`); });
-  const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|^#top$|^#about$|^$/.test(h));
+  const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|^#top$|^#about$|^privacy\.html$|^$/.test(h));
   const sid = idsOf('services.html');
   fl.forEach((h) => { const [pg, id] = h.split('#'); if (!PAGES.includes(pg) || (id && !(pg === 'services.html' ? sid : idsOf(pg)).has(id))) bad.push(`подвал: ссылка ${h} ведёт в никуда`); });
   if (fl.join(',') !== 'services.html,cases.html,automations.html,process.html,services.html#faq' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
@@ -1120,7 +1120,7 @@ console.log('\nтексты и типографика (TASK-polish.md)');
 // «Когда сайт готов» и «Как устроена подписка» по три карточки, раздела «После запуска» нет, вопросов пять; process.html —
 // четыре секции по пять шагов (#apps и #ai — метки в общих секциях), одно «Нужно от вас», ссылки на существующие якоря,
 // ≤ 3,2 / 6,5 экрана; повторный переход
-// в вкладке — data-repeat (не на первой странице и не с ?intro=); sitemap — пять адресов; снимки.
+// в вкладке — data-repeat (не на первой странице и не с ?intro=); sitemap — шесть адресов (политика — без EN); снимки.
 console.log('\nструктура: услуги, «Как работаем», сборка без разлёта, повторный переход');
 {
   const bad = [], info = [];
@@ -1200,9 +1200,9 @@ console.log('\nструктура: услуги, «Как работаем», с
     await page.close();
   }
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
-  if (['', 'services.html', 'cases.html', 'automations.html', 'process.html'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 5 || (sm.match(/hreflang="en"/g) || []).length !== 5) bad.push('sitemap.xml: не пять адресов с EN');
+  if (['', 'services.html', 'cases.html', 'automations.html', 'process.html'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 6 || (sm.match(/hreflang="en"/g) || []).length !== 5 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy\.html<\/loc>\s*<\/url>/.test(sm)) bad.push('sitemap.xml: не пять адресов с EN');
   if (bad.length) fail('структура: ' + bad.join('; '));
-  else console.log(`  ✓ разлёта (data-pt-burst) нет нигде, у подвала — мягкий выдох; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — четыре секции по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — пять адресов`);
+  else console.log(`  ✓ разлёта (data-pt-burst) нет нигде, у подвала — мягкий выдох; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — четыре секции по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — шесть адресов (политика — без EN)`);
 }
 // Ясность (TASK-clarity.md), часть A: на услугах «Разово» / «Ежемесячно» — крупные заголовки групп; в «Варианте 03» нет
 // пересказа сопровождения; «Как устроена подписка» — по три строки «Сайт / Сценарий / Агент» с <b>; блок порядка на
@@ -1662,6 +1662,36 @@ console.log('\nкто делает: карточка в контакте, «О �
   await quick.close();
   if (bad.length) fail('кто делает: ' + bad.join('; '));
   else console.log('  ✓ карточка #about в контакте пяти страниц (справа на 1440, под кнопкой на 390, по-английски в EN), «О студии» последним пунктом подвала');
+}
+// Реквизиты и политика (TASK-about-analytics.md, раздел 2): в подвале всех страниц (и политики) под .foot-tag — строка
+// «Самозанятый <ФИО> · ИНН <ИНН> · Политика конфиденциальности · Настройки cookie» (кнопка [data-ck-open] скрыта без JS);
+// заглушек [ЗАПОЛНИТЬ] / [ФИО] / [ИНН] нет нигде; privacy.html отдаёт 200, без engine.js, scenes.js, i18n.js, data-sec и
+// переключателя языка, заголовок «Политика конфиденциальности», колонка до 720 px, текст 16 px; в sitemap — без EN.
+console.log('\nреквизиты и политика конфиденциальности');
+{
+  const bad = [];
+  const pv = readFileSync(path.join(root, 'privacy.html'), 'utf8').replace(/\r\n/g, '\n');
+  const all = { ...src, 'privacy.html': pv };
+  for (const [f, h] of Object.entries(all)) {
+    if (/\[(ЗАПОЛНИТЬ|ФИО|ИНН|Имя)/.test(h)) bad.push(`${f}: заглушка данных владельца`);
+    const pre = f === '404.html' ? '/' : '';
+    if (!h.includes(`<p class="foot-req">Самозанятый Давыдовский Даниил Дмитриевич · ИНН&nbsp;027816319319 · <a href="${pre}privacy.html">Политика конфиденциальности</a><span class="foot-ckw" hidden> · <button type="button" class="foot-ck" data-ck-open>Настройки cookie</button></span></p>`)) bad.push(`${f}: строка реквизитов в подвале`);
+  }
+  if (/engine\.js|scenes\.js|i18n\.js|data-sec=|data-lang=|data-pt-canvas/.test(pv.replace(/<!--[\s\S]*?-->/g, '')) || !/<h1>Политика конфиденциальности<\/h1>/.test(pv) || /name="robots"/.test(pv)) bad.push('privacy.html: движок, словарь, переключатель языка, noindex или нет заголовка');
+  const r = await fetch(BASE + 'privacy.html'); if (r.status !== 200) bad.push(`privacy.html: ${r.status}`);
+  const quick = await chromium.launch();
+  for (const [w, h] of [[1440, 900], [390, 844]]) {
+    const page = await quick.newPage({ viewport: { width: w, height: h } });
+    const errs = []; page.on('pageerror', (e) => errs.push(e.message));
+    await page.goto(BASE + 'privacy.html'); await page.waitForTimeout(400);
+    const d = await page.evaluate(() => ({ w: document.querySelector('.doc-in').getBoundingClientRect().width, fs: getComputedStyle(document.querySelector('.doc-in p')).fontSize, lh: parseFloat(getComputedStyle(document.querySelector('.doc-in p')).lineHeight) / 16, h2: getComputedStyle(document.querySelector('.doc-in h2')).fontSize, over: document.documentElement.scrollWidth > innerWidth + 1, menu: document.querySelectorAll('.nav a, .menu-nav a').length }));
+    if (d.w > 720.5 || d.fs !== '16px' || Math.abs(d.lh - 1.7) > 0.02 || d.h2 !== '22px' || d.over || d.menu !== 12) bad.push(`privacy.html ${w}: ${JSON.stringify(d)}`);
+    if (errs.length) bad.push(`privacy.html ${w}: ${errs.join(' | ')}`);
+    await page.close();
+  }
+  await quick.close();
+  if (bad.length) fail('реквизиты и политика: ' + bad.join('; '));
+  else console.log('  ✓ строка реквизитов в подвале всех страниц (ФИО, ИНН, политика, «Настройки cookie»), заглушек нет; privacy.html — 200, без движка и EN, колонка 720 px, текст 16 / 1.7, h2 22 px');
 }
 // Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
 // «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.

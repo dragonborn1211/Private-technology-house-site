@@ -492,6 +492,10 @@
     'Самозанятый': 'Self-employed (Russia)',
     'Договор и чек «Мой налог» на каждую оплату. Для компаний — без НДС.': 'A contract and an official tax receipt for every payment. No VAT for companies.',
     'О студии': 'About',
+    // реквизиты в подвале (раздел 2); политика — только по-русски
+    'Самозанятый Давыдовский Даниил Дмитриевич · ИНН 027816319319 ·': 'Self-employed Daniil Dmitrievich Davydovsky · Tax ID 027816319319 ·',
+    'Политика конфиденциальности': 'Privacy policy (in Russian)',
+    'Настройки cookie': 'Cookie settings',
     'Все готовые решения': 'All ready-made solutions',
     'Работы: сайты': 'Work: websites',
     'Работы: автоматизация': 'Work: automation',
