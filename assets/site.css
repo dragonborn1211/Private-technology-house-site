@@ -459,7 +459,7 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 /* тонкие разделители страницы услуг — не рамки .fr, но и они проявляются вместе с рамками: до сборки секции их не видно
    (раньше линия строки модуля ниже стояла на экране, пока сам модуль ещё не собран) */
 .pt-on .sec :is(.sv-rows li,.sv-meta,.sv-pf,.sv-qs,.sv-f + .sv-f){transition:border-color .9s ease}
-.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) :is(.sv-rows li,.sv-meta,.sv-pf,.sv-qs,.sv-f + .sv-f){border-color:transparent}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) :is(.sv-rows li,.sv-meta,.sv-pf,.sv-qs,.sv-f + .sv-f,.who-l,.who-l li){border-color:transparent}
 /* «Как работаем»: пять шагов в ряд, номер в цвете шага */
 .sv-steps{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:28px;margin:0;padding:0;list-style:none}
 .sv-step{display:flex;flex-direction:column;gap:12px;padding-top:22px}
@@ -694,6 +694,26 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .foot-tel{grid-area:tel}
 .foot-name{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#EEF3F6}
 .foot-tag{margin:0;max-width:320px;font-size:13px;line-height:1.55;color:#8193A0}
+/* «Кто делает» (TASK-about-analytics.md, раздел 1): карточка справа от «Расскажите о задаче» на всех страницах, кроме 404;
+   на ≤ 1000 px — под кнопкой. Монограмма — пока нет фото (data-pt-skip: градиентный текст из частиц собрался бы одним цветом,
+   проявляется с s-done) */
+.ct-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:40px 64px;align-items:end}
+@media (max-width:1000px){.ct-grid{grid-template-columns:minmax(0,1fr)}}
+.who{position:relative;display:flex;flex-direction:column;gap:18px;padding:22px;border-radius:26px}
+.who-top{display:flex;gap:18px;align-items:center}
+.who-ph{flex:none;width:96px;height:120px;border-radius:18px;object-fit:cover;border:1px solid rgba(188,211,222,.18);background:linear-gradient(160deg,#1A2A36,#0E1720);filter:grayscale(.3) contrast(1.05)}
+.who-ph.mono{position:relative;display:flex;align-items:center;justify-content:center;filter:none}
+.who-ph.mono b{font:italic 500 46px/1 'Cormorant Garamond',Georgia,serif;background:linear-gradient(120deg,#8ED8F8,#7FA8FF 45%,#B7A6F2 75%,#9FE5D1);-webkit-background-clip:text;background-clip:text;color:transparent}
+.who-ph.mono::before{content:"";position:absolute;inset:14px;border:1px solid rgba(142,216,248,.28);border-radius:4px;transform:rotate(45deg) scale(.72)}
+.pt-on .sec .who-ph{transition:opacity .9s ease}
+.pt-on .sec:not(.s-done) .who-ph{opacity:0}
+.who-k{margin:0;color:#8ED8F8}
+.who-n{margin:4px 0 0;font-size:24px;font-weight:500;letter-spacing:-.015em;color:#EEF3F6}
+.who-r{margin:4px 0 0;font-size:14.5px;line-height:1.5;color:#9DB0BC}
+.who-l{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;border-top:1px solid rgba(188,211,222,.1)}
+.who-l li{display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px solid rgba(188,211,222,.1);font-size:14px;line-height:1.5;color:#9DB0BC}
+.who-l li b{font-weight:500;color:#EEF3F6}
+@media (max-width:760px){.who-l li{grid-template-columns:minmax(0,1fr);gap:2px}}
 .foot-col{display:block}
 .foot-ln{display:flex;flex-wrap:wrap;gap:0 22px;margin:0}
 .pt .foot-ln a{display:inline-flex;align-items:center;min-height:36px;font-size:14px;color:#9DB0BC;transition:color .3s ease}

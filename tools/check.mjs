@@ -735,7 +735,7 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
   const foot = (f) => { const m = src[f].match(/<footer[\s\S]*?<\/footer>/g) || []; return m.length === 1 && /<footer[^>]*class="[^"]*\bfoot\b/.test(m[0]) ? m[0].replace(/ aria-current="page"/g, '').replace(/(<a href=")[^"]*(" hreflang=)/g, '$1$2').replace(/href="\//g, 'href="') : `(подвалов ${m.length})`; };
   const f0 = foot('index.html');
   PAGES.forEach((f) => { if (foot(f) !== f0) bad.push(`${f}: подвал отличается от главной`); });
-  const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|^#top$|^$/.test(h));
+  const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|^#top$|^#about$|^$/.test(h));
   const sid = idsOf('services.html');
   fl.forEach((h) => { const [pg, id] = h.split('#'); if (!PAGES.includes(pg) || (id && !(pg === 'services.html' ? sid : idsOf(pg)).has(id))) bad.push(`подвал: ссылка ${h} ведёт в никуда`); });
   if (fl.join(',') !== 'services.html,cases.html,automations.html,process.html,services.html#faq' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
@@ -762,7 +762,8 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
 {
   const bad = [], aid = idsOf('automations.html'), cid = idsOf('cases.html');
   const filtersC = new Set([...src['cases.html'].matchAll(/data-filter="([a-z]+)"/g)].map((m) => m[1]));
-  for (const [w, h, lim] of [[1440, 900, 7.5], [390, 844, 10.8]]) {   // TASK-clarity.md: на телефоне «Что входит» свёрнуто
+  // TASK-clarity.md: на телефоне «Что входит» свёрнуто; с «Кто делает» (TASK-about-analytics.md) — +0.6 экрана на телефоне
+  for (const [w, h, lim] of [[1440, 900, 7.6], [390, 844, 11.6]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + 'services.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
@@ -809,7 +810,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
       if (m.btn !== 'Смотреть работы → #objects') bad.push(`кнопка первого экрана: ${m.btn}`);
       if (m.contact !== 'Контакт / Расскажите о задаче' || m.price !== 'Цены') bad.push(`контакт «${m.contact}», «Цены» «${m.price}»`);
     }
-    if (m.len > (w === 1440 ? 5.2 : 8.5)) bad.push(`главная ${w}: ${m.len.toFixed(2)} экрана (не больше ${w === 1440 ? 5.2 : 8.5})`);
+    if (m.len > (w === 1440 ? 5.4 : 9.0)) bad.push(`главная ${w}: ${m.len.toFixed(2)} экрана (не больше ${w === 1440 ? 5.4 : 9.0})`);
     // снимки: главная целиком и «Кейсы»
     await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
     await page.evaluate(() => document.querySelectorAll('img[loading="lazy"]').forEach((i) => { i.loading = 'eager'; })); await page.waitForTimeout(300);
@@ -1142,7 +1143,7 @@ console.log('\nструктура: услуги, «Как работаем», с
   }
   // «Как работаем»
   const pid = idsOf('process.html');
-  for (const [w, h, lim] of [[1440, 900, 3.2], [390, 844, 6.5]]) {
+  for (const [w, h, lim] of [[1440, 900, 3.45], [390, 844, 7.2]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + 'process.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
@@ -1603,7 +1604,8 @@ console.log('\nревью, 5–9: группы на главной, NDA, сле�
   // на главной второй кнопки нет («Почта» закомментирована до почты владельца)
   if (/class="btn btn-g/.test(((/data-sec="contact"[\s\S]*?<\/section>/.exec(src['index.html']) || [''])[0]).replace(/<!--[\s\S]*?-->/g, ''))) bad.push('index.html: у контакта появилась вторая кнопка');
   for (const f of PAGES) if (!/<body>\n<a class="skip" href="#main">Перейти к содержанию<\/a>\n/.test(src[f]) || (src[f].match(/ id="main" tabindex="-1"/g) || []).length !== 1) bad.push(`${f}: «Перейти к содержанию» / #main`);
-  const LEN = { 'index.html': [4.9, 7.9], 'services.html': [7.2, 10.8], 'process.html': [3.1, 6.4], 'cases.html': [3.7, 5.8], 'automations.html': [4.7, 7.8] };
+  // с «Кто делает» (TASK-about-analytics.md): на десктопе заголовок контакта — две строки (+0.18), на телефоне карточка (+0.6)
+  const LEN = { 'index.html': [5.1, 8.5], 'services.html': [7.3, 11.4], 'process.html': [3.2, 7.0], 'cases.html': [3.9, 6.5], 'automations.html': [4.8, 8.5] };
   const quick = await chromium.launch();
   for (const [w, h] of [[1440, 900], [390, 844]]) {
     const page = await quick.newPage({ viewport: { width: w, height: h } });
@@ -1628,6 +1630,38 @@ console.log('\nревью, 5–9: группы на главной, NDA, сле�
   await quick.close();
   if (bad.length) fail('ревью, 5–9: ' + bad.join('; '));
   else console.log(`  ✓ «Разово / Ежемесячно» на главной, NDA без тега, следующий шаг в контакте, «Перейти к содержанию» → #main, ссылки карточек от 44 px; длина ${info.join('; ')}`);
+}
+// «Кто делает» (TASK-about-analytics.md, раздел 1): на всех страницах, кроме 404, в #contact — карточка #about (имя, три пункта
+// .who-l, монограмма, пока нет фото); в подвале последним пунктом «О студии» → #about (на 404 — /#about); на 1440 карточка справа
+// от «Расскажите о задаче», на 390 — под кнопкой; в EN — по-английски.
+console.log('\nкто делает: карточка в контакте, «О студии» в подвале');
+{
+  const bad = [];
+  for (const f of PAGES) {
+    const h = src[f], c = (/<section data-sec="contact"[\s\S]*?<\/section>/.exec(h) || [''])[0];
+    const nav = (/<nav class="foot-col foot-nav"[\s\S]*?<\/nav>/.exec(h) || [''])[0], last = [...nav.matchAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g)].pop();
+    if (!last || last[2] !== 'О студии' || last[1] !== (f === '404.html' ? '/#about' : '#about')) bad.push(`${f}: последний пункт подвала — ${last ? last[2] + ' → ' + last[1] : 'нет'}`);
+    if (f === '404.html') { if (/id="about"/.test(h)) bad.push('404.html: карточка «Кто делает»'); continue; }
+    const who = (/<aside class="blk glass fr who" data-blk id="about"[\s\S]*?<\/aside>/.exec(c) || [''])[0];
+    if (!who || !/<div class="ct-grid">/.test(c)) { bad.push(`${f}: нет карточки #about в #contact`); continue; }
+    if ((who.match(/<li>/g) || []).length !== 3 || !/<p class="who-n" id="who-n">Даниил Давыдовский<\/p>/.test(who) || !/class="who-ph mono"[^>]*><b>Д<\/b>/.test(who) || /\[|ЗАПОЛНИТЬ|Каждый проект/.test(who)) bad.push(`${f}: карточка «Кто делает» — ${who.slice(0, 80)}`);
+  }
+  const quick = await chromium.launch();
+  for (const [w, h, q] of [[1440, 900, ''], [390, 844, ''], [1440, 900, '&lang=en']]) {
+    const page = await quick.newPage({ viewport: { width: w, height: h } });
+    await page.goto(BASE + 'cases.html?intro=instant' + q); await page.waitForTimeout(500);
+    const r = await page.evaluate(() => {
+      const a = document.getElementById('about').getBoundingClientRect(), b = document.querySelector('#contact .ct-grid > .blk:not(.who)').getBoundingClientRect(), btn = document.querySelector('#contact .btn-p').getBoundingClientRect();
+      return { right: a.left > b.left + b.width * 0.5, below: a.top >= btn.bottom, w: Math.round(a.width), n: document.getElementById('who-n').textContent, k: document.querySelector('.who-k').textContent, mono: document.querySelector('.who-ph b').textContent };
+    });
+    if (w === 1440 && (!r.right || r.w > 421)) bad.push(`1440${q}: карточка не справа (${JSON.stringify(r)})`);
+    if (w === 390 && !r.below) bad.push(`390: карточка не под кнопкой (${JSON.stringify(r)})`);
+    if (q && (r.n !== 'Daniil Davydovsky' || r.k !== 'Who builds it' || r.mono !== 'D')) bad.push(`EN: ${JSON.stringify(r)}`);
+    await page.close();
+  }
+  await quick.close();
+  if (bad.length) fail('кто делает: ' + bad.join('; '));
+  else console.log('  ✓ карточка #about в контакте пяти страниц (справа на 1440, под кнопкой на 390, по-английски в EN), «О студии» последним пунктом подвала');
 }
 // Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
 // «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.
