@@ -275,10 +275,10 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     const settle = async (ms) => { await run(ms); await page.waitForTimeout(1000); await run(50); };
     const bad = [], res = [];
     const want = (st, slot, acc, where) => { if (st.slot !== String(slot) || st.tab !== String(slot - 1) || st.acc !== acc || !st.capOk) bad.push(`${where}: ${JSON.stringify(st)}`); };
-    // клик по вкладке 04: активна она, «Безопасность», мята; через 1 с всё ещё 04 — клик не всплывает до панели
+    // клик по вкладке 04: активна она, «Защита данных», мята; через 1 с всё ещё 04 — клик не всплывает до панели
     await page.click('[data-usp="3"]'); await settle(1000);
     let st = await state(); want(st, 4, 'rgb(159, 229, 209)', 'клик по вкладке 04');
-    if (st.title !== 'Безопасность') bad.push(`подпись после клика по 04: «${st.title}»`);
+    if (st.title !== 'Защита данных') bad.push(`подпись после клика по 04: «${st.title}»`);
     res.push(await idx(page));
     await page.click('[data-next]'); await settle(400); want(await state(), 5, 'rgb(201, 194, 245)', 'стрелка →'); res.push(await idx(page));
     await page.click('[data-prev]'); await settle(400); want(await state(), 4, 'rgb(159, 229, 209)', 'стрелка ←'); res.push(await idx(page));
@@ -757,7 +757,8 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
       rows: ['projects', 'subscription'].map((i) => document.getElementById(i)).filter((e) => e && e.classList.contains('row-h') && parseFloat(getComputedStyle(e).scrollMarginTop) === 88).length }));
     if (r.n) bad.push(`услуги ${w}: кейсы и схемы на странице (${r.n})`);
     if (r.len > lim) bad.push(`услуги ${w}: ${r.len.toFixed(2)} экрана (не больше ${lim})`);
-    if (r.cost !== 'care:фиксированная') bad.push(`услуги: «Стоимость» — ${r.cost}`);
+    // «Стоимость» до цен владельца нет нигде (TASK-review.md 4.3: «фиксированная» ничего не сообщала)
+    if (r.cost) bad.push(`услуги: «Стоимость» — ${r.cost}`);
     if (r.cases !== 'sites,automation,ai' || r.cases.split(',').some((c) => !filtersC.has(c))) bad.push(`услуги: «Кейсы: …» → ${r.cases}`);
     const tp = r.tpl.split(',').map((x) => x.split('#')[1]);
     if (tp.join(',') !== 'site-leads,b24-report,price-monitor,voice-task,reviews,avito-bot' || tp.some((x) => !aid.has(x)) || r.all !== 2) bad.push(`услуги: «Готовые решения» ${r.tpl}, «Все готовые решения» ${r.all}`);
@@ -804,7 +805,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
   [...src['index.html'].matchAll(/href="cases\.html#([^"]+)"/g)].forEach((mm) => { if (!cid.has(mm[1])) bad.push(`главная: cases.html#${mm[1]} — нет такого кейса`); });
   console.log(`  · главная: ${lens[1440].toFixed(2)} экрана на 1440, ${lens[390].toFixed(2)} на 390`);
   if (bad.length) fail(bad.join('; '));
-  else console.log('  ✓ услуги: без кейсов, снимков, NDA и схем, «Стоимость» только «фиксированная», «Кейсы: …» и «Готовые шаблоны» — на существующие якоря; главная: «Кейсы» — Resonara, ИИ-аудитор (как на cases.html) и демо-сайты, «Все кейсы →»; «Готовые автоматизации» — две карточки, «Все шаблоны →»; ≤ 5,2 / 8,5 экрана');
+  else console.log('  ✓ услуги: без кейсов, снимков, NDA и схем, «Стоимости» нет, «Кейсы: …» и «Готовые шаблоны» — на существующие якоря; главная: «Кейсы» — Resonara, ИИ-аудитор (как на cases.html) и демо-сайты, «Все кейсы →»; «Готовые автоматизации» — две карточки, «Все шаблоны →»; ≤ 5,2 / 8,5 экрана');
 }
 
 // кейсы: фильтр кликом и по хешу, схемы после смены фильтра в правильном размере, NDA всегда видна, без JS — все
@@ -1529,6 +1530,35 @@ console.log('\nревью, 2–3: свои шрифты, иконка сайта
   await quick.close();
   if (bad.length) fail('ревью, 2–3: ' + bad.join('; '));
   else console.log(`  ✓ запросов к Google нет, шрифты из assets/fonts (${info.join('; ')}), preload — Manrope 300 / 400 cyrillic; иконки, theme-color и og:* на местах (404 — без og), файлы отдают 200, в EN og:* переведены`);
+}
+// Ревью, раздел 4 — тексты: «ИИ-» нигде (в названиях и подписях — «AI»); описание главной и лид каталога (с его описанием)
+// — новые; у «Приложений» — «Формат: разово», у «Сопровождения» нет «Стоимости», теги автоматизации — с чем соединяем
+// (не инструменты); демо-карточка — «Ваш сайт — следующий»; вкладка 04 — «Защита», её название — «Защита данных»; в EN —
+// «Six services, two formats.» и «…and it's on us.» вместо «accountable / responsible».
+console.log('\nревью, 4: тексты');
+{
+  const bad = [], strip = (h) => h.replace(/&nbsp;/g, ' ');
+  const I = readFileSync(path.join(root, 'assets', 'i18n.js'), 'utf8'), HO = readFileSync(path.join(root, 'assets', 'hero-objects.js'), 'utf8');
+  for (const f of PAGES) if (/ИИ/.test(src[f])) bad.push(`${f}: «ИИ»`);
+  if (/ИИ/.test(I) || /'Безопасность'/.test(HO)) bad.push('i18n.js / hero-objects.js: «ИИ» или «Безопасность»');
+  const D = 'Сайты, приложения, интеграции с Битрикс24 и Telegram, автоматизация и AI-ассистенты. Смета до старта, код ваш.';
+  if (!src['index.html'].includes(`<meta name="description" content="${D}">`)) bad.push('описание главной');
+  const L = 'Типовые сценарии для Битрикс24, Telegram и маркетплейсов. Выберите подходящий — подключим под ваши поля и правила.';
+  if (!src['automations.html'].includes(`<meta name="description" content="${L}">`) || !strip(src['automations.html']).includes(`<span>${L}</span>`) || /Запускаем по/.test(src['automations.html'])) bad.push('лид и описание каталога');
+  const sv = strip(src['services.html']);
+  const meta = (id) => { const m = new RegExp(`<article[^>]*id="${id}"[\\s\\S]*?<dl class="sv-meta">([\\s\\S]*?)</dl>`).exec(sv); return m ? m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : ''; };
+  if (meta('apps') !== 'Формат разово') bad.push(`«Приложения»: ${meta('apps')}`);
+  if (meta('care') !== 'Формат ежемесячно') bad.push(`«Сопровождение»: ${meta('care')}`);
+  const chips = (/<article[^>]*id="automation"[\s\S]*?<ul class="sv-chips"[^>]*>([\s\S]*?)<\/ul>/.exec(sv) || [])[1] || '';
+  if (chips.replace(/<\/li><li>/g, ' · ').replace(/<\/?li>/g, '') !== 'Битрикс24 · Telegram · Wildberries · Ozon · Авито · Таблицы') bad.push(`теги автоматизации: ${chips}`);
+  if (!/<h3 class="sv-sh">Сборка<\/h3><p class="sv-sd">[^<]*n8n/.test(strip(src['process.html']))) bad.push('инструменты на «Как работаем», шаг «Сборка»');
+  for (const f of ['index.html', 'cases.html']) if (!strip(src[f]).includes('<span class="obj-h">Ваш сайт — следующий</span>') || !strip(src[f]).includes('<span class="obj-d">Соберём такой же под вашу компанию →</span>') || /Следующий объект/.test(src[f])) bad.push(`${f}: демо-карточка`);
+  if (!/<span class="cx-w">Защита<\/span><\/span><span class="usp-n" hidden>Защита данных<\/span>/.test(src['index.html'])) bad.push('вкладка 04 «Кодекса»');
+  for (const [k, v] of [['Защита данных', 'Data protection'], ['Защита', 'Security'], ['Шесть направлений в двух форматах.', 'Six services, two formats.'], ['Ваш сайт — следующий', 'Your site could be next'], [D, 'Websites, apps, Bitrix24 and Telegram integrations, automation and AI assistants. Estimate before we start, the code is yours.']])
+    if (!I.includes(`'${k}': '${v.replace(/'/g, "\\'")}'`)) bad.push(`EN: ${k} → ${v}`);
+  if (/accountable|responsible for it/.test(I) || (I.match(/and it\\'s on us\./g) || []).length !== 3) bad.push('EN: «…and it\'s on us.» не в трёх местах');
+  if (bad.length) fail('ревью, 4: ' + bad.join('; '));
+  else console.log('  ✓ «AI» вместо «ИИ», описания главной и каталога, лид каталога, «Формат: разово» у приложений, без «Стоимости», теги автоматизации — с чем соединяем, демо-карточка, «Защита данных», английский');
 }
 // Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
 // «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.

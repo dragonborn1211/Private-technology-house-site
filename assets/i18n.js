@@ -11,7 +11,7 @@
   var EN = {
     // вкладка и описание
     'Private Technology House — студия полного цикла': 'Private Technology House — full-cycle studio',
-    'Студия полного цикла: сайты, системы, инфраструктура и AI — тихо, точно и только под вашу задачу.': 'Full-cycle studio: websites, systems, infrastructure and AI — quiet, precise and built only for your task.',
+    'Сайты, приложения, интеграции с Битрикс24 и Telegram, автоматизация и AI-ассистенты. Смета до старта, код ваш.': 'Websites, apps, Bitrix24 and Telegram integrations, automation and AI assistants. Estimate before we start, the code is yours.',
 
     // первый экран
     'Разделы': 'Sections',
@@ -39,14 +39,14 @@
     'Предыдущий принцип': 'Previous principle',
     'Следующий принцип': 'Next principle',
     'Кодекс студии': 'The studio code',
-    // слово на вкладке («Защита») и полное название принципа в подписи («Безопасность»)
+    // слово на вкладке («Защита») и полное название принципа в подписи («Защита данных»)
     'Расчёт': 'Logic',
     'Точность': 'Precision',
     'Скорость': 'Speed',
     'Защита': 'Security',
     'Дизайн': 'Design',
     'Холодный расчёт': 'Cold calculation',
-    'Безопасность': 'Security',
+    'Защита данных': 'Data protection',
     'пауза': 'pause',
     'Данные и доступы под замком: шифрование, резервные копии, права по ролям.': 'Data and access under lock: encryption, backups, role-based permissions.',
 
@@ -60,8 +60,8 @@
     'Запросить показ →': 'Request a demo →',
     'Анимация: разные сайты по очереди собираются из частиц': 'Animation: different websites assemble from particles one after another',
     '[ ваш проект ]': '[ your project ]',
-    'Следующий объект': 'Next object',
-    'Может быть вашим. Расскажите о задаче →': 'It could be yours. Tell us about your task →',
+    'Ваш сайт — следующий': 'Your site could be next',
+    'Соберём такой же под вашу компанию →': 'We\'ll build one like this for your company →',
     'Схема: Битрикс24, задачи → Webhook → n8n → AI, анализ → Telegram; из Telegram вопрос возвращается к AI': 'Diagram: Bitrix24 tasks → Webhook → n8n → AI analysis → Telegram; questions from Telegram go back to AI',
     // «03 / Готовые автоматизации» на главной и каталог automations.html; два кейса со схемами — тоже здесь
     'Схема: форма на сайте → Webhook → n8n на сервере → лид в Битрикс24 и сообщение менеджеру в Telegram': 'Diagram: website form → Webhook → n8n on our server → a lead in Bitrix24 and a Telegram message to the manager',
@@ -70,9 +70,9 @@
     'Голосовое → задача в Битрикс24': 'Voice message → task in Bitrix24',
     'Схема: новый отзыв на Wildberries или Ozon → n8n на сервере → AI пишет черновик ответа → проверка в Telegram → ответ публикуется на маркетплейсе': 'Diagram: a new Wildberries or Ozon review → n8n on our server → AI drafts a reply → approval in Telegram → the reply goes live on the marketplace',
     'Ответы на отзывы Wildberries и Ozon': 'Replies to Wildberries and Ozon reviews',
-    'ИИ-разбор задач': 'AI task digest',
+    'AI-разбор задач': 'AI task digest',
     'Схема: телефония → Битрикс24, запись → n8n → распознавание речи → AI, оценка → CRM, сделка': 'Diagram: telephony → Bitrix24 recording → n8n → speech recognition → AI scoring → CRM deal',
-    'ИИ-аудитор звонков': 'AI call auditor',
+    'AI-аудитор звонков': 'AI call auditor',
     'Анимация: из типовых систем по очереди собираются разные цепочки автоматизации': 'Animation: different automation chains assemble from common systems one after another',
     // скрытые кейсы cases.html (<template data-hidden-cases>): переводы ждут их показа
     'Схема: мини-приложение Telegram ⇄ API ⇄ CRM Битрикс24, из CRM уведомление менеджеру': 'Diagram: Telegram mini app ⇄ API ⇄ Bitrix24 CRM; the CRM notifies a manager',
@@ -183,6 +183,9 @@
     'LibreChat · агенты': 'LibreChat · agents',
     // «Ваш процесс»: новые источники в случайных цепочках
     'Авито': 'Avito',
+    'Таблицы': 'Spreadsheets',
+    'С чем соединяем': 'What we connect',
+    'разово': 'one-off',
     'Звонок': 'Call',
     // ---------- «01 / Услуги» на главной (TASK-services.md) ----------
     'Проекты': 'Projects',
@@ -217,9 +220,7 @@
     'Входит': 'Included',
     // группа «Проекты»
     'Срок': 'Timeline',
-    'Стоимость': 'Price',
     'Формат': 'Format',
-    'по смете': 'per estimate',
     'Обсудить задачу': 'Discuss a task',
     // сайты
     'Адаптив': 'Responsive',
@@ -258,7 +259,6 @@
     // группа «По подписке»
     // сопровождение
     'ежемесячно': 'monthly',
-    'фиксированная': 'fixed',
     'Обсудить сопровождение': 'Discuss website care',
     'Хостинг и домен': 'Hosting and domain',
     'Узнаём о сбое раньше вас и сразу берёмся за ремонт.': 'We learn about an outage before you do and start fixing it right away.',
@@ -266,7 +266,6 @@
     'Правки': 'Edits',
     'Персональные данные': 'Personal data',
     // автоматизация
-    'API и вебхуки': 'APIs and webhooks',
     'Битрикс24': 'Bitrix24',
     'Запуск': 'Launch',
     'запуск + ежемесячно': 'setup + monthly',
@@ -284,7 +283,7 @@
     'Чат для сотрудников': 'Team chat',
     'База знаний': 'Knowledge base',
     'Разбор звонков': 'Call review',
-    'ИИ-продавец для Авито': 'AI sales agent for Avito',
+    'AI-продавец для Авито': 'AI sales agent for Avito',
     'Отвечает покупателям в чатах круглосуточно и знает ваш каталог.': 'Answers buyers in chats around the clock and knows your catalog.',
     // кейс «Агенты для отделов» (cases.html)
     'Схема: продажи, бухгалтерия и поддержка ⇄ агенты в LibreChat ⇄ AI-шлюз на Cloudflare и база знаний': 'Diagram: sales, accounting and support ⇄ agents in LibreChat ⇄ an AI gateway on Cloudflare and a knowledge base',
@@ -357,7 +356,7 @@
     'Отвечает покупателям в чатах Авито круглосуточно и знает ваш каталог. Сложный вопрос передаёт менеджеру в Telegram.': 'Answers buyers in Avito chats around the clock and knows your catalog. Hard questions go to a manager in Telegram.',
     'Мониторинг цен конкурентов': 'Competitor price monitoring',
     'Подключить →': 'Connect →',
-    'Работает у клиента: ИИ-разбор задач →': 'Running for a client: AI task digest →',
+    'Работает у клиента: AI-разбор задач →': 'Running for a client: AI task digest →',
     'Работает у клиента: Каталог на автопилоте →': 'Running for a client: Catalog on autopilot →',
     'Нет нужного шаблона?': 'No template that fits?',
     'Схема: сообщение в чате Авито → n8n на сервере → AI отвечает по каталогу → ответ в чат Авито; сложный вопрос — менеджеру в Telegram': 'Diagram: a message in an Avito chat → n8n on our server → AI answers from the catalog → a reply in the Avito chat; a hard question goes to a manager in Telegram',
@@ -393,7 +392,7 @@
     'Делаем один раз. Держим всегда.': 'Built once. Kept alive.',
     'Проект сдаём целиком, код ваш. Потом его можно забрать или оставить у нас на сопровождении.': 'We hand the project over in full, and the code is yours. Then you can take it in-house or leave it with us for ongoing care.',
     'Разово: смета до старта, код ваш.': 'One-off: estimate before we start, the code is yours.',
-    'Ежемесячно: работает на наших серверах, мы за это отвечаем.': 'Monthly: it runs on our servers, and we are accountable for it.',
+    'Ежемесячно: работает на наших серверах, мы за это отвечаем.': 'Monthly: it runs on our servers, and it\'s on us.',
     'Для компаний, которым важно, как их видят. Свой визуальный стиль, 3D и анимация.': 'For companies that care how they are seen. Your own visual style, 3D and animation.',
     'Android, iOS и Telegram mini-app: от интерфейса до публикации.': 'Android, iOS and Telegram mini-apps: from interface to publishing.',
     'Связываем Битрикс24, Telegram и любые сервисы с API.': 'We connect Bitrix24, Telegram and any service with an API.',
@@ -449,7 +448,7 @@
     'Такой же для вас: шаблон «Каталог из прайса» →': 'Want the same? The “Catalog from a price list” template →',
     'Продажи, бухгалтерия и поддержка спрашивают своих агентов в одном чате. Агенты отвечают по документам компании. Все запросы к нейросетям идут через один шлюз с общими ключами и лимитами.': 'Sales, accounting and support ask their agents in one chat. The agents answer from company documents. All AI requests go through one gateway with shared keys and limits.',
     'Android, iOS и внутренние системы клиентов покажем на созвоне.': 'Android, iOS and clients’ internal systems we show on a call.',
-    'Запускаем по шаблону на нашем сервере. Вы даёте ключ или вебхук, мы подключаем и следим. Оплата помесячно.': 'We launch from a template on our server. You give us a key or a webhook, we connect it and keep watch. Billed monthly.',
+    'Типовые сценарии для Битрикс24, Telegram и маркетплейсов. Выберите подходящий — подключим под ваши поля и правила.': 'Standard workflows for Bitrix24, Telegram and marketplaces. Pick one and we\'ll fit it to your fields and rules.',
     'Нужно от вас:': 'What we need from you:',
     'вебхук Битрикс24 и доступ к форме на сайте': 'a Bitrix24 webhook and access to the website form',
     'вебхук Битрикс24 и список сотрудников': 'a Bitrix24 webhook and a staff list',
@@ -545,7 +544,7 @@
     // TASK-clarity.md, часть A: заголовки групп на услугах, «Как устроена подписка», «Порядок работы», «Что входит в услугу»
     'проекты': 'projects',
     'Смета и сроки до старта. Код ваш.': 'Estimate and timeline before we start. The code is yours.',
-    'Работает на наших серверах, мы за это отвечаем.': 'Runs on our servers, and we are responsible for it.',
+    'Работает на наших серверах, мы за это отвечаем.': 'Runs on our servers, and it\'s on us.',
     'Ничего не переносите': 'Nothing to move',
     'Правки по сообщению в Telegram': 'Edits on a Telegram message',
     'Сбоями и обновлениями занимаемся мы': 'We handle outages and updates',
@@ -574,11 +573,11 @@
     'Опишите рутину, которую делаете руками. Соберём сценарий под ваш процесс и будем за ним следить.': 'Describe the routine you do by hand. We will build a workflow for your process and keep an eye on it.',
     'Описать процесс →': 'Describe your process →',
     // TASK-clarity.md, B7: лид услуг разбит на узлы — «Проект» и «Подписка» цветами форматов
-    'Шесть направлений в двух форматах.': 'Six areas in two formats.',
+    'Шесть направлений в двух форматах.': 'Six services, two formats.',
     'Проект': 'A project',
     'делаем разово и сдаём целиком, код ваш.': 'is one-off and handed over in full, and the code is yours.',
     'Подписка': 'A subscription',
-    'ежемесячная: всё работает на наших серверах, мы за это отвечаем.': 'is monthly: everything runs on our servers, and we are accountable for it.',
+    'ежемесячная: всё работает на наших серверах, мы за это отвечаем.': 'is monthly: everything runs on our servers, and it\'s on us.',
     // B9: демо-сайт «Посёлок «Сосны»» (мини-сцена)
     'Посёлок «Сосны»': 'Pines Village',
     'Жить': 'Live',
@@ -620,7 +619,7 @@
     'Хочу подключить «Ответы на отзывы Wildberries и Ozon».': 'I\'d like to connect "Replies to Wildberries and Ozon reviews".',
     'Хочу подключить «Утренний разбор задач».': 'I\'d like to connect "Morning task review".',
     'Хочу подключить «Каталог из прайса».': 'I\'d like to connect "Catalog from a price list".',
-    'Хочу подключить «ИИ-продавец для Авито».': 'I\'d like to connect "AI sales agent for Avito".',
+    'Хочу подключить «AI-продавец для Авито».': 'I\'d like to connect "AI sales agent for Avito".',
     'Хочу подключить «Мониторинг цен конкурентов».': 'I\'d like to connect "Competitor price monitoring".',
     'Ещё 3': '3 more',
     'Ещё 2': '2 more',
