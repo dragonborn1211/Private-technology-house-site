@@ -361,7 +361,8 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     await page.evaluate(() => document.addEventListener('click', (e) => { if (e.target.closest('[data-menu] .menu-nav a')) e.preventDefault(); }, { once: true }));
     await page.click('[data-menu] .menu-nav a[href="cases.html"]'); await run(400);
     const m3 = await st(), mh = await page.evaluate(() => [...document.querySelectorAll('[data-menu] .menu-nav a')].map((a) => a.getAttribute('href')).join(','));
-    await page.click('[data-topbar] [data-menu-open]'); await run(400);
+    // страница осталась на первом экране (пункт меню ведёт на страницу, переход погашен) — липкой шапки нет, меню — из шапки
+    await page.click(opener); await run(400);
     await page.click('[data-menu] [data-lang="en"]'); await run(4200);
     const m4 = await st();
     await page.keyboard.press('Escape'); await run(400);
