@@ -4,7 +4,7 @@
 // экрана (pt:secdone первого экрана или 4 с, что раньше), не поверх вступления; reduced motion и страница без движка
 // (privacy.html) — сразу. «Настройки cookie» в политике ([data-ck-open], без JS скрыта) открывают её снова. Метрика грузится тоже
 // после первого экрана и в простое браузера: вебвизор не пишет самую тяжёлую часть анимации, кадры вступления не отнимаются.
-// Цели — только при загруженной Метрике: tg (ссылка в Telegram), max (Max), phone (звонок), filter (кнопка фильтра), replay (↻),
+// Цели — только при загруженной Метрике: tg (ссылка в Telegram), max (Max), wa (WhatsApp), phone (звонок), filter (кнопка фильтра), replay (↻),
 // lang_en (переход на EN).
 // Подключается последним на всех страницах.
 (function () {
@@ -92,13 +92,14 @@
     if (!t || !t.closest) return;
     if (t.closest('[data-ck-open]')) { e.preventDefault(); open(); return; }
     if (!ymOn) return;
-    // обращения: Telegram, Max, звонок; place — секция / липкая шапка / меню
-    var a = t.closest('a[href*="t.me/dragonborne0"], a[href*="max.ru/"], a[href^="tel:"]');
+    // обращения: Telegram, Max, WhatsApp, звонок; place — секция / липкая шапка / меню
+    var a = t.closest('a[href*="t.me/dragonborne0"], a[href*="max.ru/"], a[href*="wa.me/"], a[href^="tel:"]');
     if (a) {
       var sec = a.closest('[data-sec]'), place = sec ? sec.getAttribute('data-sec') : a.closest('[data-topbar]') ? 'topbar' : a.closest('[data-menu]') ? 'menu' : PAGE;
       var href = a.getAttribute('href');
       if (/^tel:/.test(href)) goal('phone', { place: place });
       else if (/max\.ru/.test(href)) goal('max', { place: place });
+      else if (/wa\.me/.test(href)) goal('wa', { place: place });
       else goal('tg', { place: place, text: a.getAttribute('data-tg') || a.textContent.replace(/\s+/g, ' ').trim() });
       return;
     }
