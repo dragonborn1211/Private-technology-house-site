@@ -80,11 +80,15 @@
       // reduced motion), хранилища не трогаем. Включить — true.
       var AUTO_MODE = false;
       var FAST_LD = 0.6, PAGE = (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/, '');
+      // Повторный заход в этой вкладке (вторая и следующие страницы, обновление, «назад»): sessionStorage['pt-nav']
+      var REPEAT = false;
+      try { REPEAT = sessionStorage.getItem('pt-nav') === '1'; sessionStorage.setItem('pt-nav', '1'); } catch (e) { /* хранилище запрещено — полная */ }
       var MODE = (function () {
         var q = /[?&]intro=(full|fast|instant)(?:&|$)/.exec(location.search);
         if (rm) return 'rm';
         if (q) return q[1];
-        if (!AUTO_MODE) return 'full';
+        // повторный заход — быстрая сборка (просьба владельца: «очень сильно упростить и ускорить»); первый — полная
+        if (!AUTO_MODE) return REPEAT ? 'fast' : 'full';
         try {
           var seen = JSON.parse(sessionStorage.getItem('pt-seen') || '[]');
           if (seen.indexOf(PAGE) >= 0) return 'instant';
@@ -95,12 +99,12 @@
         return 'full';
       })();
       root.setAttribute('data-intro', MODE);
-      // Повторный переход в этой вкладке (вторая и следующие страницы, обновление): та же полная сборка, темп ×REPEAT_K
-      // (просьба владельца: «чуть-чуть» быстрее). ?intro=… — без ускорения, чтобы проверки шли в одном темпе.
-      // «Пересобрать блок» (PRESENT_K) не меняется. Выше этой строки от HERO_K / SEC_K зависит только runK — пересчитан.
-      var REPEAT_K = 0.75, REPEAT = false;
-      try { REPEAT = sessionStorage.getItem('pt-nav') === '1'; sessionStorage.setItem('pt-nav', '1'); } catch (e) { /* хранилище запрещено — полный темп */ }
-      if (REPEAT && MODE === 'full' && !/[?&]intro=/.test(location.search)) { HERO_K *= REPEAT_K; SEC_K *= REPEAT_K; runK = SEC_K; root.setAttribute('data-repeat', ''); }
+      // Повторный заход: первый экран — быстрая сборка (runHeroFast: без вспышки и двух линий, один луч, H1 читается к ~0.4 с),
+      // секции ниже — в темпе ×REPEAT_K (~0.47 с вместо ~0.78). Раньше повторный заход был той же полной сборкой ×0.75.
+      // ?intro=… — без ускорения, чтобы проверки шли в одном темпе. «Пересобрать блок» (PRESENT_K) — прежний.
+      // Выше этой строки от SEC_K зависит только runK — пересчитан.
+      var REPEAT_K = 0.6;
+      if (REPEAT && !AUTO_MODE && MODE === 'fast' && !/[?&]intro=/.test(location.search)) { SEC_K *= REPEAT_K; runK = SEC_K; root.setAttribute('data-repeat', ''); }
 
       function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
       function tr(s) { return window.PTI18N ? window.PTI18N.t(s) : s; }
@@ -165,7 +169,8 @@
         pultT = setTimeout(function () { if (!alive) return; if (replaying && (running || queue.length)) { pultLater(); return; } replaying = false; pultShown = true; pultMini(true, true); }, 2000);
       }
       // первый экран собран без показа (перезагрузка в середине страницы) — пульт сразу свёрнут
-      function pultSkip() { if (!pultShown && !replaying) { pultShown = true; clearTimeout(pultT); pultMini(true, true); } }
+      // still — без качения: быстрая сборка повторного захода сворачивает пульт сразу, катить его на каждом переходе незачем
+      function pultSkip(still) { if (!pultShown && !replaying) { pultShown = true; clearTimeout(pultT); pultMini(true, !still); } }
       function at(sec, fn) { timers.push(setTimeout(function () { if (alive) fn(); }, Math.max(0, sec) * 1000)); }
       // Положение корня. getBoundingClientRect заставляет браузер досчитать стили и раскладку, если их что-то сбило, — в
       // кадре это лишний пересчёт всей страницы (на слабом телефоне — заметная доля кадра). Полный замер — на стадиях,
@@ -832,7 +837,7 @@
         heroSweep = { axis: 'x', spread: FAST_LD }; line(beamEl, FAST_LD);
         setStage(s, 'done'); phText(s, ALL, false); heroSweep = null;
         if (heroObj) heroObj.start(false);
-        pultSkip(); log(s, '✓ ready');
+        pultSkip(true); log(s, '✓ ready');
         atRun(FAST_LD + 0.15, function () { phFade(BLD); });
         atRun(FAST_LD + 0.35, function () { s.state = 'done'; setProg(); secDone(s.el); finish(s); });
         atRun(FAST_LD + 1.2, function () { root.classList.remove('pt-sweep'); if (beamEl) beamEl.classList.remove('run'); });

@@ -55,7 +55,7 @@
 // на cases.html рядов из одной карточки нет.
 // Структура (TASK-structure.md): меню «Что делаем · Работы · Готовые решения · Как работаем» (с 1200 px в шапке, ниже —
 // кнопка меню), страница process.html, новый порядок услуг, сборка без разлёта в конце (data-pt-burst нет), повторный переход
-// в вкладке — темп ×0.75 (data-repeat), подпись над названием карточки — Manrope 15/500.
+// в вкладке — быстрая сборка (data-repeat), подпись над названием карточки — Manrope 15/500.
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
@@ -332,7 +332,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
   else console.log(`  ✓ сцены (${p0.length}) стартуют после сборки и стоят на паузе вне экрана`);
   if (tag === 'd1440') {
     // липкая шапка: в первом экране скрыта; ниже — видна при прокрутке вверх, прячется при прокрутке вниз
-    const bar = () => page.evaluate(() => { const b = document.querySelector('[data-topbar]'); return { on: b.classList.contains('on') && getComputedStyle(b).visibility !== 'hidden', cur: [...b.querySelectorAll('[data-nav][aria-current="true"]')].map((a) => a.getAttribute('data-nav')).join(',') }; });
+    const bar = () => page.evaluate(() => { const b = document.querySelector('[data-topbar]'); return { on: b.classList.contains('on') && getComputedStyle(b).visibility !== 'hidden', hrefs: [...b.querySelectorAll('.nav a')].map((a) => a.getAttribute('href')).join(',') }; });
     const go = async (y) => { await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), y); await page.waitForTimeout(80); await run(150); await page.waitForTimeout(120); await run(50); };
     await go(0); const b0 = await bar();
     const py = await page.evaluate(() => document.querySelector('#automation').getBoundingClientRect().top + window.scrollY);
@@ -340,8 +340,8 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     await go(py + 100); const b2 = await bar();
     await go(py + 400); const b3 = await bar();
     if (b0.on || b1.on || !b2.on || b3.on) fail(`липкая шапка: в первом экране ${b0.on}, вниз ${b1.on}, вверх ${b2.on}, снова вниз ${b3.on}`);
-    else if (b2.cur !== 'automation') fail(`липкая шапка: активный пункт «${b2.cur}», ждали automation`);
-    else console.log('  ✓ липкая шапка: скрыта в первом экране, вверх — видна (активен «Автоматизации»), вниз — прячется');
+    else if (b2.hrefs !== 'services.html,cases.html,automations.html,process.html') fail(`липкая шапка: пункты меню ведут на ${b2.hrefs}`);
+    else console.log('  ✓ липкая шапка: скрыта в первом экране, вверх — видна, вниз — прячется; пункты меню — на страницы');
   }
   if (tag === 'm390') {
     // меню на телефоне: Telegram и кнопка меню в шапке, Esc, фокус, пункт меню, язык
@@ -358,8 +358,9 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     await page.keyboard.press('Escape'); await run(400);
     const m2 = await st(), back = await page.evaluate((sel) => document.activeElement === document.querySelector(sel), opener);
     await page.click(opener); await run(400);
-    await page.click('[data-menu] .menu-nav a[href="#objects"]'); await run(2600); await page.waitForTimeout(150); await run(100);
-    const m3 = await st(), ptop = await page.evaluate(() => Math.round(document.querySelector('#objects').getBoundingClientRect().top));
+    await page.evaluate(() => document.addEventListener('click', (e) => { if (e.target.closest('[data-menu] .menu-nav a')) e.preventDefault(); }, { once: true }));
+    await page.click('[data-menu] .menu-nav a[href="cases.html"]'); await run(400);
+    const m3 = await st(), mh = await page.evaluate(() => [...document.querySelectorAll('[data-menu] .menu-nav a')].map((a) => a.getAttribute('href')).join(','));
     await page.click('[data-topbar] [data-menu-open]'); await run(400);
     await page.click('[data-menu] [data-lang="en"]'); await run(4200);
     const m4 = await st();
@@ -370,7 +371,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     if (!m1.on || !m1.lock || !m1.inMenu || exp !== 'true') bad.push(`открытие: ${JSON.stringify(m1)}, aria-expanded ${exp}`);
     if (under !== 'hidden') bad.push('под открытым меню видна страница (светлое пятно)');
     if (m2.on || m2.lock || !back) bad.push(`Esc: меню ${m2.on ? 'открыто' : 'закрыто'}, фокус на кнопке ${back}`);
-    if (m3.on || Math.abs(ptop) > 8) bad.push(`пункт меню: меню ${m3.on ? 'открыто' : 'закрыто'}, «Кейсы» на ${ptop}px`);
+    if (m3.on || mh !== 'services.html,cases.html,automations.html,process.html') bad.push(`пункт меню: меню ${m3.on ? 'открыто' : 'закрыто'}, пункты ведут на ${mh}`);
     if (m4.lang !== 'en') bad.push(`RU/EN в меню: lang=${m4.lang}`);
     if (bad.length) fail('меню на телефоне: ' + bad.join('; '));
     else console.log('  ✓ меню на телефоне: открывается, Esc закрывает и возвращает фокус, пункт ведёт к секции, RU/EN переключает язык');
@@ -696,7 +697,7 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
 {
   const bad = [];
   const MENU = {
-    'index.html': ['#directions', '#objects', '#automation', 'process.html'],
+    'index.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
     'services.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
     'cases.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
     'automations.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
@@ -1160,7 +1161,7 @@ console.log('\nструктура: услуги, «Как работаем», с
     await page.locator('#case-resonara').screenshot({ path: path.join(shots, 'cases-resonara-1440.png') });
     await page.close();
   }
-  // повторный переход в одной вкладке: первая страница — полный темп, вторая — data-repeat; с ?intro= — без ускорения.
+  // повторный переход в одной вкладке: первая страница — полная сборка, вторая — быстрая (data-repeat); с ?intro= — без ускорения.
   // Кадры конца сборки первого экрана главной: сразу после «✓ ready» и через 2 с (частицы гаснут на месте, без разлёта)
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -1693,12 +1694,14 @@ console.log(`\nрежимы сборки: полная / быстрая / сра
     const c = { m: await mode(), all: await doneAll(page) };
     return f.m === 'fast' && f.h1 && b.all && c.m === 'instant' && c.all ? '' : JSON.stringify({ f, b, c });
   });
-  await scene('«Как работаем» с главной → process.html', 'index.html', '', async (page) => {
+  // повторный заход в вкладке — быстрая сборка (просьба владельца): без вспышки и двух линий, H1 виден к ~0.7 с
+  await scene('повторный заход: «Как работаем» с главной → process.html — быстрая', 'index.html', '', async (page, mode) => {
     await page.clock.runFor(6500);
     await page.click('.hero-hdr .nav a[href="process.html"]'); await page.waitForURL(/process\.html/);
-    await page.clock.runFor(4000); await page.waitForTimeout(100);
-    const r = await page.evaluate(() => ({ done: document.querySelector('[data-sec="hero"]').classList.contains('s-done'), rep: document.getElementById('pt-site').hasAttribute('data-repeat'), h1: document.querySelector('h1').textContent.replace(/\s+/g, ' ').trim() }));
-    return r.done && r.rep && r.h1 === 'Как мы работаем.' ? '' : JSON.stringify(r);
+    await page.clock.runFor(100); await page.waitForTimeout(700);
+    const r = await page.evaluate(() => ({ rep: document.getElementById('pt-site').hasAttribute('data-repeat'), h1: document.querySelector('h1').textContent.replace(/\s+/g, ' ').trim() }));
+    r.m = await mode(); r.on = await h1on(page);
+    return r.m === 'fast' && r.rep && r.on && r.h1 === 'Как мы работаем.' ? '' : JSON.stringify(r);
   });
   for (const m of ['full', 'fast', 'instant']) await scene(`?intro=${m}`, `index.html?intro=${m}`, `sessionStorage.setItem('pt-seen', '["index"]')`, async (page, mode) => { await page.clock.runFor(100); const got = await mode(); return got === m ? '' : got; });
   await scene('хранилище запрещено → полная', 'index.html', `Object.defineProperty(window, 'localStorage', { get() { throw new Error('denied'); } }); Object.defineProperty(window, 'sessionStorage', { get() { throw new Error('denied'); } });`, async (page, mode) => { await page.clock.runFor(4000); const r = { m: await mode(), hero: await page.evaluate(() => document.querySelector('[data-sec="hero"]').classList.contains('s-done')) }; return r.m === 'full' && r.hero ? '' : JSON.stringify(r); });

@@ -39,25 +39,6 @@
   window.addEventListener('pointerdown', unpin, { passive: true });
   window.addEventListener('keydown', function (e) { if (/^(Arrow(Up|Down)|Page(Up|Down)|Home|End| )$/.test(e.key)) unpin(); });
 
-  // активный раздел: пункт меню текущей секции — aria-current
-  var links = Array.prototype.slice.call(root.querySelectorAll('[data-nav]'));
-  // «Процесс» живёт на странице услуг (пункт меню главной ведёт туда), «Цены» скрыты до утверждения цен
-  var KEY = { directions: 'directions', objects: 'objects', automation: 'automation', pricing: 'pricing' };
-  var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')), inBand = [];
-  function setActive() {
-    var cur = null;
-    for (var k = 0; k < secs.length; k++) if (inBand.indexOf(secs[k]) >= 0) { cur = KEY[secs[k].getAttribute('data-sec')] || null; break; }
-    links.forEach(function (a) { if (cur && a.getAttribute('data-nav') === cur) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
-  }
-  if ('IntersectionObserver' in window) {
-    // тонкая полоса на 35–40% высоты окна: секция, которая её пересекает, и есть текущая
-    var io = new IntersectionObserver(function (es) {
-      es.forEach(function (e) { var i = inBand.indexOf(e.target); if (e.isIntersecting && i < 0) inBand.push(e.target); else if (!e.isIntersecting && i >= 0) inBand.splice(i, 1); });
-      setActive();
-    }, { rootMargin: '-35% 0px -60% 0px', threshold: 0 });
-    secs.forEach(function (s) { io.observe(s); });
-  }
-
   // ---------- меню на телефоне, планшете и узком ноутбуке (до 1199 px) ----------
   // Открывается кнопкой [data-menu-open] (в шапке первого экрана и в липкой). Фокус уходит в меню и не выходит из него;
   // Esc, кнопка закрытия и клик по пункту закрывают, фокус возвращается на кнопку. Пока меню открыто, страница стоит.
