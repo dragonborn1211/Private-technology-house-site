@@ -194,7 +194,7 @@ body{margin:0;background:#0A121A}
 .scan-beam.run{animation:ptBeamH var(--beam,.5s) linear forwards}
 @keyframes ptBeamH{0%{transform:translateY(-4px);opacity:0}6%{opacity:1}94%{opacity:1}100%{transform:translateY(calc(100vh + 4px));opacity:0}}
 .pt-lines .sec.s-skel .scan{animation:none}
-.pt-lines .sec[data-sec="hero"].s-skel .wf,.pt-lines .sec[data-sec="hero"].s-skel .fr,.pt-lines .sec[data-sec="hero"].s-skel .an,.pt-lines .sec[data-sec="hero"].s-skel .hero-obj::before,.pt-lines .sec[data-sec="hero"].s-skel .nb .ar,.pt-lines .sec[data-sec="hero"].s-skel .logo-d,.pt-lines .sec[data-sec="hero"].s-skel .ico svg,.pt-lines .sec[data-sec="hero"].s-skel .cm-btn svg,.pt-lines .sec[data-sec="hero"].s-skel .burger{transition-delay:var(--ld,0s)}
+.pt-lines .sec[data-sec="hero"].s-skel .wf,.pt-lines .sec[data-sec="hero"].s-skel .fr,.pt-lines .sec[data-sec="hero"].s-skel .an,.pt-lines .sec[data-sec="hero"].s-skel .hero-obj::before,.pt-lines .sec[data-sec="hero"].s-skel .nb .ar,.pt-lines .sec[data-sec="hero"].s-skel .logo-d,.pt-lines .sec[data-sec="hero"].s-skel .ico svg,.pt-lines .sec[data-sec="hero"].s-skel .cm-btn :is(svg,.ic),.pt-lines .sec[data-sec="hero"].s-skel .burger{transition-delay:var(--ld,0s)}
 .pt-lines .sec[data-sec="hero"].s-text .ptx,.pt-lines .sec[data-sec="hero"].s-text .obj-ct,.pt-lines .sec[data-sec="hero"].s-text .obj-cap{opacity:1;transition:opacity .4s ease var(--ld,0s)}
 /* главная кнопка первого экрана: контур — с рамками, а заливка и свечение — с текстом, по горизонтальной линии (--ld по y,
    как .ptx), за то же время (TASK-review.md 1.4: заливка проявлялась позже заголовка). В быстрой сборке — как текст */
@@ -284,8 +284,8 @@ body{margin:0;background:#0A121A}
    под ним справа (слева под шапкой подпись кикера); ромб логотипа и иконки проявляются вместе с рамками кнопок */
 .hero-hdr > .wf{top:10px;bottom:10px}
 .hero-hdr > .wf .wf-l{top:calc(100% + 6px);left:auto;right:0}
-.pt-on .sec .hero-hdr .logo-d,.pt-on .sec .hero-hdr .ico svg,.pt-on .sec .hero-hdr .cm-btn svg,.pt-on .sec .hero-hdr .burger{transition:opacity .9s ease}
-.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .logo-d,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .ico svg,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .cm-btn svg,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .burger{opacity:0}
+.pt-on .sec .hero-hdr .logo-d,.pt-on .sec .hero-hdr .ico svg,.pt-on .sec .hero-hdr .cm-btn :is(svg,.ic),.pt-on .sec .hero-hdr .burger{transition:opacity .9s ease}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .logo-d,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .ico svg,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .cm-btn :is(svg,.ic),.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .burger{opacity:0}
 .hdr-act{display:flex;flex:none;align-items:center;gap:12px}
 .pt .hdr-cta{min-height:44px;padding:0 20px;font-size:14px}
 /* «Обсудить проект» в шапках — список каналов связи (просьба владельца: иконки — «в „Обсудить проект“»): Telegram, MAX,
@@ -716,11 +716,18 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .foot-ico{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 0}
 .pt-on .sec .foot-ico svg{transition:opacity .9s ease}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .foot-ico svg{opacity:0}
-.pt-on .sec .foot-ico img{transition:opacity .9s ease}
-.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .foot-ico img{opacity:0}
+.pt-on .sec .foot-ico :is(img,.ic){transition:opacity .9s ease}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .foot-ico :is(img,.ic){opacity:0}
 /* знак MAX — присланный владельцем (форма, маска, размытие клиньев — как есть), клинья перекрашены в палитру сайта:
    assets/icons/max.svg; файлом, а не в разметке: на странице он четыре раза, а внутренние id маски и фильтра повторялись бы */
-.ic-max{display:block;flex:none}
+.ic-max{display:block;flex:none;margin:0 1px}
+/* иконки связи — по образцу знака MAX (просьба владельца): контур Tabler (линия 2) маской, заливка — тот же круговой перелив
+   палитры, что у знака MAX (сирень сверху справа → мята → голубой снизу слева → синий); 22 px — по размеру знака MAX (20 px) */
+.ic{display:block;flex:none;width:22px;height:22px;background:conic-gradient(from 45deg,#B7A6F2,#9FE5D1 90deg,#8ED8F8 180deg,#7FA8FF 270deg,#B7A6F2 360deg);-webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat}
+.ic-tg{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 10l-4 4l6 6l4 -16l-18 7l4 2l2 6l3 -4'/%3E%3C/svg%3E")}
+.ic-wa{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9'/%3E%3Cpath d='M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1'/%3E%3C/svg%3E")}
+.ic-ph{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2'/%3E%3C/svg%3E")}
+.ic-chat{--m:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 20l1.3 -3.9c-2.324 -3.437 -1.426 -7.872 2.1 -10.374c3.526 -2.501 8.59 -2.296 11.845 .48c3.255 2.777 3.695 7.266 1.029 10.501c-2.666 3.235 -7.615 4.215 -11.574 2.293l-4.7 1'/%3E%3C/svg%3E")}
 .foot-name{margin:0 0 10px;font-size:11px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#EEF3F6}
 .foot-tag{margin:0;max-width:320px;font-size:13px;line-height:1.55;color:#8193A0}
 /* ссылка на политику в подвале (TASK-founder.md: ФИО и ИНН — только в самой политике, «Настройки cookie» — в ней же) */

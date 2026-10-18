@@ -1804,7 +1804,7 @@ console.log('\nсвязь: подвал, «Обсудить проект», ме
   const pv = readFileSync(path.join(root, 'privacy.html'), 'utf8').replace(/\r\n/g, '\n');
   for (const [f, h] of Object.entries({ ...src, 'privacy.html': pv })) {
     const ic = (/<p class="foot-ico">([\s\S]*?)<\/p>/.exec(h) || [])[1] || '';
-    const a = [...ic.matchAll(/<a href="([^"]+)"[^>]*class="ico fr" aria-label="([^"]+)"[^>]*><(svg|img)/g)].map((m) => m[1]);
+    const a = [...ic.matchAll(/<a href="([^"]+)"[^>]*class="ico fr" aria-label="([^"]+)"[^>]*><(svg|img|span)/g)].map((m) => m[1]);
     if (a.join(' ').replace(/max\.ru\/\S+/, 'max.ru/…') !== 'https://t.me/dragonborne0 https://max.ru/… https://wa.me/79090243995 tel:+79090243995' || /Telegram · @dragonborne0/.test(h)) bad.push(`${f}: подвал ${JSON.stringify(a)}`);
     const cms = [...h.matchAll(/<div class="cm" data-cm>[\s\S]*?<\/div>\n<\/div>/g)].map((m) => m[0]);
     if (cms.length !== 2 || cms.some((c) => !/data-tg="Хочу обсудить проект\."/.test(c) || !/href="https:\/\/max\.ru\//.test(c) || !/href="https:\/\/wa\.me\/79090243995" target="_blank" rel="noopener" data-wa=/.test(c) || !/href="tel:\+79090243995"/.test(c))) bad.push(`${f}: списков «Обсудить проект» ${cms.length} или в них не все каналы`);

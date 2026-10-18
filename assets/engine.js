@@ -934,7 +934,7 @@
           // вертикальная линия рисует все рамки (каркас и стили — одна стадия), за ней частицы обводят блоки и рамки
           atRun((1.6 + o) * K, function () {
             probeNow();
-            lineDelays('.wf, .fr, .an, .hero-obj, .nb .ar, .logo-d, .ico svg, .cm-btn svg, .burger', 'x', LD); heroSweep = { axis: 'x', spread: LD }; line(beamEl, LD);
+            lineDelays('.wf, .fr, .an, .hero-obj, .nb .ar, .logo-d, .ico svg, .cm-btn svg, .cm-btn .ic, .burger', 'x', LD); heroSweep = { axis: 'x', spread: LD }; line(beamEl, LD);
             setStage(s, 'skel'); measure(s); phWire(s, BLD, false); heroSweep = null; log(s, '02 · frames.draw()');
           });
           atRun((1.6 + o) * K + LD * 0.5, objGo);
