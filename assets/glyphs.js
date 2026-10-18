@@ -20,10 +20,19 @@
     if (!it.svg.pauseAnimations) return;
     if (it.on && it.vis && !rm && !root.classList.contains('pt-lite')) it.svg.unpauseAnimations(); else it.svg.pauseAnimations();
   }
+  // Секция собралась — чертежи включаются по одному за кадр (onQ): старт прорисовки — новые анимации у сотен линий, и
+  // шесть чертежей разом совпадали в одном кадре с проявлением текста секции (на слабом устройстве — рывок до 50 мс).
+  // Соседний чертёж начинает на кадр позже — на глаз не видно. Сразу (без очереди) — при старте модуля и reduced motion
+  var onQ = [], onRaf = 0;
+  function turnOn(it) { it.on = true; it.el.classList.add('is-on'); smil(it); }
+  function pump() { onRaf = 0; var it = onQ.shift(); if (it) turnOn(it); if (onQ.length) onRaf = requestAnimationFrame(pump); }
   function sync(it, first) {
-    var done = !it.sec || !root.classList.contains('pt-on') || it.sec.classList.contains('s-done');
-    if (done && !it.on) { it.on = true; if (first || rm) it.el.classList.add('is-now'); it.el.classList.add('is-on'); }
-    else if (!done && it.on) { it.on = false; it.el.classList.remove('is-on', 'is-now'); }
+    var done = !it.sec || !root.classList.contains('pt-on') || it.sec.classList.contains('s-done'), q = onQ.indexOf(it);
+    if (done && !it.on) {
+      if (first || rm) { if (q >= 0) onQ.splice(q, 1); it.on = true; it.el.classList.add('is-now'); it.el.classList.add('is-on'); }
+      else if (q < 0) { if (onQ.length || onRaf) onQ.push(it); else { turnOn(it); onRaf = requestAnimationFrame(pump); } }
+    }
+    else if (!done) { if (q >= 0) onQ.splice(q, 1); if (it.on) { it.on = false; it.el.classList.remove('is-on', 'is-now'); } }
     smil(it);
   }
   function vis(it, v) { it.vis = v; it.el.classList.toggle('is-vis', v); smil(it); }

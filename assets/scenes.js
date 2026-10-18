@@ -144,6 +144,12 @@
       }
       g.restore();
     }
+    // Контуры блоков и строк шаблона — по замеру текста его шрифтами (measureText: ~10 мс на слабом устройстве в начале
+    // каждого цикла). Результат зависит только от шаблона, размера окна, языка и шрифтов — он запоминается (rcMemo, массивы
+    // только читаются), а следующий шаблон замеряется заранее, в простое после «✓ ready» (prepRects)
+    var rcMemo = {};
+    function rectsMemo(tp) { var k = TPL.indexOf(tp) + '|' + MW + '|' + MH + '|' + lang() + '|' + (document.fonts ? document.fonts.status : ''); return rcMemo[k] || (rcMemo[k] = rects(tp)); }
+    function prepRects() { if (!env.rm) ric(function () { if (on && !asleep) rectsMemo(TPL[(ti + 1) % TPL.length]); }); }
     function rects(tp) {
       var R = [];
       mx.save();
@@ -166,16 +172,52 @@
       return best;
     }
     function sample(tp, mode) {
+      if (!mode) { var j = sampleJob(tp, null); return { d: j.d, w: j.w, h: j.h }; }
+      var jb = sampleJob(tp, mode); sampleRows(jb, 1e9); return jb.out;
+    }
+    // Точки демо-сайта (стадия 3): сайт рисуется на скрытом холсте, по пикселям — точки и цвета палитры. Это ~25 мс на
+    // слабом устройстве одним куском, раз в цикл. Шаблон известен с начала цикла (стадия 0), а точки нужны через 2.5 с,
+    // поэтому их считают заранее в простое браузера (prepSamples): по строкам, кусками до ~4 мс. Тот же расчёт и та же
+    // случайность; не успели или сменились размер, язык, шрифты — досчитывается сразу, как раньше
+    function sampleJob(tp, mode) {
       oc3.width = Math.max(1, Math.round(MW)); oc3.height = Math.max(1, Math.round(MH));
       og3.setTransform(1, 0, 0, 1, 0, 0); og3.clearRect(0, 0, oc3.width, oc3.height);
       drawSite(og3, tp, 1, mode);
-      var d = og3.getImageData(0, 0, oc3.width, oc3.height).data, xs = [], ys = [], cs = [], w = oc3.width;
-      if (!mode) return { d: d, w: w, h: oc3.height };
-      for (var y = 0; y < oc3.height; y++) for (var x = 0; x < w; x++) {
-        var k = (y * w + x) * 4;
-        if (d[k + 3] > 110) { xs.push(x + Math.random()); ys.push(y + Math.random()); cs.push(nearest(tp, d[k], d[k + 1], d[k + 2])); }
+      return { tp: tp, d: og3.getImageData(0, 0, oc3.width, oc3.height).data, w: oc3.width, h: oc3.height, y: 0, out: { n: 0, x: [], y: [], c: [] } };
+    }
+    function sampleRows(j, ms) {
+      var d = j.d, w = j.w, tp = j.tp, o = j.out, t0 = performance.now();
+      while (j.y < j.h) {
+        for (var x = 0, y = j.y; x < w; x++) {
+          var k = (y * w + x) * 4;
+          if (d[k + 3] > 110) { o.x.push(x + Math.random()); o.y.push(y + Math.random()); o.c.push(nearest(tp, d[k], d[k + 1], d[k + 2])); }
+        }
+        j.y++;
+        if (performance.now() - t0 > ms) break;
       }
-      return { n: xs.length, x: xs, y: ys, c: cs };
+      o.n = o.x.length;
+      return j.y >= j.h;
+    }
+    var pre = null;
+    function preKey() { return ti + '|' + MW + '|' + MH + '|' + lang() + '|' + (document.fonts ? document.fonts.status : ''); }
+    var ric = window.requestIdleCallback ? function (fn) { window.requestIdleCallback(fn, { timeout: 1500 }); } : function (fn) { setTimeout(function () { fn({ timeRemaining: function () { return 4; } }); }, 50); };
+    function prepSamples() {
+      if (env.rm) return;
+      var p = pre = { key: preKey(), tp: TPL[ti], st: null, sb: null };
+      ric(function step(dl) {
+        if (pre !== p || p.key !== preKey()) return;
+        var ms = Math.max(1, Math.min(4, dl.timeRemaining()));
+        if (!p.st) p.st = sampleJob(p.tp, 'txt');
+        else if (!sampleRows(p.st, ms)) { /* дальше */ }
+        else if (!p.sb) p.sb = sampleJob(p.tp, 'blk');
+        else if (sampleRows(p.sb, ms)) return;
+        ric(step);
+      });
+    }
+    function takeSample(tp, mode) {
+      var p = pre, j = p && p.tp === tp && p.key === preKey() ? (mode === 'txt' ? p.st : p.sb) : null;
+      if (!j) return sample(tp, mode);
+      sampleRows(j, 1e9); return j.out;
     }
     function perim(f, o) {
       var r = Math.min(f.r || 0, f.w / 2, f.h / 2), sw = Math.max(0, f.w - 2 * r), sh = Math.max(0, f.h - 2 * r), ar = Math.PI * r / 2, t = Math.random() * (2 * sw + 2 * sh + 4 * ar), a, x, y;
@@ -201,15 +243,15 @@
     function setStage(s, instant) {
       stage = s; var tp = TPL[ti];
       if (s === 0) {
-        RC = rects(tp);
+        RC = rectsMemo(tp); prepSamples();
         var L = []; for (var q = 0; q <= 6; q++) L.push(MW * (0.06 + q * 0.88 / 6));
         assign(function (o) { o.x = L[(Math.random() * L.length) | 0] + (Math.random() - 0.5) * 0.8; o.y = Math.random() * MH; o.a = 0.55; o.c = Math.random() < 0.75 ? GLS : ICEC; }, !instant, false);
       } else if (s === 1) {
-        if (!RC.length) RC = rects(tp);
+        if (!RC.length) RC = rectsMemo(tp);
         var pw = pick(RC, function (f) { return f.w + f.h; });
         assign(function (o) { perim(pw(), o); o.a = 0.85; o.c = Math.random() < 0.7 ? GLS : ICEC; }, !instant, false);
       } else if (s === 2) {
-        if (!RC.length) RC = rects(tp);
+        if (!RC.length) RC = rectsMemo(tp);
         var tx = RC.filter(function (f) { return f.t; }), bk = RC.filter(function (f) { return !f.t; });
         var pt = pick(tx, function (f) { return f.w * Math.max(2, f.h * 0.5); }), pb = bk.length ? pick(bk, function (f) { return f.w + f.h; }) : null;
         assign(function (o) {
@@ -218,7 +260,7 @@
           o.a = 0.8;
         }, !instant, false);
       } else if (s === 3) {
-        var st = sample(tp, 'txt'), sb = sample(tp, 'blk');
+        var st = takeSample(tp, 'txt'), sb = takeSample(tp, 'blk'); pre = null;
         assign(function (o) {
           var S = (!sb.n || (st.n && Math.random() < 0.62)) ? st : sb;
           if (!S.n) { o.x = Math.random() * MW; o.y = Math.random() * MH; o.c = GLS; o.a = 0; return; }
@@ -236,6 +278,7 @@
           A[i] = 1; AT[i] = 0.32; FR[i] = 1; SWT[i] = 0;
         }
       }
+      if (s === 5) prepRects();
       if (lab) lab.textContent = tr(tp.name) + ' · ' + LBL[s];
     }
     function resize() {

@@ -19,6 +19,10 @@
       var mouse = { cx: -1e5, cy: -1e5 };
       var P, V, T, NT, C, CT, NC, A, AT, NA, SZ, NS, SW, M, NM, SP, TP, BUF, BLD = [];
       var layoutGen = 0, lzT = [0, 0, 0, 0], lzQ = 0;
+      // Дрожание частиц сборки — из таблицы случайных чисел (JN), с новой случайной точки в каждом кадре: тот же равномерный
+      // шум той же силы, но без двух вызовов Math.random на каждую из 25 000 частиц (это было ~40 % времени цикла при сборке)
+      var JN = new Float32Array(8192);
+      for (var jq = 0; jq < 8192; jq++) JN[jq] = Math.random() - 0.5;
       var prog = null, buf = null, U = {};
       var SMK = 520, sX = new Float32Array(SMK), sY = new Float32Array(SMK), sVX = new Float32Array(SMK), sVY = new Float32Array(SMK), sL = new Float32Array(SMK), sM = new Float32Array(SMK), sC = new Float32Array(SMK), sI = 0, lastPX = null, lastPY = null;
       var smk = root.querySelector('[data-pt-smoke]'), sctx = smk ? smk.getContext('2d') : null, SPR = [], smokeLive = false;
@@ -32,7 +36,12 @@
       // кончилась». Пустое значение — прежний сильный разлёт по экрану (phAmbient), оставлен на будущее
       var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')).map(function (el) { return { el: el, name: el.getAttribute('data-sec'), state: 'idle', geo: null, geoKey: '', replay: false, burst: el.getAttribute('data-pt-burst') }; });
       var pultEl = root.querySelector('[data-pult]'), pultT = 0, pultShown = false, replaying = false;
-      var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, cur = null, io = null, io2 = null;
+      var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, cur = null, io = null, io2 = null, io3 = null, io4 = null, near = [], preOn = false;
+      // Сцены в карточках просыпаются по одной за кадр (wakeQ, frame): пробуждение схемы или демо-сайта — подгонка холста и
+      // раскладка узлов, 15–20 мс на слабом устройстве; две-три в одной задаче давали рывок до 45 мс в финале сборки секции.
+      // Сцена стартует на кадр-два позже — на глаз не видно. Усыплённая (пересборка, смена языка) из очереди убирается
+      var wakeQ = [];
+      function sleepScene(sc) { var k = wakeQ.indexOf(sc); if (k >= 0) wakeQ.splice(k, 1); sc.sleep(); }
       // «Тихие» зоны — текст первого экрана (кикер, H1, лид, кнопки, строка доверия) и текст панели «Кодекс студии»
       // (вкладки сверху, подпись снизу): пыль над ним горит слабее (CALM_A), чтобы не мешать читать, а при раскладке
       // gAmbient выбирает точку вне зон. Раньше зоны были блоками целиком и пыль в них не рисовалась вовсе: блоки занимали
@@ -249,6 +258,17 @@
         });
         return L.map(function (l) { return { x: l.x1, w: l.x2 - l.x1, cy: l.y + l.h * 0.56, bh: Math.max(3, l.fs * 0.4) }; });
       }
+      // растр букв частями (prefetch): склейка частей — как один растр
+      function catGl(parts) {
+        function cat(key) {
+          var n = 0; parts.forEach(function (p) { n += p[key].n; });
+          var o = { n: n, x: new Float32Array(n), y: new Float32Array(n), r: new Uint8Array(n), g: new Uint8Array(n), b: new Uint8Array(n) }, at = 0;
+          parts.forEach(function (p) { var q = p[key]; ['x', 'y', 'r', 'g', 'b'].forEach(function (f) { o[f].set(q[f], at); }); at += q.n; });
+          return o;
+        }
+        var B = cat('big'), S = cat('small');
+        return { n: B.n + S.n, big: B, small: S };
+      }
       function glyphs(words) {
         var big = [], small = [];
         words.forEach(function (w) { (w.st.fs >= 30 ? big : small).push(w); });
@@ -333,7 +353,29 @@
       // Растр букв — самая дорогая часть замера, а нужен он только стадии «буквы» (phText). Поэтому он считается
       // лениво и один раз на геометрию. Раньше он пересчитывался уже на стадии сетки первого экрана (после догрузки
       // шрифтов кэш сбрасывается) и давал заметный рывок.
-      function ensureGl(s) { if (s.geo && !s.geo.gl) s.geo.gl = glyphs(s.geo.words); }
+      function ensureGl(s) { if (s.geo && !s.geo.gl) { s.geo.gl = glyphs(s.geo.words); s.prep = null; } }
+      // Замер и растр букв секции — заранее, пока она в полутора экранах ниже (IntersectionObserver), в простое браузера и
+      // частями по словам: на стадии букв растр уже готов, и сборка не дёргается (растр — до 40 мс на слабом устройстве, замер
+      // — до 10). Геометрия та же: кэш по layoutGen, ширине, месту секции в документе и шрифтам. Не успели — ensureGl посчитает
+      // сразу, как раньше. Часть — слова на ~6 мс, между частями браузер рисует кадры
+      var ric = window.requestIdleCallback ? function (fn) { return window.requestIdleCallback(fn, { timeout: 600 }); } : function (fn) { return setTimeout(function () { fn({ timeRemaining: function () { return 8; }, didTimeout: true }); }, 30); };
+      function prefetchNear() { preOn = true; near.forEach(prefetch); }
+      function prefetch(s) {
+        if (rm || s === hero || (s.state !== 'idle' && s.state !== 'queued') || s.prep || (s.geo && s.geo.gl)) return;
+        var job = s.prep = { parts: [], i: 0 };
+        ric(function step(dl) {
+          if (s.prep !== job || (s.state !== 'idle' && s.state !== 'queued')) { if (s.prep === job) s.prep = null; return; }
+          if (!job.geo) { measure(s); job.geo = s.geo; if (job.geo.gl) { s.prep = null; return; } if (dl.timeRemaining() < 4) { ric(step); return; } }
+          if (s.geo !== job.geo) { s.prep = null; return; }   // раскладка сменилась — посчитает сборка
+          var ws = job.geo.words, t0 = performance.now();
+          while (job.i < ws.length && (performance.now() - t0 < 6 || dl.didTimeout && performance.now() - t0 < 10)) {
+            var part = ws.slice(job.i, job.i + 24); job.i += part.length;
+            job.parts.push(glyphs(part));
+          }
+          if (job.i < ws.length) { ric(step); return; }
+          job.geo.gl = catGl(job.parts); s.prep = null;
+        });
+      }
       function perLen(f) { if (f.line === 'top') return f.w; var r = f.r; return 2 * Math.max(0, f.w - 2 * r) + 2 * Math.max(0, f.h - 2 * r) + 2 * Math.PI * r; }
       function chooser(list, wf) { var cum = [], s = 0; list.forEach(function (it) { s += wf(it); cum.push(s); }); return function () { var v = Math.random() * s, lo = 0, hi = cum.length - 1; while (lo < hi) { var mid = (lo + hi) >> 1; if (cum[mid] < v) lo = mid + 1; else hi = mid; } return list[lo]; }; }
       function rrPoint(f, o) {
@@ -387,10 +429,27 @@
         };
       }
       var tmp = { x: 0, y: 0, r: 0, g: 0, b: 0, a: 1, s: 1.3, m: 0 };
+      // Новые цели частиц. opt.part (стадии обычных секций, sweep) — по частям: треть сразу, остальное — по трети в
+      // следующих кадрах (fillJob, frame). Раскладка 25 000 целей — до 35 мс на слабом устройстве, и она совпадала с
+      // пересчётом стилей стадии в одном кадре. Время смены цели у всех частиц считается от одного момента (job.now), как
+      // если бы раскладка шла целиком: частица из поздней части сменит цель на кадр-два позже — на глаз не видно. Всё, что
+      // трогает цели (новая раскладка, гашение, финал, взрыв, мгновенная сборка, смена языка), сначала доводит отложенное
+      // (flushFill), поэтому порядок событий прежний. Первый экран, смена языка и мгновенные стадии — целиком, как раньше.
+      var fillJob = null;
+      function flushFill() { var j = fillJob; if (j) { fillJob = null; fillRun(j, j.idx.length); } }
       function fill(idx, gens, opt) {
-        var tot = 0, cum = [], now = performance.now();
+        flushFill();
+        var tot = 0, cum = [];
         gens.forEach(function (g) { tot += g.w; cum.push(tot); });
-        for (var k = 0; k < idx.length; k++) {
+        var job = { idx: idx, gens: gens, cum: cum, tot: tot, opt: opt, now: performance.now(), k: 0 };
+        if (!opt.part || opt.instant || rm) { fillRun(job, idx.length); return; }
+        job.step = Math.ceil(idx.length / 3);
+        fillRun(job, job.step);
+        if (job.k < idx.length) fillJob = job;
+      }
+      function fillRun(job, cnt) {
+        var idx = job.idx, gens = job.gens, cum = job.cum, tot = job.tot, opt = job.opt, now = job.now, end = Math.min(idx.length, job.k + cnt);
+        for (var k = job.k; k < end; k++) {
           var i = idx[k], v = Math.random() * tot, gi = 0;
           while (gi < cum.length - 1 && v > cum[gi]) gi++;
           gens[gi].f(tmp);
@@ -404,10 +463,11 @@
           }
           SW[i] = now + d * 1000;
         }
+        job.k = end;
       }
       function sweep(s, inst, spread) {
         if (s === hero && heroSweep) return heroSweep.axis === 'x' ? { instant: inst, axis: 'x', spread: heroSweep.spread, rnd: 0.06 } : { instant: inst, axis: 'y', y0: -rootTop, h: VH, spread: heroSweep.spread, rnd: 0.06 };
-        return s === hero ? { instant: inst, axis: 'x', spread: spread * 0.8, rnd: 0.1 } : { instant: inst, axis: 'y', y0: s.geo.box.y, h: Math.min(s.geo.box.h, VH * 1.4), spread: spread * runK, rnd: 0.12 * runK }; }
+        return s === hero ? { instant: inst, axis: 'x', spread: spread * 0.8, rnd: 0.1 } : { instant: inst, axis: 'y', y0: s.geo.box.y, h: Math.min(s.geo.box.h, VH * 1.4), spread: spread * runK, rnd: 0.12 * runK, part: true }; }
       function phGrid(s, idx, inst) {
         var cols = [];
         Array.prototype.forEach.call(root.querySelectorAll('.pt-col'), function (el) { var r = el.getBoundingClientRect(); if (r.width > 0) cols.push(r.left - rootLeft, r.right - rootLeft); });
@@ -443,6 +503,7 @@
         cur = { s: s, f: phText, idx: idx };
       }
       function phFade(idx) {
+        flushFill();
         var now = performance.now();
         for (var k = 0; k < idx.length; k++) {
           var i = idx[k], p = i * 2, c = i * 3;
@@ -454,18 +515,21 @@
       }
       function phAmbient(idx, inst) {
         fill(idx, [{ w: 1, f: function (o) { gAmbient(o); o.m = 0; o.a = 0; } }], { instant: inst, axis: 'x', spread: 0, rnd: inst ? 0 : 0.5 });
-        at(inst ? 0 : 1.6, function () { if (running) return; for (var k = 0; k < idx.length; k++) { var i = idx[k]; if (SW[i]) NM[i] = 1; else M[i] = 1; } });
+        at(inst ? 0 : 1.6, function () { if (running) return; flushFill(); for (var k = 0; k < idx.length; k++) { var i = idx[k]; if (SW[i]) NM[i] = 1; else M[i] = 1; } });
       }
       // Тихий финал сборки — у всех секций, кроме подвала: частицы догасают на месте, а уже невидимыми переезжают в случайные
       // точки экрана (TP — телепорт при переключении) и ждут следующей сборки. Видимая пыль — свой запас AMB (dustSet).
+      // Частицы сборки после финала невидимы (видимая пыль — свой запас AMB), поэтому им нужна только случайная точка экрана:
+      // цвет и размер им задаст следующая сборка. Раньше здесь для каждой из 25 000 частиц подбиралась точка пыли с обходом
+      // текста первого экрана (gAmbient, до 8 попыток) — до 60 мс на слабом устройстве в финале каждой секции
       function phSettle(idx) {
-        var now = performance.now();
+        flushFill();
+        var now = performance.now(), vt = -rootTop;
         for (var k = 0; k < idx.length; k++) {
           var i = idx[k], p = i * 2, c = i * 3;
           if (SW[i]) { T[p] = NT[p]; T[p + 1] = NT[p + 1]; CT[c] = NC[c]; CT[c + 1] = NC[c + 1]; CT[c + 2] = NC[c + 2]; AT[i] = NA[i]; SZ[i] = NS[i]; M[i] = NM[i]; }
-          gAmbient(tmp);
-          NT[p] = tmp.x; NT[p + 1] = tmp.y; NC[c] = tmp.r / 255; NC[c + 1] = tmp.g / 255; NC[c + 2] = tmp.b / 255;
-          NA[i] = 0; NS[i] = tmp.s; NM[i] = 1; TP[i] = 1;
+          NT[p] = Math.random() * W; NT[p + 1] = vt + Math.random() * VH; NC[c] = CT[c]; NC[c + 1] = CT[c + 1]; NC[c + 2] = CT[c + 2];
+          NA[i] = 0; NS[i] = SZ[i]; NM[i] = 1; TP[i] = 1;
           SW[i] = now + 1300 + Math.random() * 700;
         }
       }
@@ -477,6 +541,7 @@
       // финал (phSettle). Раньше было из одной точки: из середины подвала (облако закрывало ссылки), потом — из середины его
       // верхней линии полукуполом (TASK-review.md, раздел 8).
       function phPop(idx, s) {
+        flushFill();
         var now = performance.now(), g = s.geo && s.geo.box, G = null;
         if (s.geo) { ensureGl(s); G = s.geo.gl; }
         var POPN = mob ? 2000 : 4000, POPR = mob ? 110 : 170, reach = (1 - Math.pow(0.975, 45)) / 0.025, out = [];
@@ -497,7 +562,7 @@
           C[r] = CT[r] = NC[r] = col[0] / 255; C[r + 1] = CT[r + 1] = NC[r + 1] = col[1] / 255; C[r + 2] = CT[r + 2] = NC[r + 2] = col[2] / 255;
           A[j] = 0.9; AT[j] = NA[j] = 0.6; SZ[j] = NS[j] = 1.4 + Math.random() * 1.1; M[j] = NM[j] = 1; TP[j] = 0; out.push(j);
         }
-        at(0.25, function () { if (running) return; for (var q = 0; q < out.length; q++) AT[out[q]] = NA[out[q]] = 0; });
+        at(0.25, function () { if (running) return; flushFill(); for (var q = 0; q < out.length; q++) AT[out[q]] = NA[out[q]] = 0; });
         at(1.2, function () { if (running) return; phSettle(idx); });
       }
       function alloc() {
@@ -521,6 +586,7 @@
       function seed() {
         root.classList.add('pt-booted');
         if (booted) return;
+        flushFill();
         booted = true; rootRect();
         for (var i = 0; i < N; i++) {
           var p = i * 2, c = i * 3, col = DUST[(Math.random() * DUST.length) | 0];
@@ -564,6 +630,7 @@
       }
       // Первый экран помечен собранным без сборки: включаем сетку, объект первого экрана сразу стоит на месте.
       function skipHero() {
+        if (!preOn) setTimeout(prefetchNear, 800);
         seed(); root.classList.add('g-on');
         objStart(true);
         pultSkip();
@@ -571,6 +638,7 @@
       // pt-booted — пульт можно показывать (TASK-review.md 1.1: до вспышки посетитель видел чёрный экран и кнопку пульта)
       function burst() {
         root.classList.add('pt-booted');
+        flushFill();
         booted = true;
         var hr = hero.el.getBoundingClientRect(), cx = W / 2, cy = hr.top - rootTop + Math.min(VH, hr.height) * 0.46;
         // BURST_FULL: круглая вспышка растёт и к стадии сетки (0.6 · HERO_K с) накрывает весь экран — круг радиусом в
@@ -597,6 +665,7 @@
         dustLvl = -1;
       }
       function snap() {
+        flushFill();
         for (var i = 0; i < N; i++) {
           var p = i * 2, c = i * 3;
           T[p] = NT[p]; T[p + 1] = NT[p + 1]; M[i] = NM[i]; AT[i] = A[i] = NA[i]; SZ[i] = NS[i];
@@ -691,6 +760,7 @@
         if (running) dustT = now;
         var dl = now - dustT < 400 ? 0 : 1;
         if (booted && dl !== dustLvl) { dustLvl = dl; dustSet(dl === 1); }
+        if (fillJob) { var fj = fillJob; fillRun(fj, fj.step); if (fj.k >= fj.idx.length && fillJob === fj) fillJob = null; }
         var f = Math.min(3, dt * 60), damp = Math.pow(0.855, f), k = 0.015 * f, dd = Math.pow(0.975, f);
         // курсор — «свет» (TASK-clarity.md, B4): слабый толчок от курсора и закручивание вокруг него — частицы обтекают его и
         // не улетают (раньше толчок ×1.6 выметал пыль, и вокруг мыши оставалось пустое пятно); свободная пыль в круге ярче и
@@ -699,12 +769,18 @@
         var ca = Math.min(1, dt * 3.5), aa = Math.min(1, dt * 3), ts = now * 0.00035, vt = -rootTop, n = 0;
         // первый экран собран и не пересобирается — свободные точки пыли над его текстом горят слабее (CALM_A)
         var calmOn = hero.state === 'done' && calmZones().length > 0;
-        // невидимые свободные частицы на экран не попадают: их дрейф считаем по очереди, четверть за кадр,
-        // с накопленным временем своей четверти (lzT). Видимые частицы считаются каждый кадр, как раньше.
+        // Невидимые частицы (погасли и гаснут дальше) на экран не попадают, их движение не видно. Свободные только едут
+        // вместе со страницей и остаются в пределах экрана (перенос с края на край) — оттуда их возьмёт следующая сборка или
+        // пыль. Погасшие на буквах после сборки (до переноса в случайную точку, 1.3–2 с) стоят на месте: пружина уже
+        // привела их к цели. Цвет и затухание скорости — по очереди, четверть за кадр, с накопленным временем своей четверти
+        // (lzT). Раньше свободным считался тот же дрейф, что и видимым (два Math.random, синус и косинус), а погасшим на
+        // буквах — пружина: две трети времени цикла в покое. Видимые частицы считаются каждый кадр, как раньше; назначенная
+        // смена цели (SW) проверяется раньше, так что частица, которой пора загореться, считается полностью.
         lzQ = (lzQ + 1) & 3;
         for (var q = 0; q < 4; q++) lzT[q] += dt;
         var ldt = lzT[lzQ], lf = Math.min(12, ldt * 60), ldd = Math.pow(0.975, lf), lca = Math.min(1, ldt * 3.5), laa = Math.min(1, ldt * 3);
         lzT[lzQ] = 0;
+        var jn = (Math.random() * 8192) | 0;
         for (var i = 0; i < N; i++) {
           var p = i * 2, c = i * 3;
           if (SW[i] && now >= SW[i]) {
@@ -713,22 +789,19 @@
             if (TP[i]) { TP[i] = 0; P[p] = T[p]; P[p + 1] = T[p + 1]; V[p] = V[p + 1] = 0; A[i] = 0; C[c] = CT[c]; C[c + 1] = CT[c + 1]; C[c + 2] = CT[c + 2]; }
             else if (!M[i] && !rm) { V[p] += (Math.random() - 0.5) * 3; V[p + 1] += (Math.random() - 0.5) * 3; }
           }
-          var x = P[p], y = P[p + 1], vx = V[p], vy = V[p + 1];
-          if (M[i] && AT[i] === 0 && A[i] < 0.01) {
-            y += shift;
-            if ((i & 3) === lzQ) {
-              vx += (Math.random() - 0.5) * 0.05 * lf + Math.sin(y * 0.0045 + ts + SP[i]) * 0.012 * lf;
-              vy += (Math.random() - 0.5) * 0.05 * lf + Math.cos(x * 0.0045 - ts) * 0.012 * lf;
-              vx *= ldd; vy *= ldd; x += vx * lf; y += vy * lf;
-              if (x < -4) x += W + 8; else if (x > W + 4) x -= W + 8;
-              if (y < vt - 30) y += VH + 60; else if (y > vt + VH + 30) y -= VH + 60;
-              V[p] = vx; V[p + 1] = vy; P[p] = x;
-              C[c] += (CT[c] - C[c]) * lca; C[c + 1] += (CT[c + 1] - C[c + 1]) * lca; C[c + 2] += (CT[c + 2] - C[c + 2]) * lca;
-              A[i] += (AT[i] - A[i]) * laa;
+          if (AT[i] === 0 && A[i] < 0.01) {
+            if (M[i]) {
+              var ly = P[p + 1] + shift;
+              if (ly < vt - 30) ly += VH + 60; else if (ly > vt + VH + 30) ly -= VH + 60;
+              P[p + 1] = ly;
             }
-            P[p + 1] = y;
+            if ((i & 3) === lzQ) {
+              C[c] += (CT[c] - C[c]) * lca; C[c + 1] += (CT[c + 1] - C[c + 1]) * lca; C[c + 2] += (CT[c + 2] - C[c + 2]) * lca;
+              A[i] += (AT[i] - A[i]) * laa; V[p] *= ldd; V[p + 1] *= ldd;
+            }
             continue;
           }
+          var x = P[p], y = P[p + 1], vx = V[p], vy = V[p + 1];
           if (M[i]) {
             y += shift;
             vx += (Math.random() - 0.5) * 0.05 * f + Math.sin(y * 0.0045 + ts + SP[i]) * 0.012 * f;
@@ -740,7 +813,7 @@
             vx = (vx + dx * k) * damp; vy = (vy + dy * k) * damp;
             var d2 = dx * dx + dy * dy;
             if (d2 > 400) { var dl = Math.sqrt(d2), sw = Math.min(1, dl / 260) * 0.45 * f * SP[i]; vx -= dy / dl * sw; vy += dx / dl * sw; }
-            vx += (Math.random() - 0.5) * 0.025 * f; vy += (Math.random() - 0.5) * 0.025 * f;
+            var jf = 0.025 * f; vx += JN[jn = (jn + 1) & 8191] * jf; vy += JN[jn = (jn + 1) & 8191] * jf;
           }
           var ex = x - mx, ey = y - my, e2 = ex * ex + ey * ey;
           var lt = 0, ox = 0, oy = 0;
@@ -765,6 +838,7 @@
           BUF[b + 5] = (lt ? Math.min(0.9, A[i] * (1 + 1.4 * lt)) : A[i]) * cz; BUF[b + 6] = lt ? SZ[i] * (1 + 0.25 * lt) : SZ[i];
         }
         drawSmoke(dt, f);
+        if (wakeQ.length) wakeQ.shift().wake();
         for (var si = 0; si < scenes.length; si++) scenes[si].tick(dt);
         render(n);
       }
@@ -797,10 +871,17 @@
           sctx.drawImage(SPR[(hue * SPR.length) | 0], sX[j] - r, sY[j] - r, r * 2, r * 2);
         }
         sctx.globalAlpha = 1; sctx.globalCompositeOperation = 'source-over';
+        // пустой холст следа прячем: полноэкранный слой под стеклянными карточками заставлял видеокарту заново размывать их
+        // фон при прокрутке, даже когда следа нет
+        if (any !== smokeLive) smk.style.visibility = any ? '' : 'hidden';
         smokeLive = any;
       }
-      function fitSites() {
-        sites.forEach(function (fr) { var p = fr.parentNode, k = Math.max(0.01, p.clientWidth / 1440); fr.style.transform = 'scale(' + k.toFixed(4) + ')'; fr.style.height = Math.ceil(p.clientHeight / k) + 'px'; });
+      // el — только превью этой секции (сборка); без el — все (ресайз). Сначала все замеры, потом все записи: чередование
+      // «замер, запись» пересчитывало страницу на каждом превью (до 45 мс в финале сборки на слабом устройстве)
+      function fitSites(el) {
+        var v = [];
+        sites.forEach(function (fr) { if (el && !el.contains(fr)) return; var p = fr.parentNode; v.push([fr, Math.max(0.01, p.clientWidth / 1440), p.clientHeight]); });
+        v.forEach(function (x) { x[0].style.transform = 'scale(' + x[1].toFixed(4) + ')'; x[0].style.height = Math.ceil(x[2] / x[1]) + 'px'; });
       }
       // Живое превью дорогое: целый сайт рендерится в 1440 px. Поэтому карточка по умолчанию показывает снимок
       // .site-shot, а iframe грузится и проявляется, только пока курсор (или фокус) на карточке собранной секции.
@@ -836,8 +917,8 @@
       }
       function wakeSites(el) {
         sites.forEach(function (fr) { if (el.contains(fr) && !fr._armed) { fr._armed = true; if (fr._want) liveSite(fr, true); } });
-        fitSites();
-        scenes.forEach(function (sc) { if (el.contains(sc.cv)) sc.wake(); });
+        fitSites(el);
+        scenes.forEach(function (sc) { if (el.contains(sc.cv)) { if (rm) sc.wake(); else if (wakeQ.indexOf(sc) < 0) wakeQ.push(sc); } });
         secDone(el);
       }
       // секция собрана — событие для отклика на цели якоря (scroll.js, arrive): цель в несобранной секции ждёт его
@@ -874,6 +955,7 @@
       var popWait = null;
       function finish(s) {
         running = null;
+        if (s === hero && !preOn) setTimeout(prefetchNear, 800);
         if (s && s.burst === 'pop') popWait = s;
         if (!queue.length) {
           var ps = popWait, pr = ps && ps.el.getBoundingClientRect(); popWait = null;
@@ -1020,7 +1102,7 @@
           every.forEach(function (x) {
             setStage(x, null);
             // сцены в карточках гаснут вместе с текстом (CSS) и спят до конца пересборки, потом собираются заново
-            scenes.forEach(function (sc) { if (sc.sleep && x.el.contains(sc.cv)) sc.sleep(); });
+            scenes.forEach(function (sc) { if (sc.sleep && x.el.contains(sc.cv)) sleepScene(sc); });
           });
           log(s, 'content.unmount()'); measure(s); phWire(s, idx, false);
         });
@@ -1094,7 +1176,7 @@
           list.forEach(function (x) {
             x.el.classList.add('s-swap'); setStage(x, null);
             // сцены гаснут вместе со всем и спят: на новом языке они соберутся заново, уже на виду (wakeSites)
-            scenes.forEach(function (sc) { if (sc.sleep && x.el.contains(sc.cv)) sc.sleep(); });
+            scenes.forEach(function (sc) { if (sc.sleep && x.el.contains(sc.cv)) sleepScene(sc); });
           });
         });
         atRun(0.95, function () {
@@ -1191,6 +1273,15 @@
           secs.forEach(function (s) { io.observe(s.el); });
           // последняя секция (подвал) — без отступа снизу: она бывает ниже 18% окна и тогда никогда не попала бы в полосу
           io2 = new IntersectionObserver(onSee, { threshold: 0 }); io2.observe(secs[secs.length - 1].el);
+          // первый экран ушёл из кадра — перелив заголовка и пульсация точки на паузе (.pt-away): их всё равно не видно, а
+          // браузер пересчитывал их каждый кадр
+          io4 = new IntersectionObserver(function (es) { hero.el.classList.toggle('pt-away', !es[es.length - 1].isIntersecting); }, { threshold: 0 });
+          io4.observe(hero.el);
+          // секции в полутора экранах ниже — замер и растр букв заранее (prefetch)
+          io3 = new IntersectionObserver(function (es) {
+            es.forEach(function (e) { for (var i = 0; i < secs.length; i++) if (secs[i].el === e.target) { var s = secs[i], k = near.indexOf(s); if (e.isIntersecting) { if (k < 0) near.push(s); if (preOn) prefetch(s); } else if (k >= 0) near.splice(k, 1); } });
+          }, { rootMargin: '0px 0px 150% 0px', threshold: 0 });
+          secs.forEach(function (s) { io3.observe(s.el); });
         } else secs.forEach(function (s) { request(s); });
         start();
       }
@@ -1202,7 +1293,7 @@
       return {
         setActive: function (v) { active = v; if (v) start(); },
         destroy: function () {
-          alive = false; timers.forEach(clearTimeout); clearInterval(typeT); clearTimeout(pultT); if (raf) cancelAnimationFrame(raf); if (io) io.disconnect(); if (io2) io2.disconnect();
+          alive = false; timers.forEach(clearTimeout); clearInterval(typeT); clearTimeout(pultT); if (raf) cancelAnimationFrame(raf); if (io) io.disconnect(); if (io2) io2.disconnect(); if (io3) io3.disconnect(); if (io4) io4.disconnect();
           btns.forEach(function (b) { b.removeEventListener('click', replay); });
           if (heroObj) heroObj.destroy();
           langLinks.forEach(function (a) { a.removeEventListener('click', onLang); });
