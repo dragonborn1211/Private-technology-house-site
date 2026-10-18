@@ -1766,8 +1766,8 @@ console.log('\ncookie и Метрика');
     const { ctx, page } = await mk({ consent: 'yes', stub: true });
     // Метрика — после первого экрана и в простое браузера (requestIdleCallback, не дольше 3 с)
     await page.goto(BASE + 'index.html'); await page.waitForTimeout(7000);
-    const calls = await page.evaluate(() => { document.addEventListener('click', (e) => e.preventDefault()); document.querySelector('#contact a[href*="t.me/dragonborne0"]').click(); return (window.__ym || []).map((c) => c[1] + ':' + (c[2] || '') + ':' + JSON.stringify(c[3] || {})); });
-    if (!calls.some((c) => /^init:/.test(c)) || !calls.some((c) => /^reachGoal:tg:\{"place":"contact","text":"Хочу обсудить проект\."\}/.test(c))) bad.push(`цели: ${calls.join(' | ')}`);
+    const calls = await page.evaluate(() => { document.addEventListener('click', (e) => e.preventDefault()); document.querySelector('#contact a[href*="t.me/dragonborne0"]').click(); document.querySelector('.foot-ico a[href*="max.ru"]').click(); document.querySelector('.foot-ico a[href^="tel:"]').click(); return (window.__ym || []).map((c) => c[1] + ':' + (c[2] || '') + ':' + JSON.stringify(c[3] || {})); });
+    if (!calls.some((c) => /^init:/.test(c)) || !calls.some((c) => /^reachGoal:tg:\{"place":"contact","text":"Хочу обсудить проект\."\}/.test(c)) || !calls.includes('reachGoal:max:{"place":"foot"}') || !calls.includes('reachGoal:phone:{"place":"foot"}')) bad.push(`цели: ${calls.join(' | ')}`);
     if (await page.$('.ck')) bad.push('при согласии плашка показана');
     await ctx.close();
   }
@@ -1790,10 +1790,11 @@ console.log('\ncookie и Метрика');
   }
   await quick.close();
   if (bad.length) fail('cookie и Метрика: ' + bad.join('; '));
-  else console.log('  ✓ до согласия нет Метрики и cookie _ym, плашка после первого экрана, «Отклонить» запоминается, «Настройки cookie» открывают снова, «Принять» грузит tag.js, цель tg с местом и текстом, YM_ID = 0 — без плашки, EN — по-английски, политика — сразу; yandex-verification на главной');
+  else console.log('  ✓ до согласия нет Метрики и cookie _ym, плашка после первого экрана, «Отклонить» запоминается, «Настройки cookie» открывают снова, «Принять» грузит tag.js, цели tg (место и текст), max и phone, YM_ID = 0 — без плашки, EN — по-английски, политика — сразу; yandex-verification на главной');
 }
 // Связь в подвале — иконки (просьба владельца): вместо строки «Telegram · @dragonborne0» три кнопки .ico со своими SVG —
-// Telegram (t.me/dragonborne0), Max (max.ru) и телефон (tel:+7…, когда будет номер); у каждой aria-label; на всех страницах.
+// Telegram (t.me/dragonborne0), Max (max.ru) и телефон (tel:+79090243995); у каждой aria-label; на всех страницах. Знак MAX —
+// ещё и в обеих шапках, после Telegram.
 console.log('\nсвязь в подвале: иконки');
 {
   const bad = [];
@@ -1801,17 +1802,19 @@ console.log('\nсвязь в подвале: иконки');
   for (const [f, h] of Object.entries({ ...src, 'privacy.html': pv })) {
     const ic = (/<p class="foot-ico">([\s\S]*?)<\/p>/.exec(h) || [])[1] || '';
     const a = [...ic.matchAll(/<a href="([^"]+)"[^>]*class="ico fr" aria-label="([^"]+)"[^>]*><svg[\s\S]*?<\/svg><\/a>/g)].map((m) => [m[1], m[2]]);
-    // телефон — когда владелец пришлёт номер (третья иконка необязательна)
-    if (a.length < 2 || a.length > 3 || !/^https:\/\/t\.me\/dragonborne0$/.test(a[0][0]) || !/^https:\/\/(web\.)?max\.ru\//.test(a[1][0]) || (a[2] && !/^tel:\+\d{11,12}$/.test(a[2][0])) || /Telegram · @dragonborne0/.test(h)) bad.push(`${f}: ${JSON.stringify(a)}`);
+    if (a.length !== 3 || !/^https:\/\/t\.me\/dragonborne0$/.test(a[0][0]) || !/^https:\/\/(web\.)?max\.ru\//.test(a[1][0]) || a[2][0] !== 'tel:+79090243995' || /Telegram · @dragonborne0/.test(h)) bad.push(`${f}: ${JSON.stringify(a)}`);
+    // MAX — и в шапке первого экрана, и в липкой (сразу после Telegram), и в подвале; знак — глиф логотипа контуром
+    const mx = [...h.matchAll(/<a href="https:\/\/max\.ru\/[^"]+" target="_blank" rel="noopener" class="ico( fr)?" aria-label="Написать в Max"[^>]*><svg[^>]*viewBox="110 110 780 780"[^>]*stroke="currentColor"/g)].length;
+    if (mx !== 3) bad.push(`${f}: значков MAX ${mx} (нужно 3: две шапки и подвал)`);
   }
   const quick = await chromium.launch();
   const page = await quick.newPage({ viewport: { width: 390, height: 844 } });
   await page.goto(BASE + 'index.html?intro=instant&lang=en'); await page.waitForTimeout(400);
   const r = await page.evaluate(() => [...document.querySelectorAll('.foot-ico a')].map((a) => { const b = a.getBoundingClientRect(); return { l: a.getAttribute('aria-label'), w: Math.round(b.width), h: Math.round(b.height), svg: !!a.querySelector('svg') }; }));
-  if (r.length < 2 || r.some((x) => /[А-Яа-яЁё]/.test(x.l) || x.w < 44 || x.h < 44 || !x.svg)) bad.push(`EN / зоны нажатия: ${JSON.stringify(r)}`);
+  if (r.length !== 3 || r.some((x) => /[А-Яа-яЁё]/.test(x.l) || x.w < 44 || x.h < 44 || !x.svg)) bad.push(`EN / зоны нажатия: ${JSON.stringify(r)}`);
   await quick.close();
   if (bad.length) fail('связь в подвале: ' + bad.join('; '));
-  else console.log('  ✓ в подвале всех страниц — иконки Telegram, Max (и телефон, если есть) (44 px, с подписями, в EN по-английски)');
+  else console.log('  ✓ в подвале всех страниц — иконки Telegram, MAX и телефон (44 px; MAX и в обеих шапках, с подписями, в EN по-английски)');
 }
 // Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
 // «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.
