@@ -100,6 +100,8 @@
       if (!el) return;
       e.preventDefault();
       // scroll-margin-top цели (модули страницы услуг — 88 px): иначе она уходила под липкую шапку
+      // цель с tabindex (ссылка «к содержанию» → #main) получает фокус: следующий Tab идёт уже от неё, а не по шапке
+      if (el.hasAttribute('tabindex')) el.focus({ preventScroll: true });
       to(el.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(el).scrollMarginTop) || 0), function () { arrive(el); });
       if (history.pushState) history.pushState(null, '', '#' + id);
     });

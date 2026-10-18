@@ -18,6 +18,10 @@
 html{scroll-behavior:smooth;scrollbar-width:none}
 html::-webkit-scrollbar{display:none}
 body{margin:0;background:#0A121A}
+/* «Перейти к содержанию» (TASK-review.md 9.2): первая ссылка страницы, видна только в фокусе с клавиатуры */
+.skip{position:absolute;left:12px;top:-60px;z-index:100;padding:10px 16px;border-radius:999px;background:#EEF3F6;color:#0A121A;font:600 14px/1.2 Manrope,system-ui,sans-serif;text-decoration:none}
+.skip:focus{top:12px}
+#main:focus{outline:none}
 /* до старта движка (.pt-boot снимает engine.js) секций не видно и переходов нет: иначе браузер успевает
    нарисовать готовую страницу, пока грузятся скрипты, и она потом гаснет поверх вспышки частиц */
 .pt-boot .sec > :not(.wrap),.pt-boot .sec .wrap > *{opacity:0}
@@ -120,6 +124,8 @@ body{margin:0;background:#0A121A}
 .obj-h{font-size:22px;font-weight:500;color:#EEF3F6}
 .obj-d{font-size:15px;line-height:1.55;color:#9DB0BC}
 .pt a.card-cta{font-size:15px;font-weight:600;color:#BCD3DE}
+/* зоны нажатия на телефоне (TASK-review.md 9.1): заголовки-ссылки карточек и «Запросить показ →» были 21–30 px */
+.pt a.card-link{display:inline-flex;align-items:center;min-height:44px}
 /* «адресная строка» над живым превью: три точки и домен; сайт под ней. Кликается вся карточка через .card-link */
 .site-bar{position:absolute;top:0;left:0;right:0;height:30px;z-index:1;display:flex;align-items:center;gap:6px;padding:0 14px;background:rgba(10,18,26,.72);border-bottom:1px solid rgba(188,211,222,.12);pointer-events:none}
 .site-bar i{flex:none;width:6px;height:6px;border-radius:50%;background:rgba(188,211,222,.26)}
@@ -403,7 +409,7 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .sv-head{display:flex;flex-wrap:wrap;gap:40px 64px;align-items:stretch;padding:clamp(16px,5vh,64px) 0 0}
 .sv-col{flex:1.15 1 520px;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:24px}
 .crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0}
-.pt .crumbs a{color:#8FAEC0;transition:color .3s ease}
+.pt .crumbs a{padding:8px 0;color:#8FAEC0;transition:color .3s ease}
 .pt .crumbs a:hover{color:#EEF3F6}
 .crumbs i{font-style:normal;color:#4E6878}
 .crumbs [aria-current]{color:#8ED8F8}
@@ -619,6 +625,21 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .obj[id]{scroll-margin-top:88px}
 /* «Под NDA»: пунктирное окно, по центру плашка с замком */
 .flow-win.nda-win{display:flex;align-items:center;justify-content:center}
+/* «Под NDA» (TASK-review.md, раздел 6): в окне — размытый силуэт закрытых проектов, только CSS: три телефона разной высоты
+   с полосами-строками, по центру плашка с замком. Смысл: «есть, но не покажем». Проявляется с текстом секции */
+.nda-ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6%;filter:blur(3px);opacity:.5;pointer-events:none}
+.nda-ph i{--c:#8ED8F8;display:flex;flex-direction:column;gap:9px;box-sizing:border-box;width:17%;height:62%;padding:22px 14px 0;border:2px solid color-mix(in srgb,var(--c) 70%,transparent);border-radius:18px;background:color-mix(in srgb,var(--c) 6%,transparent)}
+.nda-ph i:nth-child(2){--c:#B7A6F2;height:76%}
+.nda-ph i:nth-child(3){--c:#9FE5D1;height:52%}
+.nda-ph b{display:block;height:7px;border-radius:4px;background:color-mix(in srgb,var(--c) 60%,transparent)}
+.nda-ph b:first-child{height:12px;width:70%}
+.nda-ph b:nth-child(2){width:100%}
+.nda-ph b:nth-child(3){width:58%}
+.nda-ph b:nth-child(4){width:84%}
+.nda-win .nda{position:relative}
+.pt-on .sec .nda-ph{transition:opacity .9s ease}
+.pt-on .sec:not(.s-done) .nda-ph{opacity:0}
+@media (max-width:760px){.nda-ph i{border-radius:12px;padding:14px 9px 0;gap:6px}.nda-ph b{height:5px}.nda-ph b:first-child{height:8px}}
 /* фильтр кейсов и шаблонов: кнопки-«таблетки», нажатая — подсвечена */
 .fl{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 28px}
 .fl-b{appearance:none;margin:0;display:inline-flex;align-items:center;min-height:40px;padding:0 18px;border-radius:999px;border:1px solid rgba(188,211,222,.18);background-color:rgba(228,237,242,.02);font:500 14px/1 Manrope,system-ui,sans-serif;color:#9DB0BC;cursor:pointer;transition:border-color .3s ease,color .3s ease,background-color .3s ease,box-shadow .3s ease}
@@ -658,6 +679,8 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .gh-m{font:500 12px/1.4 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8FAEC0}
 .row-h.gx{padding-top:28px;margin-bottom:28px;align-items:flex-end}
 .row-h.gx .row-t{font-size:16px}
+/* главная: группы направлений — те же «Разово / Ежемесячно», что на услугах, но мельче (TASK-review.md, раздел 5) */
+[data-sec="directions"] .gh-w{font-size:clamp(34px,3.4vw,48px)}
 /* «Как устроена подписка»: строки «Сайт / Сценарий / Агент» вровень во всех трёх карточках */
 .sv-path .list b{font-weight:500;color:#EEF3F6;margin-right:3px}
 /* 404 */

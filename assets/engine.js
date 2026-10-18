@@ -472,11 +472,12 @@
       // Небольшой взрыв в конце страницы (подвал всех страниц, data-pt-burst="pop"; просьба владельца: «небольшой взрыв, не как
       // до этого, а попроще»). Прежний «выдох» вёл частицы с букв пружиной к точкам рядом и гасил по пути — они таяли раньше,
       // чем успевали разойтись, и его не было видно. Теперь — вспышка при загрузке в миниатюре: частицы подвала гаснут на месте,
-      // а POPN из них вспыхивают в середине подвала и разлетаются кругом (свободно, скорость затухает сама) радиусом POPR,
-      // через 0.25 с начинают гаснуть, к ~1 с их нет. Пока летят, за край экрана не переносятся (burstEnd). Через 1.2 с — тихий
-      // финал (phSettle).
+      // а POPN из них вспыхивают в середине верхней линии подвала (граница с контактом) и разлетаются вверх и в стороны
+      // (свободно, скорость затухает сама; вертикаль — только вверх, ×0.6), радиусом POPR: облако идёт над пустым местом между
+      // кнопкой контакта и подвалом, а не поверх ссылок подвала (TASK-review.md, раздел 8). Через 0.25 с начинают гаснуть, к
+      // ~1 с их нет. Пока летят, за край экрана не переносятся (burstEnd). Через 1.2 с — тихий финал (phSettle).
       function phPop(idx, s) {
-        var now = performance.now(), g = s.geo && s.geo.box, cx = g ? g.x + g.w / 2 : W / 2, cy = g ? g.y + g.h / 2 : -rootTop + VH * 0.85;
+        var now = performance.now(), g = s.geo && s.geo.box, cx = g ? g.x + g.w / 2 : W / 2, cy = g ? g.y : -rootTop + VH * 0.8;
         var POPN = mob ? 1300 : 2600, POPR = mob ? 120 : 200, reach = (1 - Math.pow(0.975, 45)) / 0.025, out = [];
         burstEnd = Math.max(burstEnd, now + 1600);
         for (var k = 0; k < idx.length; k++) {
@@ -487,7 +488,7 @@
         for (k = 0; k < POPN && k < idx.length; k++) {
           var j = idx[(Math.random() * idx.length) | 0], q = j * 2, r = j * 3, a = Math.random() * 6.2832, rr = Math.random() * 5;
           var d = POPR * Math.sqrt(Math.random()) * (0.85 + Math.random() * 0.3) / reach, col = Math.random() < 0.25 ? COL.frost : DUST[(Math.random() * DUST.length) | 0];
-          P[q] = cx + Math.cos(a) * rr; P[q + 1] = cy + Math.sin(a) * rr; V[q] = Math.cos(a) * d; V[q + 1] = Math.sin(a) * d * 0.85;
+          P[q] = cx + Math.cos(a) * rr; P[q + 1] = cy - Math.abs(Math.sin(a)) * rr; V[q] = Math.cos(a) * d; V[q + 1] = -Math.abs(Math.sin(a)) * d * 0.6;
           C[r] = CT[r] = NC[r] = col[0] / 255; C[r + 1] = CT[r + 1] = NC[r + 1] = col[1] / 255; C[r + 2] = CT[r + 2] = NC[r + 2] = col[2] / 255;
           A[j] = 0.9; AT[j] = NA[j] = 0.6; SZ[j] = NS[j] = 1.5 + Math.random() * 1.2; M[j] = NM[j] = 1; TP[j] = 0; out.push(j);
         }

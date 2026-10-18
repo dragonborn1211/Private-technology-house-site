@@ -176,7 +176,9 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
   const page = await browser.newPage({ viewport: { width: w, height: h }, reducedMotion: rm ? 'reduce' : 'no-preference' });
   const errs = [];
   page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
-  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) errs.push(m.text()); });
+  // preload шрифтов (crossorigin) со страницы, открытой с диска (file://), Chrome блокирует как кросс-доменный запрос — это
+  // артефакт проверки: на сайте шрифты идут по https с того же адреса (их загрузку проверяет «ревью, 2–3» через сервер)
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_|Access to font at 'file:/.test(m.text())) errs.push(m.text()); });
   await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
   await page.clock.pauseAt(new Date('2026-01-01T12:00:01Z'));
   await page.addInitScript(printsInit);
@@ -519,7 +521,7 @@ for (const [w, h, tag, lang] of [[1440, 900, 's1440', 'ru'], [1700, 930, 's1700'
   const page = await browser.newPage({ viewport: { width: w, height: h } });
   const errs = [], bad = [];
   page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
-  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) errs.push(m.text()); });
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_|Access to font at 'file:/.test(m.text())) errs.push(m.text()); });
   await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
   await page.clock.pauseAt(new Date('2026-01-01T12:00:01Z'));
   await page.goto('file://' + sfile + (lang === 'en' ? '?lang=en' : ''));
@@ -817,7 +819,7 @@ console.log('\nкейсы и готовые автоматизации');
     const page = await browser.newPage({ viewport: { width: w, height: h } });
     const errs = [];
     page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
-    page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) errs.push(m.text()); });
+    page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_|Access to font at 'file:/.test(m.text())) errs.push(m.text()); });
     await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
     await page.clock.pauseAt(new Date('2026-01-01T12:00:01Z'));
     await page.addInitScript(printsInit);
@@ -949,7 +951,7 @@ for (const f of ['cases.html', 'automations.html', 'process.html']) for (const [
   const page = await browser.newPage({ viewport: { width: w, height: h } });
   const errs = [], bad = [];
   page.on('pageerror', (e) => errs.push('pageerror: ' + e.message));
-  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) errs.push(m.text()); });
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_|Access to font at 'file:/.test(m.text())) errs.push(m.text()); });
   await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
   await page.clock.pauseAt(new Date('2026-01-01T12:00:01Z'));
   await page.goto(BASE + f + (lang === 'en' ? '?lang=en' : ''));
@@ -1323,7 +1325,7 @@ console.log('\nясность, B1–B3: фильтры и якоря с аним
     const r = await page.evaluate(() => {
       const objs = [...document.querySelectorAll('.obj')].concat(...[...document.querySelectorAll('template')].map((t) => [...t.content.querySelectorAll('.obj')]));
       const win = (c) => c.querySelector('.flow-win, .site, canvas[data-mini]');
-      return { no: objs.filter((c) => win(c) && c.id !== 'your-process' && !c.querySelector('.win-tag')).map((c) => c.id || (c.querySelector('.obj-h, .card-link') || {}).textContent),
+      return { no: objs.filter((c) => win(c) && c.id !== 'your-process' && c.id !== 'case-nda' && !c.querySelector('.win-tag')).map((c) => c.id || (c.querySelector('.obj-h, .card-link') || {}).textContent),
         mono: objs.filter((c) => c.querySelector('.obj-tx .mono')).length, outside: [...document.querySelectorAll('.win-tag')].filter((t) => !t.parentElement.matches('.flow-win, .site, .fr')).length,
         tpl: [...document.querySelectorAll(location.pathname.endsWith('automations.html') ? '.win-tag' : '#automation .win-tag')].map((t) => t.textContent).filter((x) => /Шаблон/.test(x)) };
     });
@@ -1372,7 +1374,8 @@ console.log('\nясность, B4 / B5 / B8: свет курсора, пульт
 // Фоновая пыль и взрыв подвала (просьба владельца: «всегда на заднем фоне частицы; при анимации чуть меньше, после каждой —
 // обратно»; «на футере небольшой взрыв, попроще»). У пыли свой запас AMB: после сборки на экране почти вся (≥ 85 %), пока
 // собирается секция — реже (45–80 %), после — снова ≥ 85 %. Подвал кончается взрывом phPop: частицы вылетают из середины
-// подвала, облако растёт и за ~1 с гаснет. Пыль не жмётся к краям: в середине экрана (50 % × 50 %) ≥ 15 % точек, над текстом
+// подвала — из середины его верхней линии вверх и в стороны (TASK-review.md, раздел 8: облако не поверх ссылок подвала; ниже
+// линии частиц нет), облако растёт и за ~1 с гаснет. Пыль не жмётся к краям: в середине экрана (50 % × 50 %) ≥ 15 % точек, над текстом
 // первого экрана она приглушена, а не пропадает; курсор посреди экрана её не выметает (через 3 с в круге 110 px — не меньше
 // половины равномерного). Счёт — через отладочный крючок: проверка дописывает его в копию engine.js, и
 // страница грузит её вместо настоящей (обычный headless-браузер: под SwiftShader кадры рывками).
@@ -1385,11 +1388,11 @@ console.log('\nфоновая пыль и взрыв подвала');
   else if (/inCalm\(x, y\)\) continue/.test(eng)) bad.push('engine.js: пыль над текстом первого экрана не рисуется (дыра посреди экрана)');
   else {
     // dust — видимые точки пыли на экране; pop — свободные видимые частицы сборки (бывают только во вспышке и во взрыве), их центр и разброс
-    eng = eng.replace(at, `      window.__dbg = function () { var v = 0, n = 0, sx = 0, sy = 0, sd = 0, nb = N - AMB.length;
+    eng = eng.replace(at, `      window.__dbg = function () { var v = 0, n = 0, sx = 0, sy = 0, sd = 0, pm = -1e9, nb = N - AMB.length;
         for (var i = 0; i < N; i++) { var x = P[i * 2], y = P[i * 2 + 1] + rootTop;
-          if (i >= nb) { if (A[i] > 0.05 && y > 0 && y < VH && x > 0 && x < W) v++; } else if (M[i] && A[i] > 0.08) { n++; sx += x; sy += y; } }
+          if (i >= nb) { if (A[i] > 0.05 && y > 0 && y < VH && x > 0 && x < W) v++; } else if (M[i] && A[i] > 0.08) { n++; sx += x; sy += y; if (y > pm) pm = y; } }
         if (n) { sx /= n; sy /= n; for (i = 0; i < nb; i++) if (M[i] && A[i] > 0.08) sd += Math.hypot(P[i * 2] - sx, P[i * 2 + 1] + rootTop - sy); sd /= n; }
-        return { dust: v / Math.max(1, AMB.length), pop: n, px: sx, py: sy, pd: sd, W: W };
+        return { dust: v / Math.max(1, AMB.length), pop: n, px: sx, py: sy, pd: sd, pm: pm, W: W };
       };
       window.__near = function (cx, cy, rr) { var n = 0, t = 0, c = 0;
         for (var i = N - AMB.length; i < N; i++) { var x = P[i * 2] + rootLeft, y = P[i * 2 + 1] + rootTop; if (!(A[i] > 0.05 && y > 0 && y < VH && x > 0 && x < W)) continue; t++;
@@ -1423,19 +1426,20 @@ console.log('\nфоновая пыль и взрыв подвала');
       // подвал: взрыв из его середины, облако растёт и гаснет
       const pop = await page.evaluate(() => new Promise((res) => {
         window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
-        const foot = document.querySelector('[data-sec="foot"]'); let t1 = 0, max = 0, d1 = 0, d2 = 0, cx = 0, cy = 0, end = 0; const t0 = performance.now();
+        const foot = document.querySelector('[data-sec="foot"]'); let t1 = 0, max = 0, d1 = 0, d2 = 0, cx = 0, cy = 0, low = -1e9, end = 0; const t0 = performance.now();
         const f = () => {
           const d = window.__dbg(), now = performance.now();
-          if (!t1 && d.pop > 50 && foot.classList.contains('s-done')) { t1 = now; d1 = d.pd; const r = foot.getBoundingClientRect(); cx = d.px - (r.left + r.width / 2); cy = d.py - (r.top + r.height / 2); }
-          if (t1) { max = Math.max(max, d.pop); if (!d2 && now - t1 > 400) d2 = d.pd; if (!end && now - t1 > 300 && d.pop === 0) end = Math.round(now - t1); }
-          if (end || now - t0 > 12000) res({ max, d1: Math.round(d1), d2: Math.round(d2), cx: Math.round(cx), cy: Math.round(cy), end, after: d.dust }); else requestAnimationFrame(f);
+          const r = foot.getBoundingClientRect();
+          if (!t1 && d.pop > 50 && foot.classList.contains('s-done')) { t1 = now; d1 = d.pd; cx = d.px - (r.left + r.width / 2); }
+          if (t1) { max = Math.max(max, d.pop); if (d.pop) low = Math.max(low, d.pm - r.top); if (!d2 && now - t1 > 400) { d2 = d.pd; cy = d.py - r.top; } if (!end && now - t1 > 300 && d.pop === 0) end = Math.round(now - t1); }
+          if (end || now - t0 > 12000) res({ max, d1: Math.round(d1), d2: Math.round(d2), cx: Math.round(cx), cy: Math.round(cy), low: Math.round(low), end, after: d.dust }); else requestAnimationFrame(f);
         };
         requestAnimationFrame(f);
       }));
       const tag = w + ' px';
       if (d0 < 0.85) bad.push(`${tag}: после первого экрана видно ${Math.round(d0 * 100)} % пыли`);
       if (!sec.done || sec.lo > 0.8 || sec.lo < 0.45 || sec.after < 0.85) bad.push(`${tag}: пыль на сборке секции — минимум ${Math.round(sec.lo * 100)} %, после ${Math.round(sec.after * 100)} %`);
-      if (pop.max < (w < 760 ? 500 : 1000) || !pop.end || pop.end > 1500 || !(pop.d2 > pop.d1 * 1.4) || Math.abs(pop.cx) > 60 || Math.abs(pop.cy) > 60) bad.push(`${tag}: взрыв подвала ${JSON.stringify(pop)}`);
+      if (pop.max < (w < 760 ? 500 : 1000) || !pop.end || pop.end > 1500 || !(pop.d2 > pop.d1 * 1.4) || Math.abs(pop.cx) > 60 || !(pop.cy < -10 && pop.cy > -160) || pop.low > 8) bad.push(`${tag}: взрыв подвала ${JSON.stringify(pop)}`);
       info.push(`${tag}: пыль ${Math.round(d0 * 100)} % (в середине ${Math.round(mid * 100)} %) → на сборке ${Math.round(sec.lo * 100)} % → ${Math.round(sec.after * 100)} %; взрыв ${pop.max} частиц, облако ${pop.d1} → ${pop.d2} px, погас за ${pop.end} мс`);
       await ctx.close();
     }
@@ -1559,6 +1563,52 @@ console.log('\nревью, 4: тексты');
   if (/accountable|responsible for it/.test(I) || (I.match(/and it\\'s on us\./g) || []).length !== 3) bad.push('EN: «…and it\'s on us.» не в трёх местах');
   if (bad.length) fail('ревью, 4: ' + bad.join('; '));
   else console.log('  ✓ «AI» вместо «ИИ», описания главной и каталога, лид каталога, «Формат: разово» у приложений, без «Стоимости», теги автоматизации — с чем соединяем, демо-карточка, «Защита данных», английский');
+}
+// Ревью, разделы 5–9: на главной в «Что делаем» — два .gh-w («Разово» / «Ежемесячно») со строками как на услугах; у #case-nda
+// нет тега в углу, в окне — силуэт (три телефона) и плашка; вторая кнопка контакта внутренних страниц — следующий шаг; ссылка
+// «Перейти к содержанию» — первая в <body>, ведёт на #main (он есть, с tabindex), видна только в фокусе; ссылки карточек — от
+// 44 px; длина страниц не выросла больше чем на 0.2 экрана (было по TASK-review.md: главная 4.9 / 7.9, услуги 7.2 / 10.8,
+// «Как работаем» 3.1 / 6.4, работы 3.7 / 5.8, готовые решения 4.7 / 7.8).
+console.log('\nревью, 5–9: группы на главной, NDA, следующий шаг, «к содержанию», зоны нажатия, длина');
+{
+  const bad = [], info = [], strip = (h) => h.replace(/&nbsp;/g, ' ');
+  const dir = (/data-sec="directions"[\s\S]*?<\/section>/.exec(strip(src['index.html'])) || [''])[0];
+  const gw = [...dir.matchAll(/<h3 class="gh"><span class="gh-w">([^<]+)<\/span> <span class="gh-m">([^<]+)<\/span><\/h3>\n<p class="row-t">([^<]+)<\/p>/g)].map((m) => m.slice(1).join('/'));
+  if (gw.join(' | ') !== 'Разово/проекты/Смета и сроки до старта. Код ваш. | Ежемесячно/подписка/Работает на наших серверах, мы за это отвечаем.') bad.push(`группы на главной: ${gw.join(' | ') || 'нет'}`);
+  const nda = (/<article class="glass fr obj" id="case-nda">[\s\S]*?<\/article>/.exec(src['cases.html']) || [''])[0];
+  if (/win-tag/.test(nda) || (nda.match(/<i>/g) || []).length !== 3 || !/class="nda-ph" aria-hidden="true"/.test(nda) || !/\[ под NDA \]/.test(nda)) bad.push('карточка «Под NDA»');
+  for (const [f, href, t] of [['services.html', 'automations.html', 'Готовые решения →'], ['process.html', 'services.html', 'Что делаем →'], ['cases.html', 'services.html', 'Что делаем →'], ['automations.html', 'cases.html', 'Работы →']]) {
+    const c = (/data-sec="contact"[\s\S]*?<\/section>/.exec(src[f]) || [''])[0];
+    if (!c.includes(`<a href="${href}" class="btn btn-g fr"><span>${t}</span></a>`) || /На главную/.test(c)) bad.push(`${f}: вторая кнопка контакта`);
+  }
+  // на главной второй кнопки нет («Почта» закомментирована до почты владельца)
+  if (/class="btn btn-g/.test(((/data-sec="contact"[\s\S]*?<\/section>/.exec(src['index.html']) || [''])[0]).replace(/<!--[\s\S]*?-->/g, ''))) bad.push('index.html: у контакта появилась вторая кнопка');
+  for (const f of PAGES) if (!/<body>\n<a class="skip" href="#main">Перейти к содержанию<\/a>\n/.test(src[f]) || (src[f].match(/ id="main" tabindex="-1"/g) || []).length !== 1) bad.push(`${f}: «Перейти к содержанию» / #main`);
+  const LEN = { 'index.html': [4.9, 7.9], 'services.html': [7.2, 10.8], 'process.html': [3.1, 6.4], 'cases.html': [3.7, 5.8], 'automations.html': [4.7, 7.8] };
+  const quick = await chromium.launch();
+  for (const [w, h] of [[1440, 900], [390, 844]]) {
+    const page = await quick.newPage({ viewport: { width: w, height: h } });
+    const len = [];
+    for (const f of Object.keys(LEN)) {
+      await page.goto(BASE + f + '?intro=instant'); await page.waitForTimeout(400);
+      const r = await page.evaluate(() => ({ len: document.documentElement.scrollHeight / innerHeight, skip: getComputedStyle(document.querySelector('.skip')).top, small: [...document.querySelectorAll('a.card-link')].filter((a) => a.getBoundingClientRect().height && a.getBoundingClientRect().height < 43.5).map((a) => a.textContent.trim().slice(0, 20)) }));
+      const lim = LEN[f][w < 760 ? 1 : 0] + 0.2;
+      if (r.len > lim) bad.push(`${f} ${w}: ${r.len.toFixed(2)} экрана (было ${LEN[f][w < 760 ? 1 : 0]})`);
+      if (parseFloat(r.skip) >= 0) bad.push(`${f} ${w}: «к содержанию» видна без фокуса`);
+      if (r.small.length) bad.push(`${f} ${w}: ссылки карточек ниже 44 px — ${r.small.join(', ')}`);
+      if (f === 'cases.html' && w < 760) {
+        await page.keyboard.press('Tab');
+        const fx = await page.evaluate(() => ({ cls: document.activeElement.className, top: document.activeElement.getBoundingClientRect().top }));
+        if (fx.cls !== 'skip' || fx.top < 0) bad.push(`первый Tab: ${JSON.stringify(fx)}`);
+      }
+      len.push(`${f.replace('.html', '')} ${r.len.toFixed(2)}`);
+    }
+    info.push(`${w}: ${len.join(', ')}`);
+    await page.close();
+  }
+  await quick.close();
+  if (bad.length) fail('ревью, 5–9: ' + bad.join('; '));
+  else console.log(`  ✓ «Разово / Ежемесячно» на главной, NDA без тега, следующий шаг в контакте, «Перейти к содержанию» → #main, ссылки карточек от 44 px; длина ${info.join('; ')}`);
 }
 // Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
 // «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.
@@ -1840,7 +1890,7 @@ console.log(`\nрежимы сборки: полная / быстрая / сра
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     if (init) await ctx.addInitScript(init);
     const page = await ctx.newPage(), errs = [];
-    page.on('pageerror', (e) => errs.push(e.message)); page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) errs.push(m.text()); });
+    page.on('pageerror', (e) => errs.push(e.message)); page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_|Access to font at 'file:/.test(m.text())) errs.push(m.text()); });
     await page.clock.install({ time: new Date(T0) });
     await page.goto('file://' + path.join(root, url));
     const mode = () => page.evaluate(() => document.getElementById('pt-site').getAttribute('data-intro'));
