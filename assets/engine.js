@@ -647,12 +647,18 @@
         if (raw > 0 && raw < 1) probe.w.push(raw);
         // на очень медленном устройстве к концу окна кадров меньше четырёх — добираем ещё до 1.5 с
         if (now < probe.to || (probe.w.length < 4 && now < probe.to + 1500)) return;
+        probeDecide(4);
+      }
+      function probeDecide(min) {
+        if (!probe || probe.w.length < min) return;
         var w = probe.w; probe = null;
-        if (w.length < 4) return;
         w.sort(function (a, b) { return a - b; });
         var med = w[w.length >> 1], want = med > 0.05 ? 2 : med > 0.034 ? 1 : 0;
         if (want > lite) setLite(want);
       }
+      // стадия рамок первого экрана подводит итог оценки по уже собранным кадрам (от трёх) — до своей тяжёлой работы. Окно
+      // кончается за ~50 мс до неё, а на слабом телефоне кадр длиннее: решение приходило уже после начала стадии рамок
+      function probeNow() { probeDecide(3); }
       function watchQuality(now, raw) {
         if (raw > 1 || document.hidden) { qT = 0; qW.length = 0; return; }
         if (lite >= 2 || now - bootAt < 3000) return;
@@ -927,6 +933,7 @@
         if (INTRO_LINES) {
           // вертикальная линия рисует все рамки (каркас и стили — одна стадия), за ней частицы обводят блоки и рамки
           atRun((1.6 + o) * K, function () {
+            probeNow();
             lineDelays('.wf, .fr, .an, .hero-obj, .nb .ar, .logo-d, .ico svg, .burger', 'x', LD); heroSweep = { axis: 'x', spread: LD }; line(beamEl, LD);
             setStage(s, 'skel'); measure(s); phWire(s, BLD, false); heroSweep = null; log(s, '02 · frames.draw()');
           });
@@ -942,7 +949,7 @@
           atRun((4.75 + o) * K, function () { finish(s); });
           return;
         }
-        atRun((1.6 + o) * K, function () { setStage(s, 'wire'); measure(s); phWire(s, BLD, false); log(s, '02 · layout.measure()'); objGo(); });
+        atRun((1.6 + o) * K, function () { probeNow(); setStage(s, 'wire'); measure(s); phWire(s, BLD, false); log(s, '02 · layout.measure()'); objGo(); });
         atRun((2.65 + o) * K, function () { setStage(s, 'skel'); phSkel(s, BLD, false); log(s, '03 · styles.apply(glacier)'); });
         atRun((3.7 + o) * K, function () { setStage(s, 'text'); measure(s); phText(s, BLD, false); log(s, '04 · type.crystallize()'); });
         atRun((5.25 + o) * K, done);
