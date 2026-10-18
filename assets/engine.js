@@ -33,13 +33,17 @@
       var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')).map(function (el) { return { el: el, name: el.getAttribute('data-sec'), state: 'idle', geo: null, geoKey: '', replay: false, burst: el.getAttribute('data-pt-burst') }; });
       var pultEl = root.querySelector('[data-pult]'), pultT = 0, pultShown = false, replaying = false;
       var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, cur = null, io = null, io2 = null;
-      // «Тихие» зоны — текстовые блоки первого экрана (кикер, H1, лид, кнопки, строка доверия) и текст панели «Кодекс
-      // студии» (вкладки сверху, подпись снизу): фоновая пыль на них не ложится ни при раскладке (gAmbient выбирает
-      // точку заново), ни при дрейфе (такая точка не рисуется). Координаты — от корня, как у частиц; пересчёт при смене
-      // раскладки (layoutGen).
-      var calmEls = Array.prototype.filter.call(hero.el.querySelectorAll('[data-blk]'), function (b) { return !b.matches('[data-obj], header'); })
-        .concat(Array.prototype.slice.call(hero.el.querySelectorAll('[data-obj] .obj-top, [data-obj] .obj-cw')));
-      var calm = [], calmGen = -1;
+      // «Тихие» зоны — текст первого экрана (кикер, H1, лид, кнопки, строка доверия) и текст панели «Кодекс студии»
+      // (вкладки сверху, подпись снизу): пыль над ним горит слабее (CALM_A), чтобы не мешать читать, а при раскладке
+      // gAmbient выбирает точку вне зон. Раньше зоны были блоками целиком и пыль в них не рисовалась вовсе: блоки занимали
+      // всю колонку текста (на телефоне — почти весь первый экран), и пыль, которая теперь видна всегда, оставляла посередине
+      // пустое место (владелец: «очень мало в центре, в основном по краям»). Теперь зоны — строки текста (calmEls,
+      // прямоугольники строк через Range); вкладки и подпись панели (calmBox) — целиком: подпись меняется каждые 8–10 с.
+      // Координаты — от корня, как у частиц; пересчёт при смене раскладки (layoutGen; смена языка его тоже растит). calmB —
+      // общая рамка зон, чтобы не перебирать их для каждой точки.
+      var calmEls = Array.prototype.filter.call(hero.el.querySelectorAll('[data-blk]'), function (b) { return !b.matches('[data-obj], header'); });
+      var calmBox = Array.prototype.slice.call(hero.el.querySelectorAll('[data-obj] .obj-top, [data-obj] .obj-cw'));
+      var calm = [], calmB = [0, 0, 0, 0], calmGen = -1, CALM_A = 0.3;
       // Фоновая пыль (просьба владельца: «чтобы всегда на заднем фоне были частицы; при анимации их чуть меньше, после каждой —
       // обратно»). Свой запас точек AMB — доля DUSTA / DUSTM от всех частиц (столько пыли было видно после сборки и раньше), в
       // сборке он не участвует: секции собирают остальные (BLD), и пыль не пропадает на каждой сборке. Пока идёт сборка (первый
@@ -343,11 +347,22 @@
       function calmZones() {
         if (calmGen === layoutGen) return calm;
         calmGen = layoutGen; calm = [];
-        var rl = root.getBoundingClientRect();
-        calmEls.forEach(function (b) { var r = b.getBoundingClientRect(); if (r.width > 0) calm.push(r.left - rl.left - 6, r.top - rl.top - 6, r.right - rl.left + 6, r.bottom - rl.top + 6); });
+        var rl = root.getBoundingClientRect(), rg = document.createRange();
+        function add(r, pad) { if (r.width > 0 && r.height > 0) calm.push(r.left - rl.left - pad, r.top - rl.top - pad, r.right - rl.left + pad, r.bottom - rl.top + pad); }
+        calmEls.forEach(function (b) {
+          var tw = document.createTreeWalker(b, NodeFilter.SHOW_TEXT), t;
+          while ((t = tw.nextNode())) { if (!/\S/.test(t.nodeValue)) continue; rg.selectNodeContents(t); Array.prototype.forEach.call(rg.getClientRects(), function (r) { add(r, 2); }); }
+        });
+        calmBox.forEach(function (b) { add(b.getBoundingClientRect(), 6); });
+        calmB = [1e9, 1e9, -1e9, -1e9];
+        for (var k = 0; k < calm.length; k += 4) { calmB[0] = Math.min(calmB[0], calm[k]); calmB[1] = Math.min(calmB[1], calm[k + 1]); calmB[2] = Math.max(calmB[2], calm[k + 2]); calmB[3] = Math.max(calmB[3], calm[k + 3]); }
         return calm;
       }
-      function inCalm(x, y) { for (var k = 0; k < calm.length; k += 4) if (x > calm[k] && x < calm[k + 2] && y > calm[k + 1] && y < calm[k + 3]) return true; return false; }
+      function inCalm(x, y) {
+        if (x < calmB[0] || x > calmB[2] || y < calmB[1] || y > calmB[3]) return false;
+        for (var k = 0; k < calm.length; k += 4) if (x > calm[k] && x < calm[k + 2] && y > calm[k + 1] && y < calm[k + 3]) return true;
+        return false;
+      }
       function gAmbient(o) {
         var z = hero.state === 'done' && calmZones().length;
         for (var t = 0; t < 8; t++) { o.x = Math.random() * W; o.y = -rootTop + Math.random() * VH; if (!z || !inCalm(o.x, o.y)) break; }
@@ -559,7 +574,11 @@
           A[i] = 0.95; AT[i] = NA[i] = 0.55; SZ[i] = NS[i] = 2 + Math.random() * 1.4; M[i] = NM[i] = 1; SW[i] = 0;
           T[p] = NT[p] = P[p]; T[p + 1] = NT[p + 1] = P[p + 1];
         }
-        // пыль разлетается со вспышкой и остаётся на экране, когда остальные уходят в сетку (dustSet в ближайшем кадре)
+        // Пыль разлетается со вспышкой и остаётся на экране, когда остальные уходят в сетку (dustSet в ближайшем кадре). Её
+        // скорость — чтобы остановиться в случайной точке экрана: свободная точка за всё время проходит 39 · v (затухание
+        // 0.975 за кадр). С общей скоростью вспышки она пролетала бы в 2.7 раза дальше расчётного, за край экрана, и потом
+        // ещё секунду-две проносилась через весь экран, перескакивая с края на край.
+        for (var k = 0; k < AMB.length; k++) { var j = AMB[k] * 2; V[j] = (Math.random() * W - P[j]) / 39; V[j + 1] = (-rootTop + Math.random() * VH - P[j + 1]) / 39; }
         dustLvl = -1;
       }
       function snap() {
@@ -657,7 +676,7 @@
         // чуть крупнее. На телефоне курсора нет — эффекта нет
         var mx = mouse.cx - rootLeft, my = mouse.cy - rootTop, R = mob ? 0 : 110, R2 = R * R;
         var ca = Math.min(1, dt * 3.5), aa = Math.min(1, dt * 3), ts = now * 0.00035, vt = -rootTop, n = 0;
-        // первый экран собран и не пересобирается — свободные точки пыли в его текстовых блоках не рисуем
+        // первый экран собран и не пересобирается — свободные точки пыли над его текстом горят слабее (CALM_A)
         var calmOn = hero.state === 'done' && calmZones().length > 0;
         // невидимые свободные частицы на экран не попадают: их дрейф считаем по очереди, четверть за кадр,
         // с накопленным временем своей четверти (lzT). Видимые частицы считаются каждый кадр, как раньше.
@@ -703,19 +722,26 @@
             vx += (Math.random() - 0.5) * 0.025 * f; vy += (Math.random() - 0.5) * 0.025 * f;
           }
           var ex = x - mx, ey = y - my, e2 = ex * ex + ey * ey;
-          var lt = 0;
-          if (e2 < R2) { var ed = Math.sqrt(e2) || 1, es = (1 - ed / R) * 0.35 * f, sv = (1 - ed / R) * 0.5 * f; vx += ex / ed * es - ey / ed * sv; vy += ey / ed * es + ex / ed * sv; if (M[i]) lt = 1 - ed / R; }
-          x += vx * f; y += vy * f;
+          var lt = 0, ox = 0, oy = 0;
+          if (e2 < R2) {
+            var ed = Math.sqrt(e2) || 1, es = (1 - ed / R) * 0.35 * f, sv = (1 - ed / R) * 0.5 * f;
+            // Частицы сборки держит пружина — толчок и закручивание в скорость. Свободную пыль держит только затухание 0.975:
+            // те же добавки копились, точка раскручивалась и вылетала из круга, и вокруг мыши (обычно посреди экрана) было
+            // пусто. Ей — сдвиг, а не скорость: медленно обтекает курсор по кругу (до ~1 px за кадр у центра) и не улетает.
+            if (M[i]) { lt = 1 - ed / R; ox = -ey / ed * lt * 0.9 * f; oy = ex / ed * lt * 0.9 * f; }
+            else { vx += ex / ed * es - ey / ed * sv; vy += ey / ed * es + ex / ed * sv; }
+          }
+          x += vx * f + ox; y += vy * f + oy;
           if (M[i] && now > burstEnd) { if (x < -4) x += W + 8; else if (x > W + 4) x -= W + 8; if (y < vt - 30) y += VH + 60; else if (y > vt + VH + 30) y -= VH + 60; }
           P[p] = x; P[p + 1] = y; V[p] = vx; V[p + 1] = vy;
           C[c] += (CT[c] - C[c]) * ca; C[c + 1] += (CT[c + 1] - C[c + 1]) * ca; C[c + 2] += (CT[c + 2] - C[c + 2]) * ca;
           A[i] += (AT[i] - A[i]) * aa;
           var sx = x + rootLeft, sy = y + rootTop;
           if (A[i] < 0.01 || sy < -8 || sy > VH + 8 || sx < -8 || sx > W + 8) continue;
-          if (calmOn && M[i] && inCalm(x, y)) continue;
+          var cz = calmOn && M[i] && inCalm(x, y) ? CALM_A : 1;
           var b = n * 7; n++;
           BUF[b] = sx; BUF[b + 1] = sy; BUF[b + 2] = C[c]; BUF[b + 3] = C[c + 1]; BUF[b + 4] = C[c + 2];
-          BUF[b + 5] = lt ? Math.min(0.9, A[i] * (1 + 1.4 * lt)) : A[i]; BUF[b + 6] = lt ? SZ[i] * (1 + 0.25 * lt) : SZ[i];
+          BUF[b + 5] = (lt ? Math.min(0.9, A[i] * (1 + 1.4 * lt)) : A[i]) * cz; BUF[b + 6] = lt ? SZ[i] * (1 + 0.25 * lt) : SZ[i];
         }
         drawSmoke(dt, f);
         for (var si = 0; si < scenes.length; si++) scenes[si].tick(dt);
@@ -821,9 +847,17 @@
       }
       function loop(now) { raf = 0; if (!alive || !active) return; frame(now); if (!rm) raf = requestAnimationFrame(loop); }
       function start() { if (raf || !alive || !active || rm) return; prev = performance.now(); raf = requestAnimationFrame(loop); }
+      // Взрыв подвала ждёт, пока соберётся всё в очереди (popWait): частицы нужны следующей сборке. На телефоне подвал виден
+      // сразу с секциями над ним и собирается первым (у него свой наблюдатель без отступа) — раньше взрыв там не случался
+      // никогда: к финалу подвала очередь не пуста. Теперь он — в финале последней сборки, если подвал ещё на экране.
+      var popWait = null;
       function finish(s) {
         running = null;
-        if (!queue.length) { if (s && s.burst === 'pop') phPop(BLD, s); else if (!s || s.burst != null) phAmbient(BLD, false); else phSettle(BLD); }
+        if (s && s.burst === 'pop') popWait = s;
+        if (!queue.length) {
+          var ps = popWait, pr = ps && ps.el.getBoundingClientRect(); popWait = null;
+          if (ps && pr.bottom > 0 && pr.top < VH) phPop(BLD, ps); else if (s && s.burst === '') phAmbient(BLD, false); else phSettle(BLD);
+        }
         pump();
       }
       // Пропуск сборки по действию пользователя: текст и рамки проявляются сразу, частицы уходят в финал.

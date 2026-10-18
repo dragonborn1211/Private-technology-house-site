@@ -1341,7 +1341,7 @@ console.log('\nясность, B4 / B5 / B8: свет курсора, пульт
   const bad = [];
   const eng = readFileSync(path.join(root, 'assets', 'engine.js'), 'utf8');
   if (!/R = mob \? 0 : 110/.test(eng) || !/\* 0\.35 \* f/.test(eng) || /\* 1\.6 \* f/.test(eng)) bad.push('engine.js: курсор всё ещё выметает частицы (нужны R 110, толчок 0.35, на телефоне 0)');
-  if (!/function phPop\(/.test(eng) || !/s\.burst === 'pop'\) phPop/.test(eng) || /phPuff/.test(eng)) bad.push('engine.js: нет phPop или финал подвала не через него');
+  if (!/function phPop\(/.test(eng) || !/s\.burst === 'pop'\) popWait = s/.test(eng) || !/phPop\(BLD, ps\)/.test(eng) || /phPuff/.test(eng)) bad.push('engine.js: нет phPop или финал подвала не через него');
   for (const f of PAGES) {
     const h = src[f], all = (h.match(/data-pt-burst/g) || []).length, pop = (h.match(/<footer data-sec="foot" class="sec foot" data-pt-burst="pop">/g) || []).length;
     if (all !== 1 || pop !== 1) bad.push(`${f}: data-pt-burst ${all}, у подвала pop ${pop}`);
@@ -1371,7 +1371,9 @@ console.log('\nясность, B4 / B5 / B8: свет курсора, пульт
 // Фоновая пыль и взрыв подвала (просьба владельца: «всегда на заднем фоне частицы; при анимации чуть меньше, после каждой —
 // обратно»; «на футере небольшой взрыв, попроще»). У пыли свой запас AMB: после сборки на экране почти вся (≥ 85 %), пока
 // собирается секция — реже (45–80 %), после — снова ≥ 85 %. Подвал кончается взрывом phPop: частицы вылетают из середины
-// подвала, облако растёт и за ~1 с гаснет. Счёт — через отладочный крючок: проверка дописывает его в копию engine.js, и
+// подвала, облако растёт и за ~1 с гаснет. Пыль не жмётся к краям: в середине экрана (50 % × 50 %) ≥ 15 % точек, над текстом
+// первого экрана она приглушена, а не пропадает; курсор посреди экрана её не выметает (через 3 с в круге 110 px — не меньше
+// половины равномерного). Счёт — через отладочный крючок: проверка дописывает его в копию engine.js, и
 // страница грузит её вместо настоящей (обычный headless-браузер: под SwiftShader кадры рывками).
 console.log('\nфоновая пыль и взрыв подвала');
 {
@@ -1379,6 +1381,7 @@ console.log('\nфоновая пыль и взрыв подвала');
   let eng = readFileSync(path.join(root, 'assets', 'engine.js'), 'utf8');
   const at = '      return {\n        setActive';
   if (!eng.includes(at) || !/var AMB = \[\]|AMB = \[\]/.test(eng)) bad.push('engine.js: нет запаса пыли AMB или места для отладочного крючка');
+  else if (/inCalm\(x, y\)\) continue/.test(eng)) bad.push('engine.js: пыль над текстом первого экрана не рисуется (дыра посреди экрана)');
   else {
     // dust — видимые точки пыли на экране; pop — свободные видимые частицы сборки (бывают только во вспышке и во взрыве), их центр и разброс
     eng = eng.replace(at, `      window.__dbg = function () { var v = 0, n = 0, sx = 0, sy = 0, sd = 0, nb = N - AMB.length;
@@ -1386,7 +1389,11 @@ console.log('\nфоновая пыль и взрыв подвала');
           if (i >= nb) { if (A[i] > 0.05 && y > 0 && y < VH && x > 0 && x < W) v++; } else if (M[i] && A[i] > 0.08) { n++; sx += x; sy += y; } }
         if (n) { sx /= n; sy /= n; for (i = 0; i < nb; i++) if (M[i] && A[i] > 0.08) sd += Math.hypot(P[i * 2] - sx, P[i * 2 + 1] + rootTop - sy); sd /= n; }
         return { dust: v / Math.max(1, AMB.length), pop: n, px: sx, py: sy, pd: sd, W: W };
-      };\n` + at);
+      };
+      window.__near = function (cx, cy, rr) { var n = 0, t = 0, c = 0;
+        for (var i = N - AMB.length; i < N; i++) { var x = P[i * 2] + rootLeft, y = P[i * 2 + 1] + rootTop; if (!(A[i] > 0.05 && y > 0 && y < VH && x > 0 && x < W)) continue; t++;
+          if (x > W * 0.25 && x < W * 0.75 && y > VH * 0.25 && y < VH * 0.75) c++; if (Math.hypot(x - cx, y - cy) < rr) n++; }
+        return { n: n, exp: t * Math.PI * rr * rr / (W * VH), mid: t ? c / t : 0 }; };\n` + at);
     const quick = await chromium.launch();
     for (const [w, h] of [[1440, 900], [390, 844]]) {
       const ctx = await quick.newContext({ viewport: { width: w, height: h }, isMobile: w < 760, hasTouch: w < 760 });
@@ -1396,6 +1403,15 @@ console.log('\nфоновая пыль и взрыв подвала');
       await page.waitForFunction(() => document.querySelector('[data-sec="hero"]').classList.contains('s-done'), null, { timeout: 15000 });
       await page.waitForTimeout(2200);
       const d0 = await page.evaluate(() => window.__dbg().dust);
+      const mid = await page.evaluate(() => window.__near(0, 0, 0).mid);
+      if (mid < 0.15) bad.push(`${w} px: в середине экрана ${Math.round(mid * 100)} % пыли (равномерно 25)`);
+      if (w > 760) {
+        await page.mouse.move(700, 440); await page.mouse.move(720, 450, { steps: 5 }); await page.waitForTimeout(3000);
+        const nr = await page.evaluate(() => window.__near(720, 450, 110));
+        if (nr.n < nr.exp * 0.5) bad.push(`курсор выметает пыль: в круге 110 px ${nr.n} при равномерных ${nr.exp.toFixed(1)}`);
+        info.push(`у курсора ${nr.n} точек (равномерно ${Math.round(nr.exp)})`);
+        await page.mouse.move(5, 5);
+      }
       // секция ниже: доля пыли, пока собирается, и через 2 с после
       const sec = await page.evaluate(() => new Promise((res) => {
         const s = document.querySelectorAll('[data-sec]')[1]; window.scrollTo({ top: s.getBoundingClientRect().top + scrollY - 40, behavior: 'instant' });
@@ -1419,7 +1435,7 @@ console.log('\nфоновая пыль и взрыв подвала');
       if (d0 < 0.85) bad.push(`${tag}: после первого экрана видно ${Math.round(d0 * 100)} % пыли`);
       if (!sec.done || sec.lo > 0.8 || sec.lo < 0.45 || sec.after < 0.85) bad.push(`${tag}: пыль на сборке секции — минимум ${Math.round(sec.lo * 100)} %, после ${Math.round(sec.after * 100)} %`);
       if (pop.max < (w < 760 ? 500 : 1000) || !pop.end || pop.end > 1500 || !(pop.d2 > pop.d1 * 1.4) || Math.abs(pop.cx) > 60 || Math.abs(pop.cy) > 60) bad.push(`${tag}: взрыв подвала ${JSON.stringify(pop)}`);
-      info.push(`${tag}: пыль ${Math.round(d0 * 100)} % → на сборке ${Math.round(sec.lo * 100)} % → ${Math.round(sec.after * 100)} %; взрыв ${pop.max} частиц, облако ${pop.d1} → ${pop.d2} px, погас за ${pop.end} мс`);
+      info.push(`${tag}: пыль ${Math.round(d0 * 100)} % (в середине ${Math.round(mid * 100)} %) → на сборке ${Math.round(sec.lo * 100)} % → ${Math.round(sec.after * 100)} %; взрыв ${pop.max} частиц, облако ${pop.d1} → ${pop.d2} px, погас за ${pop.end} мс`);
       await ctx.close();
     }
     await quick.close();
