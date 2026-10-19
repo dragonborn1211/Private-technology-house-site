@@ -1626,7 +1626,8 @@ console.log('\nревью, 5–9: группы на главной, NDA, сле�
   if (/class="btn btn-g/.test(((/data-sec="contact"[\s\S]*?<\/section>/.exec(src['index.html']) || [''])[0]).replace(/<!--[\s\S]*?-->/g, ''))) bad.push('index.html: у контакта появилась вторая кнопка');
   for (const f of PAGES) if (!/<body>\n<a class="skip" href="#main">Перейти к(?: |&nbsp;)содержанию<\/a>\n/.test(src[f]) || (src[f].match(/ id="main" tabindex="-1"/g) || []).length !== 1) bad.push(`${f}: «Перейти к содержанию» / #main`);
   // с «Кто делает» (TASK-about-analytics.md): на десктопе заголовок контакта — две строки (+0.18), на телефоне карточка (+0.6)
-  const LEN = { 'index.html': [5.1, 8.5], 'services.html': [7.3, 11.4], 'process.html': [3.2, 7.0], 'cases.html': [3.9, 6.5], 'automations.html': [4.8, 8.5] };
+  // база — после TASK-polish-2.md (карточка основателя и строка «Или:» в контакте: +76 px на телефоне, +60 на десктопе)
+  const LEN = { 'index.html': [5.25, 8.8], 'services.html': [7.4, 11.55], 'process.html': [3.3, 7.15], 'cases.html': [4.05, 6.6], 'automations.html': [4.95, 8.6] };
   const quick = await chromium.launch();
   for (const [w, h] of [[1440, 900], [390, 844]]) {
     const page = await quick.newPage({ viewport: { width: w, height: h } });
@@ -1787,8 +1788,8 @@ console.log('\ncookie и Метрика');
     const { ctx, page } = await mk({ consent: 'yes', stub: true });
     // Метрика — после первого экрана и в простое браузера (requestIdleCallback, не дольше 3 с)
     await page.goto(BASE + 'index.html'); await page.waitForTimeout(7000);
-    const calls = await page.evaluate(() => { document.addEventListener('click', (e) => e.preventDefault()); document.querySelector('#contact a[href*="t.me/dragonborne0"]').click(); document.querySelector('.foot-ico a[href*="max.ru"]').click(); document.querySelector('.foot-ico a[href*="wa.me"]').click(); document.querySelector('.foot-ico a[href^="tel:"]').click(); return (window.__ym || []).map((c) => c[1] + ':' + (c[2] || '') + ':' + JSON.stringify(c[3] || {})); });
-    if (!calls.some((c) => /^init:/.test(c)) || !calls.some((c) => /^reachGoal:tg:\{"place":"contact","text":"Хочу обсудить проект\."\}/.test(c)) || !calls.includes('reachGoal:max:{"place":"foot"}') || !calls.includes('reachGoal:wa:{"place":"foot"}') || !calls.includes('reachGoal:phone:{"place":"foot"}')) bad.push(`цели: ${calls.join(' | ')}`);
+    const calls = await page.evaluate(() => { document.addEventListener('click', (e) => e.preventDefault()); document.querySelector('#contact a[href*="t.me/dragonborne0"]').click(); document.querySelector('footer .foot-ico a[href*="max.ru"]').click(); document.querySelector('footer .foot-ico a[href*="wa.me"]').click(); document.querySelector('footer .foot-ico a[href^="tel:"]').click(); document.querySelector('#contact .ct-alt a[href*="wa.me"]').click(); return (window.__ym || []).map((c) => c[1] + ':' + (c[2] || '') + ':' + JSON.stringify(c[3] || {})); });
+    if (!calls.some((c) => /^init:/.test(c)) || !calls.some((c) => /^reachGoal:tg:\{"place":"contact","text":"Хочу обсудить проект\."\}/.test(c)) || !calls.includes('reachGoal:max:{"place":"foot"}') || !calls.includes('reachGoal:wa:{"place":"foot"}') || !calls.includes('reachGoal:phone:{"place":"foot"}') || !calls.includes('reachGoal:wa:{"place":"contact"}')) bad.push(`цели: ${calls.join(' | ')}`);
     if (await page.$('.ck')) bad.push('при согласии плашка показана');
     await ctx.close();
   }
@@ -1828,15 +1829,19 @@ console.log('\nсвязь: подвал, «Обсудить проект», ме
     if (a.join(' ').replace(/max\.ru\/\S+/, 'max.ru/…') !== 'https://t.me/dragonborne0 https://max.ru/… https://wa.me/79090243995 tel:+79090243995' || /Telegram · @dragonborne0/.test(h)) bad.push(`${f}: подвал ${JSON.stringify(a)}`);
     const cms = [...h.matchAll(/<div class="cm" data-cm>[\s\S]*?<\/div>\n<\/div>/g)].map((m) => m[0]);
     if (cms.length !== 2 || cms.some((c) => !/data-tg="Хочу обсудить проект\."/.test(c) || !/href="https:\/\/max\.ru\//.test(c) || !/href="https:\/\/wa\.me\/79090243995" target="_blank" rel="noopener" data-wa=/.test(c) || !/href="tel:\+79090243995"/.test(c))) bad.push(`${f}: списков «Обсудить проект» ${cms.length} или в них не все каналы`);
-    if ((h.match(/<img class="ic-max" src="\/?assets\/icons\/max\.svg"/g) || []).length !== 4) bad.push(`${f}: знак MAX не в четырёх местах`);
-    if (/class="ico( fr)?" aria-label="Написать в (Telegram|Max)"/.test(h.replace(/<p class="foot-ico">[\s\S]*?<\/p>/, ''))) bad.push(`${f}: в шапке остались отдельные иконки`);
+    const alt = (/<p class="ct-alt foot-ico">([\s\S]*?)<\/p>/.exec(h) || [])[1];
+    if ((h.match(/<img class="ic-max" src="\/?assets\/icons\/max\.svg"/g) || []).length !== (alt ? 5 : 4)) bad.push(`${f}: знак MAX не в ${alt ? 'пяти' : 'четырёх'} местах`);
+    if (/class="ico( fr)?" aria-label="Написать в (Telegram|Max)"/.test(h.replace(/<p class="foot-ico">[\s\S]*?<\/p>/, '').replace(/<p class="ct-alt foot-ico">[\s\S]*?<\/p>/, ''))) bad.push(`${f}: в шапке остались отдельные иконки`);
+    // контакт: «Или:» — MAX, WhatsApp с черновиком, телефон; Telegram в строке нет (он — главная кнопка)
+    if (/data-sec="contact"/.test(h) && (!alt || [...alt.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1].replace(/max\.ru\/\S+/, 'max.ru/…')).join(' ') !== 'https://max.ru/… https://wa.me/79090243995 tel:+79090243995' || !/data-wa="Хочу обсудить проект\."/.test(alt))) bad.push(`${f}: строка «Или:» в контакте`);
   }
   const quick = await chromium.launch();
   for (const [w, h, q] of [[1440, 900, ''], [390, 844, ''], [390, 844, '&lang=en']]) {
     const page = await quick.newPage({ viewport: { width: w, height: h } });
     await page.goto(BASE + 'index.html?intro=instant' + q); await page.waitForTimeout(500);
-    const ft = await page.evaluate(() => [...document.querySelectorAll('.foot-ico a')].map((a) => { const b = a.getBoundingClientRect(); return { l: a.getAttribute('aria-label'), w: Math.round(b.width), h: Math.round(b.height) }; }));
+    const [ft, ca] = await page.evaluate(() => ['footer .foot-ico a', '#contact .ct-alt a'].map((sel) => [...document.querySelectorAll(sel)].map((a) => { const b = a.getBoundingClientRect(); return { l: a.getAttribute('aria-label'), w: Math.round(b.width), h: Math.round(b.height) }; })));
     if (ft.length !== 4 || ft.some((x) => x.w < 44 || x.h < 44 || (q && /[А-Яа-яЁё]/.test(x.l)))) bad.push(`${w}${q}: подвал ${JSON.stringify(ft)}`);
+    if (ca.length !== 3 || ca.some((x) => x.w < 44 || x.h < 44 || (q && /[А-Яа-яЁё]/.test(x.l)))) bad.push(`${w}${q}: «Или:» в контакте ${JSON.stringify(ca)}`);
     const btn = '.hero-hdr .cm-btn';
     await page.click(btn); await page.waitForTimeout(250);
     const op = await page.evaluate(() => {
