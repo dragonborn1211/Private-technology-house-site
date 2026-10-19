@@ -800,7 +800,8 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 /* «Кто делает» (TASK-about-analytics.md, раздел 1): карточка справа от «Расскажите о задаче» на всех страницах, кроме 404;
    на ≤ 1000 px — под кнопкой. Монограмма — пока нет фото (data-pt-skip: градиентный текст из частиц собрался бы одним цветом,
    проявляется с s-done) */
-.ct-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);gap:40px 64px;align-items:end}
+/* карточка основателя — до 520 px (владелец: «можно немного растянуть»; было 420), на средних окнах — от 420 */
+.ct-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,clamp(420px,36vw,520px));gap:40px 64px;align-items:end}
 @media (max-width:1000px){.ct-grid{grid-template-columns:minmax(0,1fr)}}
 .who{position:relative;display:flex;flex-direction:column;gap:18px;padding:22px;border-radius:26px}
 /* оформление (владелец 2026-10-19: «блок с основателем тоже можно красиво оформить»): кромка-перелив палитры и мягкое свечение

@@ -1677,7 +1677,7 @@ console.log('\nкто делает: карточка в контакте, «О �
       const a = document.getElementById('about').getBoundingClientRect(), b = document.querySelector('#contact .ct-grid > .blk:not(.who)').getBoundingClientRect(), btn = document.querySelector('#contact .btn-p').getBoundingClientRect();
       return { right: a.left > b.left + b.width * 0.5, below: a.top >= btn.bottom, w: Math.round(a.width), n: document.getElementById('who-n').textContent, k: document.querySelector('.who-k').textContent, mono: document.querySelector('.who-ph b').textContent };
     });
-    if (w === 1440 && (!r.right || r.w > 421)) bad.push(`1440${q}: карточка не справа (${JSON.stringify(r)})`);
+    if (w === 1440 && (!r.right || r.w > 521)) bad.push(`1440${q}: карточка не справа (${JSON.stringify(r)})`);
     if (w === 390 && !r.below) bad.push(`390: карточка не под кнопкой (${JSON.stringify(r)})`);
     if (q && (r.n !== 'Daniil Davydovsky' || r.k !== 'Founder' || r.mono !== 'D')) bad.push(`EN: ${JSON.stringify(r)}`);
     await page.close();
