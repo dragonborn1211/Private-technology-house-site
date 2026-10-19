@@ -1,7 +1,11 @@
 // Локальный просмотр сайта: node tools/serve.mjs [порт] → http://localhost:8080
 // Отдаёт страницы корня и assets/ — ровно то, что уходит на хостинг, — и локальные эталоны tools/ref/. На несуществующий
 // адрес (в том числе вложенный: /cases/abc) — 404.html со статусом 404, как GitHub Pages.
+// Как на хостинге: текст (HTML, CSS, JS, SVG) сжат gzip — иначе локальный Lighthouse на медленной сети считает в три раза
+// больше байт; Cache-Control: no-cache (перепроверка при каждом заходе), а не no-store — с no-store браузер не кладёт
+// страницу в кэш «Назад» (bfcache).
 import { createServer } from 'node:http';
+import { gzipSync } from 'node:zlib';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -18,10 +22,13 @@ createServer(async (req, res) => {
   const allowed = (path.dirname(file) === root && (/\.(html|xml|txt)$/.test(file) || /^(favicon\.(svg|ico)|apple-touch-icon\.png)$/.test(path.basename(file)))) || file.startsWith(path.join(root, 'assets') + path.sep) || file.startsWith(path.join(root, 'tools', 'ref') + path.sep);
   try {
     if (!allowed) throw new Error('not allowed');
-    const body = await readFile(file);
-    res.writeHead(200, { 'Content-Type': TYPES[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' }).end(body);
+    send(200, await readFile(file), path.extname(file));
   } catch {
-    const body = await readFile(path.join(root, '404.html')).catch(() => 'not found');
-    res.writeHead(404, { 'Content-Type': TYPES['.html'], 'Cache-Control': 'no-store' }).end(body);
+    send(404, await readFile(path.join(root, '404.html')).catch(() => Buffer.from('not found')), '.html');
+  }
+  function send(code, body, ext) {
+    const h = { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': 'no-cache', Vary: 'Accept-Encoding' };
+    if (/\.(html|css|js|svg|xml|txt)$/.test(ext) && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) { body = gzipSync(body); h['Content-Encoding'] = 'gzip'; }
+    res.writeHead(code, h).end(body);
   }
 }).listen(port, () => console.log(`http://localhost:${port}`));
