@@ -1538,7 +1538,9 @@ console.log('\nревью, 2–3: свои шрифты, иконка сайта
     const h = src[f], head = h.slice(0, h.indexOf('</head>'));
     if (/googleapis|gstatic/.test(h)) bad.push(`${f}: ссылка на Google Fonts`);
     const pre = [...head.matchAll(/<link rel="preload" href="([^"]+)" as="font" type="font\/woff2" crossorigin>/g)].map((m) => m[1].replace(/^\//, ''));
-    if (pre.join() !== 'assets/fonts/manrope-cyrillic-300-normal.woff2,assets/fonts/manrope-cyrillic-400-normal.woff2') bad.push(`${f}: preload шрифтов ${pre.join(', ') || 'нет'}`);
+    // TASK-qa.md: ещё начертания H1 — Manrope 300 latin (пробелы и латиница в H1) и Cormorant italic cyrillic: иначе H1
+    // сначала набирался вперемешку со шрифтом-заменой и на 412 px переносился иначе (сдвиг раскладки)
+    if (pre.join() !== 'assets/fonts/manrope-cyrillic-300-normal.woff2,assets/fonts/manrope-cyrillic-400-normal.woff2,assets/fonts/manrope-latin-300-normal.woff2,assets/fonts/cormorant-garamond-cyrillic-500-italic.woff2') bad.push(`${f}: preload шрифтов ${pre.join(', ') || 'нет'}`);
     for (const re of [/<link rel="icon" href="\/?favicon\.svg" type="image\/svg\+xml">/, /<link rel="icon" href="\/?favicon\.ico" sizes="any">/, /<link rel="apple-touch-icon" href="\/?apple-touch-icon\.png">/, /<meta name="theme-color" content="#0A121A">/]) if (!re.test(head)) bad.push(`${f}: нет ${re.source.slice(0, 40)}`);
     const og = (k) => (new RegExp(`<meta property="og:${k}" content="([^"]*)">`).exec(head) || [])[1];
     if (f === '404.html') { if (/og:/.test(head)) bad.push('404.html: og:* не нужны'); continue; }
@@ -1571,7 +1573,7 @@ console.log('\nревью, 2–3: свои шрифты, иконка сайта
   }
   await quick.close();
   if (bad.length) fail('ревью, 2–3: ' + bad.join('; '));
-  else console.log(`  ✓ запросов к Google нет, шрифты из assets/fonts (${info.join('; ')}), preload — Manrope 300 / 400 cyrillic; иконки, theme-color и og:* на местах (404 — без og), файлы отдают 200, в EN og:* переведены`);
+  else console.log(`  ✓ запросов к Google нет, шрифты из assets/fonts (${info.join('; ')}), preload — начертания первого экрана (Manrope 300 / 400, Cormorant italic); иконки, theme-color и og:* на местах (404 — без og), файлы отдают 200, в EN og:* переведены`);
 }
 // Ревью, раздел 4 — тексты: «ИИ-» нигде (в названиях и подписях — «AI»); описание главной и лид каталога (с его описанием)
 // — новые; у «Приложений» — «Формат: разово», у «Сопровождения» нет «Стоимости», теги автоматизации — с чем соединяем
