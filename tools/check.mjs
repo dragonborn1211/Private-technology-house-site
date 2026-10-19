@@ -930,7 +930,7 @@ console.log('\nкейсы и готовые автоматизации');
   st = await state(page);
   const T = ['site-leads', 'voice-task', 'reviews', 'b24-report', 'catalog', 'avito-bot', 'price-monitor'];
   if (st.vis.join(',') !== T.join(',') || st.always !== 'your-process' || st.btns !== 'all,leads,tasks,goods,reports,ai') bad.push(`каталог: ${JSON.stringify(st)}`);
-  const cards = await page.evaluate(() => [...document.querySelectorAll('[data-cat]')].map((c) => ({ id: c.id, flow: c.querySelector('canvas[data-flow]').dataset.flow, need: /^Нужно от\s+вас: \S/.test(c.querySelector('.tp-need').textContent), go: !!c.querySelector('a.tp-go[data-tg^="Хочу подключить «"]'), cases: [...c.querySelectorAll('a[href^="cases.html#"]')].map((a) => a.getAttribute('href').split('#')[1]), obj: /Объект №/.test(c.textContent) })));
+  const cards = await page.evaluate(() => [...document.querySelectorAll('[data-cat]')].map((c) => ({ id: c.id, flow: c.querySelector('canvas[data-flow]').dataset.flow, need: /^Нужно от\s+вас: \S/.test(c.querySelector('.tp-need').textContent), go: !!c.querySelector('a.tp-go[data-tg^="Хочу подключить «"]'), cases: [...c.querySelectorAll('a[href^="cases#"], a[href^="cases.html#"]')].map((a) => a.getAttribute('href').split('#')[1]), obj: /Объект №/.test(c.textContent) })));
   const cid = idsOf('cases.html');
   cards.forEach((c) => { if (!c.need || !c.go || c.obj || c.cases.some((x) => !cid.has(x))) bad.push(`шаблон ${c.id}: «Нужно от вас» ${c.need}, «Подключить» ${c.go}, «Объект №» ${c.obj}, кейсы ${c.cases.join(',')}`); });
   const links = cards.filter((c) => c.cases.length).map((c) => c.id + '→' + c.cases.join('')).join(',');
