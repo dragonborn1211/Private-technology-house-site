@@ -376,10 +376,10 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     else console.log('  ✓ липкая шапка: скрыта в первом экране, вверх — видна, вниз — прячется; пункты меню — на страницы');
   }
   if (tag === 'm390') {
-    // меню на телефоне: Telegram и кнопка меню в шапке, Esc, фокус, пункт меню, язык
+    // меню на телефоне: «Обсудить проект» (каналы связи) и кнопка меню в шапке, Esc, фокус, пункт меню, язык
     await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(100); await run(300);
     const st = () => page.evaluate(() => ({ on: document.querySelector('[data-menu]').classList.contains('on'), lock: document.documentElement.classList.contains('pt-lock'), inMenu: document.querySelector('[data-menu]').contains(document.activeElement), lang: document.documentElement.lang }));
-    const hb = await page.evaluate(() => { const v = (sel) => { const el = document.querySelector(sel), r = el && el.getBoundingClientRect(); return !!r && r.width > 0 && r.bottom > 0 && r.top < innerHeight; }; return v('[data-sec="hero"] header a[href*="t.me"]') && v('[data-sec="hero"] [data-menu-open]'); });
+    const hb = await page.evaluate(() => { const v = (sel) => { const el = document.querySelector(sel), r = el && el.getBoundingClientRect(); return !!r && r.width > 0 && r.bottom > 0 && r.top < innerHeight; }; return v('[data-sec="hero"] header .cm-btn') && v('[data-sec="hero"] [data-menu-open]'); });
     const opener = '[data-sec="hero"] [data-menu-open]';
     await page.click(opener); await run(400); await page.waitForTimeout(100);
     const m1 = await st(), exp = await page.getAttribute(opener, 'aria-expanded');
@@ -400,7 +400,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     await page.keyboard.press('Escape'); await run(400);
     await page.evaluate(() => document.querySelector('[data-menu] [data-lang="ru"]').click()); await run(4200);
     const bad = [];
-    if (!hb) bad.push('в шапке не видно Telegram или кнопки меню');
+    if (!hb) bad.push('в шапке не видно «Обсудить проект» (каналы связи) или кнопки меню');
     if (!m1.on || !m1.lock || !m1.inMenu || exp !== 'true') bad.push(`открытие: ${JSON.stringify(m1)}, aria-expanded ${exp}`);
     if (under !== 'hidden') bad.push('под открытым меню видна страница (светлое пятно)');
     if (m2.on || m2.lock || !back) bad.push(`Esc: меню ${m2.on ? 'открыто' : 'закрыто'}, фокус на кнопке ${back}`);
@@ -749,10 +749,10 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
     }
     for (const w of ['flow-lock', 'Поток', 'Сетевой сервис', 'data-hidden-section="integrations"']) if (src[f].includes(w)) bad.push(`${f}: «${w}»`);
   }
-  const foot = (f) => { const m = src[f].match(/<footer[\s\S]*?<\/footer>/g) || []; return m.length === 1 && /<footer[^>]*class="[^"]*\bfoot\b/.test(m[0]) ? m[0].replace(/ aria-current="page"/g, '').replace(/(<a href=")[^"]*(" hreflang=)/g, '$1$2').replace(/href="\//g, 'href="') : `(подвалов ${m.length})`; };
+  const foot = (f) => { const m = src[f].match(/<footer[\s\S]*?<\/footer>/g) || []; return m.length === 1 && /<footer[^>]*class="[^"]*\bfoot\b/.test(m[0]) ? m[0].replace(/ aria-current="page"/g, '').replace(/(<a href=")[^"]*(" hreflang=)/g, '$1$2').replace(/href="\//g, 'href="').replace(/src="\//g, 'src="') : `(подвалов ${m.length})`; };
   const f0 = foot('index.html');
   PAGES.forEach((f) => { if (foot(f) !== f0) bad.push(`${f}: подвал отличается от главной`); });
-  const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|max\.ru|^tel:|^#top$|^#about$|^privacy\.html$|^$/.test(h));
+  const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|max\.ru|wa\.me|^tel:|^#top$|^#about$|^privacy\.html$|^$/.test(h));
   const sid = idsOf('services.html');
   fl.forEach((h) => { const [pg, id] = h.split('#'); if (!PAGES.includes(pg) || (id && !(pg === 'services.html' ? sid : idsOf(pg)).has(id))) bad.push(`подвал: ссылка ${h} ведёт в никуда`); });
   if (fl.join(',') !== 'services.html,cases.html,automations.html,process.html,services.html#faq' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);

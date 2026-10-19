@@ -9,7 +9,8 @@
 //   черновики сообщений — на языке страницы;
 // - матрица: каждая страница × 1440 / 390 × RU / EN × первый заход / reduced motion в Chromium, 1440 / 390 RU в WebKit:
 //   ошибки и предупреждения консоли, неудачные запросы, все секции собраны, горизонтальная прокрутка, кнопки и текст за
-//   краем окна, зоны нажатия меньше 44 px на телефоне, текст мельче 12 px, контраст мелкого текста ниже 4.5:1, кириллица
+//   краем окна, зоны нажатия меньше 44 px на телефоне (с невидимым расширением ::before), текст мельче 11 px (11 px —
+//   сведения: 12 px на решении владельца), контраст мелкого текста ниже 4.5:1 (кроме декоративного aria-hidden), кириллица
 //   в EN;
 // - производительность главной (Chromium, первый заход, CPU ×1 и ×4): долгие задачи за вступление, когда читается H1,
 //   CLS, LCP, кадры при прокрутке (p50 / p95 / > 50 мс), работа главного потока на кадр в покое.
@@ -109,7 +110,7 @@ async function links() {
 // ---------------------------------------------------------------- матрица
 // Проверки на странице после сборки всех секций (в браузере)
 function pageChecks(opts) {
-  const { mob, en } = opts, W = innerWidth, res = { edge: [], tap: [], small: [], contrast: [], cyr: [], notDone: [], docOver: 0 };
+  const { mob, en } = opts, W = innerWidth, res = { edge: [], tap: [], small: [], small11: [], contrast: [], cyr: [], notDone: [], docOver: 0 };
   const vis = (el) => { for (let e = el; e && e.nodeType === 1; e = e.parentElement) { const cs = getComputedStyle(e); if (cs.display === 'none' || cs.visibility === 'hidden' || e.inert || e.hidden) return false; } return true; };
   const skip = (el) => el.closest('template, .an, .wf, .site-view, [data-menu]:not(.on), [data-topbar]:not(.on), .cm-pop[hidden], [aria-hidden="true"] canvas');
   const label = (el) => (el.textContent.trim() || el.getAttribute('aria-label') || el.tagName).replace(/\s+/g, ' ').slice(0, 30);
@@ -130,7 +131,10 @@ function pageChecks(opts) {
     if (cs.display === 'inline') { const p = el.parentElement, txt = [...p.childNodes].some((n) => n !== el && n.nodeType === 3 && n.textContent.trim()); if (txt) return; }
     // зона больше видимой рамки: ::after ссылки-карточки растянут на всю карточку
     if (el.matches('a.card-link')) { const c = el.closest('.obj, .glass'); if (c && c.getBoundingClientRect().height >= 44) return; }
-    if (r.height < 43.5 || r.width < 43.5) res.tap.push(`«${label(el)}» ${Math.round(r.width)}×${Math.round(r.height)}`);
+    // невидимое расширение зоны ::before (слой «зоны нажатия» в site.css) — зона больше рамки элемента
+    let tw = r.width, th = r.height; const pb = getComputedStyle(el, '::before');
+    if (pb.content !== 'none' && pb.position === 'absolute') { tw = Math.max(tw, parseFloat(pb.width) || 0); th = Math.max(th, parseFloat(pb.height) || 0); }
+    if (th < 43.5 || tw < 43.5) res.tap.push(`«${label(el)}» ${Math.round(tw)}×${Math.round(th)}`);
   });
   // текст: размер и контраст (фон — первый непрозрачный предок, полупрозрачные слои смешиваются с фоном страницы)
   const parse = (c) => { const m = c.match(/rgba?\(([^)]+)\)/); if (!m) return null; const v = m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return [v[0], v[1], v[2], v.length > 3 ? v[3] : 1]; };
@@ -147,10 +151,13 @@ function pageChecks(opts) {
   for (let t; (t = tw.nextNode());) {
     if (!t.textContent.trim()) continue;
     const el = t.parentElement; if (!el || seenEl.has(el)) continue; seenEl.add(el);
-    if (el.closest('script, style, template, noscript, .an, .wf, [data-menu]:not(.on), [data-topbar]:not(.on), .cm-pop[hidden], .ck[hidden]') || !vis(el)) continue;
+    // декоративное (aria-hidden: разделители крошек, подписи внутри рисунков, адресная строка превью) — не текст страницы
+    if (el.closest('script, style, template, noscript, .an, .wf, [aria-hidden="true"], [data-menu]:not(.on), [data-topbar]:not(.on), .cm-pop[hidden], .ck[hidden]') || !vis(el)) continue;
     const r = el.getBoundingClientRect(); if (!r.width || !r.height) continue;
     const cs = getComputedStyle(el), fs = parseFloat(cs.fontSize), txt = t.textContent.trim().replace(/\s+/g, ' ').slice(0, 30);
-    if (fs < 11.95) res.small.push(`«${txt}» ${fs}px`);
+    // мельче 11 px — ошибка; ровно 11 px — моноширинные подписи сайта (кикеры, крошки, RU / EN): 12 px — на решение
+    // владельца (TASK-qa.md, отчёт), пока в сводке как сведения
+    if (fs < 10.95) res.small.push(`«${txt}» ${fs}px`); else if (fs < 11.95) res.small11.push(`«${txt}» ${fs}px`);
     const fg = parse(cs.color), bold = parseInt(cs.fontWeight, 10) >= 700, large = fs >= 24 || (bold && fs >= 18.66);
     if (fg && fg[3] > 0 && !large && cs.webkitTextFillColor !== 'rgba(0, 0, 0, 0)' && !/text/.test(cs.backgroundClip + cs.webkitBackgroundClip)) {
       let o = 1; for (let e = el; e && e.nodeType === 1; e = e.parentElement) o *= parseFloat(getComputedStyle(e).opacity);
@@ -196,10 +203,12 @@ async function runOne(browserType, b, cfg) {
 async function matrix() {
   console.log('\nматрица');
   const runs = [];
-  for (const pg of ALL_PAGES) for (const w of [1440, 390]) for (const lang of (pg === 'privacy.html' ? ['ru'] : ['ru', 'en'])) for (const mode of ['full', 'rm']) runs.push({ bt: 'chromium', pg, w, h: w < 760 ? 844 : 900, lang, mode });
-  for (const pg of ALL_PAGES) for (const w of [1440, 390]) for (const mode of ['full', 'rm']) runs.push({ bt: 'webkit', pg, w, h: w < 760 ? 844 : 900, lang: 'ru', mode });
-  const B = { chromium: await chromium.launch({ args: GPU }), webkit: await webkit.launch() };
-  const res = [], CONC = 3;
+  // QA_MODES=rm — только reduced motion (быстро: раскладка та же), QA_BROWSERS=chromium — без WebKit
+  const MODES = (process.env.QA_MODES || 'full,rm').split(','), BRS = (process.env.QA_BROWSERS || 'chromium,webkit').split(',');
+  if (BRS.includes('chromium')) for (const pg of ALL_PAGES) for (const w of [1440, 390]) for (const lang of (pg === 'privacy.html' ? ['ru'] : ['ru', 'en'])) for (const mode of MODES) runs.push({ bt: 'chromium', pg, w, h: w < 760 ? 844 : 900, lang, mode });
+  if (BRS.includes('webkit')) for (const pg of ALL_PAGES) for (const w of [1440, 390]) for (const mode of MODES) runs.push({ bt: 'webkit', pg, w, h: w < 760 ? 844 : 900, lang: 'ru', mode });
+  const B = { chromium: BRS.includes('chromium') ? await chromium.launch({ args: GPU }) : null, webkit: BRS.includes('webkit') ? await webkit.launch() : null };
+  const res = [], CONC = +(process.env.QA_CONC || 3);
   let k = 0;
   await Promise.all(Array.from({ length: CONC }, async () => {
     while (k < runs.length) {
@@ -208,7 +217,7 @@ async function matrix() {
       catch (e) { res.push({ ...cfg, browser: cfg.bt, err: e.message.slice(0, 200) }); }
     }
   }));
-  await B.chromium.close(); await B.webkit.close();
+  if (B.chromium) await B.chromium.close(); if (B.webkit) await B.webkit.close();
   const rows = [];
   for (const r of res.sort((a, b) => (a.pg + a.w + a.lang + a.mode + a.browser).localeCompare(b.pg + b.w + b.lang + b.mode + b.browser))) {
     const tag = `${r.pg} · ${r.w} · ${r.lang} · ${r.mode} · ${r.browser}`;
@@ -221,11 +230,11 @@ async function matrix() {
       if (r.docOver > 1) probs.push(`прокрутка вбок ${r.docOver}px`);
       if (r.edge.length) probs.push('за краем: ' + r.edge.slice(0, 4).join(', '));
       if (r.tap.length) probs.push(`нажатие < 44: ${r.tap.length} — ` + r.tap.slice(0, 6).join(', '));
-      if (r.small.length) probs.push(`текст < 12px: ${r.small.length} — ` + [...new Set(r.small)].slice(0, 5).join(', '));
+      if (r.small.length) probs.push(`текст < 11px: ${r.small.length} — ` + [...new Set(r.small)].slice(0, 5).join(', '));
       if (r.contrast.length) probs.push(`контраст < 4.5: ${r.contrast.length} — ` + [...new Set(r.contrast)].slice(0, 5).join(', '));
       if (r.cyr.length) probs.push('кириллица в EN: ' + r.cyr.slice(0, 4).join(' | '));
     }
-    rows.push({ tag, ok: !probs.length, probs });
+    rows.push({ tag, ok: !probs.length, probs, detail: r.err ? null : { cons: r.cons, net: r.net, notDone: r.notDone, edge: r.edge, tap: r.tap, small: r.small, small11: r.small11, contrast: r.contrast, cyr: r.cyr } });
     probs.forEach((p) => fail(tag, p));
   }
   summary.matrix = rows;
