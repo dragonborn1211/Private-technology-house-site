@@ -883,3 +883,11 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .pt :is(a,button).btn-p:focus-visible{animation:pt-pulse 1.8s ease-in-out infinite}
 .pt .cm-pop a:focus-visible span{background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent!important;animation:pt-flow 2.4s linear infinite}
 @media (prefers-reduced-motion:reduce){.pt .nav a,.pt .menu-nav a,.pt .foot-ln a,.pt .crumbs a,.pt a.lnk,.pt a.card-link,.pt a.tp-go,.pt a.sv-go,.pt .sv-fl a,.pt a.sv-fw,.foot-req a,.doc-in :is(p,li) a,.ck p a,.pt :is(a,button).btn-g::after,.pt .ico::after,.pt .fl-b::after,.pt .sv-tl a::after,.pt a.obj-all::after,.nb::after,.ck-b .n::after,.pt :is(a,button).btn-p,.pt .cm-pop a span{animation:none!important}}
+/* ---------- зоны нажатия на тач-экранах (TASK-qa.md): не меньше 44×44 px ----------
+   Невидимое расширение ::before по центру элемента: вид и раскладка прежние, палец попадает. Ссылка «к содержанию»
+   видна только в фокусе — ей просто высота 44 px */
+.skip{display:inline-flex;align-items:center;min-height:44px;padding:0 16px}
+@media (pointer:coarse),(max-width:760px){
+.pt .crumbs a,.foot-req a,.pt .sv-fl a,.pt a.sv-fw,.pt .foot-ln a,.doc-in .pv-ckb,.pt .lang a,.ck-b button{position:relative}
+.pt .crumbs a::before,.foot-req a::before,.pt .sv-fl a::before,.pt a.sv-fw::before,.pt .foot-ln a::before,.doc-in .pv-ckb::before,.pt .lang a::before,.pt .sv-tl a::before,.fl-b::before,.ck-b button::before{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}
+}
