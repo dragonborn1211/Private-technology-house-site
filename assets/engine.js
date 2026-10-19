@@ -110,8 +110,10 @@
       try { var tv = +sessionStorage.getItem('pt-visit') || 0; REPEAT = tv > 0 && Date.now() - tv < 30 * 60e3; sessionStorage.setItem('pt-visit', String(Date.now())); } catch (e) { /* хранилище запрещено — полная */ }
       // Скрипты пришли поздно (позже ~4 с от начала загрузки): CSS показывает страницу без сборки (pt-late в site.css) — не
       // прячем её ради вступления, всё сразу на месте, движение идёт (как режим «сразу»). По времени, а не по стилю: чтение
-      // стиля здесь стоило лишнего пересчёта стилей всей страницы
-      var LATE = root.classList.contains('pt-boot') && performance.now() > 3800;
+      // стиля здесь стоило лишнего пересчёта стилей всей страницы. Время — часы анимаций документа (от начала загрузки, как
+      // performance.now): их не подменяют поддельные часы проверок (у Playwright performance.now не начинается заново на
+      // следующей странице), и считают они время, пока страница рисовалась, — а запасной CSS виден только тогда
+      var LATE = root.classList.contains('pt-boot') && (function () { var t = document.timeline && document.timeline.currentTime; return typeof t === 'number' ? t : performance.now(); })() > 3800;
       var MODE = (function () {
         var q = /[?&]intro=(full|fast|instant)(?:&|$)/.exec(location.search);
         if (rm) return 'rm';

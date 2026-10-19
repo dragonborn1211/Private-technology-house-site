@@ -599,7 +599,9 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .glyph.is-now :is(.lb,.dot,.led,.gl,.pulse){transition:none}
 .glyph.is-now .bars .d{animation:glBar 3s linear calc(var(--k,0) * 120ms) infinite}
 /* вне экрана и в облегчённом режиме петли стоят */
-.glyph:not(.is-vis) *,.pt-lite .glyph *{animation-play-state:paused}
+/* !important: сокращённое animation у петель (.glyph.is-on .pulse{animation:…} и др.) специфичнее и сбрасывало play-state
+   в running — вне экрана импульсы, уведомление и диоды шли дальше (TASK-qa.md) */
+.glyph:not(.is-vis) *,.pt-lite .glyph *{animation-play-state:paused!important}
 .pt-lite .glyph.is-on :is(.d,.bars .d){animation:none;stroke-dashoffset:0}
 .glyph-mini .lb{display:none}
 /* мелкие рисунки: линия в единицах viewBox толще, чтобы на экране оставалась ~1 px */
