@@ -2228,8 +2228,8 @@ console.log('\nраскладка на промежуточных ширинах
         const clip = [...document.querySelectorAll('.cx-l')].filter((l) => l.scrollWidth > l.clientWidth + 1).length;
         if (clip) res.push(`вкладок, где подпись шире вкладки: ${clip}`);
       }
-      // курсивный кусок заголовка на ширине от 761 — одной строкой («Один / дом.» рвалось)
-      if (W > 760) document.querySelectorAll('.h2 .it, .sv-h1 .it').forEach((it) => { const n = it.getClientRects().length, r = it.getBoundingClientRect(); if (n !== 1 || r.right > W + 1) res.push(`курсив «${it.textContent.trim().slice(0, 20)}» — ${n} стр., край ${Math.round(r.right)}`); });
+      // курсивный кусок заголовка на ширине от 761 — одной строкой («Один / дом.» рвалось); .hx — акцент в H2 (вариант B владельца)
+      if (W > 760) document.querySelectorAll('.h2 .it, .sv-h1 .it, h2 .hx').forEach((it) => { const n = it.getClientRects().length, r = it.getBoundingClientRect(); if (n !== 1 || r.right > W + 1) res.push(`курсив «${it.textContent.trim().slice(0, 20)}» — ${n} стр., край ${Math.round(r.right)}`); });
       return res;
     });
     out.forEach((x) => bad.push(`${pg} ${w} ${lang}: ${x}`));

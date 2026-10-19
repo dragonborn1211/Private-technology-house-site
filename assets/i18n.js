@@ -386,7 +386,16 @@
     'Что согласовали, то и делаем. Макет, поля в CRM и сумма совпадают со сметой.': 'We build what we agreed. The layout, the CRM fields and the total match the estimate.',
     'Живой прототип показываем рано. Правки идут по кругам, число кругов — в смете.': 'We show a live prototype early. Revisions go in rounds, and the number of rounds is in the estimate.',
     'Дизайн рисуем под компанию. Чужие темы и конструкторы не используем.': 'We design for your company. No third-party themes, no site builders.',
-    'Делаем один раз. Держим всегда.': 'Built once. Kept alive.',
+    // заголовки разделов с курсивным акцентом (.hx) — по частям, в том же порядке
+    'Делаем один раз.': 'Built once.',
+    'Держим всегда.': 'Kept alive.',
+    'решения': 'solutions',
+    'Расскажите о': 'Tell us about your',
+    'задаче': 'task',
+    'Порядок': 'How a',
+    'работы': 'project goes',
+    'Вопросы о': 'Subscription',
+    'подписке': 'FAQ',
     'Проект сдаём целиком, код ваш. Потом его можно забрать или оставить у нас на сопровождении.': 'We hand the project over in full, and the code is yours. Then you can take it in-house or leave it with us for ongoing care.',
     'Для компаний, которым важно, как их видят. Свой визуальный стиль, 3D и анимация.': 'For companies that care how they are seen. Your own visual style, 3D and animation.',
     'Android, iOS и Telegram mini-app: от интерфейса до публикации.': 'Android, iOS and Telegram mini-apps: from interface to publishing.',
@@ -403,7 +412,6 @@
     'Звонки расшифровываются и оцениваются по скрипту продаж. Итог появляется в карточке сделки.': 'Calls are transcribed and scored against the sales script. The result appears in the deal card.',
     'Заявка с сайта сразу становится лидом в Битрикс24, а менеджер получает сообщение в Telegram.': 'A website request instantly becomes a lead in Bitrix24, and the manager gets a Telegram message.',
     'Руководитель надиктовывает задачу в Telegram, и она появляется в Битрикс24 с исполнителем и сроком.': 'A manager dictates a task in Telegram, and it appears in Bitrix24 with an assignee and a deadline.',
-    'Расскажите о задаче': 'Tell us about your task',
     'Предложим решение, сроки и смету после первого созвона.': 'We will propose a solution, timeline and estimate after the first call.',
     'Точную смету называем после разбора задачи. Здесь ориентиры.': 'We give an exact estimate once we have looked into the task. These are guidelines.',
     // услуги
@@ -456,7 +464,6 @@
     'По утрам в Telegram приходит сводка по задачам Битрикс24 с выводами. Боту можно задать вопрос по любой задаче.': 'Every morning a summary of Bitrix24 tasks with conclusions arrives in Telegram. You can ask the bot about any task.',
     'Вы загружаете прайс в чат с агентом. Товары с описаниями и SEO появляются в каталоге сайта, отчёт приходит в Telegram.': 'You upload a price list to a chat with the agent. Products with descriptions and SEO appear in the website catalog, and the report arrives in Telegram.',
     'По утрам цены и остатки конкурентов собираются в таблицу, короткая сводка приходит в Telegram.': 'Every morning competitor prices and stock are collected into a spreadsheet, and a short summary arrives in Telegram.',
-    'Вопросы о подписке': 'Subscription FAQ',
     'Да. Шаблон служит отправной точкой: поля, сообщения и правила настраиваем под ваш процесс.': 'Yes. A template is a starting point: fields, messages and rules are tuned to your process.',
     'Зависит от шаблона и объёма. Назовём после короткого созвона, подписка оплачивается фиксированным платежом раз в месяц.': 'It depends on the template and the volume. We will name the price after a short call, and the subscription is a fixed monthly payment.',
     // роли узлов на схемах (scenes.js, ROLE_RU): в английской версии — как раньше
@@ -586,7 +593,6 @@
     'останавливается': 'stops',
     'Данные': 'Data',
     'выгружаем по запросу': 'exported on request',
-    'Порядок работы': 'How a project goes',
     'Что входит в услугу': 'What the service includes',
     // TASK-clarity.md, B2–B3: подписи в окне схемы (без «Шаблон ·»), «Нет нужного шаблона?»
     'Битрикс24 · Telegram': 'Bitrix24 · Telegram',
