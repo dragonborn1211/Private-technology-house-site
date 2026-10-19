@@ -16,7 +16,9 @@
   var de = document.documentElement;
   var rm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var LERP = 0.08;
-  var cur = window.scrollY, tgt = cur, run = false, tw = null, last = -1, raf = 0, ours = cur;
+  // начальная позиция не читается: чтение scrollY здесь заставляло браузер разложить всю страницу прямо посреди разбора
+  // HTML (долгая задача на слабом телефоне). Её берут колесо (cur = tgt = scrollY, пока не едем), to() и обработчик scroll
+  var cur = 0, tgt = 0, run = false, tw = null, last = -1, raf = 0, ours = 0;
   var bar = document.querySelector('[data-sbar]'), thumb = bar && bar.querySelector('[data-sbar-thumb]');
   var hideT = 0, drag = null, hover = false, th = 0;
 
