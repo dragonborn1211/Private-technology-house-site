@@ -2214,7 +2214,7 @@ console.log('\nраскладка на промежуточных ширинах
       const W = innerWidth, res = [];
       document.querySelectorAll('#pt-site .sec a, #pt-site .sec button, #pt-site .sec h1, #pt-site .sec h2, #pt-site .sec h3, #pt-site .sec p, #pt-site .sec li, [data-topbar] a, [data-topbar] button').forEach((el) => {
         if (el.closest('template, [data-menu], .site-view, .an, .wf')) return;
-        const sx = el.closest('.sv-paths, .cx'); if (sx && getComputedStyle(sx).overflowX === 'auto') return;
+        const sx = el.closest('.sv-paths, .cx, .fl'); if (sx && getComputedStyle(sx).overflowX === 'auto') return;
         const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') return;
         const r = el.getBoundingClientRect(); if (!r.width) return;
         if (r.right > W + 1 || r.left < -1) res.push(`«${(el.textContent.trim() || el.getAttribute('aria-label') || el.tagName).slice(0, 24)}» ${Math.round(r.left)}..${Math.round(r.right)}`);
@@ -2334,6 +2334,30 @@ console.log('\nпервый экран: шапка, заголовок, пане
   }
   if (bad.length) fail(bad.join(' | '));
   else console.log('  ✓ вступление: две линии, старый сканер выключен; шапка собирается вместе с первым экраном; H1 — три строки, курсив целиком; панель в первом экране; плашка пульта не перекрывает контент; пульт свёрнут при прокрутке (RU и EN)');
+}
+// TASK-polish-2.md, 1: подпись окна схемы (.win-tag в левом верхнем углу) не задевает узлы — на главной, в работах и каталоге,
+// 320 / 390 / 1440. Узлы — прямоугольники из графа сцены (canvas.__ptBoxes, scenes.js)
+console.log('\nсхемы: подпись окна и узлы');
+{
+  const bad = [], seen = [];
+  for (const w of [320, 390, 1440]) for (const pg of ['index.html', 'cases.html', 'automations.html']) {
+    const page = await browser.newPage({ viewport: { width: w, height: 900 } });
+    await page.goto(BASE + pg + '?intro=instant'); await page.waitForTimeout(600);
+    const H = await page.evaluate(() => document.documentElement.scrollHeight);
+    for (let y = 0; y < H; y += 600) { await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), y); await page.waitForTimeout(200); }
+    await page.waitForTimeout(1500);
+    const r = await page.evaluate(() => [...document.querySelectorAll('canvas[data-flow]')].filter((c) => c.getClientRects().length && c.__ptBoxes).map((c) => {
+      const t = c.parentNode.querySelector('.win-tag'); if (!t) return null;
+      const a = t.getBoundingClientRect(), b = c.getBoundingClientRect(), tb = [a.left - b.left, a.top - b.top, a.width, a.height], boxes = c.__ptBoxes();
+      const hit = boxes.filter(([x, y, bw, bh]) => Math.min(tb[0] + tb[2], x + bw) > Math.max(tb[0], x) && Math.min(tb[1] + tb[3], y + bh) > Math.max(tb[1], y)).length;
+      return { flow: c.dataset.flow, n: boxes.length, hit };
+    }).filter(Boolean));
+    r.forEach((x) => { seen.push(x.flow); if (!x.n) bad.push(`${pg} ${w}: ${x.flow} — узлов нет`); else if (x.hit) bad.push(`${pg} ${w}: ${x.flow} — подпись окна на ${x.hit} узл.`); });
+    await page.close();
+  }
+  if (!seen.length) bad.push('схем с подписью окна не найдено');
+  if (bad.length) fail('схемы: ' + bad.join('; '));
+  else console.log(`  ✓ подпись окна не задевает узлы: ${new Set(seen).size} схем на 320 / 390 / 1440`);
 }
 await browser.close();
 console.log(failed ? `\nИТОГ: ${failed} проблем(ы). Скриншоты: tools/shots/` : '\nИТОГ: всё чисто. Скриншоты: tools/shots/ — просмотри глазами.');

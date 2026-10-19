@@ -543,8 +543,10 @@
       }
     }
 
-    G.layout = function (g, W, H, compact) {
-      G.W = W; G.H = H; G.compact = compact;
+    // top — низ подписи окна (.win-tag) + зазор: узлы не выше него (TASK-polish-2.md, 1). Диапазон высот не прижимается, а сжимается
+    // в полосу [top, H]: схема сохраняет пропорции, верхний ряд не собирается в линию под подписью
+    G.layout = function (g, W, H, compact, top) {
+      G.W = W; G.H = H; G.compact = compact; top = top || 0;
       // крупные схемы (окно ≥ 400 px — ряд «Автоматизация» в две колонки): шрифт 13 px, от 520 px — 14.5 px, цветная подпись роли 10 px
       var big = !compact && W >= 400, wide = W >= 520;
       var fs = compact ? 11 : big ? (wide ? 14.5 : 13) : 11, px = compact ? 7 : big ? (wide ? 13 : 11) : 10, py = compact ? 5 : big ? 10 : 6, lh = fs + (big ? 5 : 3), maxW = W * (compact ? 0.3 : big ? 0.25 : 0.27) - 2 * px;
@@ -563,12 +565,14 @@
         // mx / my — раскладка узкого окна (телефон); tx / ty — средней ширины (крупный шрифт, окно 400–519 px): там плашки
         // уже крупные, а окно ещё узкое, и короткие связи не вмещали подписи событий. Нет полей — узел стоит по x / y
         var mid = big && !wide, fx = compact && n.mx != null ? n.mx : mid && n.tx != null ? n.tx : n.fx, fy = compact && n.my != null ? n.my : mid && n.ty != null ? n.ty : n.fy;
-        n.x = clamp(fx * W, n.w / 2 + 6, W - n.w / 2 - 6); n.y = clamp(fy * H, n.h / 2 + 6, H - n.h / 2 - 6);
+        n.x = clamp(fx * W, n.w / 2 + 6, W - n.w / 2 - 6); n.y = clamp(top + fy * (H - top), Math.max(n.h / 2 + 6, top + n.h / 2), H - n.h / 2 - 6);
       });
       g.restore();
       edges.forEach(curve);
     };
     // instant — сразу готовая схема (статичный кадр, оверлей «Потока»)
+    // прямоугольники узлов [x, y, w, h] — для проверки (check.mjs: подпись окна их не задевает)
+    G.boxes = function () { return nodes.map(function (n) { return [n.x - n.w / 2, n.y - n.h / 2, n.w, n.h]; }); };
     G.build = function (instant) {
       G.t = 0; G.fade = 1; G.dusting = false; G.first = G.spawnAt = instant ? 0.3 : 1.5;
       pulses.length = 0; labels.length = 0; parts.length = 0;
@@ -935,11 +939,18 @@
     var st = { w: 0, h: 0, d: 0 }, on = false, G = null, ct = 0, stage = '', prev = '', CYC = 7, gl = '', swapAt = 0, held = false;
     var RUN = cfg.rand === 'duplex' ? 'sync' : 'run';
     function compact() { return st.w < 340; }
+    // низ подписи окна (.win-tag в левом верхнем углу) относительно холста + 8 px: выше узлы не ставим; карточка скрыта — 0
+    function topPad() {
+      var t = win.querySelector('.win-tag'); if (!t) return 0;
+      var a = t.getBoundingClientRect(), b = cv.getBoundingClientRect();
+      return a.height > 0 && b.height > 0 ? Math.max(0, Math.round(a.bottom - b.top) + 8) : 0;
+    }
+    cv.__ptBoxes = function () { return G ? G.boxes() : []; };
     function label(s) { stage = s; if (lab && G) lab.textContent = G.title + ' · ' + s; }
     function next(first) {
       var spec = cfg.rand ? (first && env.rm ? chainSpec(cfg.still, cfg.rand === 'duplex') : randSpec(cfg.rand, prev)) : cfg;
       prev = spec.title || '';
-      G = makeGraph(spec); gl = lang(); G.layout(g, st.w, st.h, compact()); G.build(env.rm); ct = 0;
+      G = makeGraph(spec); gl = lang(); G.layout(g, st.w, st.h, compact(), topPad()); G.build(env.rm); ct = 0;
       if (cfg.rand) label(env.rm ? 'ready' : 'build');
     }
     function draw() { g.setTransform(st.d, 0, 0, st.d, 0, 0); g.clearRect(0, 0, st.w, st.h); if (G) G.draw(g, 1, false); }
@@ -947,7 +958,7 @@
     function rebuild() {
       swapAt = 0;
       if (cfg.rand) { next(false); return; }
-      G = makeGraph(cfg); gl = lang(); G.layout(g, st.w, st.h, compact()); G.build(env.rm);
+      G = makeGraph(cfg); gl = lang(); G.layout(g, st.w, st.h, compact(), topPad()); G.build(env.rm);
     }
     function tick(dt) {
       if (!on || env.rm || !G || asleep) return;
@@ -967,7 +978,7 @@
     }
     function resize() {
       if (!fitCanvas(cv, st)) return;
-      if (G) G.layout(g, st.w, st.h, compact());
+      if (G) G.layout(g, st.w, st.h, compact(), topPad());
       if (on && env.rm) draw();
     }
     // повторное пробуждение (секцию пересобрали) — схема собирается заново: узлы слева направо, потом импульсы
@@ -995,7 +1006,7 @@
       if (!G.dusting) G.dust();
       swapAt = 0.4;
     }
-    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (G) { G.layout(g, st.w, st.h, compact()); if (on && env.rm) draw(); } });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (G) { G.layout(g, st.w, st.h, compact(), topPad()); if (on && env.rm) draw(); } });
     return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, relang: relang, restart: restart };
   }
 

@@ -96,12 +96,25 @@
       r.t = setTimeout(function () { if (run !== r) return; run = null; settle(); }, long + 20);
     }, leave.length ? 160 : 0);
   }
+  // телефон: ряд фильтров — одна строка с прокруткой вбок (site.css, TASK-polish-2.md, 5). Выбранная кнопка — в видимой части
+  // ряда (прокручиваем сам ряд, а не страницу, как scrollIntoView), маска справа «есть ещё» — пока ряд не докручен до конца
+  function edge() { box.classList.toggle('is-end', box.scrollLeft + box.clientWidth >= box.scrollWidth - 2); }
+  function reveal(f, now) {
+    if (box.scrollWidth <= box.clientWidth + 2) return;
+    var b = Array.prototype.filter.call(btns, function (x) { return x.getAttribute('data-filter') === f; })[0]; if (!b) return;
+    var r = box.getBoundingClientRect(), q = b.getBoundingClientRect(), fade = r.width * 0.12, d = 0;
+    if (q.left < r.left) d = q.left - r.left - 8; else if (q.right > r.right - fade) d = q.right - (r.right - fade) + 8;
+    if (d) box.scrollBy({ left: d, behavior: rm || now ? 'auto' : 'smooth' });
+  }
+  box.addEventListener('scroll', edge, { passive: true });
+  window.addEventListener('resize', edge);
   var cur = null;
   function set(f, write) {
     if (f === cur) return;
     var first = cur === null;
     cur = f;
     btns.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-filter') === f ? 'true' : 'false'); });
+    if (!first) reveal(f);
     // адрес — без новой записи в истории; «Все» — без хеша. Язык (?lang=en) остаётся
     if (write && history.replaceState) {
       try { history.replaceState(history.state, '', location.pathname + location.search + (f ? '#' + pre + f : '')); } catch (e) { /* file:// и т. п. */ }
@@ -118,4 +131,8 @@
   window.addEventListener('hashchange', function () { set(fromHash(), false); });
   box.hidden = false;
   set(fromHash(), false);
+  // замер — после показа ряда (скрытый мерится нулём и «докручен до конца»), и ещё раз со своими шрифтами; выбранная по хешу
+  // кнопка (#f-ai) — сразу в видимой части ряда
+  reveal(cur, true); edge();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { reveal(cur, true); edge(); });
 })();

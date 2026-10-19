@@ -47,7 +47,9 @@
     var pl = document.querySelector('.foot-req a'), href = pl ? pl.getAttribute('href') : '/privacy';
     box = document.createElement('div');
     box.className = 'ck'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Cookie');
-    box.innerHTML = '<p>Сайт использует cookie и Яндекс Метрику, чтобы понимать, какие страницы полезны. Подробнее — в <a href="' + href + '">политике конфиденциальности</a>.</p>' +
+    // на телефоне — короткий текст (.ck-s, site.css): полный занимал три строки и пятую часть экрана (TASK-polish-2.md, 4)
+    box.innerHTML = '<p class="ck-l">Сайт использует cookie и Яндекс Метрику, чтобы понимать, какие страницы полезны. Подробнее — в <a href="' + href + '">политике конфиденциальности</a>.</p>' +
+      '<p class="ck-s">Используем cookie и Яндекс Метрику. <a href="' + href + '">Подробнее</a></p>' +
       '<div class="ck-b"><button type="button" class="y">Принять</button><button type="button" class="n">Отклонить</button></div>';
     translate(box);
     box.querySelector('.y').addEventListener('click', accept);

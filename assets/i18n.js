@@ -389,6 +389,8 @@
     // заголовки разделов с курсивным акцентом (.hx) — по частям, в том же порядке
     'Делаем один раз.': 'Built once.',
     'Наши работы': 'Our work',
+    // контакт: другие каналы под кнопкой Telegram (TASK-polish-2.md, 3)
+    'Или:': 'Or:',
     'Держим всегда.': 'Kept alive.',
     'решения': 'solutions',
     'Расскажите о': 'Tell us about your',
@@ -503,6 +505,9 @@
     // ссылка на политику в подвале; сама политика — только по-русски
     'Политика конфиденциальности': 'Privacy policy (in Russian)',
     // плашка cookie (assets/consent.js, раздел 3)
+    // плашка cookie на телефоне — коротко (TASK-polish-2.md, 4)
+    'Используем cookie и Яндекс Метрику.': 'We use cookies and Yandex Metrica.',
+    'Подробнее': 'Details',
     'Сайт использует cookie и Яндекс Метрику, чтобы понимать, какие страницы полезны. Подробнее — в': 'The site uses cookies and Yandex Metrica to see which pages are useful. Details are in the',
     'политике конфиденциальности': 'privacy policy (in Russian)',
     'Принять': 'Accept',

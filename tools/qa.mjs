@@ -123,7 +123,7 @@ function pageChecks(opts) {
   // за краем окна: кнопки, ссылки, заголовки, абзацы, пункты (ленты с прокруткой вбок — свои)
   document.querySelectorAll('a, button, h1, h2, h3, h4, p, li, summary, .btn, .ck').forEach((el) => {
     if (skip(el) || !vis(el)) return;
-    const sx = el.closest('.sv-paths, .cx'); if (sx && /auto|scroll/.test(getComputedStyle(sx).overflowX)) return;
+    const sx = el.closest('.sv-paths, .cx, .fl'); if (sx && /auto|scroll/.test(getComputedStyle(sx).overflowX)) return;
     const r = el.getBoundingClientRect(); if (!r.width || !r.height) return;
     if (r.right > W + 1 || r.left < -1) res.edge.push(`«${label(el)}» ${Math.round(r.left)}..${Math.round(r.right)}`);
   });

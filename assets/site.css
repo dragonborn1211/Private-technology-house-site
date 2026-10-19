@@ -136,7 +136,7 @@ body{margin:0;background:#0A121A}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .fr{background-color:transparent!important;border-color:transparent!important;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 .pt-on .sec .list li::before{opacity:0;transition:opacity .9s ease}
 .pt-on .sec.s-done .list li::before{opacity:1}
-@media (max-width:760px){.pt-col:nth-child(n+5){display:none}.pt-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}.nav,.hide-m{display:none!important}.an{display:none}.pill-step{min-width:0!important;flex:1;overflow:hidden;text-overflow:ellipsis}}
+@media (max-width:760px){.pt-col:nth-child(n+5){display:none}.pt-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}.nav,.hide-m{display:none!important}.an{display:none}.pill-step{display:none!important}}
 @media (prefers-reduced-motion:reduce){.pill-dot,.it{animation:none}.sec.s-skel .scan{animation:none}}
 /* «Объекты»: шапки рядов, сетка карточек, окна со схемами */
 .row-h{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;margin:0 0 22px;padding-top:16px}
@@ -411,8 +411,11 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .hero-h,.hero-h:lang(en){font-size:40px}
 .hero-h:lang(ru){font-size:38px}
 .hero-obj{min-height:540px}
-.pill-step{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis}
-.pult.is-mini .pult-bar{width:calc(100vw - 88px)}
+/* строка лога пульта на телефоне не помещалась и обрезалась до одной буквы («● h») — её нет: точка, кнопка и полоска
+   прогресса (TASK-polish-2.md, 2) */
+.pill-step{display:none}
+.pult.is-mini .pult-bar{width:auto}
+.pult-bar{gap:10px}
 }
 @media (prefers-reduced-motion:reduce){.topbar,.topbar.on,.menu,.menu.on{transition:none}.menu{transform:none}}
 /* ---------- «01 / Услуги» на главной: две группы — «Проекты» и «По подписке», шесть карточек-ссылок на services.html.
@@ -699,6 +702,15 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 @media (max-width:760px){.nda-ph i{border-radius:12px;padding:14px 9px 0;gap:6px}.nda-ph b{height:5px}.nda-ph b:first-child{height:8px}}
 /* фильтр кейсов и шаблонов: кнопки-«таблетки», нажатая — подсвечена */
 .fl{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 28px}
+/* телефон: фильтры — одна строка с прокруткой вбок (TASK-polish-2.md, 5): «AI» и «Отчёты · AI» уходили во вторую строку по одной.
+   Маска справа — «есть ещё», в конце ряда её нет (filter.js, .is-end). Поля 2 px сверху и снизу — прокрутка обрезала бы
+   невидимое расширение зоны нажатия до 44 px */
+@media (max-width:760px){
+.fl{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding:2px 0;margin:-2px 0 26px;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+.fl::-webkit-scrollbar{display:none}
+.fl.is-end{-webkit-mask-image:none;mask-image:none}
+.fl-b{flex:none}
+}
 .fl-b{appearance:none;margin:0;display:inline-flex;align-items:center;min-height:40px;padding:0 18px;border-radius:999px;border:1px solid rgba(188,211,222,.18);background-color:rgba(228,237,242,.02);font:500 14px/1 Manrope,'Manrope fb',system-ui,sans-serif;color:#9DB0BC;cursor:pointer;transition:border-color .3s ease,color .3s ease,background-color .3s ease,box-shadow .3s ease}
 .fl-b:hover{color:#EEF3F6;border-color:rgba(142,216,248,.45)}
 .fl-b[aria-pressed="true"]{color:#EEF3F6;border-color:rgba(142,216,248,.6);background-color:rgba(142,216,248,.1);box-shadow:0 0 22px -8px rgba(142,216,248,.6)}
@@ -751,6 +763,9 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .foot-tel{grid-area:tel}
 /* связь в подвале — иконки (просьба владельца): Telegram, Max, телефон; кнопки как в шапке, проявляются с рамками подвала */
 .foot-ico{display:flex;flex-wrap:wrap;gap:12px;margin:8px 0 0}
+/* контакт: другие каналы под кнопкой Telegram — те же кнопки-иконки, что в подвале (TASK-polish-2.md, 3) */
+.ct-alt.foot-ico{align-items:center;gap:10px;margin:4px 0 0;font-size:14px;color:#8FAEC0}
+.ct-alt>span{margin-right:2px}
 .pt-on .sec .foot-ico svg{transition:opacity .9s ease}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .foot-ico svg{opacity:0}
 .pt-on .sec .foot-ico :is(img,.ic){transition:opacity .9s ease}
@@ -777,12 +792,13 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 @keyframes ck-in{from{opacity:0;transform:translateY(16px)}}
 .ck.ck-out{opacity:0;transform:translateY(8px);pointer-events:none}
 .ck p{margin:0;font-size:14px;line-height:1.55;color:#BCD3DE}
+.ck-s{display:none}
 .ck p a{color:#8ED8F8;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(142,216,248,.45)}
 .ck-b{display:flex;gap:10px}
 .ck-b button{height:42px;padding:0 18px;border-radius:999px;font:600 14px Manrope,'Manrope fb',system-ui,sans-serif;cursor:pointer}
 .ck-b .y{background:#EEF3F6;color:#0A121A;border:0}
 .ck-b .n{background:transparent;color:#EEF3F6;border:1px solid rgba(188,211,222,.28)}
-@media (max-width:760px){.ck{left:12px;right:12px;bottom:12px;width:auto}.ck-b button{flex:1}.ck-open .pult{visibility:hidden}}
+@media (max-width:760px){.ck{left:12px;right:12px;bottom:12px;width:auto;gap:12px;padding:14px 14px 12px}.ck-b button{flex:1}.ck-open .pult{visibility:hidden}.ck .ck-l{display:none}.ck .ck-s{display:block}}
 .pt-lite ~ .ck,.pt-lite .ck{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(10,18,26,.97)}
 @media (prefers-reduced-motion:reduce){.ck{animation:none;transition:none}}
 /* страница для чтения (privacy.html): без движка частиц, одна колонка до 720 px */
