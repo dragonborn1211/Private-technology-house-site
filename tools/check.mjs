@@ -821,7 +821,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
     });
     lens[w] = m.len;
     if (w === 1440) {
-      if (m.h2 !== 'Работы' || m.cards.map((c) => c.k).join(' | ') !== 'Сайт · AI | AI · Битрикс24 | Демо · ваш проект' || !m.cards[2].mini || m.more !== 'cases.html Все работы →') bad.push(`главная «Работы»: ${m.h2}; ${m.cards.map((c) => c.k + ' ' + c.t + (c.mini ? ' (демо)' : '')).join(' | ')}; ${m.more}`);
+      if (m.h2 !== 'Наши работы' || m.cards.map((c) => c.k).join(' | ') !== 'Сайт · AI | AI · Битрикс24 | Демо · ваш проект' || !m.cards[2].mini || m.more !== 'cases.html Все работы →') bad.push(`главная «Работы»: ${m.h2}; ${m.cards.map((c) => c.k + ' ' + c.t + (c.mini ? ' (демо)' : '')).join(' | ')}; ${m.more}`);
       m.cards.slice(0, 2).forEach((c) => { if (!src['cases.html'].replace(/&nbsp;/g, ' ').includes('>' + c.t + '<')) bad.push(`главная: кейса «${c.t}» нет на cases.html`); });
       if (m.ah2 !== 'Готовые решения' || m.aobj || m.titles !== 'automations.html#site-leads,automations.html#voice-task' || m.amore !== 'automations.html Все решения →' || m.dmore !== 'services.html Все направления →' || m.dk !== 'Что делаем') bad.push(`главная «Готовые решения» и «Что делаем»: ${m.dk}, ${m.dmore}, «${m.ah2}», «Объект №» ${m.aobj}, заголовки ${m.titles}, ${m.amore}`);
       m.titles.split(',').forEach((x) => { if (!aid.has(x.split('#')[1])) bad.push(`главная: ${x} — нет такой карточки`); });
@@ -1665,7 +1665,7 @@ console.log('\nкто делает: карточка в контакте, «О �
     if (f === '404.html') { if (/id="about"/.test(h)) bad.push('404.html: карточка «Кто делает»'); continue; }
     const who = (/<aside class="blk glass fr who" data-blk id="about"[\s\S]*?<\/aside>/.exec(c) || [''])[0];
     if (!who || !/<div class="ct-grid">/.test(c)) { bad.push(`${f}: нет карточки #about в #contact`); continue; }
-    if ((who.match(/<li>/g) || []).length !== 3 || !/<p class="who-n" id="who-n">Даниил Давыдовский<\/p>/.test(who) || !/class="who-ph mono"[^>]*><b>Д<\/b>/.test(who) || /\[|ЗАПОЛНИТЬ|Каждый проект/.test(who)) bad.push(`${f}: карточка основателя — ${who.slice(0, 80)}`);
+    if ((who.match(/<li>/g) || []).length !== 3 || !/<p class="who-n" id="who-n">Даниил (<span class="hx" data-grad="[^"]+">)?Давыдовский(<\/span>)?<\/p>/.test(who) || !/class="who-ph mono"[^>]*><b>Д<\/b>/.test(who) || /\[|ЗАПОЛНИТЬ|Каждый проект/.test(who)) bad.push(`${f}: карточка основателя — ${who.slice(0, 80)}`);
     // TASK-founder.md: не «работаю один» — основатель студии, голос «мы»
     if (!/<p class="who-k mono">Основатель студии<\/p>/.test(who) || /веду сам|держу сам|Без(&nbsp;| )менеджеров|Мой налог|Кто делает/.test(h)) bad.push(`${f}: карточка говорит «работаю один»`);
   }
