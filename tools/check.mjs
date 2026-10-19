@@ -373,7 +373,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     await go(py + 100); const b2 = await bar();
     await go(py + 400); const b3 = await bar();
     if (b0.on || b1.on || !b2.on || b3.on) fail(`липкая шапка: в первом экране ${b0.on}, вниз ${b1.on}, вверх ${b2.on}, снова вниз ${b3.on}`);
-    else if (b2.hrefs !== 'services.html,cases.html,automations.html,process.html') fail(`липкая шапка: пункты меню ведут на ${b2.hrefs}`);
+    else if (b2.hrefs !== 'services,cases,automations,process') fail(`липкая шапка: пункты меню ведут на ${b2.hrefs}`);
     else console.log('  ✓ липкая шапка: скрыта в первом экране, вверх — видна, вниз — прячется; пункты меню — на страницы');
   }
   if (tag === 'm390') {
@@ -392,7 +392,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     const m2 = await st(), back = await page.evaluate((sel) => document.activeElement === document.querySelector(sel), opener);
     await page.click(opener); await run(400);
     await page.evaluate(() => document.addEventListener('click', (e) => { if (e.target.closest('[data-menu] .menu-nav a')) e.preventDefault(); }, { once: true }));
-    await page.click('[data-menu] .menu-nav a[href="cases.html"]'); await run(400);
+    await page.click('[data-menu] .menu-nav a[href="cases"]'); await run(400);
     const m3 = await st(), mh = await page.evaluate(() => [...document.querySelectorAll('[data-menu] .menu-nav a')].map((a) => a.getAttribute('href')).join(','));
     // страница осталась на первом экране (пункт меню ведёт на страницу, переход погашен) — липкой шапки нет, меню — из шапки
     await page.click(opener); await run(400);
@@ -405,7 +405,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     if (!m1.on || !m1.lock || !m1.inMenu || exp !== 'true') bad.push(`открытие: ${JSON.stringify(m1)}, aria-expanded ${exp}`);
     if (under !== 'hidden') bad.push('под открытым меню видна страница (светлое пятно)');
     if (m2.on || m2.lock || !back) bad.push(`Esc: меню ${m2.on ? 'открыто' : 'закрыто'}, фокус на кнопке ${back}`);
-    if (m3.on || mh !== 'services.html,cases.html,automations.html,process.html') bad.push(`пункт меню: меню ${m3.on ? 'открыто' : 'закрыто'}, пункты ведут на ${mh}`);
+    if (m3.on || mh !== 'services,cases,automations,process') bad.push(`пункт меню: меню ${m3.on ? 'открыто' : 'закрыто'}, пункты ведут на ${mh}`);
     if (m4.lang !== 'en') bad.push(`RU/EN в меню: lang=${m4.lang}`);
     if (bad.length) fail('меню на телефоне: ' + bad.join('; '));
     else console.log('  ✓ меню на телефоне: открывается, Esc закрывает и возвращает фокус, пункт ведёт к секции, RU/EN переключает язык');
@@ -523,8 +523,8 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
       procLinks: all('a').filter((a) => a.textContent.trim() === 'Как работаем').map((a) => a.getAttribute('href')), contact: document.querySelector('#contact .mono.k').textContent.trim() };
   });
   const bad = [];
-  if (r.cards.length !== 6 || r.cards.some((h) => !/^services\.html#/.test(h) || !ids.has(h.split('#')[1]))) bad.push(`карточки: ${r.cards.join(', ')}`);
-  if (r.more.join() !== 'services.html') bad.push(`«Все услуги» → ${r.more.join()}`);
+  if (r.cards.length !== 6 || r.cards.some((h) => !/^services#/.test(h) || !ids.has(h.split('#')[1]))) bad.push(`карточки: ${r.cards.join(', ')}`);
+  if (r.more.join() !== 'services') bad.push(`«Все услуги» → ${r.more.join()}`);
   if (r.h2 !== 'Делаем один раз. Держим всегда.') bad.push(`заголовок «${r.h2}»`);
   if (r.nums) bad.push(`номера 01–04 в блоке: ${r.nums}`);
   if (r.old.length) bad.push(`старые пункты: ${r.old.join(', ')}`);
@@ -532,12 +532,12 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
   if (r.dead) bad.push(`ссылок на objects.html: ${r.dead}`);
   if (r.canonical !== 'https://privatechouse.ru/') bad.push(`canonical «${r.canonical}»`);
   if (r.glyphs !== 6 || r.icons) bad.push(`рисунков в карточках ${r.glyphs}, иконок в квадратах ${r.icons}`);
-  if (r.process || r.procLinks.length !== 4 || r.procLinks.some((h) => h !== 'process.html') || r.contact !== 'Контакт') bad.push(`«Как работаем»: секция ${r.process}, ссылки ${r.procLinks.join(', ')}, контакт «${r.contact}»`);
+  if (r.process || r.procLinks.length !== 4 || r.procLinks.some((h) => h !== 'process') || r.contact !== 'Контакт') bad.push(`«Как работаем»: секция ${r.process}, ссылки ${r.procLinks.join(', ')}, контакт «${r.contact}»`);
   const sv = readFileSync(path.join(root, 'services.html'), 'utf8');
-  if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 6 || /svc-ic/.test(sv) || (sv.match(/<a href="process\.html"[^>]*>Как работаем<\/a>/g) || []).length !== 4) bad.push('страница услуг: шесть мини-рисунков, нет иконок, «Как работаем» → process.html (три меню и подвал)');
+  if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 6 || /svc-ic/.test(sv) || (sv.match(/<a href="process"[^>]*>Как работаем<\/a>/g) || []).length !== 4) bad.push('страница услуг: шесть мини-рисунков, нет иконок, «Как работаем» → process.html (три меню и подвал)');
   for (const f of readdirSync(path.join(root, 'assets')).filter((x) => x.endsWith('.js'))) if (/addEventListener\(\s*['"](before)?unload['"]/.test(readFileSync(path.join(root, 'assets', f), 'utf8'))) bad.push(`${f}: unload / beforeunload отключает кэш «Назад»`);
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8'), rb = readFileSync(path.join(root, 'robots.txt'), 'utf8');
-  if (['', 'services.html', 'cases.html', 'automations.html', 'process.html'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 5 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
+  if (['', 'services', 'cases', 'automations', 'process'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 5 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
   if (!/User-agent: \*/.test(rb) || !/Sitemap: https:\/\/privatechouse\.ru\/sitemap\.xml/.test(rb)) bad.push('robots.txt');
   await page.close();
   if (bad.length) fail('главная: ' + bad.join('; '));
@@ -732,12 +732,12 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
 {
   const bad = [];
   const MENU = {
-    'index.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
-    'services.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
-    'cases.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
-    'automations.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
-    'process.html': ['services.html', 'cases.html', 'automations.html', 'process.html'],
-    '404.html': ['/services.html', '/cases.html', '/automations.html', '/process.html'] };
+    'index.html': ['services', 'cases', 'automations', 'process'],
+    'services.html': ['services', 'cases', 'automations', 'process'],
+    'cases.html': ['services', 'cases', 'automations', 'process'],
+    'automations.html': ['services', 'cases', 'automations', 'process'],
+    'process.html': ['services', 'cases', 'automations', 'process'],
+    '404.html': ['/services', '/cases', '/automations', '/process'] };
   const CUR = { 'services.html': 0, 'cases.html': 1, 'automations.html': 2, 'process.html': 3 };
   for (const f of PAGES) {
     const navs = [...src[f].matchAll(/<nav class="(nav|menu-nav)" aria-label="Разделы">([\s\S]*?)<\/nav>/g)];
@@ -753,10 +753,10 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
   const foot = (f) => { const m = src[f].match(/<footer[\s\S]*?<\/footer>/g) || []; return m.length === 1 && /<footer[^>]*class="[^"]*\bfoot\b/.test(m[0]) ? m[0].replace(/ aria-current="page"/g, '').replace(/(<a href=")[^"]*(" hreflang=)/g, '$1$2').replace(/href="\//g, 'href="').replace(/src="\//g, 'src="') : `(подвалов ${m.length})`; };
   const f0 = foot('index.html');
   PAGES.forEach((f) => { if (foot(f) !== f0) bad.push(`${f}: подвал отличается от главной`); });
-  const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|max\.ru|wa\.me|^tel:|^#top$|^#about$|^privacy\.html$|^$/.test(h));
+  const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|max\.ru|wa\.me|^tel:|^#top$|^#about$|^privacy$|^$/.test(h));
   const sid = idsOf('services.html');
-  fl.forEach((h) => { const [pg, id] = h.split('#'); if (!PAGES.includes(pg) || (id && !(pg === 'services.html' ? sid : idsOf(pg)).has(id))) bad.push(`подвал: ссылка ${h} ведёт в никуда`); });
-  if (fl.join(',') !== 'services.html,cases.html,automations.html,process.html,services.html#faq' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
+  fl.forEach((h) => { const [p0, id] = h.split('#'), pg = p0 + '.html'; if (!PAGES.includes(pg) || (id && !(pg === 'services.html' ? sid : idsOf(pg)).has(id))) bad.push(`подвал: ссылка ${h} ведёт в никуда`); });
+  if (fl.join(',') !== 'services,cases,automations,process,services#faq' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
   // меню на 1024–1280 — одна строка и не наезжает на логотип и кнопки (RU и EN)
   for (const f of ['index.html', 'cases.html', 'process.html']) for (const lang of ['', '?lang=en']) for (const w of [1024, 1199, 1200, 1280]) {
     const page = await browser.newPage({ viewport: { width: w, height: 800 } });
@@ -787,8 +787,8 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
     await page.goto(BASE + 'services.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
     const r = await page.evaluate(() => ({ n: document.querySelectorAll('.sv-ex, .sv-cases, .sv-nda, canvas[data-flow]').length, len: document.documentElement.scrollHeight / innerHeight,
       cost: [...document.querySelectorAll('.sv-meta div')].filter((d) => /Стоимость/.test(d.textContent)).map((d) => d.closest('[id]').id + ':' + d.querySelector('dd').textContent).join(','),
-      cases: [...document.querySelectorAll('a[href^="cases.html#"]')].map((a) => a.getAttribute('href').split('#')[1]).join(','),
-      tpl: [...document.querySelectorAll('.sv-tl a')].map((a) => a.getAttribute('href')).join(','), all: document.querySelectorAll('a.sv-go[href="automations.html"]').length,
+      cases: [...document.querySelectorAll('a[href^="cases#"]')].map((a) => a.getAttribute('href').split('#')[1]).join(','),
+      tpl: [...document.querySelectorAll('.sv-tl a')].map((a) => a.getAttribute('href')).join(','), all: document.querySelectorAll('a.sv-go[href="automations"]').length,
       rows: ['projects', 'subscription'].map((i) => document.getElementById(i)).filter((e) => e && e.classList.contains('row-h') && parseFloat(getComputedStyle(e).scrollMarginTop) === 88).length }));
     if (r.n) bad.push(`услуги ${w}: кейсы и схемы на странице (${r.n})`);
     if (r.len > lim) bad.push(`услуги ${w}: ${r.len.toFixed(2)} экрана (не больше ${lim})`);
@@ -821,9 +821,9 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
     });
     lens[w] = m.len;
     if (w === 1440) {
-      if (m.h2 !== 'Наши работы' || m.cards.map((c) => c.k).join(' | ') !== 'Сайт · AI | AI · Битрикс24 | Демо · ваш проект' || !m.cards[2].mini || m.more !== 'cases.html Все работы →') bad.push(`главная «Работы»: ${m.h2}; ${m.cards.map((c) => c.k + ' ' + c.t + (c.mini ? ' (демо)' : '')).join(' | ')}; ${m.more}`);
+      if (m.h2 !== 'Наши работы' || m.cards.map((c) => c.k).join(' | ') !== 'Сайт · AI | AI · Битрикс24 | Демо · ваш проект' || !m.cards[2].mini || m.more !== 'cases Все работы →') bad.push(`главная «Работы»: ${m.h2}; ${m.cards.map((c) => c.k + ' ' + c.t + (c.mini ? ' (демо)' : '')).join(' | ')}; ${m.more}`);
       m.cards.slice(0, 2).forEach((c) => { if (!src['cases.html'].replace(/&nbsp;/g, ' ').includes('>' + c.t + '<')) bad.push(`главная: кейса «${c.t}» нет на cases.html`); });
-      if (m.ah2 !== 'Готовые решения' || m.aobj || m.titles !== 'automations.html#site-leads,automations.html#voice-task' || m.amore !== 'automations.html Все решения →' || m.dmore !== 'services.html Все направления →' || m.dk !== 'Что делаем') bad.push(`главная «Готовые решения» и «Что делаем»: ${m.dk}, ${m.dmore}, «${m.ah2}», «Объект №» ${m.aobj}, заголовки ${m.titles}, ${m.amore}`);
+      if (m.ah2 !== 'Готовые решения' || m.aobj || m.titles !== 'automations#site-leads,automations#voice-task' || m.amore !== 'automations Все решения →' || m.dmore !== 'services Все направления →' || m.dk !== 'Что делаем') bad.push(`главная «Готовые решения» и «Что делаем»: ${m.dk}, ${m.dmore}, «${m.ah2}», «Объект №» ${m.aobj}, заголовки ${m.titles}, ${m.amore}`);
       m.titles.split(',').forEach((x) => { if (!aid.has(x.split('#')[1])) bad.push(`главная: ${x} — нет такой карточки`); });
       if (m.btn !== 'Смотреть работы → #objects') bad.push(`кнопка первого экрана: ${m.btn}`);
       if (m.contact !== 'Контакт / Расскажите о задаче' || m.price !== 'Цены') bad.push(`контакт «${m.contact}», «Цены» «${m.price}»`);
@@ -837,7 +837,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
     await page.screenshot({ path: path.join(shots, `home-cases-${w}.png`), fullPage: true, clip: { x: 0, y: Math.round(b.y), width: w, height: Math.round(b.h) } });
     await ctx.close();
   }
-  [...src['index.html'].matchAll(/href="cases\.html#([^"]+)"/g)].forEach((mm) => { if (!cid.has(mm[1])) bad.push(`главная: cases.html#${mm[1]} — нет такого кейса`); });
+  [...src['index.html'].matchAll(/href="cases#([^"]+)"/g)].forEach((mm) => { if (!cid.has(mm[1])) bad.push(`главная: cases.html#${mm[1]} — нет такого кейса`); });
   console.log(`  · главная: ${lens[1440].toFixed(2)} экрана на 1440, ${lens[390].toFixed(2)} на 390`);
   if (bad.length) fail(bad.join('; '));
   else console.log('  ✓ услуги: без кейсов, снимков, NDA и схем, «Стоимости» нет, «Кейсы: …» и «Готовые шаблоны» — на существующие якоря; главная: «Кейсы» — Resonara, ИИ-аудитор (как на cases.html) и демо-сайты, «Все кейсы →»; «Готовые автоматизации» — две карточки, «Все шаблоны →»; ≤ 5,2 / 8,5 экрана');
@@ -948,7 +948,7 @@ console.log('\nкейсы и готовые автоматизации');
   await page.close();
   // якоря с главной и услуг: карточка существует; переход — карточка собрана и не под липкой шапкой
   const aid = idsOf('automations.html');
-  const refs = [...new Set(['index.html', 'services.html', 'cases.html'].flatMap((f) => [...src[f].matchAll(/href="automations\.html#([^"]+)"/g)].map((m) => m[1])))];
+  const refs = [...new Set(['index.html', 'services.html', 'cases.html'].flatMap((f) => [...src[f].matchAll(/href="automations#([^"]+)"/g)].map((m) => m[1])))];
   refs.forEach((r) => { if (!aid.has(r)) bad.push(`automations.html#${r} — нет такой карточки`); });
   for (const id of ['reviews', 'price-monitor']) {
     page = await open('automations.html#' + id);
@@ -1029,7 +1029,7 @@ console.log('\n404');
     const tag = `${w} ${q || 'ru'}`;
     if (resp.status() !== 404) bad.push(`${tag}: статус ${resp.status()}`);
     if (miss.length) bad.push(`${tag}: не загрузились ${miss.slice(0, 4).join(', ')}`);
-    if (r.nd.length || r.robots !== 'noindex' || r.css !== 'rgb(10, 18, 26)' || r.btns !== '/,/services.html,/cases.html,/automations.html' || r.sw > 1) bad.push(`${tag}: ${JSON.stringify(r)}`);
+    if (r.nd.length || r.robots !== 'noindex' || r.css !== 'rgb(10, 18, 26)' || r.btns !== '/,/services,/cases,/automations' || r.sw > 1) bad.push(`${tag}: ${JSON.stringify(r)}`);
     if (q) { const left = await page.evaluate(cyrillic); if (left.length || r.h1 !== 'page.') bad.push(`${tag}: кириллица ${left.slice(0, 4).join(' | ')}, H1 «${r.h1}»`); }
     errs.forEach((e) => bad.push(`${tag}: ${e}`));
     if (w === 1440 && !q) { await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(200); await page.clock.runFor(300); await page.screenshot({ path: path.join(shots, '404-1440.png') }); }
@@ -1152,7 +1152,7 @@ console.log('\nструктура: услуги, «Как работаем», с
       after: document.querySelectorAll('#after .sv-path').length, subs: document.querySelectorAll('#sub-how .sv-path').length,
       h2: [...document.querySelectorAll('h2')].map((h) => h.textContent.trim()), q: document.querySelectorAll('.sv-q').length,
       quit: /отказаться от\s+подписки/.test([...document.querySelectorAll('.sv-q summary')].map((x) => x.textContent).join(' ')),
-      proc: [...document.querySelectorAll('[data-sec="process"] a')].filter((a) => a.getAttribute('href') === 'process.html').length,
+      proc: [...document.querySelectorAll('[data-sec="process"] a')].filter((a) => a.getAttribute('href') === 'process').length,
       steps: document.querySelectorAll('[data-sec="process"] .sv-step').length, care: !!document.querySelector('#after a[href="#care"]'),
       sm: ['after', 'sub-how', 'process'].map((i) => getComputedStyle(document.getElementById(i).querySelector('[style*="scroll-margin-top"]') || document.getElementById(i)).scrollMarginTop).join(',') }));
     if (r.order !== 'hero,process,sites,apps,servers,after,care,automation,ai,subs,faq,contact,foot') bad.push(`услуги: порядок ${r.order}`);
@@ -1177,7 +1177,7 @@ console.log('\nструктура: услуги, «Как работаем», с
       if (r.dirs !== 'sites:5:1:1 servers:5:1:1 care:5:1:1 automation:5:1:1' || r.secs !== 4 || r.alias !== 'apps>sites ai>automation') bad.push(`process.html: направления ${r.dirs}, секций ${r.secs}, якоря ${r.alias}`);
       if (r.h1 !== 'Как мы работаем.' || !/Как работаем/.test(r.cur)) bad.push(`process.html: H1 «${r.h1}», текущий пункт ${r.cur}`);
       r.links.forEach((x) => {
-        const [pg, id] = x.split('#');
+        const [p0, id] = x.split('#'), pg = p0 && !/\.html$/.test(p0) ? p0 + '.html' : p0;
         const ok = !pg ? pid.has(id) : pg === 'automations.html' && /^f-/.test(id || '') ? true : pg === 'privacy.html' ? !id : PAGES.includes(pg) && (!id || idsOf(pg).has(id));
         if (!ok) bad.push(`process.html: ссылка ${x} — нет цели`);
       });
@@ -1218,7 +1218,7 @@ console.log('\nструктура: услуги, «Как работаем», с
     await page.close();
   }
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
-  if (['', 'services.html', 'cases.html', 'automations.html', 'process.html'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 6 || (sm.match(/hreflang="en"/g) || []).length !== 5 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy\.html<\/loc>\s*<\/url>/.test(sm)) bad.push('sitemap.xml: не пять адресов с EN');
+  if (['', 'services', 'cases', 'automations', 'process'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 6 || (sm.match(/hreflang="en"/g) || []).length !== 5 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy\.html<\/loc>\s*<\/url>/.test(sm)) bad.push('sitemap.xml: не пять адресов с EN');
   if (bad.length) fail('структура: ' + bad.join('; '));
   else console.log(`  ✓ разлёта (data-pt-burst) нет нигде, у подвала — мягкий выдох; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — четыре секции по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — шесть адресов (политика — без EN)`);
 }
@@ -1360,7 +1360,7 @@ console.log('\nясность, B1–B3: фильтры и якоря с аним
       const win = (c) => c.querySelector('.flow-win, .site, canvas[data-mini]');
       return { no: objs.filter((c) => win(c) && c.id !== 'your-process' && c.id !== 'case-nda' && !c.querySelector('.win-tag')).map((c) => c.id || (c.querySelector('.obj-h, .card-link') || {}).textContent),
         mono: objs.filter((c) => c.querySelector('.obj-tx .mono')).length, outside: [...document.querySelectorAll('.win-tag')].filter((t) => !t.parentElement.matches('.flow-win, .site, .fr')).length,
-        tpl: [...document.querySelectorAll(location.pathname.endsWith('automations.html') ? '.win-tag' : '#automation .win-tag')].map((t) => t.textContent).filter((x) => /Шаблон/.test(x)) };
+        tpl: [...document.querySelectorAll(/\/automations(\.html)?$/.test(location.pathname) ? '.win-tag' : '#automation .win-tag')].map((t) => t.textContent).filter((x) => /Шаблон/.test(x)) };
     });
     if (r.no.length || r.mono || r.outside || r.tpl.length) bad.push(`${f}: без плашки ${r.no.join(', ') || 0}, подписей в .obj-tx ${r.mono}, плашек вне окна ${r.outside}, «Шаблон» ${r.tpl.join(', ') || 0}`);
     await page.close();
@@ -1617,7 +1617,7 @@ console.log('\nревью, 5–9: группы на главной, NDA, сле�
   if (gw.join(' | ') !== 'Разово/проекты/Смета и сроки до старта. Код ваш. | Ежемесячно/подписка/Работает на наших серверах, мы за это отвечаем.') bad.push(`группы на главной: ${gw.join(' | ') || 'нет'}`);
   const nda = (/<article class="glass fr obj" id="case-nda">[\s\S]*?<\/article>/.exec(src['cases.html']) || [''])[0];
   if (/win-tag/.test(nda) || (nda.match(/<i>/g) || []).length !== 3 || !/class="nda-ph" aria-hidden="true"/.test(nda) || !/\[ под NDA \]/.test(nda)) bad.push('карточка «Под NDA»');
-  for (const [f, href, t] of [['services.html', 'automations.html', 'Готовые решения →'], ['process.html', 'services.html', 'Что делаем →'], ['cases.html', 'services.html', 'Что делаем →'], ['automations.html', 'cases.html', 'Работы →']]) {
+  for (const [f, href, t] of [['services.html', 'automations', 'Готовые решения →'], ['process.html', 'services', 'Что делаем →'], ['cases.html', 'services', 'Что делаем →'], ['automations.html', 'cases', 'Работы →']]) {
     // стрелка — через &nbsp; (TASK-qa.md: «→» не уходит на строку одна)
     const c = ((/data-sec="contact"[\s\S]*?<\/section>/.exec(src[f]) || [''])[0]).replace(/&nbsp;/g, ' ');
     if (!c.includes(`<a href="${href}" class="btn btn-g fr"><span>${t}</span></a>`) || /На главную/.test(c)) bad.push(`${f}: вторая кнопка контакта`);
@@ -1699,7 +1699,7 @@ console.log('\nреквизиты и политика конфиденциаль
   for (const [f, h] of Object.entries(all)) {
     if (/\[(ЗАПОЛНИТЬ|ФИО|ИНН|Имя)/.test(h)) bad.push(`${f}: заглушка данных владельца`);
     const pre = f === '404.html' ? '/' : '';
-    if (!h.includes(`<p class="foot-req"><a href="${pre}privacy.html">Политика конфиденциальности</a></p>`)) bad.push(`${f}: ссылка на политику в подвале`);
+    if (!h.includes(`<p class="foot-req"><a href="${pre}privacy">Политика конфиденциальности</a></p>`)) bad.push(`${f}: ссылка на политику в подвале`);
     const ft = (/<footer[\s\S]*?<\/footer>/.exec(h) || [''])[0];
     if (/data-ck-open/.test(ft)) bad.push(`${f}: «Настройки cookie» в подвале`);
     if (f !== 'privacy.html' && /ИНН|[Сс]амозанят|Давыдовский Даниил Дмитриевич/.test(h)) bad.push(`${f}: ФИО / ИНН / «самозанятый» вне политики`);
@@ -2174,8 +2174,8 @@ console.log(`\nрежимы сборки: полная / быстрая / сра
   });
   if (AUTO) await scene('главная → «Все услуги» → назад → снова услуги', 'index.html', '', async (page, mode) => {
     await page.clock.runFor(6500);
-    await page.evaluate(() => document.querySelector('#directions .more a[href="services.html"]').click());
-    await page.waitForURL(/services\.html/);
+    await page.evaluate(() => document.querySelector('#directions .more a[href="services"]').click());
+    await page.waitForURL(/\/services/);
     const f = { m: await mode() };
     await page.clock.runFor(100); await page.waitForTimeout(700); f.h1 = await h1on(page);
     await page.goBack(); await page.clock.runFor(100); await page.waitForTimeout(100);
@@ -2187,7 +2187,7 @@ console.log(`\nрежимы сборки: полная / быстрая / сра
   // повторный заход в вкладке — быстрая сборка (просьба владельца): без вспышки и двух линий, H1 виден к ~0.7 с
   await scene('повторный заход: «Как работаем» с главной → process.html — быстрая', 'index.html', '', async (page, mode) => {
     await page.clock.runFor(6500);
-    await page.click('.hero-hdr .nav a[href="process.html"]'); await page.waitForURL(/process\.html/);
+    await page.click('.hero-hdr .nav a[href="process"]'); await page.waitForURL(/\/process/);
     await page.clock.runFor(100); await page.waitForTimeout(700);
     const r = await page.evaluate(() => ({ rep: document.getElementById('pt-site').hasAttribute('data-repeat'), h1: document.querySelector('h1').textContent.replace(/\s+/g, ' ').trim() }));
     r.m = await mode(); r.on = await h1on(page);

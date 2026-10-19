@@ -730,7 +730,7 @@
   function carry(e) {
     if (I.lang !== 'en') return;
     var a = e.target.closest && e.target.closest('a[href]');
-    if (!a || a.hasAttribute('data-lang') || a.origin !== location.origin || /(^|&)lang=/.test(a.search.slice(1)) || !/(\/|\.html)$/.test(a.pathname)) return;
+    if (!a || a.hasAttribute('data-lang') || a.origin !== location.origin || /(^|&)lang=/.test(a.search.slice(1)) || !/(\/|\.html|\/[\w-]+)$/.test(a.pathname)) return;
     var h = a.getAttribute('href');
     a.search = (a.search ? a.search + '&' : '?') + 'lang=en';
     setTimeout(function () { a.setAttribute('href', h); }, 0);

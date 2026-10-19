@@ -87,7 +87,8 @@ async function links() {
         const st = await get(file);
         if (st !== 200) bad.push(`${where}: ${it.k} ${it.raw} → ${st}`);
         if (u.hash.length > 1 && st === 200) {
-          const id = decodeURIComponent(u.hash.slice(1)), name = u.pathname.split('/').pop() || 'index.html';
+          // адреса страниц — без .html (/cases — это cases.html, как на GitHub Pages)
+          const id = decodeURIComponent(u.hash.slice(1)), name = (u.pathname.split('/').pop() || 'index').replace(/\.html$/, '') + '.html';
           if (!ids(html[file]).has(id) && !(FILTER[name] && FILTER[name].test(id))) bad.push(`${where}: якорь ${it.raw} — нет id «${id}» на ${name}`);
         }
       } else if (/^(https?|tel|mailto):/.test(u.protocol)) {
@@ -535,11 +536,11 @@ const SCEN = {
     if (r.ck) bad.push('плашка cookie по-русски');
     // переход по пункту меню сохраняет язык
     const w = page.viewportSize().width;
-    if (w >= 1200) { await Promise.all([page.waitForNavigation(), page.click('[data-sec="hero"] .nav a[href="cases.html"]')]); }
-    else { await page.click('[data-sec="hero"] [data-menu-open]'); await page.waitForTimeout(400); await Promise.all([page.waitForNavigation(), page.click('[data-menu] .menu-nav a[href="cases.html"]')]); }
+    if (w >= 1200) { await Promise.all([page.waitForNavigation(), page.click('[data-sec="hero"] .nav a[href="cases"]')]); }
+    else { await page.click('[data-sec="hero"] [data-menu-open]'); await page.waitForTimeout(400); await Promise.all([page.waitForNavigation(), page.click('[data-menu] .menu-nav a[href="cases"]')]); }
     await page.waitForTimeout(600);
     const u = page.url(), hl = await page.evaluate(() => document.documentElement.lang);
-    if (!/cases\.html\?lang=en/.test(u) || hl !== 'en') bad.push(`переход из EN: ${u.replace(BASE, '/')}, lang=${hl}`);
+    if (!/\/cases\?lang=en/.test(u) || hl !== 'en') bad.push(`переход из EN: ${u.replace(BASE, '/')}, lang=${hl}`);
     bad.push(...errs); await ctx.close(); return bad;
   },
   // «Обсудить проект»: клавиатура, Esc и фокус, клик мимо, второй клик, aria-expanded; в липкой шапке — так же

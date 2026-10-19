@@ -95,9 +95,11 @@
     }, { passive: false });
     document.addEventListener('click', function (e) {
       if (e.defaultPrevented || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      // путь страницы без .html и index: /services и /services.html, / и /index.html — одна страница
+      var pn = function (p) { return p.replace(/[.]html$/, '').replace(/[/]index$/, '/'); };
       // якорь на этой же странице: «#process» или с именем файла — «services.html#process» в подвале страницы услуг
       var a = e.target.closest && e.target.closest('a[href*="#"]'), id = '';
-      if (a && a.hash.length > 1 && !a.target && a.pathname === location.pathname && a.search === location.search) {
+      if (a && a.hash.length > 1 && !a.target && pn(a.pathname) === pn(location.pathname) && a.search === location.search) {
         try { id = decodeURIComponent(a.hash.slice(1)); } catch (er) { id = ''; }
       }
       var el = id && document.getElementById(id);

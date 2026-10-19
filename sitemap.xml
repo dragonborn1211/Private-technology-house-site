@@ -7,30 +7,30 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/"/>
   </url>
   <url>
-    <loc>https://privatechouse.ru/services.html</loc>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/services.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/services.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/services.html"/>
+    <loc>https://privatechouse.ru/services</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/services"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/services?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/services"/>
   </url>
   <url>
-    <loc>https://privatechouse.ru/cases.html</loc>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/cases.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/cases.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/cases.html"/>
+    <loc>https://privatechouse.ru/cases</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/cases"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/cases?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/cases"/>
   </url>
   <url>
-    <loc>https://privatechouse.ru/automations.html</loc>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/automations.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/automations.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/automations.html"/>
+    <loc>https://privatechouse.ru/automations</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/automations"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/automations?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/automations"/>
   </url>
   <url>
-    <loc>https://privatechouse.ru/process.html</loc>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/process.html"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/process.html?lang=en"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/process.html"/>
+    <loc>https://privatechouse.ru/process</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/process"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/process?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/process"/>
   </url>
   <url>
-    <loc>https://privatechouse.ru/privacy.html</loc>
+    <loc>https://privatechouse.ru/privacy</loc>
   </url>
 </urlset>

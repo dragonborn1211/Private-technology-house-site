@@ -44,7 +44,7 @@
   }
   function open() {
     if (box) return;
-    var pl = document.querySelector('.foot-req a'), href = pl ? pl.getAttribute('href') : '/privacy.html';
+    var pl = document.querySelector('.foot-req a'), href = pl ? pl.getAttribute('href') : '/privacy';
     box = document.createElement('div');
     box.className = 'ck'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Cookie');
     box.innerHTML = '<p>Сайт использует cookie и Яндекс Метрику, чтобы понимать, какие страницы полезны. Подробнее — в <a href="' + href + '">политике конфиденциальности</a>.</p>' +
@@ -99,11 +99,11 @@
       var k = n.id && FMT[n.id] ? n.id : n.getAttribute && n.getAttribute('data-sec');
       if (k && FMT[k]) return FMT[k];
     }
-    var m = /(?:^|\/)(services|process)\.html#([\w-]+)/.exec(href || '') || /^#([\w-]+)/.exec(href || '');
+    var m = /(?:^|\/)(services|process)(?:\.html)?#([\w-]+)/.exec(href || '') || /^#([\w-]+)/.exec(href || '');
     var id = m ? m[m.length - 1] : '';
     if (FMT[id]) return FMT[id];
-    if (/automations\.html/.test(href || '')) return 'подписка';
-    if (/cases\.html/.test(href || '')) return 'кейс';
+    if (/automations(\.html)?([#?]|$)/.test(href || '')) return 'подписка';
+    if (/cases(\.html)?([#?]|$)/.test(href || '')) return 'кейс';
     return 'общий';
   }
   function nameOf(el) {
