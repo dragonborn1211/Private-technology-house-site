@@ -819,7 +819,8 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .who-ph.mono::before{content:"";position:absolute;inset:14px;border:1px solid;border-image:linear-gradient(135deg,rgba(142,216,248,.75),rgba(183,166,242,.55)) 1;transform:rotate(45deg) scale(.72)}
 .pt-on .sec .who-ph{transition:opacity .9s ease}
 .pt-on .sec:not(.s-done) .who-ph{opacity:0}
-.who-k{margin:0;color:#8ED8F8}
+/* «Основатель студии» — крупнее остальных моноширинных подписей (владелец: «чуть покрупнее»; было 11 px) */
+.who-k{margin:0;color:#8ED8F8;font-size:13px;letter-spacing:.16em}
 .who-n{margin:4px 0 0;font-size:24px;font-weight:500;letter-spacing:-.015em;color:#EEF3F6}
 .who-r{margin:4px 0 0;font-size:14.5px;line-height:1.5;color:#9DB0BC}
 .who-l{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;border-top:1px solid rgba(188,211,222,.1)}
