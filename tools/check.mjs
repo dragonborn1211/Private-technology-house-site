@@ -2308,14 +2308,19 @@ console.log('\nпервый экран: шапка, заголовок, пане
       }
       if (lang === 'ru' && w === 1920) await page.screenshot({ path: path.join(shots, 'd1920-first-screen.png') });
       // объект крупнее, но не задевает вкладки и подпись: границы по пикселям за весь цикл объекта, без первой секунды —
-      // там частицы перелетают из прошлого объекта по всей панели (текст и пыль на время замера скрыты)
+      // там частицы перелетают из прошлого объекта по всей панели (текст и пыль на время замера скрыты). В каждой точке цикла
+      // — медиана трёх кадров через 300 мс (TASK-qa-decisions.md, 5): искра хода ферзя живёт долю секунды и в одном кадре
+      // заходила в полосу подписи — замер падал в зависимости от фазы хода (1 из ~10 прогонов). Точки — до смены принципа
+      // (ферзь 8.5 с, «Дизайн» 10 с от клика)
       if (lang === 'ru' && w === 1280) for (const k of [0, 4]) {
         await page.mouse.move(2, 2);
         await page.evaluate((n) => document.querySelector(`[data-usp="${n}"]`).click(), k);
-        let top = 1e9, bot = 0, lim = null;
-        for (const ms of k === 4 ? [1200, 1500, 1500, 1500, 1500, 1500] : [1200, 1400, 1400, 1400, 1400, 1300]) {
-          await run(ms); await page.waitForTimeout(60);
-          const ob = await objBox(page); top = Math.min(top, ob.box[1]); bot = Math.max(bot, ob.box[3]); lim = ob;
+        let top = 1e9, bot = 0, lim = null, el = 0;
+        const med = (a) => a.slice().sort((x, y) => x - y)[1];
+        for (const t0 of k === 4 ? [1200, 2700, 4200, 5700, 7200, 8700] : [1200, 2600, 4000, 5400, 6800, 7800]) {
+          const bs = [];
+          for (const t of [t0, t0 + 300, t0 + 600]) { await run(t - el); el = t; await page.waitForTimeout(60); bs.push(await objBox(page)); }
+          top = Math.min(top, med(bs.map((x) => x.box[1]))); bot = Math.max(bot, med(bs.map((x) => x.box[3]))); lim = bs[2];
         }
         if (top < lim.top || bot > lim.cap) bad.push(`${tag}: объект 0${k + 1} по вертикали ${top}..${bot}, подписи вкладок до ${lim.top}, подпись со стрелками с ${lim.cap}`);
       }
