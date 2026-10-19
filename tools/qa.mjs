@@ -244,7 +244,8 @@ async function matrix() {
 }
 
 // ---------------------------------------------------------------- производительность
-async function perfRun(rate) {
+async function perfRun(rate, pg = '') {
+  const home = !pg;
   const b = await chromium.launch({ args: GPU });
   const ctx = await b.newContext({ viewport: { width: 1440, height: 900 } });
   await ctx.addInitScript(() => {
@@ -257,16 +258,22 @@ async function perfRun(rate) {
     const f = (t) => {
       const q = window.__qa;
       if (!q.h1) { const h = document.querySelector('h1 .ptx, h1.ptx'); if (h && parseFloat(getComputedStyle(h).opacity) > 0.9) q.h1 = Math.round(t); }
-      if (q.rec && prev) q.fr.push(t - prev);
+      if (q.rec && prev) q.fr.push([Math.round(t), t - prev]);
       prev = t; requestAnimationFrame(f);
     };
     requestAnimationFrame(f);
+    // когда включился облегчённый режим: бюджет p95 при CPU ×4 — по кадрам после него (TASK-qa.md, 4.1)
+    document.addEventListener('DOMContentLoaded', () => {
+      const r = document.getElementById('pt-site'); if (!r) return;
+      const chk = () => { if (!window.__qa.liteAt && r.classList.contains('pt-lite')) window.__qa.liteAt = Math.round(performance.now()); };
+      chk(); new MutationObserver(chk).observe(r, { attributes: true, attributeFilter: ['class'] });
+    });
   });
   const page = await ctx.newPage();
   const cdp = await ctx.newCDPSession(page);
   await cdp.send('Emulation.setCPUThrottlingRate', { rate });
   await cdp.send('Performance.enable');
-  await page.goto(BASE);
+  await page.goto(BASE + pg);
   await page.waitForTimeout(rate > 1 ? 6000 : 4000);
   const intro = await page.evaluate(() => ({ lt: window.__qa.lt.filter((x) => x[0] < 4000 * (window.__rate || 1)), h1: window.__qa.h1, lite: document.getElementById('pt-site').classList.contains('pt-lite') }));
   // прокрутка колесом до конца
@@ -275,12 +282,13 @@ async function perfRun(rate) {
   const H = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
   for (let y = 0; y < H + 200; y += 100) { await page.mouse.wheel(0, 100); await page.waitForTimeout(60); }
   await page.waitForTimeout(2500);
-  const fr = await page.evaluate(() => { window.__qa.rec = false; return window.__qa.fr; });
+  const { fr, liteAt } = await page.evaluate(() => { window.__qa.rec = false; return { fr: window.__qa.fr, liteAt: window.__qa.liteAt || 0 }; });
   // покой: 10 с без действий, потом 3 с трассы — время главного потока на кадр. Курсор — у левого края, ни над чем
   // (над карточкой схемы чаще идут импульсы — это уже не покой). Два места: первый экран (посетитель открыл сайт и читает)
   // и середина страницы
   await page.mouse.move(5, 450);
   const idleAt = async (frac) => {
+    if (!home) return { med: 0, p90: 0, n: 0 };
     await page.evaluate((f) => window.scrollTo({ top: (document.documentElement.scrollHeight - innerHeight) * f, behavior: 'instant' }), frac);
     await page.waitForTimeout(10000);
     const chunks = [], onData = (e) => chunks.push(...e.value); cdp.on('Tracing.dataCollected', onData);
@@ -306,23 +314,27 @@ async function perfRun(rate) {
   const idleMed = Math.max(idleTop.med, idleMid.med), idleP90 = Math.max(idleTop.p90, idleMid.p90);
   const q = await page.evaluate(() => ({ cls: window.__qa.cls, lcp: window.__qa.lcp, lite: document.getElementById('pt-site').classList.contains('pt-lite') }));
   await b.close();
-  const so = [...fr].sort((a, b) => a - b), pc = (p) => so.length ? so[Math.min(so.length - 1, Math.floor(so.length * p))] : 0;
-  return { rate, introLongTasks: intro.lt.filter((x) => x[1] > 50).length, h1: intro.h1, cls: +q.cls.toFixed(4), lcp: q.lcp, frames: so.length, p50: +pc(0.5).toFixed(1), p95: +pc(0.95).toFixed(1), over50: so.filter((x) => x > 50).length, idleRaw: +idleMed.toFixed(2), idleP90: +idleP90.toFixed(2), idleTop: +idleTop.med.toFixed(2), idleMid: +idleMid.med.toFixed(2), idleFrames: idleTop.n + idleMid.n, lite: q.lite, liteIntro: intro.lite };
+  const pcOf = (arr, p) => { const a = [...arr].sort((x, y) => x - y); return a.length ? a[Math.min(a.length - 1, Math.floor(a.length * p))] : 0; };
+  const so = fr.map((x) => x[1]), pc = (p) => pcOf(so, p);
+  const aft = liteAt ? fr.filter((x) => x[0] >= liteAt).map((x) => x[1]) : [];
+  return { rate, introLongTasks: intro.lt.filter((x) => x[1] > 50).length, h1: intro.h1, cls: +q.cls.toFixed(4), lcp: q.lcp, page: pg || 'index', frames: so.length, p50: +pc(0.5).toFixed(1), p95: +pc(0.95).toFixed(1), p95lite: aft.length >= 30 ? +pcOf(aft, 0.95).toFixed(1) : null, liteAt, over50: so.filter((x) => x > 50).length, idleRaw: +idleMed.toFixed(2), idleP90: +idleP90.toFixed(2), idleTop: +idleTop.med.toFixed(2), idleMid: +idleMid.med.toFixed(2), idleFrames: idleTop.n + idleMid.n, lite: q.lite, liteIntro: intro.lite };
 }
 async function perf() {
-  console.log('\nпроизводительность главной (Chromium, первый заход)');
-  for (const rate of [1, 4]) {
-    const r = await perfRun(rate), x4 = rate > 1;
+  console.log('\nпроизводительность (Chromium, первый заход): главная — вступление, прокрутка, покой; услуги и каталог — прокрутка');
+  for (const pg of ['', 'services.html', 'automations.html']) for (const rate of [1, 4]) {
+    const r = await perfRun(rate, pg), x4 = rate > 1, home = !pg;
     summary.perf.push(r);
     const lim = { lt: x4 ? BUDGET.introLongTasksX4 : BUDGET.introLongTasksDesktop, h1: x4 ? BUDGET.h1X4 : BUDGET.h1Desktop, p95: x4 ? BUDGET.scrollP95X4 : BUDGET.scrollP95Desktop, idle: x4 ? BUDGET.idleX4 : BUDGET.idleDesktop };
-    const tag = `главная · CPU ×${rate}`, bad = [];
-    if (r.introLongTasks > lim.lt) bad.push(`долгих задач за вступление ${r.introLongTasks} > ${lim.lt}`);
+    // при CPU ×4 бюджет прокрутки — после включения облегчённого режима (если он включился)
+    const p95 = x4 && r.p95lite != null ? r.p95lite : r.p95;
+    const tag = `${home ? 'главная' : pg} · CPU ×${rate}`, bad = [];
+    if (home && r.introLongTasks > lim.lt) bad.push(`долгих задач за вступление ${r.introLongTasks} > ${lim.lt}`);
     if (!r.h1 || r.h1 > lim.h1) bad.push(`H1 читается на ${r.h1} мс > ${lim.h1}`);
     if (r.cls > BUDGET.cls) bad.push(`CLS ${r.cls} > ${BUDGET.cls}`);
-    if (r.p95 > lim.p95) bad.push(`p95 кадра при прокрутке ${r.p95} мс > ${lim.p95}`);
-    if (r.idleRaw > lim.idle) bad.push(`покой: медиана работы главного потока ${r.idleRaw} мс на кадр > ${lim.idle}`);
+    if (p95 > lim.p95) bad.push(`p95 кадра при прокрутке ${p95} мс > ${lim.p95}`);
+    if (home && r.idleRaw > lim.idle) bad.push(`покой: медиана работы главного потока ${r.idleRaw} мс на кадр > ${lim.idle}`);
     bad.forEach((x) => fail(tag, x));
-    console.log(`  ${bad.length ? '✗' : '✓'} ${tag}: H1 ${r.h1} мс, долгих задач ${r.introLongTasks}, CLS ${r.cls}, LCP ${r.lcp} мс, кадры p50 ${r.p50} / p95 ${r.p95} мс, > 50 мс: ${r.over50} из ${r.frames}, покой: медиана ${r.idleRaw} (первый экран ${r.idleTop}, середина ${r.idleMid}) / p90 ${r.idleP90} мс на кадр${r.lite ? ', облегчённый режим' : ''}${bad.length ? '\n      ' + bad.join('\n      ') : ''}`);
+    console.log(`  ${bad.length ? '✗' : '✓'} ${tag}: H1 ${r.h1} мс, ${home ? `долгих задач ${r.introLongTasks}, ` : ''}CLS ${r.cls}, LCP ${r.lcp} мс, кадры p50 ${r.p50} / p95 ${r.p95}${r.p95lite != null ? ` (после облегчённого режима ${r.p95lite})` : ''} мс, > 50 мс: ${r.over50} из ${r.frames}${home ? `, покой: медиана ${r.idleRaw} (первый экран ${r.idleTop}, середина ${r.idleMid}) / p90 ${r.idleP90} мс на кадр` : ''}${r.lite ? ', облегчённый режим' : ''}${bad.length ? '\n      ' + bad.join('\n      ') : ''}`);
   }
 }
 

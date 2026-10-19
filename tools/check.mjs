@@ -1618,12 +1618,13 @@ console.log('\nревью, 5–9: группы на главной, NDA, сле�
   const nda = (/<article class="glass fr obj" id="case-nda">[\s\S]*?<\/article>/.exec(src['cases.html']) || [''])[0];
   if (/win-tag/.test(nda) || (nda.match(/<i>/g) || []).length !== 3 || !/class="nda-ph" aria-hidden="true"/.test(nda) || !/\[ под NDA \]/.test(nda)) bad.push('карточка «Под NDA»');
   for (const [f, href, t] of [['services.html', 'automations.html', 'Готовые решения →'], ['process.html', 'services.html', 'Что делаем →'], ['cases.html', 'services.html', 'Что делаем →'], ['automations.html', 'cases.html', 'Работы →']]) {
-    const c = (/data-sec="contact"[\s\S]*?<\/section>/.exec(src[f]) || [''])[0];
+    // стрелка — через &nbsp; (TASK-qa.md: «→» не уходит на строку одна)
+    const c = ((/data-sec="contact"[\s\S]*?<\/section>/.exec(src[f]) || [''])[0]).replace(/&nbsp;/g, ' ');
     if (!c.includes(`<a href="${href}" class="btn btn-g fr"><span>${t}</span></a>`) || /На главную/.test(c)) bad.push(`${f}: вторая кнопка контакта`);
   }
   // на главной второй кнопки нет («Почта» закомментирована до почты владельца)
   if (/class="btn btn-g/.test(((/data-sec="contact"[\s\S]*?<\/section>/.exec(src['index.html']) || [''])[0]).replace(/<!--[\s\S]*?-->/g, ''))) bad.push('index.html: у контакта появилась вторая кнопка');
-  for (const f of PAGES) if (!/<body>\n<a class="skip" href="#main">Перейти к содержанию<\/a>\n/.test(src[f]) || (src[f].match(/ id="main" tabindex="-1"/g) || []).length !== 1) bad.push(`${f}: «Перейти к содержанию» / #main`);
+  for (const f of PAGES) if (!/<body>\n<a class="skip" href="#main">Перейти к(?: |&nbsp;)содержанию<\/a>\n/.test(src[f]) || (src[f].match(/ id="main" tabindex="-1"/g) || []).length !== 1) bad.push(`${f}: «Перейти к содержанию» / #main`);
   // с «Кто делает» (TASK-about-analytics.md): на десктопе заголовок контакта — две строки (+0.18), на телефоне карточка (+0.6)
   const LEN = { 'index.html': [5.1, 8.5], 'services.html': [7.3, 11.4], 'process.html': [3.2, 7.0], 'cases.html': [3.9, 6.5], 'automations.html': [4.8, 8.5] };
   const quick = await chromium.launch();
@@ -1660,7 +1661,7 @@ console.log('\nкто делает: карточка в контакте, «О �
   for (const f of PAGES) {
     const h = src[f], c = (/<section data-sec="contact"[\s\S]*?<\/section>/.exec(h) || [''])[0];
     const nav = (/<nav class="foot-col foot-nav"[\s\S]*?<\/nav>/.exec(h) || [''])[0], last = [...nav.matchAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g)].pop();
-    if (!last || last[2] !== 'О студии' || last[1] !== (f === '404.html' ? '/#about' : '#about')) bad.push(`${f}: последний пункт подвала — ${last ? last[2] + ' → ' + last[1] : 'нет'}`);
+    if (!last || last[2].replace(/&nbsp;/g, ' ') !== 'О студии' || last[1] !== (f === '404.html' ? '/#about' : '#about')) bad.push(`${f}: последний пункт подвала — ${last ? last[2] + ' → ' + last[1] : 'нет'}`);
     if (f === '404.html') { if (/id="about"/.test(h)) bad.push('404.html: карточка «Кто делает»'); continue; }
     const who = (/<aside class="blk glass fr who" data-blk id="about"[\s\S]*?<\/aside>/.exec(c) || [''])[0];
     if (!who || !/<div class="ct-grid">/.test(c)) { bad.push(`${f}: нет карточки #about в #contact`); continue; }
@@ -1729,7 +1730,7 @@ console.log('\nреквизиты и политика конфиденциаль
 console.log('\ncookie и Метрика');
 {
   const bad = [];
-  for (const f of PAGES) { const sc = [...src[f].matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]); if (!/assets\/consent\.js$/.test(sc[sc.length - 1] || '')) bad.push(`${f}: consent.js не последним`); }
+  for (const f of PAGES) { const sc = [...src[f].matchAll(/<script src="([^"]+)"/g)].map((m) => m[1]); if (!/assets\/consent\.js(\?v=[0-9a-f]+)?$/.test(sc[sc.length - 1] || '')) bad.push(`${f}: consent.js не последним`); }
   if (!/<meta name="viewport"[^>]*>\n<meta name="yandex-verification" content="e874bedbdb6c48e1">/.test(src['index.html'])) bad.push('index.html: нет yandex-verification');
   const cjs = readFileSync(path.join(root, 'assets', 'consent.js'), 'utf8');
   if (!/var YM_ID = [1-9]\d+;/.test(cjs) || /['"]<noscript/.test(cjs)) bad.push('consent.js: номер счётчика или noscript-пиксель');
@@ -2090,8 +2091,9 @@ console.log('\nрисунки направлений');
   await page.screenshot({ path: path.join(shots, 'd1440-glyphs.png') });
   // вне экрана — на паузе
   await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' })); await page.waitForTimeout(250);
-  // петли и импульсы — CSS (SMIL больше нет): вне экрана ни одна анимация рисунка не идёт
-  const off = await page.evaluate(() => [...document.querySelectorAll('#directions .glyph')].filter((el) => el.classList.contains('is-vis') || el.getAnimations({ subtree: true }).some((a) => a.playState === 'running')).length);
+  // петли и импульсы — CSS (SMIL больше нет): вне экрана ни одна петля рисунка не идёт (однократная прорисовка и переходы
+  // прозрачности доигрывают сами — их пауза не касается)
+  const off = await page.evaluate(() => [...document.querySelectorAll('#directions .glyph')].filter((el) => el.classList.contains('is-vis') || el.getAnimations({ subtree: true }).some((a) => a.playState === 'running' && a.effect && a.effect.getTiming().iterations === Infinity)).length);
   if (off) bad.push(`вне экрана не на паузе: ${off}`);
   // «Пересобрать блок»: рисунок гаснет вместе с секцией и прорисовывается заново
   await page.evaluate(() => { window.scrollTo({ top: document.querySelector('#directions').getBoundingClientRect().top + scrollY + 280, behavior: 'instant' }); window.__glOff = 0; document.querySelectorAll('#directions .glyph').forEach((el) => new MutationObserver(() => { if (!el.classList.contains('is-on')) window.__glOff++; }).observe(el, { attributes: true, attributeFilter: ['class'] })); });
