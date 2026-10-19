@@ -86,6 +86,22 @@ else {
   else console.log(`  ✓ запрещённых слов нет (${words.length} в списке; ${siteFiles.join(', ')})`);
 }
 
+// 1а. Версии стилей и скриптов в адресах (TASK-qa.md, 4.3; tools/bump.mjs): у каждого assets/*.css|js во всех HTML —
+//     ?v= = хеш его содержимого, одинаковый на всех страницах. Поменял файл и не запустил bump — проверка падает.
+{
+  const { versions } = await import('./bump.mjs');
+  const v = versions(), bad = [];
+  for (const f of readdirSync(root).filter((x) => x.endsWith('.html') && !x.startsWith('yandex'))) {
+    const s = readFileSync(path.join(root, f), 'utf8');
+    for (const m of s.matchAll(/(?:src|href)="\/?assets\/([\w.-]+\.(?:css|js))(\?v=([0-9a-f]+))?"/g)) {
+      if (!m[3]) bad.push(`${f}: ${m[1]} без ?v=`);
+      else if (v[m[1]] && m[3] !== v[m[1]]) bad.push(`${f}: ${m[1]}?v=${m[3]}, а файл — ${v[m[1]]}`);
+    }
+  }
+  if (bad.length) fail(`версии ресурсов (запусти node tools/bump.mjs): ${bad.slice(0, 8).join('; ')}`);
+  else console.log('  ✓ версии стилей и скриптов в адресах совпадают с файлами на всех страницах');
+}
+
 // отпечатки холстов-сцен, попавших под селектор (0 — холст пустой); кладётся в страницу до её скриптов
 const SCENES = ':is(canvas[data-mini], canvas[data-flow], canvas[data-flowlight])';
 const printsInit = () => {
@@ -1421,7 +1437,7 @@ console.log('\nфоновая пыль и взрыв подвала');
     for (const [w, h] of [[1440, 900], [390, 844]]) {
       const ctx = await quick.newContext({ viewport: { width: w, height: h }, isMobile: w < 760, hasTouch: w < 760 });
       const page = await ctx.newPage();
-      await page.route('**/assets/engine.js', (r) => r.fulfill({ body: eng, contentType: 'application/javascript' }));
+      await page.route('**/assets/engine.js*', (r) => r.fulfill({ body: eng, contentType: 'application/javascript' }));
       await page.goto(BASE + 'index.html');
       await page.waitForFunction(() => document.querySelector('[data-sec="hero"]').classList.contains('s-done'), null, { timeout: 15000 });
       await page.waitForTimeout(2200);
@@ -1719,7 +1735,7 @@ console.log('\ncookie и Метрика');
     const ctx = await quick.newContext({ viewport: { width: 1440, height: 900 } });
     const mc = [];
     await ctx.route('**/mc.yandex.ru/**', (r) => { mc.push(r.request().url()); r.fulfill({ status: 200, contentType: 'application/javascript', body: '' }); });
-    if (opts.js) await ctx.route('**/assets/consent.js', (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body: opts.js }));
+    if (opts.js) await ctx.route('**/assets/consent.js*', (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body: opts.js }));
     await ctx.addInitScript((o) => {
       if (o.consent) try { localStorage.setItem('pt-consent', o.consent); } catch (e) { /* нет хранилища */ }
       if (o.stub) window.ym = function () { (window.__ym = window.__ym || []).push([].slice.call(arguments)); };
