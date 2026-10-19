@@ -1,6 +1,6 @@
 // QA-прогон сайта (TASK-qa.md, раздел 7). Владелец запускает после любых правок, вместе с check.mjs:
 //   node tools/qa.mjs                 — всё: ссылки, матрица (Chromium + WebKit), производительность главной
-//   node tools/qa.mjs links matrix    — только выбранные части (links, matrix, perf)
+//   node tools/qa.mjs links matrix    — только выбранные части (links, matrix, interact, fonts, perf)
 //   QA_PAGES=index.html,cases.html node tools/qa.mjs matrix   — только эти страницы
 // Нужны браузеры Playwright: npx playwright install chromium webkit
 // Что проверяет:
@@ -12,12 +12,15 @@
 //   краем окна, зоны нажатия меньше 44 px на телефоне (с невидимым расширением ::before), текст мельче 11 px (11 px —
 //   сведения: 12 px на решении владельца), контраст мелкого текста ниже 4.5:1 (кроме декоративного aria-hidden), кириллица
 //   в EN;
+// - шрифты: каждый символ, который сайт набирает своими шрифтами (DOM, псевдоэлементы, холсты, строки scenes.js, черновики),
+//   есть в cmap файла, которым он набран (unicode-range из site.css; подмножества — tools/subset-fonts.py);
 // - производительность главной (Chromium, первый заход, CPU ×1 и ×4): долгие задачи за вступление, когда читается H1,
 //   CLS, LCP, кадры при прокрутке (p50 / p95 / > 50 мс), работа главного потока на кадр в покое.
 // Итог — таблица в консоль и tools/ref/qa/summary.json; код выхода 1, если нарушен бюджет или есть ошибка.
 import { chromium, webkit } from 'playwright';
 import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import fsMod, { mkdirSync, writeFileSync } from 'node:fs';
+import zlibMod from 'node:zlib';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -338,6 +341,167 @@ async function perf() {
   }
 }
 
+// ---------------------------------------------------------------- шрифты (TASK-qa-decisions.md, 2)
+// Подмножества шрифтов урезаны по диапазонам (tools/subset-fonts.py). Здесь — каждый символ, который сайт набирает своими
+// шрифтами, есть в cmap того файла, которым он набран: начертание — по вычисленному стилю (семейство, жирность, курсив,
+// text-transform), файл — по unicode-range из site.css. Тексты: все текстовые узлы и ::before / ::after всех страниц RU и EN
+// на 1440 и 390 (в том числе скрытые: меню, список каналов, вопросы), плашка cookie, подписи «Кодекса», всё, что сцены рисуют
+// на холстах (fillText), и все строки scenes.js (демо-сайты и схемы, RU и EN — и те, что за прогон не выпали), черновики
+// сообщений. Символа нет и в исходном файле (tools/fonts-src: → ↗ ↻ ⇄ ✓ ₽) — он и раньше шёл запасной гарнитурой, это
+// сведения; есть в исходном, но не в подмножестве — ошибка: добавить диапазон в subset-fonts.py и unicode-range.
+function woff2Cmap(file) {
+  const buf = fsMod.readFileSync(file);
+  if (buf.toString('latin1', 0, 4) !== 'wOF2') throw new Error('не woff2: ' + file);
+  const numTables = buf.readUInt16BE(12);
+  const TAGS = ['cmap', 'head', 'hhea', 'hmtx', 'maxp', 'name', 'OS/2', 'post', 'cvt ', 'fpgm', 'glyf', 'loca', 'prep', 'CFF ', 'VORG', 'EBDT', 'EBLC', 'gasp', 'hdmx', 'kern', 'LTSH', 'PCLT', 'VDMX', 'vhea', 'vmtx', 'BASE', 'GDEF', 'GPOS', 'GSUB', 'EBSC', 'JSTF', 'MATH', 'CBDT', 'CBLC', 'COLR', 'CPAL', 'SVG ', 'sbix', 'acnt', 'avar', 'bdat', 'bloc', 'bsln', 'cvar', 'fdsc', 'feat', 'fmtx', 'fvar', 'gvar', 'hsty', 'just', 'lcar', 'mort', 'morx', 'opbd', 'prop', 'trak', 'Zapf', 'Silf', 'Glat', 'Gloc', 'Feat', 'Sill'];
+  let p = 48;
+  const b128 = () => { let v = 0; for (let i = 0; i < 5; i++) { const x = buf[p++]; v = v * 128 + (x & 0x7f); if (!(x & 0x80)) return v; } throw new Error('UIntBase128'); };
+  let off = 0, cm = null;
+  for (let i = 0; i < numTables; i++) {
+    const fl = buf[p++]; let tag = TAGS[fl & 0x3f];
+    if ((fl & 0x3f) === 0x3f) { tag = buf.toString('latin1', p, p + 4); p += 4; }
+    const orig = b128(), ver = fl >> 6, tr = (tag === 'glyf' || tag === 'loca') ? ver === 0 : ver !== 0;
+    const len = tr ? b128() : orig;
+    if (tag === 'cmap') cm = [off, orig];
+    off += len;
+  }
+  const data = zlibMod.brotliDecompressSync(buf.subarray(p, p + buf.readUInt32BE(20)));
+  const c = data.subarray(cm[0], cm[0] + cm[1]), set = new Set();
+  const n = c.readUInt16BE(2);
+  let best = null;
+  for (let i = 0; i < n; i++) {
+    const pid = c.readUInt16BE(4 + i * 8), eid = c.readUInt16BE(6 + i * 8), o = c.readUInt32BE(8 + i * 8), f = c.readUInt16BE(o);
+    const score = f === 12 ? 2 : (f === 4 && ((pid === 3 && eid === 1) || pid === 0)) ? 1 : 0;
+    if (score && (!best || score > best[0])) best = [score, o, f];
+  }
+  if (!best) return set;
+  const [, o, f] = best;
+  if (f === 12) {
+    const ng = c.readUInt32BE(o + 12);
+    for (let i = 0; i < ng; i++) { const s = c.readUInt32BE(o + 16 + i * 12), e = c.readUInt32BE(o + 20 + i * 12), g = c.readUInt32BE(o + 24 + i * 12); for (let ch = s; ch <= e; ch++) if (g + ch - s) set.add(ch); }
+  } else {
+    const sc = c.readUInt16BE(o + 6) / 2, ends = o + 14, starts = ends + sc * 2 + 2, deltas = starts + sc * 2, ros = deltas + sc * 2;
+    for (let i = 0; i < sc; i++) {
+      const e = c.readUInt16BE(ends + i * 2), s = c.readUInt16BE(starts + i * 2), d = c.readInt16BE(deltas + i * 2), ro = c.readUInt16BE(ros + i * 2);
+      for (let ch = s; ch <= e && ch !== 0xffff; ch++) {
+        let g;
+        if (!ro) g = (ch + d) & 0xffff;
+        else { const gi = c.readUInt16BE(ros + i * 2 + ro + (ch - s) * 2); g = gi ? (gi + d) & 0xffff : 0; }
+        if (g) set.add(ch);
+      }
+    }
+  }
+  return set;
+}
+async function fonts() {
+  console.log('\nшрифты: каждый символ сайта — в cmap своего файла');
+  const css = fsMod.readFileSync(path.join(root, 'assets', 'site.css'), 'utf8');
+  const faces = [...css.matchAll(/@font-face\{([^}]*)\}/g)].map((m) => m[1]).filter((b) => /url\(fonts\//.test(b)).map((b) => ({
+    fam: /font-family:'([^']+)'/.exec(b)[1], st: /font-style:(\w+)/.exec(b)[1], w: +/font-weight:(\d+)/.exec(b)[1],
+    file: /url\(fonts\/([^)]+)\)/.exec(b)[1],
+    ur: /unicode-range:([^;}]+)/.exec(b)[1].split(',').map((r) => r.trim().replace('U+', '').split('-').map((x) => parseInt(x, 16))).map(([a, z]) => [a, z == null ? a : z]),
+  }));
+  const cmNew = {}, cmSrc = {};
+  for (const f of faces) {
+    cmNew[f.file] = woff2Cmap(path.join(root, 'assets', 'fonts', f.file));
+    const src = path.join(root, 'tools', 'fonts-src', f.file);
+    cmSrc[f.file] = fsMod.existsSync(src) ? woff2Cmap(src) : cmNew[f.file];
+  }
+  const FAMS = [...new Set(faces.map((f) => f.fam))];
+  // начертание, которое выберет браузер: ближайшая жирность (CSS: для 400–500 сначала вверх до 500, ниже 400 — вниз)
+  const pick = (fam, st, w) => {
+    const ws = [...new Set(faces.filter((f) => f.fam === fam).map((f) => f.w))].sort((a, b) => a - b);
+    const sts = faces.filter((f) => f.fam === fam).map((f) => f.st);
+    const s = sts.includes(st) ? st : sts[0];
+    let bw = ws.includes(w) ? w : null;
+    if (bw == null) {
+      if (w >= 400 && w <= 500) bw = ws.find((x) => x > w && x <= 500) || ws.filter((x) => x < w).pop() || ws.find((x) => x > 500);
+      else if (w < 400) bw = ws.filter((x) => x < w).pop() || ws.find((x) => x > w);
+      else bw = ws.find((x) => x > w) || ws.filter((x) => x < w).pop();
+    }
+    return { fam, st: s, w: bw };
+  };
+  const runs = new Map(), add = (fam, st, w, text, src) => { const k = `${fam}|${st}|${w}`; if (!runs.has(k)) runs.set(k, new Map()); const m = runs.get(k); for (const ch of text) { const cp = ch.codePointAt(0); if (cp >= 0x20 && !m.has(cp)) m.set(cp, src); } };
+  const b = await chromium.launch();
+  const plan = [];
+  for (const pg of ALL_PAGES) for (const lang of ['ru', 'en']) for (const w of [1440, 390]) if (!(pg === 'privacy.html' && lang === 'en')) plan.push([pg, lang, w]);
+  for (const [pg, lang, w] of plan) {
+    const ctx = await b.newContext({ viewport: { width: w, height: 900 }, isMobile: w < 760, hasTouch: w < 760 });
+    await ctx.addInitScript(() => {
+      window.__ft = [];
+      const P = CanvasRenderingContext2D.prototype;
+      for (const m of ['fillText', 'strokeText']) { const o = P[m]; P[m] = function (t, ...a) { try { window.__ft.push([this.font, String(t)]); } catch (e) { /* */ } return o.call(this, t, ...a); }; }
+    });
+    const page = await ctx.newPage();
+    const u = urlOf(pg, lang);
+    await page.goto(u + (u.includes('?') ? '&' : '?') + 'intro=instant'); await page.waitForTimeout(1200);
+    const H = await page.evaluate(() => document.documentElement.scrollHeight);
+    for (let y = 0; y < H; y += 600) { await page.evaluate((y) => window.scrollTo({ top: y, behavior: 'instant' }), y); await page.waitForTimeout(250); }
+    await page.waitForTimeout(600);
+    const r = await page.evaluate((FAMS) => {
+      const out = [];
+      const famOf = (cs) => cs.fontFamily.split(',').map((x) => x.trim().replace(/^["']|["']$/g, '')).find((x) => FAMS.includes(x)) || null;
+      const tr = (cs, t) => cs.textTransform === 'uppercase' ? t.toUpperCase() : cs.textTransform === 'lowercase' ? t.toLowerCase() : t;
+      const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let n;
+      while ((n = tw.nextNode())) {
+        const el = n.parentElement; if (!el || el.closest('script,style,noscript,template')) continue;
+        if (!n.nodeValue.trim()) continue;
+        const cs = getComputedStyle(el), fam = famOf(cs); if (fam) out.push([fam, cs.fontStyle, +cs.fontWeight, tr(cs, n.nodeValue), 'текст']);
+      }
+      for (const el of document.querySelectorAll('body *')) for (const ps of ['::before', '::after']) {
+        const cs = getComputedStyle(el, ps), c = cs.content; if (!c || c === 'none' || c === 'normal' || c === '""') continue;
+        const t = /attr\(/.test(c) ? c.replace(/attr\(([^)]+)\)/g, (_, a) => el.getAttribute(a.trim()) || '').replace(/"/g, '') : c.replace(/^"|"$/g, '');
+        const fam = famOf(cs); if (fam && t.trim()) out.push([fam, cs.fontStyle, +cs.fontWeight, tr(cs, t), 'псевдоэлемент']);
+      }
+      // скрытые шаблоны (цены, кейсы) — тем же стилем, что их будущее место: основной текст
+      const tpl = [...document.querySelectorAll('template')].map((t) => t.content.textContent).join(' ');
+      const drafts = [...document.querySelectorAll('[data-tg],[data-wa]')].map((a) => (window.PTI18N ? window.PTI18N.t(a.getAttribute('data-tg') || a.getAttribute('data-wa') || '') : ''));
+      return { out, ft: window.__ft, tpl, drafts };
+    }, FAMS);
+    const where = `${pg} ${lang} ${w}`;
+    r.out.forEach(([fam, st, wt, t, k]) => { const f = pick(fam, st, wt); add(f.fam, f.st, f.w, t, `${k}: ${where}`); });
+    for (const [font, t] of r.ft) {
+      const m = /^(italic|normal|oblique)?\s*(\d{3})?\s*([\d.]+)px\s+(.+)$/.exec(font); if (!m) continue;
+      const fam = m[4].split(',').map((x) => x.trim().replace(/^["']|["']$/g, '')).find((x) => FAMS.includes(x)); if (!fam) continue;
+      const f = pick(fam, m[1] || 'normal', +(m[2] || 400)); add(f.fam, f.st, f.w, t, `холст: ${where}`);
+    }
+    if (r.tpl.trim()) for (const wt of [300, 400, 500, 600]) add('Manrope', 'normal', wt, r.tpl, `шаблон: ${where}`);
+    // черновики сообщений уходят в мессенджер и его шрифтом набираются — проверяем, что и на сайте они бы набрались
+    r.drafts.forEach((t) => add('Manrope', 'normal', 400, t, `черновик: ${where}`));
+    await ctx.close();
+  }
+  // все строки scenes.js (демо-сайты и схемы), RU и EN, во всех шрифтах холстов
+  {
+    const srcJs = fsMod.readFileSync(path.join(root, 'assets', 'scenes.js'), 'utf8');
+    const lits = [...srcJs.matchAll(/'((?:[^'\\\n]|\\.)*)'/g)].map((m) => m[1]).filter((s) => /[A-Za-zА-Яа-яЁё0-9]/.test(s) && s.length < 160);
+    const ctx = await b.newContext(); const page = await ctx.newPage();
+    await page.goto(urlOf('index.html', 'en') + '&intro=instant'); await page.waitForTimeout(400);
+    const en = await page.evaluate((L) => L.map((s) => (window.PTI18N ? window.PTI18N.t(s) : s)), lits);
+    await ctx.close();
+    for (const s of new Set([...lits, ...en])) for (const [fam, st, w] of [['Manrope', 'normal', 300], ['Manrope', 'normal', 500], ['Manrope', 'normal', 600], ['JetBrains Mono', 'normal', 500], ['Cormorant Garamond', 'italic', 500]]) { add(fam, st, w, s, 'строка scenes.js'); add(fam, st, w, s.toUpperCase(), 'строка scenes.js'); }
+  }
+  await b.close();
+  const miss = [], old = new Map(); let total = 0;
+  for (const [k, m] of runs) {
+    const [fam, st, w] = k.split('|');
+    const cand = faces.filter((f) => f.fam === fam && f.st === st && f.w === +w);
+    for (const [cp, src] of m) {
+      total++;
+      const f = cand.find((x) => x.ur.some(([a, z]) => cp >= a && cp <= z));
+      if (f && cmNew[f.file].has(cp)) continue;
+      const inSrc = cand.some((x) => cmSrc[x.file].has(cp));
+      const s = `U+${cp.toString(16).toUpperCase().padStart(4, '0')} «${String.fromCodePoint(cp)}» ${fam} ${w}${st === 'italic' ? ' italic' : ''}`;
+      if (inSrc) miss.push(`${s} — ${f ? 'нет в подмножестве ' + f.file : 'вне unicode-range'} (${src})`);
+      else old.set(String.fromCodePoint(cp), (old.get(String.fromCodePoint(cp)) || new Set()).add(`${fam} ${w}`));
+    }
+  }
+  summary.fonts = { faces: faces.length, chars: total, miss, fallback: [...old.keys()] };
+  miss.forEach((x) => fail('шрифты', x));
+  if (old.size) summary.notes.push(`шрифты: ${[...old.keys()].join(' ')} — нет и в исходных файлах шрифтов, набираются запасной гарнитурой, как и раньше`);
+  console.log(`  ${miss.length ? '✗' : '✓'} ${runs.size} начертаний, ${total} пар «начертание — символ»: ${miss.length ? `${miss.length} мимо своего файла\n      ` + miss.slice(0, 12).join('\n      ') : 'каждый символ — в cmap своего файла'}`);
+}
+
 // ---------------------------------------------------------------- сценарии (инвентарь TASK-qa.md, раздел 2)
 // Только то, чего нет в check.mjs, — в Chromium и WebKit (Safari, встроенный браузер Telegram на iPhone)
 async function open(b, url, o = {}) {
@@ -609,6 +773,7 @@ try {
   if (want('links')) await links();
   if (want('matrix')) await matrix();
   if (want('interact')) await interact();
+  if (want('fonts')) await fonts();
   if (want('perf')) await perf();
 } finally { srv.kill(); }
 summary.notes = [...new Set(summary.notes)];
