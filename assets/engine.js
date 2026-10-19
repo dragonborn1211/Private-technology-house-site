@@ -36,7 +36,7 @@
       // кончилась». Пустое значение — прежний сильный разлёт по экрану (phAmbient), оставлен на будущее
       var secs = Array.prototype.slice.call(root.querySelectorAll('[data-sec]')).map(function (el) { return { el: el, name: el.getAttribute('data-sec'), state: 'idle', geo: null, geoKey: '', replay: false, burst: el.getAttribute('data-pt-burst') }; });
       var pultEl = root.querySelector('[data-pult]'), pultT = 0, pultShown = false, replaying = false;
-      var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, cur = null, io = null, io2 = null, io3 = null, io4 = null, near = [], preOn = false;
+      var hero = secs[0], queue = [], running = null, timers = [], typeT = 0, seeT = 0, cur = null, io = null, io2 = null, io3 = null, io4 = null, near = [], preOn = false;
       // Сцены в карточках просыпаются по одной за кадр (wakeQ, frame): пробуждение схемы или демо-сайта — подгонка холста и
       // раскладка узлов, 15–20 мс на слабом устройстве; две-три в одной задаче давали рывок до 45 мс в финале сборки секции.
       // Сцена стартует на кадр-два позже — на глаз не видно. Усыплённая (пересборка, смена языка) из очереди убирается
@@ -758,7 +758,7 @@
         if (running && queue.length && now > abortAt) {
           abortAt = now + 200;
           var rr = running.el.getBoundingClientRect();
-          if (rr.bottom < 0 || rr.top > VH) abortRun();
+          if (rr.bottom < 0 || rr.top > VH || (rr.top < 0 && rr.bottom < VH * 0.12)) abortRun();
         }
         var shift = lastTop == null ? 0 : lastTop - rootTop; lastTop = rootTop;
         // фоновая пыль: пока идёт сборка (и 0.4 с после — между секциями в очереди не мигает) — реже, потом снова вся
@@ -1068,7 +1068,9 @@
         while (queue.length) {
           var q = queue[0], r = q.el.getBoundingClientRect();
           if (q.instant) { queue.shift(); q.instant = false; setStage(q, 'done'); q.state = 'done'; setProg(); wakeSites(q.el); continue; }
-          if (r.bottom < 0) { queue.shift(); setStage(q, 'done'); q.state = 'done'; setProg(); wakeSites(q.el); if (q === hero) skipHero(); continue; }
+          // уже над экраном — или от неё у верхнего края осталась полоска меньше 12 % экрана, а за ней ждут другие (быстрая
+          // прокрутка, TASK-qa.md): сразу готова. Иначе видимые секции ждали, пока частицы соберут почти невидимую полоску
+          if (r.bottom < 0 || (queue.length > 1 && r.top < 0 && r.bottom < VH * 0.12)) { queue.shift(); setStage(q, 'done'); q.state = 'done'; setProg(); wakeSites(q.el); if (q === hero) skipHero(); continue; }
           if (r.top > VH) { queue.shift(); q.state = 'idle'; continue; }
           break;
         }
@@ -1273,7 +1275,13 @@
       } else {
         if (!jumpStart()) request(hero);
         if ('IntersectionObserver' in window) {
-          var onSee = function (es) { es.forEach(function (e) { if (e.isIntersecting) { for (var i = 0; i < secs.length; i++) if (secs[i].el === e.target) request(secs[i]); } }); };
+          // Секции, ставшие видимыми в одном кадре (их сообщают два наблюдателя: io и io2 подвала), сначала все встают в
+          // очередь, потом — по порядку на странице — сборка (seeT, один отложенный вызов). Раньше первой начинала та, о
+          // которой сообщили раньше: при быстрой прокрутке вниз — подвал или полоска верхней секции, а основной блок ждал
+          var onSee = function (es) {
+            es.forEach(function (e) { if (e.isIntersecting) { for (var i = 0; i < secs.length; i++) if (secs[i].el === e.target && secs[i].state === 'idle') { secs[i].state = 'queued'; queue.push(secs[i]); } } });
+            if (!seeT) seeT = setTimeout(function () { seeT = 0; if (!alive) return; queue.sort(function (a, b) { return secs.indexOf(a) - secs.indexOf(b); }); pump(); }, 0);
+          };
           io = new IntersectionObserver(onSee, { rootMargin: '0px 0px -18% 0px', threshold: 0 });
           secs.forEach(function (s) { io.observe(s.el); });
           // последняя секция (подвал) — без отступа снизу: она бывает ниже 18% окна и тогда никогда не попала бы в полосу
@@ -1298,7 +1306,7 @@
       return {
         setActive: function (v) { active = v; if (v) start(); },
         destroy: function () {
-          alive = false; timers.forEach(clearTimeout); clearInterval(typeT); clearTimeout(pultT); if (raf) cancelAnimationFrame(raf); if (io) io.disconnect(); if (io2) io2.disconnect(); if (io3) io3.disconnect(); if (io4) io4.disconnect();
+          alive = false; timers.forEach(clearTimeout); clearInterval(typeT); clearTimeout(pultT); clearTimeout(seeT); if (raf) cancelAnimationFrame(raf); if (io) io.disconnect(); if (io2) io2.disconnect(); if (io3) io3.disconnect(); if (io4) io4.disconnect();
           btns.forEach(function (b) { b.removeEventListener('click', replay); });
           if (heroObj) heroObj.destroy();
           langLinks.forEach(function (a) { a.removeEventListener('click', onLang); });
