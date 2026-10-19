@@ -66,7 +66,35 @@
       // (TASK-review.md 1.3: к моменту, когда читается H1, ферзь уже узнаваем; раньше панель «Кодекс студии» стояла пустой, пока
       // собирался текст), пропуск сборки и skipHero — если ещё не запущен. heroRp — идёт «Пересобрать блок» первого экрана.
       var objOn = false, heroRp = false;
-      function objStart(instant) { if (!heroObj || objOn) return; objOn = true; heroObj.start(instant); }
+      // Телефон (TASK-qa-decisions.md, 1): панель «Кодекса» там ниже первого экрана — видна только её верхняя кромка, а монтаж
+      // объекта (WebGL, фигуры, свой цикл кадров) при загрузке шёл прямо во время вступления и давал основную часть TBT. На
+      // ширине до 760 px (полная и быстрая сборка) объект монтируется, когда панель впервые видна хотя бы на 25 %, или после
+      // конца вступления в простое браузера (таймаут 2 с) — что раньше. Стадия рамок до этого только помечает «пора» (objPend),
+      // и ферзь собирается обычной анимацией, когда его видно. Пока объекта нет, панель как до старта ферзя: рамка, вкладки,
+      // подпись из разметки. «Собрать заново», смена языка и касание панели монтируют сразу. Десктоп, «сразу», reduced
+      // motion — как раньше (монтаж при загрузке).
+      var heroLazy = false, objPend = false, heroIO = null, heroIdleT = 0;
+      function heroNow() {
+        if (heroObj || !heroLazy) return heroObj;
+        heroLazy = false; if (heroIO) { heroIO.disconnect(); heroIO = null; } clearTimeout(heroIdleT);
+        try { heroObj = window.PTHero.mount(hero.el, { autostart: false }); } catch (e) { heroObj = null; console.warn(e); }
+        return heroObj;
+      }
+      // смонтировать и, если вступление уже дошло до объекта, запустить его сборку
+      function heroWake() { if (!heroLazy || !alive) return; heroNow(); if (objPend) { objPend = false; objStart(false); } }
+      // вступление кончилось — смонтировать в простое (не позже чем через 2 с)
+      function heroIdle() {
+        if (!heroLazy || heroIdleT) return;
+        heroIdleT = setTimeout(function () {
+          if (window.requestIdleCallback) window.requestIdleCallback(heroWake, { timeout: 2000 }); else setTimeout(heroWake, 200);
+        }, 0);
+      }
+      // «Собрать заново» и смена языка: объекта ещё нет — смонтировать сразу
+      function heroReplay() { heroNow(); if (!heroObj) return; objPend = false; objOn = true; heroObj.replay(); }
+      function objStart(instant) {
+        if (heroLazy) { objPend = true; return; }
+        if (!heroObj || objOn) return; objOn = true; heroObj.start(instant);
+      }
       // Темп сборки: HERO_K — множитель таймингов первого экрана (1 — исходные 5.8 с; 0.5 — буквы на 1.85 с, текст на
       // 2.6 с: по ТЗ шапки первый экран должен читаться к ~2 с), SEC_K — остальных секций (1 — исходные 3.1 с), одинаковый
       // для всех секций, страниц и режимов. Был 0.9; владелец попросил секции на обеих страницах как быстрая сборка при
@@ -639,7 +667,7 @@
       function skipHero() {
         if (!preOn) setTimeout(prefetchNear, 800);
         seed(); root.classList.add('g-on');
-        objStart(true);
+        objStart(true); heroIdle();
         pultSkip();
       }
       // pt-booted — пульт можно показывать (TASK-review.md 1.1: до вспышки посетитель видел чёрный экран и кнопку пульта)
@@ -929,7 +957,7 @@
         secDone(el);
       }
       // секция собрана — событие для отклика на цели якоря (scroll.js, arrive): цель в несобранной секции ждёт его
-      function secDone(el) { try { window.dispatchEvent(new CustomEvent('pt:secdone', { detail: el })); } catch (e) { /* старый браузер */ } }
+      function secDone(el) { if (el === hero.el) heroIdle(); try { window.dispatchEvent(new CustomEvent('pt:secdone', { detail: el })); } catch (e) { /* старый браузер */ } }
       // фильтр (assets/filter.js) показал карточки — их схемы собираются заново с первого узла
       function onShown(e) {
         var els = (e && e.detail) || [];
@@ -980,7 +1008,7 @@
         if (pend) { pend(); phFade(BLD); log(s, '✓ ready'); setProg(); if (!queue.length) phSettle(BLD); pump(); return; }
         setStage(s, 'done'); s.state = 'done'; s.replay = false;
         phFade(BLD);
-        if (s === hero) { linesOff(); root.classList.add('g-on'); if (heroRp) { if (heroObj) heroObj.replay(); } else objStart(false); if (!pultShown && !replaying) pultLater(); }
+        if (s === hero) { linesOff(); root.classList.add('g-on'); if (heroRp) heroReplay(); else objStart(false); if (!pultShown && !replaying) pultLater(); }
         log(s, '✓ ready'); setProg(); wakeSites(s.el);
         finish(s);
       }
@@ -1016,7 +1044,7 @@
         var o = replay ? -0.6 : 0, K = replay ? PRESENT_K : HERO_K, LD = LINE * K;
         if (!replay) { burst(); log(s, 'boot · ' + fmtN() + ' particles'); probeStart(K); }
         atRun((0.6 + o) * K, function () { root.classList.add('g-on'); measure(s); phGrid(s, BLD, false); log(s, '01 · grid.init(12)'); });
-        function done() { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (replay) { if (heroObj) heroObj.replay(); } else objStart(false); if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); secDone(s.el); }
+        function done() { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (replay) heroReplay(); else objStart(false); if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); secDone(s.el); }
         // объект — на стадии рамок, когда линия прошла середину экрана и рамка панели уже нарисована (TASK-review.md 1.3)
         function objGo() { if (replay) return; s.el.classList.add('obj-go'); objStart(false); }
         if (INTRO_LINES) {
@@ -1104,7 +1132,7 @@
         // прервали до постановки в очередь — все задетые секции сразу собраны (иначе гасли насовсем)
         settleFn = function () {
           every.forEach(function (x) { setStage(x, 'done'); x.state = 'done'; x.replay = false; x.instant = false; wakeSites(x.el); });
-          if (list.indexOf(hero) >= 0 && heroObj) heroObj.replay();
+          if (list.indexOf(hero) >= 0) heroReplay();
         };
         measure(s); phText(s, idx, false); log(s, 'text.dissolve()');
         atRun(1.0, function () {
@@ -1135,7 +1163,7 @@
           return Array.prototype.some.call(x.el.querySelectorAll('[data-blk]'), function (b) { var r = b.getBoundingClientRect(); if (r.bottom > 0) { anchor = b; top0 = r.top; return true; } return false; });
         });
         root.classList.add('no-anchor');
-        I.apply(lang); if (heroObj) heroObj.relabel(); layoutGen++;
+        I.apply(lang); if (heroNow()) heroObj.relabel(); layoutGen++;
         if (anchor) { var d = anchor.getBoundingClientRect().top - top0; if (Math.abs(d) > 0.5) window.scrollTo({ top: window.scrollY + d, behavior: 'instant' }); }
         requestAnimationFrame(function () { root.classList.remove('no-anchor'); });
         scenes.forEach(function (sc) { if (sc.relang) sc.relang(); });
@@ -1175,7 +1203,7 @@
         function swap() { if (!swapped) { swapped = true; swapLang(lang, list); } }
         function reveal() {
           if (shown) return; shown = true;
-          list.forEach(function (x) { x.el.classList.remove('s-swap'); setStage(x, 'done'); wakeSites(x.el); if (x === hero && heroObj) heroObj.replay(); });
+          list.forEach(function (x) { x.el.classList.remove('s-swap'); setStage(x, 'done'); wakeSites(x.el); if (x === hero) heroReplay(); });
         }
         function end() { reveal(); list.forEach(function (x) { x.state = 'done'; }); if (beamEl) beamEl.classList.remove('run'); }
         settleFn = function () { swap(); end(); };
@@ -1245,7 +1273,17 @@
       scenes = window.PTScenes ? window.PTScenes.create(root, env) : [];
       // объект первого экрана: модуль сам создаёт в секции холсты [data-gl]/[data-ov] (data-pt-skip, без кликов),
       // подписи панели, стрелки и строку принципов; ошибка модуля не должна ронять сборку сайта
-      try { heroObj = window.PTHero ? window.PTHero.mount(hero.el, { autostart: false }) : null; } catch (e) { heroObj = null; console.warn(e); }
+      var objPanel = hero.el.querySelector('[data-obj]');
+      heroLazy = !!(window.PTHero && objPanel && !rm && MODE !== 'instant' && (root.clientWidth || window.innerWidth) <= 760 && 'IntersectionObserver' in window);
+      if (heroLazy) {
+        // «вошла в экран» — от прокрутки: на большинстве телефонов (390–430 px) верх панели и так виден на 25–60 % с первого
+        // кадра, и монтаж пришёлся бы на вступление. Без прокрутки — после вступления (heroIdle)
+        var y0 = window.scrollY || 0;
+        heroIO = new IntersectionObserver(function (es) { if (Math.abs((window.scrollY || 0) - y0) > 8 && es.some(function (e) { return e.intersectionRatio >= 0.25; })) heroWake(); }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+        heroIO.observe(objPanel);
+        // касание панели до монтажа: смонтировать и запустить сразу — обработчики модуля получат этот же клик
+        hero.el.addEventListener('click', function (e) { if (heroLazy && e.target.closest && e.target.closest('[data-obj]')) { objPend = true; heroWake(); } }, true);
+      } else try { heroObj = window.PTHero ? window.PTHero.mount(hero.el, { autostart: false }) : null; } catch (e) { heroObj = null; console.warn(e); }
       makeSprites(); initGL(); layout(); rootRect();
       btns.forEach(function (b) { b.addEventListener('click', replay); });
       langLinks.forEach(function (a) { a.addEventListener('click', onLang); });
@@ -1310,7 +1348,7 @@
         destroy: function () {
           alive = false; timers.forEach(clearTimeout); clearInterval(typeT); clearTimeout(pultT); clearTimeout(seeT); if (raf) cancelAnimationFrame(raf); if (io) io.disconnect(); if (io2) io2.disconnect(); if (io3) io3.disconnect(); if (io4) io4.disconnect();
           btns.forEach(function (b) { b.removeEventListener('click', replay); });
-          if (heroObj) heroObj.destroy();
+          if (heroObj) heroObj.destroy(); if (heroIO) heroIO.disconnect(); clearTimeout(heroIdleT);
           langLinks.forEach(function (a) { a.removeEventListener('click', onLang); });
           siteOff.forEach(function (off) { off(); });
           window.removeEventListener('scroll', onScrollSites);
