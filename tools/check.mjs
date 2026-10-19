@@ -2144,7 +2144,9 @@ console.log(`\nрежимы сборки: полная / быстрая / сра
     const page = await ctx.newPage(), errs = [];
     page.on('pageerror', (e) => errs.push(e.message)); page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_|Access to font at 'file:/.test(m.text())) errs.push(m.text()); });
     await page.clock.install({ time: new Date(T0) });
-    await page.goto('file://' + path.join(root, url));
+    // с диска — как раньше; сценарии с переходом по ссылке — с сервера: ссылки без .html (адреса без расширения) с диска ведут
+    // на несуществующий файл
+    await page.goto(/^https?:/.test(url) ? url : 'file://' + path.join(root, url));
     const mode = () => page.evaluate(() => document.getElementById('pt-site').getAttribute('data-intro'));
     try { const r = await fn(page, mode); if (r) bad.push(`${name}: ${r}`); else ok.push(name); } catch (e) { bad.push(`${name}: ${e.message.split('\n')[0]}`); }
     errs.forEach((e) => bad.push(`${name}: ${e}`));
@@ -2177,7 +2179,7 @@ console.log(`\nрежимы сборки: полная / быстрая / сра
     r.h1 = await h1on(page);
     return r.m === 'instant' && r.all && r.h1 ? '' : JSON.stringify(r);
   });
-  if (AUTO) await scene('главная → «Все услуги» → назад → снова услуги', 'index.html', '', async (page, mode) => {
+  if (AUTO) await scene('главная → «Все услуги» → назад → снова услуги', BASE + 'index.html', '', async (page, mode) => {
     await page.clock.runFor(6500);
     await page.evaluate(() => document.querySelector('#directions .more a[href="services"]').click());
     await page.waitForURL(/\/services/);
@@ -2190,7 +2192,7 @@ console.log(`\nрежимы сборки: полная / быстрая / сра
     return f.m === 'fast' && f.h1 && b.all && c.m === 'instant' && c.all ? '' : JSON.stringify({ f, b, c });
   });
   // повторный заход в вкладке — быстрая сборка (просьба владельца): без вспышки и двух линий, H1 виден к ~0.7 с
-  await scene('повторный заход: «Как работаем» с главной → process.html — быстрая', 'index.html', '', async (page, mode) => {
+  await scene('повторный заход: «Как работаем» с главной → process.html — быстрая', BASE + 'index.html', '', async (page, mode) => {
     await page.clock.runFor(6500);
     await page.click('.hero-hdr .nav a[href="process"]'); await page.waitForURL(/\/process/);
     await page.clock.runFor(100); await page.waitForTimeout(700);
