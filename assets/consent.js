@@ -5,7 +5,11 @@
 // (privacy.html) — сразу. «Настройки cookie» в политике ([data-ck-open], без JS скрыта) открывают её снова. Метрика грузится тоже
 // после первого экрана и в простое браузера: вебвизор не пишет самую тяжёлую часть анимации, кадры вступления не отнимаются.
 // Цели — только при загруженной Метрике: tg (ссылка в Telegram), max (Max), wa (WhatsApp), phone (звонок), filter (кнопка фильтра), replay (↻),
-// lang_en (переход на EN).
+// lang_en (переход на EN). И две сводные (просьба владельца: видеть, сколько нажали на каждую кнопку, какой формат и сколько
+// по итогу обращений): cta — любая кнопка и ссылка сайта, lead — любое обращение (Telegram, WhatsApp, MAX, звонок). Их параметры
+// — деревом для отчёта «Параметры визитов»: cta — «Нажатия» → формат → кнопка → «блок · страница»; lead — «Обращения» → канал →
+// формат → «кнопка · страница». Формат — разово / подписка / после запуска / кейс / общий: по блоку или модулю, где кнопка, а у
+// ссылки на другую страницу — по её адресу. В Метрике цели cta и lead заводятся «JavaScript-событием» с этими идентификаторами.
 // Подключается последним на всех страницах.
 (function () {
   var YM_ID = 113667313;   // номер счётчика; 0 — Метрика выключена, плашки нет
@@ -86,12 +90,45 @@
     if (window.requestIdleCallback) window.requestIdleCallback(go, { timeout: 3000 }); else setTimeout(go, 200);
   }
   function goal(id, params) { if (ymOn && window.ym) window.ym(YM_ID, 'reachGoal', id, params); }
+  // формат услуги — по модулю / блоку (страница услуг, «Как работаем», главная) или по адресу ссылки
+  var FMT = { sites: 'разово', apps: 'разово', servers: 'разово', projects: 'разово', 'p-sites': 'разово', 'p-servers': 'разово',
+    care: 'подписка', automation: 'подписка', ai: 'подписка', subscription: 'подписка', subs: 'подписка', 'sub-how': 'подписка', 'p-care': 'подписка', 'p-automation': 'подписка', templates: 'подписка',
+    after: 'после запуска', objects: 'кейс', cases: 'кейс' };
+  function fmtOf(el, href) {
+    for (var n = el; n && n !== document.body; n = n.parentElement) {
+      var k = n.id && FMT[n.id] ? n.id : n.getAttribute && n.getAttribute('data-sec');
+      if (k && FMT[k]) return FMT[k];
+    }
+    var m = /(?:^|\/)(services|process)\.html#([\w-]+)/.exec(href || '') || /^#([\w-]+)/.exec(href || '');
+    var id = m ? m[m.length - 1] : '';
+    if (FMT[id]) return FMT[id];
+    if (/automations\.html/.test(href || '')) return 'подписка';
+    if (/cases\.html/.test(href || '')) return 'кейс';
+    return 'общий';
+  }
+  function nameOf(el) {
+    // карточка-ссылка — по её заголовку (иначе в имя попадали подписи рисунка и описание)
+    var h = el.querySelector && el.querySelector('h2, h3, h4, .obj-h, .svc-h');
+    var t = el.getAttribute('data-tg') || el.getAttribute('aria-label') || (h ? h.textContent : el.textContent) || '';
+    t = t.replace(/\s+/g, ' ').trim();
+    return (t.length > 60 ? t.slice(0, 59) + '…' : t) || el.tagName.toLowerCase();
+  }
+  function track(el, place) {
+    var href = el.getAttribute('href') || '', btn = nameOf(el), fmt = fmtOf(el, href), ch = /^tel:/.test(href) ? 'звонок' : /max\.ru/.test(href) ? 'MAX' : /wa\.me/.test(href) ? 'WhatsApp' : /t\.me\//.test(href) ? 'Telegram' : '';
+    var p1 = {}, p2 = {}, p3 = {};
+    p3[btn] = place + ' · ' + PAGE; p2[fmt] = p3; p1['Нажатия'] = p2;
+    goal('cta', p1);
+    if (ch) { var q1 = {}, q2 = {}, q3 = {}; q3[fmt] = btn + ' · ' + PAGE; q2[ch] = q3; q1['Обращения'] = q2; goal('lead', q1); }
+  }
 
   document.addEventListener('click', function (e) {
     var t = e.target;
     if (!t || !t.closest) return;
     if (t.closest('[data-ck-open]')) { e.preventDefault(); open(); return; }
     if (!ymOn) return;
+    // любая кнопка и ссылка — цель cta, обращение — ещё и lead (track)
+    var el = t.closest('a[href], button, summary, [role="button"]');
+    if (el) { var s0 = el.closest('[data-sec]'); track(el, s0 ? s0.getAttribute('data-sec') : el.closest('[data-topbar]') ? 'topbar' : el.closest('[data-menu]') ? 'menu' : el.closest('[data-pult]') ? 'пульт' : el.closest('.ck') ? 'cookie' : PAGE); }
     // обращения: Telegram, Max, WhatsApp, звонок; place — секция / липкая шапка / меню
     var a = t.closest('a[href*="t.me/dragonborne0"], a[href*="max.ru/"], a[href*="wa.me/"], a[href^="tel:"]');
     if (a) {
