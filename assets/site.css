@@ -805,14 +805,13 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 @media (max-width:1000px){.ct-grid{grid-template-columns:minmax(0,1fr)}}
 .who{position:relative;display:flex;flex-direction:column;gap:18px;padding:22px;border-radius:26px}
 /* оформление (владелец 2026-10-19: «блок с основателем тоже можно красиво оформить»): кромка-перелив палитры и мягкое свечение
-   из угла (слои ::before / ::after — проявляются с рамками, как .fr), медальон монограммы с круговым переливом, фамилия —
-   курсив с градиентом (.hx, как акцент в заголовках), у строк — ромбы цветами 01–03 */
+   из угла (слои ::before / ::after — проявляются с рамками, как .fr), медальон монограммы с круговым переливом, у строк — ромбы
+   цветами 01–03. Имя — обычное, белым (владелец: фамилию без курсива) */
 .who::before{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(142,216,248,.6),rgba(127,168,255,.22) 32%,rgba(183,166,242,.14) 62%,rgba(159,229,209,.5));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;pointer-events:none}
 .who::after{content:"";position:absolute;left:-18%;top:-26%;width:72%;height:62%;border-radius:50%;background:radial-gradient(closest-side,rgba(142,216,248,.14),rgba(127,168,255,.06) 55%,transparent);pointer-events:none}
 .who-top,.who-l{position:relative;z-index:1}
 .pt-on .sec .who::before,.pt-on .sec .who::after{transition:opacity .9s ease}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .who::before,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .who::after{opacity:0}
-.who-n .hx{font-size:1.12em}
 .who-top{display:flex;gap:18px;align-items:center}
 .who-ph{flex:none;width:96px;height:120px;border-radius:18px;object-fit:cover;border:1px solid rgba(188,211,222,.18);background:linear-gradient(160deg,#1A2A36,#0E1720);filter:grayscale(.3) contrast(1.05)}
 .who-ph.mono{position:relative;display:flex;align-items:center;justify-content:center;filter:none;border:1px solid transparent;background:linear-gradient(160deg,#1A2A36,#0E1720) padding-box,conic-gradient(from 200deg,#8ED8F8,#7FA8FF,#B7A6F2,#9FE5D1,#8ED8F8) border-box;box-shadow:0 0 34px -12px rgba(142,216,248,.55),inset 0 1px 0 rgba(246,248,250,.06)}
