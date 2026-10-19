@@ -1218,7 +1218,7 @@ console.log('\nструктура: услуги, «Как работаем», с
     await page.close();
   }
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
-  if (['', 'services', 'cases', 'automations', 'process'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 6 || (sm.match(/hreflang="en"/g) || []).length !== 5 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy\.html<\/loc>\s*<\/url>/.test(sm)) bad.push('sitemap.xml: не пять адресов с EN');
+  if (['', 'services', 'cases', 'automations', 'process'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 6 || (sm.match(/hreflang="en"/g) || []).length !== 5 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy(\.html)?<\/loc>\s*<\/url>/.test(sm)) bad.push('sitemap.xml: не пять адресов с EN');
   if (bad.length) fail('структура: ' + bad.join('; '));
   else console.log(`  ✓ разлёта (data-pt-burst) нет нигде, у подвала — мягкий выдох; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — четыре секции по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — шесть адресов (политика — без EN)`);
 }
