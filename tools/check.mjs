@@ -2303,7 +2303,8 @@ console.log('\nпервый экран: шапка, заголовок, пане
         if (!hv.shown) bad.push(`${tag}: плашка пульта не показалась по наведению`);
         else if (hv.hit.length) bad.push(`${tag}: плашка пульта по наведению перекрывает ${hv.hit.join(', ')}`);
         if (lang === 'ru' && w === 1440) await page.screenshot({ path: path.join(shots, 'd1440-pult-hover.png') });
-        await page.mouse.move(b[0], b[1] - 30, { steps: 6 }); await page.waitForTimeout(80);
+        // плашка — справа от кнопки, на её уровне: курсор идёт с кнопки вправо, на плашку
+        await page.mouse.move(b[0] + 40, b[1], { steps: 6 }); await page.waitForTimeout(80);
         if (await page.evaluate(() => getComputedStyle(document.querySelector('.pult-bar')).display === 'none')) bad.push(`${tag}: плашка схлопнулась по пути курсора с кнопки на неё`);
       }
       if (lang === 'ru' && w === 1920) await page.screenshot({ path: path.join(shots, 'd1920-first-screen.png') });

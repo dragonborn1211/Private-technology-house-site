@@ -242,13 +242,13 @@ body{margin:0;background:#0A121A}
 .obj-k{display:flex;align-items:center;gap:10px;margin:0;color:#BCD3DE;letter-spacing:.18em}
 .obj-k b{flex:none;width:6px;height:6px;border-radius:50%;background:var(--acc);box-shadow:0 0 10px var(--acc)}
 .cx{display:grid;grid-template-columns:repeat(5,minmax(max-content,1fr));gap:10px}
-.cx-i{appearance:none;border:0;background:transparent;margin:0;padding:8px 0 10px;min-height:44px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:9px;font:inherit;color:inherit}
+.cx-i{appearance:none;border:0;background:transparent;margin:0;padding:8px 0 10px;min-height:44px;text-align:center;cursor:pointer;display:flex;flex-direction:column;gap:9px;font:inherit;color:inherit}
 /* полоска вкладки — рамка .fr с data-fr-line="top": частицы обводят её при сборке, она проявляется вместе с рамками */
 .cx-bar{display:block;position:relative;height:2px;border-radius:2px;background-color:rgba(188,211,222,.14);overflow:hidden}
 .cx-bar i{position:absolute;inset:0;background:var(--c);transform:scaleX(0);transform-origin:left;box-shadow:0 0 10px var(--c)}
 /* вкладки набраны основным шрифтом сайта, как меню шапки; номеров нет (просьба владельца) — только слово, цвет принципа —
    у полоски. Приглушение неактивных — через цвет: opacity у текста занята сборкой (.ptx) */
-.cx-l{display:flex;align-items:baseline;font:500 14px/1 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:0;white-space:nowrap}
+.cx-l{display:flex;align-items:baseline;justify-content:center;font:500 14px/1 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:0;white-space:nowrap}
 .cx-w{color:#8193A0}
 .cx-i:hover .cx-w{color:#BCD3DE}
 .cx-i[aria-current="step"] .cx-w{color:#EEF3F6}
@@ -394,9 +394,11 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .pult-ring circle{fill:none;stroke:#8ED8F8;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:128.8;stroke-dashoffset:calc(128.8px * (1 - var(--prog,0)));transition:stroke-dashoffset .6s ease}
 .pult.is-mini{left:18px;transform:none}
 .pult.is-mini .pult-mini{display:flex}
-.pult.is-mini .pult-bar{position:absolute;left:0;bottom:calc(100% + 8px);width:max-content;max-width:calc(100vw - 36px);display:none}
+/* плашка — справа от кнопки ↻, по её центру, зазор 8 px (просьба владельца: «на одном уровне со стрелкой в круге»; раньше
+   была над кнопкой) */
+.pult.is-mini .pult-bar{position:absolute;left:calc(100% + 8px);top:50%;bottom:auto;transform:translateY(-50%);width:max-content;max-width:calc(100vw - 88px);display:none}
 /* мостик между кнопкой и плашкой: курсор переходит с кнопки на плашку, и она не схлопывается */
-.pult.is-mini .pult-bar::after{content:"";position:absolute;left:0;right:0;top:100%;height:10px}
+.pult.is-mini .pult-bar::after{content:"";position:absolute;right:100%;top:0;bottom:0;width:10px}
 .pult.is-mini.is-open .pult-bar,.pult.is-mini:has(:focus-visible) .pult-bar{display:flex}
 @media (hover:hover) and (min-width:761px){.pult.is-mini:hover .pult-bar{display:flex}}
 /* свёрнутая кнопка легла бы на панель объекта, кнопки или строку доверия — прячется, пока они под ней (nav.js) */
@@ -406,7 +408,7 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .hero-h:lang(ru){font-size:38px}
 .hero-obj{min-height:540px}
 .pill-step{min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis}
-.pult.is-mini .pult-bar{width:calc(100vw - 36px)}
+.pult.is-mini .pult-bar{width:calc(100vw - 88px)}
 }
 @media (prefers-reduced-motion:reduce){.topbar,.topbar.on,.menu,.menu.on{transition:none}.menu{transform:none}}
 /* ---------- «01 / Услуги» на главной: две группы — «Проекты» и «По подписке», шесть карточек-ссылок на services.html.
@@ -892,21 +894,28 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 @keyframes pt-flow{from{background-position:0 0}to{background-position:-200% 0}}
 @keyframes pt-pulse{0%,100%{box-shadow:0 0 0 0 rgba(142,216,248,.6),0 0 34px -4px rgba(142,216,248,.7)}50%{box-shadow:0 0 0 9px rgba(142,216,248,0),0 0 56px -2px rgba(183,166,242,.8)}}
 .pt :is(a,button).btn-g,.pt .ico,.pt .fl-b,.pt .sv-tl a,.pt a.obj-all,.ck-b .n{position:relative}
+/* свечение при наведении гаснет вместе с рамкой (0.3 с): у кнопок-рамок (.fr) остался переход box-shadow 1.1 с от проявления
+   при сборке — рамка уже погасла, а свечение тянулось ещё секунду. Своего свечения у них нет, проявлению это не мешает */
+.pt-on .sec :is(a,button).btn-g.fr,.pt-on .sec .ico.fr{transition:background-color .9s ease,border-color .9s ease,box-shadow .3s ease}
+/* пульсация белых кнопок — слой ::after поверх их свечения: появляется и гаснет за 0.3 с, а не рывком (раньше анимация
+   box-shadow самой кнопки включалась и обрывалась мгновенно); вне наведения — на паузе */
+.pt :is(a,button).btn-p,.ck-b .y{position:relative}
+.pt :is(a,button).btn-p::after,.ck-b .y::after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s ease;animation:pt-pulse 1.8s ease-in-out infinite paused}
 .pt :is(a,button).btn-g::after,.pt .ico::after,.pt .fl-b::after,.pt .sv-tl a::after,.pt a.obj-all::after,.nb::after,.ck-b .n::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;background:var(--pt-grad);background-size:200% 100%;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude;opacity:0;transition:opacity .3s ease;pointer-events:none}
 @media (hover:hover){
 .pt .nav a:hover,.pt .menu-nav a:hover,.pt .foot-ln a:hover,.pt .crumbs a:hover,.pt a.lnk:hover,.pt a.card-link:hover,.pt a.tp-go:hover,.pt a.sv-go:hover,.pt .sv-fl a:hover,.pt a.sv-fw:hover,.foot-req a:hover,.doc-in :is(p,li) a:hover,.ck p a:hover{background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent!important;animation:pt-flow 2.4s linear infinite}
 .pt .nav a:hover svg,.pt .menu-nav a:hover svg,.pt .foot-ln a:hover svg,.pt .crumbs a:hover svg,.pt a.lnk:hover svg,.pt a.card-link:hover svg,.pt a.tp-go:hover svg,.pt a.sv-go:hover svg,.pt .sv-fl a:hover svg,.pt a.sv-fw:hover svg,.foot-req a:hover svg,.doc-in :is(p,li) a:hover svg,.ck p a:hover svg{color:#9FE5D1}
 .pt :is(a,button).btn-g:hover::after,.pt .ico:hover::after,.pt .fl-b:hover::after,.pt .sv-tl a:hover::after,.pt a.obj-all:hover::after,.nb:hover::after,.ck-b .n:hover::after{opacity:1;animation:pt-flow 2.4s linear infinite}
 .pt :is(a,button).btn-g:hover,.pt .ico:hover,.pt .fl-b:hover,.pt .sv-tl a:hover,.pt a.obj-all:hover,.ck-b .n:hover{box-shadow:0 0 28px -8px rgba(142,216,248,.55)}
-.pt :is(a,button).btn-p:hover,.ck-b .y:hover{animation:pt-pulse 1.8s ease-in-out infinite}
-.pt .cm-pop a:hover span{background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent!important;animation:pt-flow 2.4s linear infinite}
+.pt :is(a,button).btn-p:hover::after,.ck-b .y:hover::after{opacity:1;animation-play-state:running}
+.pt .cm-pop a:hover span:not(.ic){background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent!important;animation:pt-flow 2.4s linear infinite}
 }
 .pt .nav a:focus-visible,.pt .menu-nav a:focus-visible,.pt .foot-ln a:focus-visible,.pt .crumbs a:focus-visible,.pt a.lnk:focus-visible,.pt a.card-link:focus-visible,.pt a.tp-go:focus-visible,.pt a.sv-go:focus-visible,.pt .sv-fl a:focus-visible,.pt a.sv-fw:focus-visible,.foot-req a:focus-visible,.doc-in :is(p,li) a:focus-visible,.ck p a:focus-visible{background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent!important;animation:pt-flow 2.4s linear infinite}
 .pt .nav a:focus-visible svg,.pt .menu-nav a:focus-visible svg,.pt .foot-ln a:focus-visible svg,.pt .crumbs a:focus-visible svg,.pt a.lnk:focus-visible svg,.pt a.card-link:focus-visible svg,.pt a.tp-go:focus-visible svg,.pt a.sv-go:focus-visible svg,.pt .sv-fl a:focus-visible svg,.pt a.sv-fw:focus-visible svg,.foot-req a:focus-visible svg,.doc-in :is(p,li) a:focus-visible svg,.ck p a:focus-visible svg{color:#9FE5D1}
 .pt :is(a,button).btn-g:focus-visible::after,.pt .ico:focus-visible::after,.pt .fl-b:focus-visible::after,.pt .sv-tl a:focus-visible::after,.pt a.obj-all:focus-visible::after,.nb:focus-visible::after,.ck-b .n:focus-visible::after{opacity:1;animation:pt-flow 2.4s linear infinite}
-.pt :is(a,button).btn-p:focus-visible{animation:pt-pulse 1.8s ease-in-out infinite}
-.pt .cm-pop a:focus-visible span{background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent!important;animation:pt-flow 2.4s linear infinite}
-@media (prefers-reduced-motion:reduce){.pt .nav a,.pt .menu-nav a,.pt .foot-ln a,.pt .crumbs a,.pt a.lnk,.pt a.card-link,.pt a.tp-go,.pt a.sv-go,.pt .sv-fl a,.pt a.sv-fw,.foot-req a,.doc-in :is(p,li) a,.ck p a,.pt :is(a,button).btn-g::after,.pt .ico::after,.pt .fl-b::after,.pt .sv-tl a::after,.pt a.obj-all::after,.nb::after,.ck-b .n::after,.pt :is(a,button).btn-p,.pt .cm-pop a span{animation:none!important}}
+.pt :is(a,button).btn-p:focus-visible::after,.ck-b .y:focus-visible::after{opacity:1;animation-play-state:running}
+.pt .cm-pop a:focus-visible span:not(.ic){background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent!important;animation:pt-flow 2.4s linear infinite}
+@media (prefers-reduced-motion:reduce){.pt .nav a,.pt .menu-nav a,.pt .foot-ln a,.pt .crumbs a,.pt a.lnk,.pt a.card-link,.pt a.tp-go,.pt a.sv-go,.pt .sv-fl a,.pt a.sv-fw,.foot-req a,.doc-in :is(p,li) a,.ck p a,.pt :is(a,button).btn-g::after,.pt .ico::after,.pt .fl-b::after,.pt .sv-tl a::after,.pt a.obj-all::after,.nb::after,.ck-b .n::after,.pt :is(a,button).btn-p::after,.ck-b .y::after,.pt .cm-pop a span{animation:none!important}}
 /* ---------- зоны нажатия на тач-экранах (TASK-qa.md): не меньше 44×44 px ----------
    Невидимое расширение ::before по центру элемента: вид и раскладка прежние, палец попадает. Ссылка «к содержанию»
    видна только в фокусе — ей просто высота 44 px */
