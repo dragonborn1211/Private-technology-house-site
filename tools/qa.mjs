@@ -276,18 +276,38 @@ async function perfRun(rate) {
   for (let y = 0; y < H + 200; y += 100) { await page.mouse.wheel(0, 100); await page.waitForTimeout(60); }
   await page.waitForTimeout(2500);
   const fr = await page.evaluate(() => { window.__qa.rec = false; return window.__qa.fr; });
-  // покой: 10 с без действий посреди страницы, потом 3 с замера — время главного потока на кадр
-  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight * 0.4, behavior: 'instant' }));
-  await page.waitForTimeout(10000);
-  const m0 = Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map((m) => [m.name, m.value]));
-  const n0 = await page.evaluate(() => { window.__qa.fr = []; window.__qa.rec = true; return 0; });
-  await page.waitForTimeout(3000);
-  const m1 = Object.fromEntries((await cdp.send('Performance.getMetrics')).metrics.map((m) => [m.name, m.value]));
-  const idleFr = await page.evaluate(() => { window.__qa.rec = false; return window.__qa.fr.length; });
+  // покой: 10 с без действий, потом 3 с трассы — время главного потока на кадр. Курсор — у левого края, ни над чем
+  // (над карточкой схемы чаще идут импульсы — это уже не покой). Два места: первый экран (посетитель открыл сайт и читает)
+  // и середина страницы
+  await page.mouse.move(5, 450);
+  const idleAt = async (frac) => {
+    await page.evaluate((f) => window.scrollTo({ top: (document.documentElement.scrollHeight - innerHeight) * f, behavior: 'instant' }), frac);
+    await page.waitForTimeout(10000);
+    const chunks = [], onData = (e) => chunks.push(...e.value); cdp.on('Tracing.dataCollected', onData);
+    const tdone = new Promise((r) => cdp.once('Tracing.tracingComplete', r));
+    await cdp.send('Tracing.start', { categories: 'toplevel,cc,devtools.timeline,disabled-by-default-devtools.timeline,disabled-by-default-devtools.timeline.frame', transferMode: 'ReportEvents' });
+    await page.waitForTimeout(3000);
+    await cdp.send('Tracing.end'); await tdone; cdp.off('Tracing.dataCollected', onData);
+    const thr = chunks.find((e) => e.name === 'thread_name' && e.args.name === 'CrRendererMain');
+    const mev = chunks.filter((e) => thr && e.pid === thr.pid && e.tid === thr.tid);
+    // границы кадров — ProxyMain::BeginMainFrame; задачи — только верхнего уровня (RunTask и вложенный в него
+    // ThreadControllerImpl::RunTask — одна и та же задача)
+    const bmf = mev.filter((e) => e.name === 'ProxyMain::BeginMainFrame').map((e) => e.ts).sort((x, y) => x - y);
+    const all = mev.filter((e) => e.ph === 'X' && e.dur && (e.name === 'RunTask' || e.name === 'ThreadControllerImpl::RunTask')).sort((x, y) => x.ts - y.ts || y.dur - x.dur);
+    const tasks = []; let endT = -1;
+    for (const t of all) if (t.ts >= endT) { tasks.push(t); endT = t.ts + t.dur; }
+    // кадр — задача главного потока, внутри которой BeginMainFrame (rAF движка и сцен, стили, раскладка, отрисовка)
+    const per = [];
+    for (const ts of bmf) { const t = tasks.find((x) => x.ts <= ts && x.ts + x.dur >= ts); if (t) per.push(t.dur / 1000); }
+    per.sort((x, y) => x - y);
+    return { med: per.length ? per[per.length >> 1] : 0, p90: per.length ? per[Math.floor(per.length * 0.9)] : 0, n: per.length };
+  };
+  const idleTop = await idleAt(0), idleMid = await idleAt(0.4);
+  const idleMed = Math.max(idleTop.med, idleMid.med), idleP90 = Math.max(idleTop.p90, idleMid.p90);
   const q = await page.evaluate(() => ({ cls: window.__qa.cls, lcp: window.__qa.lcp, lite: document.getElementById('pt-site').classList.contains('pt-lite') }));
   await b.close();
   const so = [...fr].sort((a, b) => a - b), pc = (p) => so.length ? so[Math.min(so.length - 1, Math.floor(so.length * p))] : 0;
-  return { rate, introLongTasks: intro.lt.filter((x) => x[1] > 50).length, h1: intro.h1, cls: +q.cls.toFixed(4), lcp: q.lcp, frames: so.length, p50: +pc(0.5).toFixed(1), p95: +pc(0.95).toFixed(1), over50: so.filter((x) => x > 50).length, idleMsPerFrame: +(((m1.TaskDuration - m0.TaskDuration) * 1000) / Math.max(1, idleFr) / rate).toFixed(2), idleRaw: +(((m1.TaskDuration - m0.TaskDuration) * 1000) / Math.max(1, idleFr)).toFixed(2), lite: q.lite, liteIntro: intro.lite };
+  return { rate, introLongTasks: intro.lt.filter((x) => x[1] > 50).length, h1: intro.h1, cls: +q.cls.toFixed(4), lcp: q.lcp, frames: so.length, p50: +pc(0.5).toFixed(1), p95: +pc(0.95).toFixed(1), over50: so.filter((x) => x > 50).length, idleRaw: +idleMed.toFixed(2), idleP90: +idleP90.toFixed(2), idleTop: +idleTop.med.toFixed(2), idleMid: +idleMid.med.toFixed(2), idleFrames: idleTop.n + idleMid.n, lite: q.lite, liteIntro: intro.lite };
 }
 async function perf() {
   console.log('\nпроизводительность главной (Chromium, первый заход)');
@@ -300,9 +320,9 @@ async function perf() {
     if (!r.h1 || r.h1 > lim.h1) bad.push(`H1 читается на ${r.h1} мс > ${lim.h1}`);
     if (r.cls > BUDGET.cls) bad.push(`CLS ${r.cls} > ${BUDGET.cls}`);
     if (r.p95 > lim.p95) bad.push(`p95 кадра при прокрутке ${r.p95} мс > ${lim.p95}`);
-    if (r.idleRaw > lim.idle) bad.push(`покой: главный поток ${r.idleRaw} мс на кадр > ${lim.idle}`);
+    if (r.idleRaw > lim.idle) bad.push(`покой: медиана работы главного потока ${r.idleRaw} мс на кадр > ${lim.idle}`);
     bad.forEach((x) => fail(tag, x));
-    console.log(`  ${bad.length ? '✗' : '✓'} ${tag}: H1 ${r.h1} мс, долгих задач ${r.introLongTasks}, CLS ${r.cls}, LCP ${r.lcp} мс, кадры p50 ${r.p50} / p95 ${r.p95} мс, > 50 мс: ${r.over50} из ${r.frames}, покой ${r.idleRaw} мс/кадр${r.lite ? ', облегчённый режим' : ''}${bad.length ? '\n      ' + bad.join('\n      ') : ''}`);
+    console.log(`  ${bad.length ? '✗' : '✓'} ${tag}: H1 ${r.h1} мс, долгих задач ${r.introLongTasks}, CLS ${r.cls}, LCP ${r.lcp} мс, кадры p50 ${r.p50} / p95 ${r.p95} мс, > 50 мс: ${r.over50} из ${r.frames}, покой: медиана ${r.idleRaw} (первый экран ${r.idleTop}, середина ${r.idleMid}) / p90 ${r.idleP90} мс на кадр${r.lite ? ', облегчённый режим' : ''}${bad.length ? '\n      ' + bad.join('\n      ') : ''}`);
   }
 }
 
