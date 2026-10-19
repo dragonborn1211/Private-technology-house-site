@@ -83,6 +83,8 @@ body{margin:0;background:#0A121A}
 .site-view iframe{position:absolute;top:0;left:0;width:1440px;height:1100px;border:0;transform-origin:0 0;opacity:0;visibility:hidden;transition:opacity .6s ease,visibility 0s linear .6s;pointer-events:none;background:#0A121A}
 .site-view iframe.on{opacity:1;visibility:visible;transition:opacity .6s ease,visibility 0s}
 /* снимок сайта (tools/previews.mjs) — превью по умолчанию; живой iframe проявляется поверх только при наведении */
+/* снимок в <picture> (WebP 480 / 960 и JPEG): обёртка не участвует в раскладке */
+.site-view > picture{display:contents}
 .site-shot{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
 .pt-on .sec .site-shot{transition:opacity .9s ease}
 .pt-on .sec:not(.s-done) .site-shot{opacity:0}
