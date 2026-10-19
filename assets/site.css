@@ -24,7 +24,10 @@ body{margin:0;background:#0A121A}
 #main:focus{outline:none}
 /* до старта движка (.pt-boot снимает engine.js) секций не видно и переходов нет: иначе браузер успевает
    нарисовать готовую страницу, пока грузятся скрипты, и она потом гаснет поверх вспышки частиц */
-.pt-boot .sec > :not(.wrap),.pt-boot .sec .wrap > *{opacity:0}
+.pt-boot .sec > :not(.wrap),.pt-boot .sec .wrap > *{opacity:0;animation:pt-late 0s 4s forwards!important}
+/* запасной путь (TASK-qa.md, 4.3): скрипты не пришли за 4 с (медленная сеть, тяжёлый телефон) — страница показывается
+   без сборки; движок, пришедший позже, это видит и включает режим «сразу» (LATE в engine.js), а не прячет её снова */
+@keyframes pt-late{to{opacity:1}}
 .pt-boot *,.pt-boot *::before,.pt-boot *::after{transition:none!important}
 /* свой скроллбар (assets/scroll.js): скрыт, пока страницу не прокручивают */
 .sbar{position:fixed;top:12px;right:4px;bottom:12px;z-index:35;width:12px;opacity:0;pointer-events:none;transition:opacity .45s ease}

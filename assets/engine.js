@@ -108,9 +108,14 @@
       // раз на сайт зашёл», во всех открытых вкладках следующий заход — полный.
       var REPEAT = false;
       try { var tv = +sessionStorage.getItem('pt-visit') || 0; REPEAT = tv > 0 && Date.now() - tv < 30 * 60e3; sessionStorage.setItem('pt-visit', String(Date.now())); } catch (e) { /* хранилище запрещено — полная */ }
+      // Скрипты пришли поздно: CSS уже показал страницу без сборки (через 4 с, pt-late в site.css) — не прячем её ради
+      // вступления, всё сразу на месте, движение идёт (как режим «сразу»)
+      var LATE = false;
+      try { var lp = root.querySelector('.sec > :not(.wrap), .sec .wrap > *'); LATE = !!lp && root.classList.contains('pt-boot') && parseFloat(getComputedStyle(lp).opacity) > 0.5; } catch (e) { LATE = false; }
       var MODE = (function () {
         var q = /[?&]intro=(full|fast|instant)(?:&|$)/.exec(location.search);
         if (rm) return 'rm';
+        if (LATE) return 'instant';
         if (q) return q[1];
         // повторный заход — быстрая сборка (просьба владельца: «очень сильно упростить и ускорить»); первый — полная
         if (!AUTO_MODE) return REPEAT ? 'fast' : 'full';
