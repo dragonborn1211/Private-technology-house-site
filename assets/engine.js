@@ -7,7 +7,8 @@
       var btns = Array.prototype.slice.call(root.querySelectorAll('[data-pt-replay]'));
       var countEl = root.querySelector('[data-pt-count]');
       var rm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-      var env = { rm: rm, mob: false, vh: 800 };
+      // hold — облегчённый режим и идёт прокрутка: декоративные петли сцен стоят (TASK-qa-decisions.md, 3; см. onHold)
+      var env = { rm: rm, mob: false, vh: 800, hold: false };
       var gl = null, c2 = null;
       if (canvas) {
         try { gl = canvas.getContext('webgl', { antialias: false, alpha: true, premultipliedAlpha: true }) || canvas.getContext('experimental-webgl', { alpha: true }); } catch (e) { gl = null; }
@@ -933,6 +934,16 @@
       // Если страница просто проехала под неподвижным курсором, превью не включается: иначе на прокрутке
       // через «Объекты» тяжёлые сайты грузились бы сами.
       var siteOff = [], lastScroll = 0;
+      // Облегчённый режим (lite ≥ 1, слабое устройство): на время прокрутки декоративные петли стоят — импульсы на схемах и
+      // смена демо-сайтов (scenes.js, env.hold; петли рисунков в облегчённом режиме выключены и так — .pt-lite .glyph *);
+      // через 150 мс после остановки идут дальше. Пыль и частицы сборки не трогаем. Человек в этот момент листает — паузы
+      // не видно, а кадр прокрутки легче
+      var holdT = 0;
+      function onHold() {
+        if (!lite) return;
+        env.hold = true;
+        clearTimeout(holdT); holdT = setTimeout(function () { env.hold = false; }, 150);
+      }
       function onScrollSites() { lastScroll = performance.now(); sites.forEach(function (fr) { clearTimeout(fr._intent); }); }
       function bindSites() {
         sites.forEach(function (fr) {
@@ -1095,6 +1106,9 @@
       }
       function pump() {
         if (running) return;
+        // едем к якорю дальше 1.5 экрана (scroll.js, pt:jump) — где остановимся, там и соберём
+        var now = performance.now();
+        if (now < travelEnd) { clearTimeout(pumpT); pumpT = setTimeout(pump, travelEnd - now + 30); return; }
         while (queue.length) {
           var q = queue[0], r = q.el.getBoundingClientRect();
           if (q.instant) { queue.shift(); q.instant = false; setStage(q, 'done'); q.state = 'done'; setProg(); wakeSites(q.el); continue; }
@@ -1105,8 +1119,68 @@
           break;
         }
         if (!queue.length) { if (!running && replaying) pultLater(); return; }
+        if (now < jumpUntil && !replaying) {
+          var vis = queue.filter(function (x) { if (x === hero || x.replay || x.instant) return false; var r = x.el.getBoundingClientRect(); return r.bottom > 0 && r.top < VH; });
+          if (vis.length) { queue = queue.filter(function (x) { return vis.indexOf(x) < 0; }); runJump(vis); return; }
+        }
         var s = queue.shift();
         if (s === hero) runHero(s, s.replay); else runSec(s);
+      }
+      // Прыжок (TASK-qa-decisions.md, 4): End, якорь через несколько экранов, рывок скроллбара — больше 1.5 высоты окна за
+      // 300 мс или поездка scroll.js к якорю (pt:jump). Раньше очередь честно собирала оказавшиеся на экране секции по одной
+      // (после End подвал ждал контакт ~1.5 с). Теперь проскоченные сразу готовы (как и раньше), а видимые — вместе, быстрой
+      // сборкой (runJump: один луч FAST_LD, как при быстром заходе); идущая обычная сборка уходит в ту же группу.
+      // travelEnd — до него pump ждёт: конец поездки к якорю; jumpUntil — до него видимые секции из очереди собираются
+      // группой. Новые видимые секции наблюдатели сообщают после кадра (onSee → pump) — группа запускается оттуда, а если
+      // сообщать нечего (на экране только прерванная сборка) — через два кадра
+      var jumpUntil = 0, travelEnd = 0, pumpT = 0, yHist = [], lastY = window.scrollY || 0;
+      function jumpNow(until) {
+        if (rm || !alive) return;
+        var now = performance.now();
+        if (until) travelEnd = Math.max(travelEnd, until);
+        jumpUntil = Math.max(jumpUntil, Math.max(travelEnd, now) + 600);
+        var s = running;
+        if (s && s !== hero && s.state === 'run' && !settleFn && !replaying && !s.jump) { runId++; running = null; cur = null; s.state = 'queued'; queue.unshift(s); }
+        clearTimeout(pumpT);
+        if (now < travelEnd) pumpT = setTimeout(pump, travelEnd - now + 30);
+        else requestAnimationFrame(function () { requestAnimationFrame(function () { if (alive) pump(); }); });
+      }
+      // точка отсчёта — последняя позиция не позже чем 300 мс назад (End — один скачок после долгой паузы: сравнивать надо
+      // с тем, где страница стояла до него)
+      function onJumpScroll() {
+        var t = performance.now(), y = window.scrollY || 0;
+        if (!yHist.length) yHist.push(t - 1000, lastY);
+        yHist.push(t, y);
+        while (yHist.length > 4 && t - yHist[2] >= 300) yHist.splice(0, 2);
+        if (Math.abs(y - yHist[1]) > VH * 1.5) { yHist = [t, y]; jumpNow(); }
+        lastY = y;
+      }
+      function onJumpEv(e) { var d = (e && e.detail) || {}; jumpNow(d.until || 0); }
+      // --ld всем элементам группы по положению слева направо: сначала все замеры, потом все записи (ловушка 7)
+      function jumpDelays(list, sec) {
+        var vw = Math.max(1, window.innerWidth), els = [], v = [], k;
+        list.forEach(function (x) { Array.prototype.push.apply(els, x.el.querySelectorAll('*')); });
+        for (k = 0; k < els.length; k++) { var r = els[k].getBoundingClientRect(); v.push((clamp(r.left / vw, 0, 1) * sec).toFixed(3) + 's'); }
+        for (k = 0; k < els.length; k++) els[k].style.setProperty('--ld', v[k]);
+      }
+      function runJump(list) {
+        var s = list[0], ft = null, my;
+        runId++; my = runId; running = s; cur = null; runK = SEC_K;
+        list.forEach(function (x) { x.state = 'run'; x.replay = false; x.jump = true; if (x.burst === 'pop') ft = x; });
+        function end() { list.forEach(function (x) { x.el.classList.remove('pt-jump'); x.jump = false; }); if (beamEl && !running) beamEl.classList.remove('run'); }
+        settleFn = function () { list.forEach(function (x) { setStage(x, 'done'); x.state = 'done'; wakeSites(x.el); }); end(); };
+        seed(); list.forEach(function (x) { measure(x); });
+        jumpDelays(list, FAST_LD);
+        list.forEach(function (x) { x.el.classList.add('pt-jump'); setStage(x, 'done'); });
+        line(beamEl, FAST_LD);
+        phGlyphs(list, BLD, FAST_LD); log(s, 'jump · ' + list.length + ' × ' + list.map(function (x) { return x.name; }).join(', '));
+        atRun(FAST_LD + 0.15, function () { phFade(BLD); });
+        atRun(FAST_LD + 0.35, function () {
+          settleFn = null; list.forEach(function (x) { x.state = 'done'; wakeSites(x.el); }); setProg(); log(s, '✓ ready');
+          if (ft) popWait = ft;
+          finish(s);
+        });
+        at(FAST_LD + 1.2, function () { if (runId === my || !running) end(); else list.forEach(function (x) { x.el.classList.remove('pt-jump'); x.jump = false; }); });
       }
       function request(s) { if (!s || s.state !== 'idle') return; s.state = 'queued'; queue.push(s); pump(); }
       // «Пересобрать блок» пересобирает всё, что видно на экране, а не одну секцию: иначе соседний блок оставался
@@ -1297,6 +1371,9 @@
       window.addEventListener('pointerdown', onMove, { passive: true });
       window.addEventListener('pointerout', onOut);
       window.addEventListener('resize', onResize);
+      window.addEventListener('scroll', onHold, { passive: true });
+      window.addEventListener('scroll', onJumpScroll, { passive: true });
+      window.addEventListener('pt:jump', onJumpEv);
       window.addEventListener('pt:shown', onShown);
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(onFonts);
       if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', onFonts);
@@ -1355,7 +1432,8 @@
           window.removeEventListener('pointermove', onMove);
           window.removeEventListener('pointerdown', onMove);
           window.removeEventListener('pointerout', onOut);
-          window.removeEventListener('resize', onResize);
+          window.removeEventListener('resize', onResize); window.removeEventListener('scroll', onHold); clearTimeout(holdT);
+          window.removeEventListener('scroll', onJumpScroll); window.removeEventListener('pt:jump', onJumpEv); clearTimeout(pumpT);
           window.removeEventListener('pt:shown', onShown);
           window.removeEventListener('wheel', onSkip); window.removeEventListener('touchmove', onSkip);
           window.removeEventListener('pointerdown', onSkip); window.removeEventListener('keydown', onSkip);

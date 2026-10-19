@@ -197,6 +197,10 @@ body{margin:0;background:#0A121A}
    задержка по положению элемента (--ld), текст быстрее обычного */
 .pt-sweep .sec[data-sec="hero"] *,.pt-sweep .sec[data-sec="hero"] *::before,.pt-sweep .sec[data-sec="hero"] *::after{transition-delay:var(--ld,0s)!important}
 .pt-sweep .sec[data-sec="hero"] .ptx{transition-duration:.35s!important}
+/* прыжок (End, якорь через несколько экранов — engine.js, runJump): видимые секции проявляются вместе за одним лучом, как
+   первый экран при быстром заходе — задержка по положению (--ld), текст быстрее обычного */
+.sec.pt-jump *,.sec.pt-jump *::before,.sec.pt-jump *::after{transition-delay:var(--ld,0s)!important}
+.sec.pt-jump .ptx{transition-duration:.35s!important}
 /* режим «сразу» (страница уже открывалась в этой вкладке): первые кадры без переходов — всё на месте с первого кадра */
 .pt-instant *,.pt-instant *::before,.pt-instant *::after{transition:none!important}
 /* луч смены языка: проходит экран слева направо, за ним буквы пересобираются на другом языке */

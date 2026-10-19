@@ -1,7 +1,8 @@
 // Сцены в карточках «Объектов». Каждая сцена — свой 2D-холст и методы wake() / tick(dt) / resize().
 // Движок (assets/engine.js) создаёт их через PTScenes.create(root, env), будит из wakeSites(),
 // тикает из frame(), ресайзит из layout(). Свой requestAnimationFrame сцены не заводят.
-// env — живые параметры движка: env.rm (prefers-reduced-motion), env.mob (ширина < 760), env.vh (высота окна).
+// env — живые параметры движка: env.rm (prefers-reduced-motion), env.mob (ширина < 760), env.vh (высота окна), env.hold
+// (облегчённый режим и идёт прокрутка: сцена, уже собравшаяся после пробуждения, стоит — петля на паузе, кадр не рисуется).
 (function () {
   var ACC = ['#8ED8F8', '#7FA8FF', '#B7A6F2', '#9FE5D1'], LILAC = '#B7A6F2';
   // цвет подписи роли над названием плашки: источник, связка, обработка, AI, результат
@@ -35,7 +36,7 @@
     if (!cv || !cv.getContext) return null;
     var mx = cv.getContext('2d'), lab = cv.parentNode.querySelector('[data-mini-label]');
     var oc3 = document.createElement('canvas'), og3 = oc3.getContext('2d', { willReadFrequently: true });
-    var MW = 1, MH = 1, md = 1, NP = 0, on = false, ct = 0, stage = -1, ti = 0, gridA = 0, wireA = 0, siteA = 0, RC = [];
+    var MW = 1, MH = 1, md = 1, NP = 0, on = false, ct = 0, stage = -1, ti = 0, gridA = 0, wireA = 0, siteA = 0, RC = [], held = false;
     var X, Y, VX, VY, TX, TY, A, AT, CI, FR, NX, NY, NA, NC, NF, SWT;
     var GP = [], GRGB = [];
     function gi(hex) { var k = GP.indexOf(hex); if (k >= 0) return k; GP.push(hex); GRGB.push([parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]); return GP.length - 1; }
@@ -304,8 +305,10 @@
       if (!on || env.rm || asleep) return;
       var br = cv.getBoundingClientRect();
       if (br.bottom < -20 || br.top > env.vh + 20) return;
+      if (env.hold && held) return;
       ct += dt;
       while (stage < STG.length - 1 && ct >= STG[stage + 1]) setStage(stage + 1);
+      if (stage >= 4) held = true;
       if (ct >= CYC) { ti = (ti + 1) % TPL.length; ct = 0; stage = -1; RC = []; setStage(0); }
       var f = Math.min(3, dt * 60), damp = Math.pow(0.84, f), k = 0.02 * f, dd = Math.pow(0.955, f), ea = Math.min(1, dt * 4);
       for (var i = 0; i < NP; i++) {
@@ -352,7 +355,7 @@
     // повторное пробуждение (секцию пересобрали) — текущий демо-сайт собирается заново с сетки
     var asleep = false;
     function wake() {
-      asleep = false;
+      asleep = false; held = false;
       if (on) { if (!env.rm) { ct = 0; stage = -1; RC = []; setStage(0); } return; }
       on = true; resize();
       if (lab) lab.classList.add('on');
@@ -929,7 +932,7 @@
   function makeFlow(cv, env, cfg) {
     if (!cv || !cv.getContext) return null;
     var g = cv.getContext('2d'), win = cv.parentNode, card = win.closest('.glass') || win, lab = win.querySelector('[data-flow-label]');
-    var st = { w: 0, h: 0, d: 0 }, on = false, G = null, ct = 0, stage = '', prev = '', CYC = 7, gl = '', swapAt = 0;
+    var st = { w: 0, h: 0, d: 0 }, on = false, G = null, ct = 0, stage = '', prev = '', CYC = 7, gl = '', swapAt = 0, held = false;
     var RUN = cfg.rand === 'duplex' ? 'sync' : 'run';
     function compact() { return st.w < 340; }
     function label(s) { stage = s; if (lab && G) lab.textContent = G.title + ' · ' + s; }
@@ -949,6 +952,8 @@
     function tick(dt) {
       if (!on || env.rm || !G || asleep) return;
       if (offscreen(cv, env)) return;
+      if (env.hold && held) return;
+      if (G.t >= G.first) held = true;
       if (swapAt > 0) { swapAt -= dt; if (swapAt <= 0) rebuild(); }
       var hov = card.matches(':hover');
       if (cfg.rand) {
@@ -968,7 +973,7 @@
     // повторное пробуждение (секцию пересобрали) — схема собирается заново: узлы слева направо, потом импульсы
     var asleep = false;
     function wake() {
-      asleep = false;
+      asleep = false; held = false;
       if (on) { if (!env.rm && G) { if (cfg.rand || gl !== lang()) rebuild(); else G.build(false); } return; }
       on = true; fitCanvas(cv, st); next(true);
       if (lab) lab.classList.add('on');

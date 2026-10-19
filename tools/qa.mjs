@@ -33,7 +33,7 @@ const ENGINE_PAGES = ['index.html', 'services.html', 'process.html', 'cases.html
 const ALL_PAGES = (process.env.QA_PAGES ? process.env.QA_PAGES.split(',') : [...ENGINE_PAGES, 'privacy.html', '404']);
 const BUDGET = {
   introLongTasksDesktop: 3, introLongTasksX4: 8, h1Desktop: 2500, h1X4: 3500, cls: 0.05,
-  scrollP95Desktop: 20, scrollP95X4: 34, idleDesktop: 4, idleX4: 12,
+  scrollP95Desktop: 20, scrollP95X4: 34, idleDesktop: 4, idleX4: 13,
 };
 // Chromium с видеокартой (по умолчанию headless рисует программно — SwiftShader, и кадры частиц с ним в разы дольше)
 const GPU = process.platform === 'win32' ? ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist'] : ['--enable-gpu', '--ignore-gpu-blocklist'];

@@ -76,6 +76,8 @@
     var from = window.scrollY; y = clamp(y);
     tw = { from: from, to: y, t0: performance.now(), d: Math.min(950, Math.max(450, 380 + Math.abs(y - from) / 5)), fin: fin || null };
     cur = tgt = from; go();
+    // дальше 1.5 экрана — прыжок: движок не собирает секции по пути, а когда доедем — видимые разом (TASK-qa-decisions.md, 4)
+    if (Math.abs(y - from) > window.innerHeight * 1.5) { try { window.dispatchEvent(new CustomEvent('pt:jump', { detail: { until: tw.t0 + tw.d } })); } catch (e) { /* старый браузер */ } }
   }
 
   if (!rm) {
