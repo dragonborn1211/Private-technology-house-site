@@ -711,6 +711,25 @@
           usp.forEach(function (u, j) { u.setAttribute('aria-current', j === slot ? 'step' : 'false'); });
           if (uspRow && uspRow.scrollWidth > uspRow.clientWidth + 4) { var a = usp[slot]; uspRow.scrollTo({ left: a.offsetLeft - uspRow.offsetLeft - 8, behavior: env.rm ? 'auto' : 'smooth' }); }
         }
+        function setSt(el, k, v) { if (el['__' + k] !== v) { el['__' + k] = v; el.style[k] = v; } }
+        // полоска активной вкладки — анимация компоновщика (Web Animations), а не запись transform в каждом кадре: смена
+        // scaleX у обычного элемента заставляла браузер в каждом кадре пересобирать слои всей страницы (TASK-qa.md, простой
+        // при CPU ×4). Ход тот же — scaleX от 0 до 1 линейно за время принципа; ведёт по-прежнему slotT: анимация стоит, пока
+        // стоит slotT (курсор над панелью), и подводится к нему, если разошлась (старт анимации на кадр позже, скрытая вкладка, кадр дольше 50 мс)
+        var fa = null, faEl = null;
+        function fillAnim(el) {
+          if (env.rm || !el.animate) return false;
+          if (faEl !== el || !fa) {
+            if (fa) fa.cancel();
+            faEl = el; fa = el.animate([{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], { duration: DUR[slot] * 1000, fill: 'both' });
+          }
+          var want = Math.min(1, slotT / DUR[slot]) * DUR[slot] * 1000, run = e < 0.5;
+          if (run && fa.playState === 'paused') fa.play();
+          else if (!run && fa.playState !== 'paused') fa.pause();
+          var ct = fa.currentTime;
+          if (ct == null || Math.abs(ct - want) > 20) fa.currentTime = want;
+          return true;
+        }
         core.update = function (dt) {
           if (!started) return;
           var s = SHP[cur], m = core.mouse, p = core.panel;
@@ -722,9 +741,11 @@
           s.upd(env.rm ? 0 : dt, e);
           if (!env.rm) { if (e < 0.5) slotT += dt; if (slotT > DUR[slot]) setSlot(slot + 1); }
           var tg = TINT[slot], kk = env.rm ? 1 : Math.min(1, dt * 2.5); core.tk += (TK[slot] - core.tk) * kk; for (var q = 0; q < 3; q++) core.tint[q] += (tg[q] - core.tint[q]) * kk;
-          if (ring) ring.style.strokeDashoffset = (RL * (1 - (env.rm ? 1 : Math.min(1, slotT / DUR[slot])))).toFixed(1);
+          // стиль пишется, только когда значение изменилось: запись того же значения каждый кадр всё равно помечала элемент
+          // к пересчёту стилей (заполненные и пустые полоски, кольцо на паузе) — TASK-qa.md, картинка та же
+          if (ring) setSt(ring, 'strokeDashoffset', (RL * (1 - (env.rm ? 1 : Math.min(1, slotT / DUR[slot])))).toFixed(1));
           if (panelEl) panelEl.classList.toggle('is-paused', e >= 0.5);
-          for (var j = 0; j < fills.length; j++) if (fills[j]) fills[j].style.transform = 'scaleX(' + (j < slot ? 1 : (j > slot ? 0 : (env.rm ? 1 : Math.min(1, slotT / DUR[slot])))).toFixed(3) + ')';
+          for (var j = 0; j < fills.length; j++) if (fills[j] && (j !== slot || !fillAnim(fills[j]))) setSt(fills[j], 'transform', 'scaleX(' + (j < slot ? 1 : (j > slot ? 0 : (env.rm ? 1 : Math.min(1, slotT / DUR[slot])))).toFixed(3) + ')');
           if (window.PTI18N && window.PTI18N.lang !== lang) labels();
         };
         usp.forEach(function (u) { u.addEventListener('click', function (ev) { ev.stopPropagation(); if (started) setSlot(+u.getAttribute('data-usp')); }); });

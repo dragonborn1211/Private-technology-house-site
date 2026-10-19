@@ -338,11 +338,13 @@
         RC.forEach(function (fr) { rr(mx, fr.x - 2.5, fr.y - 2.5, fr.w + 5, fr.h + 5, (fr.r || 0) + 2); mx.stroke(); });
         mx.setLineDash([]);
       }
-      var lc = -1, ps = env.mob ? 1.4 : 1.3;
+      // прозрачность — шагами 1/255 (холст и так хранит её с этой точностью) и только когда меняется: у собранных частиц
+      // она почти у всех одна, и 2 600 вызовов на кадр стали единицами — картинка та же
+      var lc = -1, la = -1, ps = env.mob ? 1.4 : 1.3;
       for (var j = 0; j < NP; j++) {
         if (A[j] < 0.02) continue;
         if (CI[j] !== lc) { lc = CI[j]; mx.fillStyle = GP[lc]; }
-        mx.globalAlpha = A[j];
+        var qa = Math.round(A[j] * 255); if (qa !== la) { la = qa; mx.globalAlpha = qa / 255; }
         mx.fillRect(X[j] - ps / 2, Y[j] - ps / 2, ps, ps);
       }
       mx.globalAlpha = 1;

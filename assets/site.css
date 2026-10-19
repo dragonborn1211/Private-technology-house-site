@@ -556,9 +556,9 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
    направления свой маленький чертёж в цвете --c. Когда секция собрана (glyphs.js ставит .is-on), линии .d
    прорисовываются по очереди (stroke-dashoffset, pathLength="1", номер линии --i), потом живут петлёй: «печатается»
    ответ (.type), всплывает уведомление (.ping), бежит подсветка по столбикам (.bars, номер --k), мигают диоды (.led),
-   по связям бегут импульсы (.pulse, SMIL). Моно-подписи — как на техническом чертеже. Секция собрана заранее (режим
-   «сразу», reduced motion) — .is-now: всё сразу на месте, петли идут. Вне экрана анимации на паузе (.is-vis снят,
-   SMIL — pauseAnimations). Эталон — tools/ref/glyphs/icons-variants.html, вариант A ---------- */
+   по связям бегут импульсы (.pulse, stroke-dashoffset). Моно-подписи — как на техническом чертеже. Секция собрана заранее (режим
+   «сразу», reduced motion) — .is-now: всё сразу на месте, петли идут. Вне экрана анимации на паузе (.is-vis снят).
+   Эталон — tools/ref/glyphs/icons-variants.html, вариант A ---------- */
 .glyph{position:relative;display:block}
 .glyph svg{display:block;width:100%;height:auto;overflow:visible;fill:none;stroke:var(--c);stroke-width:1.15;stroke-linecap:round;stroke-linejoin:round}
 .glyph .d{opacity:.55;stroke-dasharray:1;stroke-dashoffset:1}
@@ -570,7 +570,10 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .glyph .dot{fill:var(--c);stroke:none}
 .glyph .led{fill:var(--c);stroke:none;filter:drop-shadow(0 0 3px var(--c))}
 .glyph .gl{fill:#EEF3F6;stroke:none;transform-box:fill-box;transform-origin:center}
-.glyph .pulse{fill:#EEF3F6;stroke:none;filter:drop-shadow(0 0 4px var(--c))}
+/* импульс — точка на пути: штрих нулевой длины с круглым концом толщиной 2r (--pw), бежит по stroke-dashoffset (pathLength 1,
+   период 2 — на пути одна точка). Раньше — кружок с SMIL animateMotion: каждый его шаг менял transform SVG-элемента с
+   фильтром, и браузер в каждом кадре пересобирал слои всей страницы и заново искал элемент под курсором (TASK-qa.md, простой) */
+.glyph .pulse{fill:none;stroke:#EEF3F6;stroke-width:var(--pw,4.8);stroke-linecap:round;stroke-dasharray:0 2;stroke-dashoffset:0;filter:drop-shadow(0 0 4px var(--c))}
 .glyph .ping{transform-box:fill-box}
 .glyph :is(.lb,.dot,.led,.gl,.pulse){opacity:0;transition:opacity .6s ease}
 /* прорисовка: линии по очереди за 1.5 с, подписи, диоды, блик и импульсы — следом */
@@ -584,11 +587,13 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .glyph.is-on .type .d:nth-child(2){animation-delay:2.1s}.glyph.is-on .type .d:nth-child(3){animation-delay:2.6s}
 .glyph.is-on .ping{animation:glPing 4s ease-in-out 1.8s infinite}
 .glyph.is-on .bars .d{animation:glDraw 1.5s cubic-bezier(.6,0,.3,1) calc(var(--i,0) * 40ms) both,glBar 3s linear calc(1.6s + var(--k,0) * 120ms) infinite}
+.glyph.is-on .pulse{animation:glPulse var(--pd,2.4s) linear var(--pb,0s) infinite}
 @keyframes glDraw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
 @keyframes glType{0%{stroke-dashoffset:1}25%,85%{stroke-dashoffset:0;opacity:.55}100%{stroke-dashoffset:0;opacity:0}}
 @keyframes glPing{0%{opacity:0;transform:translateY(6px)}12%,80%{opacity:1;transform:none}100%{opacity:0;transform:none}}
 @keyframes glBar{0%,10%,100%{stroke:var(--c);opacity:.4}4%{stroke:#EEF3F6;opacity:1}}
 @keyframes glBlink{0%,100%{opacity:1}50%{opacity:.15}}
+@keyframes glPulse{to{stroke-dashoffset:-1}}
 /* секция собрана к старту (режим «сразу», reduced motion): чертёж сразу на месте, петли — без задержки на прорисовку */
 .glyph.is-now .d{animation:none;stroke-dashoffset:0}
 .glyph.is-now :is(.lb,.dot,.led,.gl,.pulse){transition:none}

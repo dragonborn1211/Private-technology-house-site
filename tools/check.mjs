@@ -2090,7 +2090,8 @@ console.log('\nрисунки направлений');
   await page.screenshot({ path: path.join(shots, 'd1440-glyphs.png') });
   // вне экрана — на паузе
   await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' })); await page.waitForTimeout(250);
-  const off = await page.evaluate(() => [...document.querySelectorAll('#directions .glyph')].filter((el) => el.classList.contains('is-vis') || !el.querySelector('svg').animationsPaused()).length);
+  // петли и импульсы — CSS (SMIL больше нет): вне экрана ни одна анимация рисунка не идёт
+  const off = await page.evaluate(() => [...document.querySelectorAll('#directions .glyph')].filter((el) => el.classList.contains('is-vis') || el.getAnimations({ subtree: true }).some((a) => a.playState === 'running')).length);
   if (off) bad.push(`вне экрана не на паузе: ${off}`);
   // «Пересобрать блок»: рисунок гаснет вместе с секцией и прорисовывается заново
   await page.evaluate(() => { window.scrollTo({ top: document.querySelector('#directions').getBoundingClientRect().top + scrollY + 280, behavior: 'instant' }); window.__glOff = 0; document.querySelectorAll('#directions .glyph').forEach((el) => new MutationObserver(() => { if (!el.classList.contains('is-on')) window.__glOff++; }).observe(el, { attributes: true, attributeFilter: ['class'] })); });
