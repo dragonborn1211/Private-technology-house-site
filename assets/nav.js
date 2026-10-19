@@ -100,6 +100,8 @@
     var b = cm.querySelector('.cm-btn'), p = cm.querySelector('.cm-pop');
     if (!b || !p || p.hidden === !v) return;
     p.hidden = !v; b.setAttribute('aria-expanded', v ? 'true' : 'false'); cm.classList.toggle('is-open', v);
+    // список прижат правым краем к кнопке; на узком экране (320 px) он уходил за левый край — сдвигаем в пределы окна
+    if (v) { p.style.setProperty('--cm-dx', '0px'); var r = p.getBoundingClientRect(), W = document.documentElement.clientWidth; p.style.setProperty('--cm-dx', Math.round(r.left < 12 ? 12 - r.left : (r.right > W - 12 ? W - 12 - r.right : 0)) + 'px'); }
   }
   function cmClose(keep) { cms.forEach(function (cm) { if (cm !== keep) cmSet(cm, false); }); }
   cms.forEach(function (cm) {

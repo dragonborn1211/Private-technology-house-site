@@ -303,7 +303,7 @@ body{margin:0;background:#0A121A}
 .cm-btn .cm-i{display:none}
 .cm-btn .cm-ch{opacity:.7;transition:transform .25s ease}
 .cm.is-open .cm-ch{transform:rotate(180deg)}
-.cm-pop{position:absolute;right:0;top:calc(100% + 10px);z-index:55;width:248px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;gap:2px;padding:8px;border-radius:20px;background:rgba(10,18,26,.94);border:1px solid rgba(188,211,222,.16);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 24px 60px -24px rgba(0,0,0,.7);animation:cm-in .2s ease}
+.cm-pop{translate:var(--cm-dx,0px) 0;position:absolute;right:0;top:calc(100% + 10px);z-index:55;width:248px;max-width:calc(100vw - 24px);display:flex;flex-direction:column;gap:2px;padding:8px;border-radius:20px;background:rgba(10,18,26,.94);border:1px solid rgba(188,211,222,.16);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 24px 60px -24px rgba(0,0,0,.7);animation:cm-in .2s ease}
 @keyframes cm-in{from{opacity:0;transform:translateY(-6px)}}
 .pt .cm-pop a{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 14px;border-radius:14px;font:500 15px/1.2 Manrope,system-ui,sans-serif;color:#EEF3F6;transition:background-color .2s ease}
 .pt .cm-pop a:hover,.pt .cm-pop a:focus-visible{background-color:rgba(142,216,248,.08)}
