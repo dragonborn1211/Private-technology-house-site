@@ -167,7 +167,8 @@ async function fullShot(page, file) {
 async function objBox(page) {
   const g = await page.evaluate(() => {
     const o = document.querySelector('[data-obj]').getBoundingClientRect(), t = { bottom: Math.max(...[...document.querySelectorAll('.cx-l')].map((l) => l.getBoundingClientRect().bottom)) }, c = document.querySelector('.obj-ct').getBoundingClientRect(), n = document.querySelector('.nav2').getBoundingClientRect();
-    document.querySelectorAll('.obj-top, .obj-foot, [data-pt-canvas]').forEach((e) => { e.style.visibility = 'hidden'; });
+    // плашка cookie (consent.js) лежит в углу поверх панели — её белые буквы и кнопка считались бы объектом
+    document.querySelectorAll('.obj-top, .obj-foot, [data-pt-canvas], .ck').forEach((e) => { e.style.visibility = 'hidden'; });
     return { o: [o.left, o.top, o.width, o.height], top: Math.round(t.bottom - o.top), cap: Math.round(Math.min(c.top, n.top) - o.top) };
   });
   await page.waitForTimeout(40);
@@ -192,7 +193,7 @@ async function objBox(page) {
     for (let k = 0; k < 3 && z >= 0; k++) { const t = trim(z, -1); if (t === z) break; z = t; }
     return [a, z];
   }, png);
-  await page.evaluate(() => document.querySelectorAll('.obj-top, .obj-foot, [data-pt-canvas]').forEach((e) => { e.style.visibility = ''; }));
+  await page.evaluate(() => document.querySelectorAll('.obj-top, .obj-foot, [data-pt-canvas], .ck').forEach((e) => { e.style.visibility = ''; }));
   return { box: [0, b[0] + 6, 0, b[1] + 6], top: g.top, cap: g.cap };
 }
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
@@ -1167,7 +1168,7 @@ console.log('\nструктура: услуги, «Как работаем», с
     const r = await page.evaluate(() => {
       const ids = ['sites', 'servers', 'care', 'automation'];
       return { dirs: ids.map((i) => { const s = document.getElementById(i); return s ? `${i}:${s.querySelectorAll('.sv-step').length}:${s.querySelectorAll('.tp-need').length}:${s.querySelector('h2') ? 1 : 0}` : i + ':нет'; }).join(' '),
-        links: [...document.querySelectorAll('a[href]')].map((a) => a.getAttribute('href')).filter((x) => !/^(https?:|#top$|\?lang|\.\/)/.test(x) && !/\?lang=/.test(x)),
+        links: [...document.querySelectorAll('a[href]')].map((a) => a.getAttribute('href')).filter((x) => !/^(https?:|tel:|#top$|\?lang|\.\/)/.test(x) && !/\?lang=/.test(x)),
         len: document.documentElement.scrollHeight / innerHeight, cur: [...document.querySelectorAll('[aria-current="page"]')].map((a) => a.textContent.trim()).join(','),
         h1: document.querySelector('h1').textContent.replace(/\s+/g, ' ').trim(), alias: ['apps', 'ai'].map((i) => { const e = document.getElementById(i); return e ? i + '>' + e.closest('[data-sec]').id : i + ':нет'; }).join(' '),
         secs: document.querySelectorAll('[data-sec^="p-"]').length };
@@ -1177,7 +1178,7 @@ console.log('\nструктура: услуги, «Как работаем», с
       if (r.h1 !== 'Как мы работаем.' || !/Как работаем/.test(r.cur)) bad.push(`process.html: H1 «${r.h1}», текущий пункт ${r.cur}`);
       r.links.forEach((x) => {
         const [pg, id] = x.split('#');
-        const ok = !pg ? pid.has(id) : pg === 'automations.html' && /^f-/.test(id || '') ? true : PAGES.includes(pg) && (!id || idsOf(pg).has(id));
+        const ok = !pg ? pid.has(id) : pg === 'automations.html' && /^f-/.test(id || '') ? true : pg === 'privacy.html' ? !id : PAGES.includes(pg) && (!id || idsOf(pg).has(id));
         if (!ok) bad.push(`process.html: ссылка ${x} — нет цели`);
       });
     }

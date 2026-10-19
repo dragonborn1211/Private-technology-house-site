@@ -38,7 +38,7 @@ const GPU = process.platform === 'win32' ? ['--use-angle=d3d11', '--enable-gpu',
 const port = 8180 + Math.floor(Math.random() * 60), BASE = `http://localhost:${port}/`;
 const srv = spawn(process.execPath, [path.join(here, 'serve.mjs'), String(port)], { stdio: 'pipe' });
 await new Promise((r) => srv.stdout.once('data', r));
-const summary = { date: new Date().toISOString(), links: [], matrix: [], perf: [], fails: [] };
+const summary = { date: new Date().toISOString(), links: [], matrix: [], perf: [], fails: [], notes: [] };
 const fail = (where, what) => { summary.fails.push(`${where}: ${what}`); };
 const urlOf = (pg, lang) => BASE + (pg === '404' ? 'nope/a/b/c.html' : pg === 'index.html' ? '' : pg) + (lang === 'en' ? '?lang=en' : '');
 
@@ -306,11 +306,281 @@ async function perf() {
   }
 }
 
+// ---------------------------------------------------------------- сценарии (инвентарь TASK-qa.md, раздел 2)
+// Только то, чего нет в check.mjs, — в Chromium и WebKit (Safari, встроенный браузер Telegram на iPhone)
+async function open(b, url, o = {}) {
+  const w = o.w || 1440, mob = w < 760;
+  const ctx = await b.newContext({ viewport: { width: w, height: o.h || (mob ? 844 : 900) }, deviceScaleFactor: mob ? 3 : 1, isMobile: mob, hasTouch: mob, reducedMotion: o.rm ? 'reduce' : 'no-preference' });
+  if (o.consent !== false) await ctx.addInitScript(() => { try { localStorage.setItem('pt-consent', 'no'); } catch (e) {} });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on('pageerror', (e) => errs.push('pageerror: ' + e.message.slice(0, 120)));
+  page.on('console', (m) => { if (m.type() === 'error') errs.push('console: ' + m.text().slice(0, 120)); });
+  await page.goto(BASE + url);
+  return { ctx, page, errs };
+}
+const SCEN = {
+  // RU / EN на лету: тексты, подписи, черовики, плашка cookie; ?lang=en сохраняется при переходе
+  async lang(b) {
+    const bad = [], { ctx, page, errs } = await open(b, 'index.html', { consent: false });
+    await page.waitForTimeout(4800);
+    await page.click('[data-sec="hero"] [data-lang="en"]'); await page.waitForTimeout(4200);
+    const r = await page.evaluate(() => {
+      const re = /[А-Яа-яЁё]/, out = [];
+      const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let t; (t = tw.nextNode());) if (re.test(t.textContent) && !t.parentElement.closest('script, style, template, [lang="ru"]')) out.push(t.textContent.trim().slice(0, 30));
+      document.querySelectorAll('[aria-label], [title], [alt]').forEach((e) => ['aria-label', 'title', 'alt'].forEach((a) => { const v = e.getAttribute(a); if (v && re.test(v) && !e.closest('[lang="ru"], template')) out.push(a + ': ' + v.slice(0, 30)); }));
+      const drafts = [...document.querySelectorAll('a[href*="?text="]')].map((a) => decodeURIComponent(a.href.split('?text=')[1])).filter((t) => re.test(t));
+      const ck = document.querySelector('.ck'); return { lang: document.documentElement.lang, cyr: out, drafts, ck: ck && !ck.hidden ? re.test(ck.textContent) : null, url: location.search };
+    });
+    if (r.lang !== 'en' || r.url.indexOf('lang=en') < 0) bad.push(`язык ${r.lang}, адрес ${r.url}`);
+    if (r.cyr.length) bad.push('кириллица после переключения: ' + r.cyr.slice(0, 4).join(' | '));
+    if (r.drafts.length) bad.push('черновики по-русски: ' + r.drafts.slice(0, 2).join(' | '));
+    if (r.ck) bad.push('плашка cookie по-русски');
+    // переход по пункту меню сохраняет язык
+    const w = page.viewportSize().width;
+    if (w >= 1200) { await Promise.all([page.waitForNavigation(), page.click('[data-sec="hero"] .nav a[href="cases.html"]')]); }
+    else { await page.click('[data-sec="hero"] [data-menu-open]'); await page.waitForTimeout(400); await Promise.all([page.waitForNavigation(), page.click('[data-menu] .menu-nav a[href="cases.html"]')]); }
+    await page.waitForTimeout(600);
+    const u = page.url(), hl = await page.evaluate(() => document.documentElement.lang);
+    if (!/cases\.html\?lang=en/.test(u) || hl !== 'en') bad.push(`переход из EN: ${u.replace(BASE, '/')}, lang=${hl}`);
+    bad.push(...errs); await ctx.close(); return bad;
+  },
+  // «Обсудить проект»: клавиатура, Esc и фокус, клик мимо, второй клик, aria-expanded; в липкой шапке — так же
+  async channels(b, w) {
+    const bad = [], { ctx, page, errs } = await open(b, 'services.html?intro=instant', { w });
+    await page.waitForTimeout(700);
+    const st = (sel) => page.evaluate((sel) => { const c = document.querySelector(sel), p = c.querySelector('.cm-pop'), btn = c.querySelector('.cm-btn'), r = p.getBoundingClientRect(); return { open: !p.hidden, exp: btn.getAttribute('aria-expanded'), focusIn: p.contains(document.activeElement), focusBtn: document.activeElement === btn, inView: p.hidden || (r.left >= 0 && r.right <= innerWidth + 0.5) }; }, sel);
+    const H = '[data-sec="hero"] .cm';
+    await page.focus(H + ' .cm-btn'); await page.keyboard.press('Enter'); await page.waitForTimeout(250);
+    let s = await st(H); if (!s.open || s.exp !== 'true' || !s.inView) bad.push(`Enter: ${JSON.stringify(s)}`);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(200);
+    s = await st(H); if (s.open || s.exp !== 'false' || !s.focusBtn) bad.push(`Esc: ${JSON.stringify(s)}`);
+    await page.click(H + ' .cm-btn'); await page.waitForTimeout(200); await page.mouse.click(5, 300); await page.waitForTimeout(200);
+    s = await st(H); if (s.open) bad.push('клик мимо не закрыл');
+    await page.click(H + ' .cm-btn'); await page.waitForTimeout(150); await page.click(H + ' .cm-btn'); await page.waitForTimeout(200);
+    s = await st(H); if (s.open) bad.push('второй клик не закрыл');
+    // липкая шапка: вниз, потом немного вверх
+    await page.evaluate(() => window.scrollTo({ top: 2600, behavior: 'instant' })); await page.waitForTimeout(250);
+    await page.evaluate(() => window.scrollTo({ top: 2400, behavior: 'instant' })); await page.waitForTimeout(500);
+    const T = '[data-topbar] .cm';
+    await page.click(T + ' .cm-btn'); await page.waitForTimeout(250);
+    s = await st(T); if (!s.open || !s.inView) bad.push(`липкая шапка: ${JSON.stringify(s)}`);
+    bad.push(...errs); await ctx.close(); return bad;
+  },
+  // «к содержанию» — первый Tab; меню телефона: закрытое не фокусируется, открытое держит фокус, Esc закрывает
+  async focus(b) {
+    const bad = [], { ctx, page, errs } = await open(b, 'cases.html?intro=instant', { w: 390 });
+    await page.waitForTimeout(700);
+    // Safari по умолчанию водит Tab только по кнопкам и полям (ссылки — с Option+Tab) — клавиатурные проверки в Chromium,
+    // в WebKit — только запертая страница под меню
+    const wk = b.browserType().name() === 'webkit';
+    if (wk) {
+      summary.notes.push('WebKit: Tab по умолчанию пропускает ссылки (настройка Safari) — порядок фокуса и ловушка меню проверены в Chromium');
+      await page.click('[data-sec="hero"] [data-menu-open]'); await page.waitForTimeout(450);
+      const lk = await page.evaluate(() => document.documentElement.classList.contains('pt-lock') && getComputedStyle(document.documentElement).overflow === 'hidden' && document.querySelector('[data-menu]').classList.contains('on'));
+      if (!lk) bad.push('меню не открылось или страница под ним не заперта');
+      await page.keyboard.press('Escape'); await page.waitForTimeout(350);
+      if (await page.evaluate(() => document.querySelector('[data-menu]').classList.contains('on'))) bad.push('Esc не закрыл меню');
+      bad.push(...errs); await ctx.close(); return bad;
+    }
+    await page.keyboard.press('Tab');
+    let a = await page.evaluate(() => document.activeElement.className);
+    if (!/\bskip\b/.test(a)) bad.push(`первый Tab — «${a}», а не «к содержанию»`);
+    await page.keyboard.press('Enter'); await page.waitForTimeout(900);
+    a = await page.evaluate(() => document.activeElement.id);
+    if (a !== 'main') bad.push(`«к содержанию» → фокус на «${a}»`);
+    for (let i = 0; i < 25; i++) { await page.keyboard.press('Tab'); if (await page.evaluate(() => !!document.activeElement.closest('[data-menu]'))) { bad.push('фокус зашёл в закрытое меню'); break; } }
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(200);
+    await page.click('[data-sec="hero"] [data-menu-open]'); await page.waitForTimeout(450);
+    for (let i = 0; i < 30; i++) { await page.keyboard.press('Tab'); if (!(await page.evaluate(() => !!document.activeElement.closest('[data-menu]')))) { bad.push(`фокус ушёл из открытого меню на ${i + 1}-м Tab`); break; } }
+    // колесо (мобильный WebKit колеса не знает — там страницу держит html.pt-lock с overflow: hidden)
+    const y0 = await page.evaluate(() => scrollY);
+    try { await page.mouse.wheel(0, 600); await page.waitForTimeout(300); if ((await page.evaluate(() => scrollY)) !== y0) bad.push('страница под меню прокрутилась'); }
+    catch (e) { const lk = await page.evaluate(() => document.documentElement.classList.contains('pt-lock') && getComputedStyle(document.documentElement).overflow === 'hidden'); if (!lk) bad.push('страница под меню не заперта (pt-lock / overflow)'); }
+    await page.keyboard.press('Escape'); await page.waitForTimeout(350);
+    if (await page.evaluate(() => document.querySelector('[data-menu]').classList.contains('on'))) bad.push('Esc не закрыл меню');
+    bad.push(...errs); await ctx.close(); return bad;
+  },
+  // якоря на странице: цель не под шапкой и вспыхивает; «Назад» возвращает; прямой заход по ссылке с хешем
+  async anchors(b, w) {
+    const bad = [];
+    for (const pg of ['services.html', 'process.html', 'index.html']) {
+      const { ctx, page, errs } = await open(b, pg, { w });
+      await page.waitForTimeout(4200);
+      await page.evaluate(() => { window.__fl = 0; new MutationObserver((ms) => ms.forEach((m) => { if (/pt-arrive/.test(m.target.className && m.target.className.baseVal === undefined ? m.target.className : '')) window.__fl++; })).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'] }); });
+      const links = await page.evaluate(() => [...document.querySelectorAll('#pt-site .sec a[href^="#"]')].filter((a) => !/^#(main|top)$/.test(a.getAttribute('href')) && a.getClientRects().length && getComputedStyle(a).visibility !== 'hidden').map((a) => a.getAttribute('href')));
+      for (const href of [...new Set(links)].slice(0, 8)) {
+        await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(300);
+        const before = await page.evaluate(() => window.__fl);
+        const el = page.locator(`#pt-site .sec a[href="${href}"]`).first();
+        await el.scrollIntoViewIfNeeded(); const y0 = await page.evaluate(() => scrollY);
+        await el.click(); await page.waitForTimeout(2600);
+        // верх цели — её первый заголовок (у секции сверху свой отступ, он может уйти под шапку), пустая метка — её секция
+        const r = await page.evaluate((h) => { const t = document.getElementById(h.slice(1)); const sec = t.closest('[data-sec]'), ar = (t.children.length || t.textContent.trim()) ? t : sec; const hd = ar.matches('h1, h2, h3, h4') ? ar : ar.querySelector('h1, h2, h3, h4, .gh-w, .sv-t') || ar; const rr = hd.getBoundingClientRect(), tb = document.querySelector('[data-topbar]'); const top = tb && tb.classList.contains('on') ? tb.getBoundingClientRect().bottom : 0; return { top: Math.round(rr.top), bar: Math.round(top), hash: location.hash, fl: window.__fl, vh: innerHeight }; }, href);
+        if (r.top < r.bar - 2 || r.top > r.vh * 0.6) bad.push(`${pg} ${href}: цель на ${r.top} (шапка ${r.bar})`);
+        if (r.fl === before) bad.push(`${pg} ${href}: цель не вспыхнула`);
+        if (r.hash !== href) bad.push(`${pg} ${href}: в адресе ${r.hash}`);
+        await page.goBack(); await page.waitForTimeout(1200);
+        const yb = await page.evaluate(() => scrollY);
+        if (Math.abs(yb - y0) > 80) bad.push(`${pg} ${href}: «Назад» → ${Math.round(yb)}, было ${Math.round(y0)}`);
+      }
+      bad.push(...errs.map((e) => pg + ': ' + e)); await ctx.close();
+    }
+    // прямой заход по ссылке с хешем: модуль собран и не под шапкой
+    const { ctx, page, errs } = await open(b, 'services.html#automation', { w });
+    await page.waitForTimeout(3800);
+    const r = await page.evaluate(() => { const t = document.getElementById('automation'); return { top: Math.round(t.getBoundingClientRect().top), done: t.closest('[data-sec]').classList.contains('s-done') }; });
+    if (!r.done || r.top < 40 || r.top > 300) bad.push(`прямой заход services.html#automation: ${JSON.stringify(r)}`);
+    bad.push(...errs); await ctx.close();
+    return bad;
+  },
+  // фильтры: хеш, прямой заход, быстрые клики подряд — карточки не налезают, видимых чётное число
+  async filters(b, w) {
+    const bad = [];
+    for (const [pg, direct, want] of [['cases.html', '#ai', 'ai'], ['automations.html', '#f-reports', 'reports']]) {
+      const { ctx, page, errs } = await open(b, pg + direct + (direct ? '' : ''), { w });
+      await page.waitForTimeout(4500);
+      let pressed = await page.evaluate(() => (document.querySelector('.fl-b[aria-pressed="true"]') || {}).dataset?.filter);
+      if (pressed !== want) bad.push(`${pg}${direct}: нажата «${pressed}»`);
+      const btns = page.locator('.fl-b:visible'), n = await btns.count();
+      for (let k = 0; k < n * 2; k++) await btns.nth(k % n).click({ delay: 0 });
+      await page.waitForTimeout(1300);
+      const r = await page.evaluate(() => {
+        const cards = [...document.querySelectorAll('.obj-grid .obj')].filter((c) => !c.hidden && c.getClientRects().length).map((c) => c.getBoundingClientRect());
+        let over = 0; for (let i = 0; i < cards.length; i++) for (let j = i + 1; j < cards.length; j++) { const a = cards[i], c = cards[j]; if (a.left < c.right - 2 && c.left < a.right - 2 && a.top < c.bottom - 2 && c.top < a.bottom - 2) over++; }
+        const grid = document.querySelector('.obj-grid').getBoundingClientRect(), low = Math.max(...cards.map((c) => c.bottom));
+        return { n: cards.length, over, hash: location.hash, cut: low > grid.bottom + 2, pressed: (document.querySelector('.fl-b[aria-pressed="true"]') || {}).dataset?.filter };
+      });
+      if (r.over) bad.push(`${pg}: после быстрых кликов карточки налезают (${r.over})`);
+      if (r.cut) bad.push(`${pg}: сетка ниже карточек обрезана`);
+      if (pg === 'cases.html' && r.n % 2) bad.push(`${pg}: видно ${r.n} — нечётно`);
+      if ((r.pressed || '') !== (r.hash.replace(/^#(f-)?/, '') || '')) bad.push(`${pg}: нажата «${r.pressed}», хеш «${r.hash}»`);
+      bad.push(...errs.map((e) => pg + ': ' + e)); await ctx.close();
+    }
+    return bad;
+  },
+  // «Ещё N» на телефоне: раскрывает, фокус остаётся на кнопке, «Свернуть» возвращает
+  async more(b) {
+    const bad = [], { ctx, page, errs } = await open(b, 'services.html?intro=instant', { w: 390 });
+    await page.waitForTimeout(700);
+    const btn = page.locator('.sv-more').first();
+    await btn.scrollIntoViewIfNeeded(); await btn.focus(); await page.keyboard.press('Enter'); await page.waitForTimeout(500);
+    let r = await page.evaluate(() => { const b = document.querySelector('.sv-more'), id = b.getAttribute('aria-controls'), rows = [...document.getElementById(id).children].filter((li) => li.getClientRects().length && getComputedStyle(li).visibility !== 'hidden'); return { exp: b.getAttribute('aria-expanded'), focus: document.activeElement === b, rows: rows.length, all: document.getElementById(id).children.length }; });
+    if (r.exp !== 'true' || !r.focus || r.rows !== r.all) bad.push(`«Ещё»: ${JSON.stringify(r)}`);
+    await page.keyboard.press('Enter'); await page.waitForTimeout(500);
+    r = await page.evaluate(() => { const b = document.querySelector('.sv-more'); return { exp: b.getAttribute('aria-expanded'), focus: document.activeElement === b }; });
+    if (r.exp !== 'false' || !r.focus) bad.push(`«Свернуть»: ${JSON.stringify(r)}`);
+    bad.push(...errs); await ctx.close(); return bad;
+  },
+  // клавиатура и свой скроллбар
+  async scroll(b) {
+    const bad = [], { ctx, page, errs } = await open(b, 'services.html?intro=instant');
+    await page.waitForTimeout(700); await page.mouse.click(5, 450);
+    const y = () => page.evaluate(() => Math.round(scrollY));
+    const H = await page.evaluate(() => document.documentElement.scrollHeight - innerHeight);
+    for (const [key, test] of [['PageDown', (a, c) => c - a > 500], ['Space', (a, c) => c - a > 500], ['ArrowDown', (a, c) => c > a], ['End', (a, c) => c > H - 5], ['Home', (a, c) => c < 5]]) {
+      const a = await y(); await page.keyboard.press(key); await page.waitForTimeout(900); const c = await y();
+      if (!test(a, c)) bad.push(`${key}: ${a} → ${c}`);
+    }
+    await page.mouse.wheel(0, 400); await page.waitForTimeout(900);
+    const sb = await page.evaluate(() => { const t = document.querySelector('[data-sbar-thumb]').getBoundingClientRect(), bar = document.querySelector('[data-sbar]'); return { on: bar.classList.contains('on'), x: t.left + t.width / 2, y: t.top + t.height / 2, bot: t.bottom }; });
+    if (!sb.on) bad.push('свой скроллбар не появился при прокрутке');
+    else {
+      const a = await y(); await page.mouse.move(sb.x, sb.y); await page.mouse.down(); await page.mouse.move(sb.x, sb.y + 120, { steps: 6 }); await page.mouse.up(); await page.waitForTimeout(300);
+      const c = await y(); if (c - a < 300) bad.push(`перетаскивание ползунка: ${a} → ${c}`);
+      const s2 = await page.evaluate(() => { const t = document.querySelector('[data-sbar-thumb]').getBoundingClientRect(); return { x: t.left + t.width / 2, bot: t.bottom }; });
+      const d = await y(); await page.mouse.click(s2.x, Math.min(880, s2.bot + 60)); await page.waitForTimeout(1300);
+      const e = await y(); if (e - d < 400) bad.push(`клик по дорожке: ${d} → ${e}`);
+    }
+    bad.push(...errs); await ctx.close(); return bad;
+  },
+  // Быстрая прокрутка до конца и обратно: видимые секции собраны не позже 1.8 с. Секции собираются по очереди в одном
+  // темпе (~0.78 с): если на экране сразу две несобранные (контакт и подвал), вторая готова к ~1.5 с. Ускорять очередь
+  // владелец отказался («соседние блоки собирались вразнобой») — порог на две сборки; ≤ 1 с — на решение владельца
+  async fast(b) {
+    const bad = [], { ctx, page, errs } = await open(b, 'index.html');
+    await page.waitForTimeout(4200);
+    for (const to of ['bottom', 'mid', 'top']) {
+      await page.evaluate((to) => window.scrollTo({ top: to === 'bottom' ? document.documentElement.scrollHeight : to === 'mid' ? document.documentElement.scrollHeight * 0.45 : 0, behavior: 'instant' }), to);
+      await page.waitForTimeout(1800);
+      const nd = await page.evaluate(() => [...document.querySelectorAll('[data-sec]')].filter((s) => { const r = s.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight && !s.classList.contains('s-done'); }).map((s) => s.dataset.sec));
+      if (nd.length) bad.push(`${to}: через 1.8 с не собраны ${nd.join(', ')}`);
+    }
+    bad.push(...errs); await ctx.close(); return bad;
+  },
+  // жизненный цикл: скрытая вкладка, «назад» из кэша, обновление и переход посреди сборки, ресайз посреди сборки
+  async life(b) {
+    const bad = [];
+    { // скрытая вкладка — кадры не идут
+      const { ctx, page, errs } = await open(b, 'index.html?intro=instant');
+      await page.waitForTimeout(800);
+      await page.evaluate(() => { window.__raf = 0; const f = () => { window.__raf++; requestAnimationFrame(f); }; requestAnimationFrame(f); });
+      const other = await ctx.newPage(); await other.goto(BASE + 'privacy.html'); await other.bringToFront(); await page.waitForTimeout(300);
+      const vis = await page.evaluate(() => document.visibilityState);
+      const a = await page.evaluate(() => window.__raf); await page.waitForTimeout(1000); const c = await page.evaluate(() => window.__raf);
+      if (vis === 'hidden' && c - a > 3) bad.push(`скрытая вкладка: ${c - a} кадров за 1 с`);
+      // headless не прячет вкладку; кадры на скрытой вкладке браузер и так не даёт, таймеров-циклов в коде нет
+      if (vis !== 'hidden') summary.notes.push('скрытая вкладка: в headless не скрывается — проверено по коду (rAF, setInterval только у печати статуса)');
+      bad.push(...errs); await ctx.close();
+    }
+    { // «назад» из кэша: страница оживает
+      const { ctx, page, errs } = await open(b, 'index.html?intro=instant');
+      await page.waitForTimeout(1200);
+      await page.evaluate(() => { window.__bf = 'x'; addEventListener('pageshow', (e) => { window.__ps = e.persisted; }); });
+      await Promise.all([page.waitForNavigation(), page.evaluate(() => { location.href = 'privacy.html'; })]); await page.waitForTimeout(600);
+      await page.goBack(); await page.waitForTimeout(1200);
+      const r = await page.evaluate(() => new Promise((ok) => { const c0 = document.querySelector('[data-pt-canvas]'); let n = 0; const f = () => { if (++n < 20) requestAnimationFrame(f); else ok({ bf: window.__bf, ps: window.__ps, alive: !!c0 }); }; requestAnimationFrame(f); }));
+      // Playwright запускает Chromium с --disable-back-forward-cache, и даже без него управляемый браузер bfcache не
+      // даёт (BackForwardCacheDisabledForDelegate) — только сведения; блокеров (unload / beforeunload) проверяет check.mjs
+      if (r.bf !== 'x') summary.notes.push('«назад» из кэша (bfcache): в управляемом браузере недоступен — проверить в Chrome вручную (DevTools → Application → Back/forward cache)');
+      bad.push(...errs); await ctx.close();
+    }
+    { // обновление и переход посреди сборки, ресайз посреди сборки
+      const { ctx, page, errs } = await open(b, 'index.html');
+      await page.waitForTimeout(1000); await page.reload(); await page.waitForTimeout(1200);
+      await page.setViewportSize({ width: 1024, height: 768 }); await page.waitForTimeout(4000);
+      const r = await page.evaluate(() => ({ hero: document.querySelector('[data-sec="hero"]').classList.contains('s-done'), over: document.documentElement.scrollWidth - innerWidth }));
+      if (!r.hero || r.over > 1) bad.push(`обновление и ресайз посреди сборки: ${JSON.stringify(r)}`);
+      await page.waitForTimeout(200); await page.reload(); await page.waitForTimeout(900);
+      await Promise.all([page.waitForNavigation(), page.evaluate(() => { location.href = 'services.html'; })]); await page.waitForTimeout(4200);
+      const s = await page.evaluate(() => document.querySelector('[data-sec="hero"]').classList.contains('s-done'));
+      if (!s) bad.push('переход посреди сборки: услуги не собрались');
+      bad.push(...errs); await ctx.close();
+    }
+    return bad;
+  },
+};
+async function interact() {
+  console.log('\nсценарии (инвентарь)');
+  const plan = [['lang', [1440]], ['channels', [1440, 390, 320]], ['focus', [390]], ['anchors', [1440, 390]], ['filters', [1440, 390]], ['more', [390]], ['scroll', [1440]], ['fast', [1440]], ['life', [1440]]];
+  const only = process.env.QA_SCEN ? process.env.QA_SCEN.split(',') : null;
+  summary.inventory = [];
+  for (const [bn, bt] of [['chromium', chromium], ['webkit', webkit]]) {
+    if (process.env.QA_BROWSERS && !process.env.QA_BROWSERS.split(',').includes(bn)) continue;
+    const b = await bt.launch(bn === 'chromium' ? { args: GPU } : {});
+    for (const [name, widths] of plan) {
+      if (only && !only.includes(name)) continue;
+      for (const w of widths) {
+        let bad; try { bad = await SCEN[name](b, w); } catch (e) { bad = ['сбой: ' + e.message.split('\n')[0].slice(0, 160)]; }
+        const tag = `${name} · ${w} · ${bn}`;
+        summary.inventory.push({ tag, ok: !bad.length, bad });
+        bad.forEach((x) => fail(tag, x));
+        console.log(`  ${bad.length ? '✗' : '✓'} ${tag}${bad.length ? '\n      ' + bad.join('\n      ') : ''}`);
+      }
+    }
+    await b.close();
+  }
+}
+
 try {
   if (want('links')) await links();
   if (want('matrix')) await matrix();
+  if (want('interact')) await interact();
   if (want('perf')) await perf();
 } finally { srv.kill(); }
+summary.notes = [...new Set(summary.notes)];
 writeFileSync(path.join(OUT, 'summary.json'), JSON.stringify(summary, null, 2));
+if (summary.notes.length) console.log('\nсведения (не ошибки):\n  ' + summary.notes.join('\n  '));
 console.log(`\nитог: ${summary.fails.length ? `✗ замечаний ${summary.fails.length}` : '✓ без замечаний'} — tools/ref/qa/summary.json`);
 process.exit(summary.fails.length ? 1 : 0);
