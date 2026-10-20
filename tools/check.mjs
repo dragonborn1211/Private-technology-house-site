@@ -1089,8 +1089,7 @@ console.log('\nтексты и типографика (TASK-polish.md)');
     if (r.it) bad.push(`${tag}: курсив с переливом вне h1 — ${r.it}`);
     if (r.numK.length) bad.push(`${tag}: кикеры с номером — ${r.numK.join(', ')}`);
     if (!lang) {
-      // «Работы» — до 2.0: вступление и описания карточек из TASK-cases-panel.md (тексты владельца финальные, там 1.9)
-      if (r.dash > (f === 'cases.html' ? 2.0 : 1.5)) bad.push(`${tag}: тире ${r.dash.toFixed(2)} на 100 слов`);
+      if (r.dash > 1.5) bad.push(`${tag}: тире ${r.dash.toFixed(2)} на 100 слов`);
       if (r.phr.length || r.which.length) bad.push(`${tag}: штампы ${r.phr.join(', ')} ${r.which.join(', ')}`);
       if (f === 'index.html') { if (r.mono > 20) bad.push(`главная: моноширинного ${r.mono.toFixed(1)} %`); if (r.h1 !== 'Сайты, интеграции и автоматизация — с холодной точностью.') bad.push(`H1 главной «${r.h1}»`); }
       stat.push(`${f.replace('.html', '')} тире ${r.dash.toFixed(2)}${f === 'index.html' ? `, моно ${r.mono.toFixed(1)} %` : ''}`);

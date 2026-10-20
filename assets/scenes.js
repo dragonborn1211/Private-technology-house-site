@@ -818,10 +818,10 @@
     ] },
     'voice-task': { src: ['tg'], seq: true, nodes: [
       { id: 'tg', name: 'Telegram · голосовое', role: 'trigger', x: 0.15, y: 0.27 },
-      { id: 'n8n', name: 'n8n · сервер', role: 'workflow', x: 0.5, y: 0.27 },
+      { id: 'n8n', name: 'n8n · сервер', role: 'workflow', x: 0.5, y: 0.27, mx: 0.46 },
       { id: 'stt', name: 'Расшифровка речи', role: 'ai', x: 0.84, y: 0.27 },
       { id: 'ai', name: 'Исполнитель и срок', role: 'ai', x: 0.84, y: 0.73 },
-      { id: 'b24', name: 'Битрикс24 · задача', role: 'output', x: 0.5, y: 0.73 },
+      { id: 'b24', name: 'Битрикс24 · задача', role: 'output', x: 0.5, y: 0.73, mx: 0.455 },
       { id: 'ok', name: 'Telegram · «готово»', role: 'output', x: 0.15, y: 0.73 }
     ], edges: [
       { a: 'tg', b: 'n8n', ev: 'voice.ogg' },
@@ -890,7 +890,7 @@
       { id: 's', name: 'Продажи', role: 'trigger', x: 0.13, y: 0.2 },
       { id: 'b', name: 'Бухгалтерия', role: 'trigger', x: 0.13, y: 0.5 },
       { id: 'h', name: 'Поддержка', role: 'trigger', x: 0.13, y: 0.8 },
-      { id: 'ag', name: 'LibreChat · агенты', role: 'workflow', x: 0.47, y: 0.5 },
+      { id: 'ag', name: 'LibreChat · агенты', role: 'workflow', x: 0.47, y: 0.5, mx: 0.53 },
       { id: 'gw', name: 'AI-шлюз · Cloudflare', role: 'webhook', x: 0.84, y: 0.27, turn: true },
       { id: 'kb', name: 'База знаний', role: 'ai', x: 0.84, y: 0.73, turn: true }
     ], edges: [
