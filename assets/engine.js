@@ -964,11 +964,31 @@
       function wakeSites(el) {
         sites.forEach(function (fr) { if (el.contains(fr) && !fr._armed) { fr._armed = true; if (fr._want) liveSite(fr, true); } });
         fitSites(el);
-        scenes.forEach(function (sc) { if (el.contains(sc.cv)) { if (rm) sc.wake(); else if (wakeQ.indexOf(sc) < 0) wakeQ.push(sc); } });
+        // схемы панели разбора работы ([data-cp], cases.html) секция не будит: панель закрыта, холст нулевой — их будит сама
+        // панель (pt:wake), когда показывает статью
+        scenes.forEach(function (sc) { if (el.contains(sc.cv) && !sc.cv.closest('[data-cp]')) { if (rm) sc.wake(); else if (wakeQ.indexOf(sc) < 0) wakeQ.push(sc); } });
         secDone(el);
       }
       // секция собрана — событие для отклика на цели якоря (scroll.js, arrive): цель в несобранной секции ждёт его
       function secDone(el) { if (el === hero.el) heroIdle(); try { window.dispatchEvent(new CustomEvent('pt:secdone', { detail: el })); } catch (e) { /* старый браузер */ } }
+      // панель разбора работы (assets/cases.js, TASK-cases-panel.md, 4.6). pt:sleep — сцены внутри detail засыпают (сетка под
+      // открытой панелью, статья, с которой ушли), живые превью гаснут: под подложкой их кадры не нужны. pt:wake — просыпаются
+      // с того же места (resume); ещё не просыпавшиеся — как обычно, но только в собранной секции. Заново с первого узла —
+      // pt:shown (панель шлёт его за pt:wake для показанной статьи)
+      function sceneSec(sc) { for (var i = 0; i < secs.length; i++) if (secs[i].el.contains(sc.cv)) return secs[i]; return null; }
+      function onSleepEv(e) {
+        var el = e && e.detail; if (!el || !el.contains) return;
+        scenes.forEach(function (sc) { if (el.contains(sc.cv)) sleepScene(sc); });
+        sites.forEach(function (fr) { if (el.contains(fr)) liveSite(fr, false); });
+      }
+      function onWakeEv(e) {
+        var el = e && e.detail; if (!el || !el.contains) return;
+        scenes.forEach(function (sc) {
+          if (!el.contains(sc.cv)) return;
+          var s = sceneSec(sc); if (s && s.state !== 'done') return;
+          if (sc.resume) sc.resume(); else sc.wake();
+        });
+      }
       // фильтр (assets/filter.js) показал карточки — их схемы собираются заново с первого узла
       function onShown(e) {
         var els = (e && e.detail) || [];
@@ -1375,6 +1395,8 @@
       window.addEventListener('scroll', onJumpScroll, { passive: true });
       window.addEventListener('pt:jump', onJumpEv);
       window.addEventListener('pt:shown', onShown);
+      window.addEventListener('pt:wake', onWakeEv);
+      window.addEventListener('pt:sleep', onSleepEv);
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(onFonts);
       if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', onFonts);
       if (rm || MODE === 'instant') {
@@ -1434,7 +1456,7 @@
           window.removeEventListener('pointerout', onOut);
           window.removeEventListener('resize', onResize); window.removeEventListener('scroll', onHold); clearTimeout(holdT);
           window.removeEventListener('scroll', onJumpScroll); window.removeEventListener('pt:jump', onJumpEv); clearTimeout(pumpT);
-          window.removeEventListener('pt:shown', onShown);
+          window.removeEventListener('pt:shown', onShown); window.removeEventListener('pt:wake', onWakeEv); window.removeEventListener('pt:sleep', onSleepEv);
           window.removeEventListener('wheel', onSkip); window.removeEventListener('touchmove', onSkip);
           window.removeEventListener('pointerdown', onSkip); window.removeEventListener('keydown', onSkip);
           if (document.fonts && document.fonts.removeEventListener) document.fonts.removeEventListener('loadingdone', onFonts);

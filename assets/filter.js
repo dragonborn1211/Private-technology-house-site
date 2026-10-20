@@ -28,9 +28,11 @@
     if (f && !cards.some(function (c) { return cats(c).indexOf(f) >= 0; })) b.hidden = true;
   });
   var valid = btns.filter(function (b) { return !b.hidden; }).map(function (b) { return b.getAttribute('data-filter'); });
+  function hash() { try { return decodeURIComponent(location.hash.slice(1)); } catch (e) { return ''; } }
+  // #case-<slug> — открытая панель разбора работы (assets/cases.js), а не фильтр: его не трогаем (TASK-cases-panel.md, 4.5)
+  function isCase(h) { return /^case-/.test(h); }
   function fromHash() {
-    var h = '';
-    try { h = decodeURIComponent(location.hash.slice(1)); } catch (e) { h = ''; }
+    var h = hash();
     if (h.indexOf(pre) !== 0) return '';
     h = h.slice(pre.length);
     return h && valid.indexOf(h) >= 0 ? h : '';
@@ -128,7 +130,7 @@
   }
   btns.forEach(function (b) { b.addEventListener('click', function () { set(b.getAttribute('data-filter'), true); }); });
   // хеш поменяли вручную или ссылкой на этой же странице. Хеш-якорь на карточку (#site-leads) — показать все
-  window.addEventListener('hashchange', function () { set(fromHash(), false); });
+  window.addEventListener('hashchange', function () { if (!isCase(hash())) set(fromHash(), false); });
   box.hidden = false;
   set(fromHash(), false);
   // замер — после показа ряда (скрытый мерится нулём и «докручен до конца»), и ещё раз со своими шрифтами; выбранная по хешу

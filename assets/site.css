@@ -170,6 +170,120 @@ body{margin:0;background:#0A121A}
 @media (prefers-reduced-motion:reduce){.pt-on .sec .win-tag{transition:none}}
 .flow-win canvas,.flow-lock canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block}
 .more{display:flex;justify-content:center;margin-top:48px}
+/* ---------- панель разбора работы (cases.html, assets/cases.js, TASK-cases-panel.md): справа на компьютере, шторкой снизу
+   на телефоне. z 50: над липкой шапкой (45) и холстом частиц (30), под меню (60). Внутри секции cases, но секция не
+   создаёт своего контекста наложения — панель стоит над всем, что ниже меню ---------- */
+/* страница под открытой панелью стоит (cases.js; pt-lock меню не подходит — он прячет страницу под стеклом) */
+html.cp-lock,html.cp-lock body{overflow:hidden}
+.cp{position:fixed;inset:0;z-index:50;visibility:hidden;pointer-events:none}
+.cp.is-open{visibility:visible;pointer-events:auto}
+.cp-scrim{position:absolute;inset:0;background:rgba(5,9,13,.6);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);opacity:0;transition:opacity .3s ease}
+.cp.is-open .cp-scrim{opacity:1}
+.cp-sheet{position:absolute;top:0;right:0;bottom:0;width:clamp(560px,48vw,720px);display:flex;flex-direction:column;background:linear-gradient(180deg,rgba(17,28,38,.985),rgba(10,18,26,.99));border-left:1px solid rgba(188,211,222,.14);box-shadow:-50px 0 90px -40px rgba(0,0,0,.8);transform:translateX(102%);transition:transform .44s cubic-bezier(.2,.8,.2,1);outline:none}
+.cp.is-open .cp-sheet{transform:none}
+/* линия-акцент по левому краю прорисовывается сверху вниз при открытии — цвет кейса */
+.cp-sheet::before{content:"";position:absolute;left:-1px;top:0;bottom:0;width:1px;background:linear-gradient(180deg,var(--cp-tc,#8ED8F8),color-mix(in srgb,var(--cp-tc,#8ED8F8) 30%,transparent) 55%,transparent);box-shadow:0 0 12px var(--cp-tc,#8ED8F8);transform:scaleY(0);transform-origin:top;transition:transform .7s cubic-bezier(.2,.8,.2,1) .18s}
+.cp.is-open .cp-sheet::before{transform:scaleY(1)}
+/* верхняя полоса: счётчик, стрелки, закрыть */
+.cp-bar{position:relative;flex:none;display:flex;align-items:center;gap:14px;padding:14px 20px 14px 40px;border-bottom:1px solid rgba(188,211,222,.1)}
+.cp-handle{display:none}
+.cp-count{font:500 12px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#6F93A6}
+.cp-count b{font-weight:500;color:#EEF3F6}.cp-count i{font-style:normal;margin:0 6px;color:#3E5666}
+.cp-nav{margin-left:auto;display:flex;gap:8px}
+.cp-ib{width:42px;height:42px;border-radius:999px;display:grid;place-items:center;border:1px solid rgba(188,211,222,.2);background:rgba(228,237,242,.03);color:#DCE7EE;cursor:pointer;transition:border-color .2s,background-color .2s,color .2s}
+.cp-ib svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.cp-ib:hover{border-color:color-mix(in srgb,var(--cp-tc,#8ED8F8) 60%,transparent);color:var(--cp-tc,#8ED8F8)}
+.cp-ib:focus-visible{outline:2px solid var(--cp-tc,#8ED8F8);outline-offset:2px}
+.cp-ib[disabled]{opacity:.35;pointer-events:none}
+.cp-x{margin-left:6px}
+/* тело: своя прокрутка, страница под панелью не едет */
+.cp-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:36px 40px 40px;scrollbar-width:thin;scrollbar-color:rgba(188,211,222,.25) transparent}
+.cp-art[hidden]{display:none}
+.cp-k{display:flex;align-items:center;gap:10px;margin:0;font:500 11px/1.4 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--tc)}
+.cp-k::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;box-shadow:0 0 10px currentColor}
+.cp-h{margin:16px 0 0;font-weight:300;font-size:clamp(38px,3.4vw,52px);line-height:1.04;letter-spacing:-.04em;color:#EEF3F6}
+.cp-lead{margin:18px 0 0;font-size:18px;line-height:1.6;color:#A9BCC8}
+/* схема — та же .flow-win, крупно */
+.cp-win{margin:30px 0 0;aspect-ratio:16/10;border-radius:20px}
+.cp-win .win-tag{color:var(--tc)}
+/* было → сделали: две ступени с линией времени */
+.cp-story{position:relative;margin:34px 0 0;padding-left:26px}
+.cp-story::before{content:"";position:absolute;left:4px;top:8px;bottom:8px;width:1px;background:linear-gradient(180deg,rgba(188,211,222,.25),var(--tc))}
+.cp-st{position:relative}
+.cp-st + .cp-st{margin-top:26px}
+.cp-st::before{content:"";position:absolute;left:-26px;top:3px;width:9px;height:9px;border-radius:50%;border:1px solid rgba(188,211,222,.45);background:#0F1A23}
+.cp-st.is-now::before{border-color:var(--tc);background:var(--tc);box-shadow:0 0 12px var(--tc)}
+.cp-st p{margin:0;font-size:16px;line-height:1.7;color:#BCD3DE}
+.cp-st:not(.is-now) p{color:#93A8B6}
+.cp-lab{margin:0 0 10px;font:500 11px/1.4 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F93A6}
+.cp-st.is-now .cp-lab{color:var(--tc)}
+.cp-sec{margin:38px 0 0}
+.cp-list{margin:0;padding:0;list-style:none;border-top:1px solid rgba(188,211,222,.1)}
+.cp-list li{position:relative;padding:14px 0 14px 24px;border-bottom:1px solid rgba(188,211,222,.1);font-size:16px;line-height:1.55;color:#DCE7EE}
+.cp-list li::before{content:"";position:absolute;left:0;top:25px;width:10px;height:2px;border-radius:2px;background:var(--tc);box-shadow:0 0 8px var(--tc)}
+.cp-note{margin:14px 0 0;font-size:14px;line-height:1.6;color:#8FAEC0}
+/* сайты: кадр с телефоном */
+.cp-shot{position:relative;margin:30px 0 0;padding:30px 0 0;border-radius:18px;overflow:visible;background:#0A121A;border:1px solid rgba(188,211,222,.14)}
+.cp-shot .site-bar{border-radius:18px 18px 0 0}
+.cp-shot > img{display:block;width:100%;height:auto;border-radius:0 0 17px 17px}
+.cp-phone{position:absolute;right:-14px;bottom:-26px;width:24%;padding:5px;border-radius:24px;background:#05090D;border:1px solid rgba(188,211,222,.22);box-shadow:0 24px 50px -18px rgba(0,0,0,.8)}
+.cp-phone img{display:block;width:100%;height:auto;border-radius:19px}
+.cp-go{display:flex;align-items:center;flex-wrap:wrap;gap:12px 18px;margin:44px 0 0}
+.cp-hint{font-size:14px;line-height:1.5;color:#8FAEC0;max-width:300px}
+.cp-hint .h-touch{display:none}
+@media (hover:none){.cp-hint .h-mouse{display:none}.cp-hint .h-touch{display:inline}}
+.cp-feat{margin:0;padding:0;list-style:none;display:grid;gap:14px}
+.cp-feat li{display:grid;grid-template-columns:minmax(0,0.9fr) minmax(0,1.25fr);gap:20px;align-items:start;padding:14px;border-radius:20px;background:linear-gradient(180deg,rgba(23,36,48,.6),rgba(14,24,33,.6));border:1px solid rgba(188,211,222,.12)}
+.cp-feat img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;border-radius:12px;border:1px solid rgba(188,211,222,.1)}
+.cp-n{font:400 13px/1 'JetBrains Mono',monospace;letter-spacing:.08em;color:var(--tc)}
+.cp-feat h4{margin:10px 0 8px;font-size:19px;font-weight:500;letter-spacing:-.01em;color:#EEF3F6}
+.cp-feat p{margin:0;font-size:15px;line-height:1.6;color:#9DB0BC}
+.cp-chips{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px}
+.cp-chips li{padding:8px 13px;border-radius:999px;border:1px solid rgba(188,211,222,.18);font-size:13px;color:#DCE7EE}
+/* призыв: в разметке — в конце кейса (без JS виден там); с JS его копия живёт в липком подвале панели */
+.cp-cta{display:flex;flex-wrap:wrap;gap:12px;margin:40px 0 0}
+.cp.js .cp-art .cp-cta{display:none}
+.cp-foot{flex:none;display:flex;align-items:center;gap:16px;padding:14px 20px 14px 40px;border-top:1px solid rgba(188,211,222,.1);background:rgba(10,18,26,.92)}
+.cp-foot:empty{display:none}
+.cp-foot .cp-cta{margin:0;flex-wrap:nowrap}
+.cp-nx{min-width:0;margin-right:auto;display:flex;flex-direction:column;gap:4px;color:#EEF3F6;cursor:pointer;background:none;border:0;padding:0;text-align:left;font:inherit}
+.cp-nx small{font:500 10.5px/1.2 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F93A6}
+.cp-nx span{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-nx:hover span{color:var(--cp-tc,#8ED8F8)}
+/* появление содержимого: блоки по очереди снизу (40 мс шаг) */
+.cp-art.is-in > *{animation:cpIn .5s cubic-bezier(.2,.8,.2,1) both}
+.cp-art.is-in > *:nth-child(2){animation-delay:.04s}.cp-art.is-in > *:nth-child(3){animation-delay:.08s}
+.cp-art.is-in > *:nth-child(4){animation-delay:.12s}.cp-art.is-in > *:nth-child(5){animation-delay:.16s}
+.cp-art.is-in > *:nth-child(n+6){animation-delay:.2s}
+@keyframes cpIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+/* карточка в сетке: подсказка, что внутри есть разбор */
+.obj-more{display:inline-flex;align-items:center;gap:8px;margin-top:4px;font:500 12px/1.2 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:#8ED8F8}
+.obj-more svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s ease}
+.obj:hover .obj-more svg,.obj:focus-within .obj-more svg{transform:translateX(4px)}
+/* телефон: нижняя шторка */
+@media (max-width:760px){
+  .cp-sheet{top:auto;left:0;width:auto;height:92dvh;max-height:calc(100dvh - 24px);border-left:0;border-top:1px solid rgba(188,211,222,.16);border-radius:24px 24px 0 0;transform:translateY(102%);box-shadow:0 -30px 70px -30px rgba(0,0,0,.8)}
+  .cp-sheet::before{left:24px;right:24px;top:-1px;bottom:auto;width:auto;height:1px;background:linear-gradient(90deg,transparent,var(--cp-tc,#8ED8F8),transparent);transform:scaleX(0);transform-origin:center}
+  .cp.is-open .cp-sheet::before{transform:scaleX(1)}
+  .cp-bar{padding:18px 14px 10px 20px;touch-action:none}
+  .cp-handle{display:block;position:absolute;left:50%;top:7px;width:40px;height:4px;margin-left:-20px;border-radius:4px;background:rgba(188,211,222,.3)}
+  .cp-ib{width:40px;height:40px}
+  .cp-body{padding:22px 20px 28px}
+  .cp-h{font-size:34px}
+  .cp-lead{font-size:16.5px}
+  .cp-win{aspect-ratio:4/3}
+  .cp-feat li{grid-template-columns:minmax(0,1fr);gap:14px}
+  .cp-phone{width:30%;right:-6px;bottom:-18px}
+  .cp-foot{padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
+  .cp-foot .cp-nx{display:none}
+  .cp-foot .cp-cta{flex:1}.cp-foot .cp-cta .btn{flex:1}.cp-foot .cp-cta .btn-g{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .cp-sheet,.cp-sheet::before,.cp-scrim{transition-duration:.01s}
+  .cp-art.is-in > *{animation:none}
+}
+/* облегчённый режим: без размытия под подложкой, как у всех стёкол */
+.pt-lite .cp-scrim{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(5,9,13,.78)}
 /* «Поток»: матовое стекло поверх световых потоков; наведение, фокус или тап (.is-open) его проясняют */
 .frost{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;background-color:rgba(10,18,26,.35);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .6s ease,background-color .6s ease,-webkit-backdrop-filter .6s ease,backdrop-filter .6s ease}
 .frost.on{opacity:1}
@@ -956,8 +1070,8 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
    видна только в фокусе — ей просто высота 44 px */
 .skip{display:inline-flex;align-items:center;min-height:44px;padding:0 16px}
 @media (pointer:coarse),(max-width:760px){
-.pt .crumbs a,.foot-req a,.pt .sv-fl a,.pt a.sv-fw,.pt .foot-ln a,.doc-in .pv-ckb,.pt .lang a,.ck-b button{position:relative}
-.pt .crumbs a::before,.foot-req a::before,.pt .sv-fl a::before,.pt a.sv-fw::before,.pt .foot-ln a::before,.doc-in .pv-ckb::before,.pt .lang a::before,.pt .sv-tl a::before,.fl-b::before,.ck-b button::before{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}
+.pt .crumbs a,.foot-req a,.pt .sv-fl a,.pt a.sv-fw,.pt .foot-ln a,.doc-in .pv-ckb,.pt .lang a,.ck-b button,.cp-ib{position:relative}
+.pt .crumbs a::before,.foot-req a::before,.pt .sv-fl a::before,.pt a.sv-fw::before,.pt .foot-ln a::before,.doc-in .pv-ckb::before,.pt .lang a::before,.pt .sv-tl a::before,.fl-b::before,.ck-b button::before,.cp-ib::before{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}
 }
 
 /* ---------- курсор в стиле сайта (просьба владельца: «курсор обычный оставь — просто покрась градиентом») ----------

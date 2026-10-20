@@ -147,6 +147,9 @@
     if (t.closest('[data-pt-replay]')) goal('replay');
   }, true);
   window.addEventListener('pt:lang', function () { if (window.PTI18N && window.PTI18N.lang === 'en') goal('lang_en'); });
+  // панель разбора работы (assets/cases.js) открыла кейс — цель case_open, slug без «case-» (только после «Принять»: goal сам
+  // проверяет); нажатие на призыв в панели — обычная цель tg
+  window.addEventListener('pt:case', function (e) { goal('case_open', { 'case': String((e && e.detail) || '') }); });
 
   var c = get();
   if (c === 'yes') whenReady(loadYm);

@@ -85,6 +85,8 @@
       if (e.ctrlKey || e.defaultPrevented) return;
       // открыто меню (nav.js, html.pt-lock) — страница стоит
       if (de.classList.contains('pt-lock')) { e.preventDefault(); return; }
+      // открыта панель разбора работы (cases.js, html.cp-lock): колесо крутит её тело — нативно, страница стоит
+      if (de.classList.contains('cp-lock')) { if (!(e.target.closest && e.target.closest('[data-cp-body]'))) e.preventDefault(); return; }
       var dy = e.deltaY;
       if (Math.abs(e.deltaX) > Math.abs(dy)) return;
       if (e.deltaMode === 1) dy *= 16; else if (e.deltaMode === 2) dy *= window.innerHeight;

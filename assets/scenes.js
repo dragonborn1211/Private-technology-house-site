@@ -363,13 +363,15 @@
       ct = 0; stage = -1; setStage(0);
     }
     function sleep() { asleep = true; }
+    // проснуться без пересборки — с того же места (панель кейса закрылась, сетка под ней снова идёт; pt:wake)
+    function resume() { if (on) asleep = false; else wake(); }
     // смена языка: текущий демо-сайт собирается заново с сетки, уже с текстами на новом языке
     function relang() {
       if (!on) return;
       if (env.rm) { drawStatic(); return; }
       ct = 0; stage = -1; RC = []; setStage(0);
     }
-    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, relang: relang };
+    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, resume: resume, relang: relang };
   }
 
   // ---------- схемы: общий движок узлов, связей и импульсов ----------
@@ -733,31 +735,49 @@
       { a: 'ai', b: 'tg', ev: 'sendMessage' },
       { a: 'tg', b: 'ai', ev: 'вопрос → ответ', k: 'q', p: 0.6 }
     ] },
+    // кейсы «Работ» (cases.html; call-audit — и в «Кейсах» главной): схемы по фактам, TASK-cases-panel.md, 2
+    // mx — узкое окно (< 340 px, телефон 320–390): длинные слова («Мини-приложение», «SEO-описание») сводили соседние узлы
     'call-audit': { src: ['tel'], nodes: [
-      { id: 'tel', name: 'Телефония', role: 'trigger', x: 0.18, y: 0.28 },
-      { id: 'rec', name: 'Битрикс24 · запись', role: 'webhook', x: 0.5, y: 0.28 },
-      { id: 'n8n', name: 'n8n', role: 'workflow', x: 0.82, y: 0.28 },
-      { id: 'stt', name: 'Распознавание речи', role: 'ai', x: 0.19, y: 0.72 },
-      { id: 'ai', name: 'AI · оценка', role: 'ai', x: 0.5, y: 0.72 },
-      { id: 'crm', name: 'CRM · сделка', role: 'output', x: 0.82, y: 0.72 }
+      { id: 'tel', name: 'Телефония', role: 'trigger', x: 0.17, y: 0.3 },
+      { id: 'rec', name: 'Запись звонка', role: 'webhook', x: 0.5, y: 0.3 },
+      { id: 'stt', name: 'Расшифровка речи', role: 'ai', x: 0.83, y: 0.3 },
+      { id: 'ai', name: 'AI · разбор звонка', role: 'ai', x: 0.5, y: 0.74 },
+      { id: 'crm', name: 'Битрикс24 · карточка', role: 'output', x: 0.17, y: 0.74 },
+      { id: 'tg', name: 'Telegram · итог дня', role: 'output', x: 0.83, y: 0.74 }
     ], edges: [
       { a: 'tel', b: 'rec', ev: 'call.end' },
-      { a: 'rec', b: 'n8n', ev: 'record.url' },
-      { a: 'n8n', b: 'stt', ev: 'transcribe()' },
-      { a: 'stt', b: 'ai', ev: 'score: 8/10' },
-      { a: 'ai', b: 'crm', ev: 'comment.add' }
+      { a: 'rec', b: 'stt', ev: 'audio' },
+      { a: 'stt', b: 'ai', ev: 'текст · без имён' },
+      { a: 'ai', b: 'crm', ev: 'разбор + балл', grp: 'out' },
+      { a: 'ai', b: 'tg', ev: 'итог дня', grp: 'out' }
     ] },
-    'tg-crm': { src: ['tg'], duplex: true, nodes: [
-      { id: 'tg', name: 'Telegram · мини-приложение', role: 'trigger', x: 0.17, y: 0.38 },
-      { id: 'api', name: 'API', role: 'webhook', x: 0.52, y: 0.38 },
-      { id: 'crm', name: 'Битрикс24 · CRM', role: 'workflow', x: 0.84, y: 0.38, turn: true },
-      { id: 'mgr', name: 'Менеджер', role: 'output', x: 0.84, y: 0.8 }
+    'studio-os': { src: ['call'], seq: true, nodes: [
+      { id: 'call', name: 'Созвон · запись', role: 'trigger', x: 0.16, y: 0.3 },
+      { id: 'stt', name: 'Расшифровка', role: 'ai', x: 0.5, y: 0.3 },
+      { id: 'ai', name: 'AI · задачи и сроки', role: 'ai', x: 0.84, y: 0.3 },
+      { id: 'ok', name: 'Telegram · подтвердить', role: 'webhook', x: 0.84, y: 0.74, mx: 0.84 },
+      { id: 'bot', name: 'Бот · художники', role: 'workflow', x: 0.5, y: 0.74, mx: 0.46 },
+      { id: 'dash', name: 'Дашборд', role: 'output', x: 0.16, y: 0.74, mx: 0.14 }
     ], edges: [
-      { a: 'tg', b: 'api', ev: 'lead.create' },
-      { a: 'api', b: 'crm', ev: 'sync ⇄' },
-      { a: 'crm', b: 'mgr', ev: 'notify' },
-      { a: 'crm', b: 'api', ev: 'status: в работе', k: 'r' },
-      { a: 'api', b: 'tg', ev: 'sync ⇄', k: 'r' }
+      { a: 'call', b: 'stt', ev: 'meeting.mp4' },
+      { a: 'stt', b: 'ai', ev: 'text' },
+      { a: 'ai', b: 'ok', ev: 'задач: 5' },
+      { a: 'ok', b: 'bot', ev: 'одобрено ✓' },
+      { a: 'bot', b: 'dash', ev: 'статусы' }
+    ] },
+    'tg-crm': { src: ['site', 'tg', 'app'], nodes: [
+      { id: 'site', name: 'Сайт', role: 'trigger', x: 0.15, y: 0.22 },
+      { id: 'tg', name: 'Мини-приложение', role: 'trigger', x: 0.15, y: 0.52 },
+      { id: 'app', name: 'Приложение', role: 'trigger', x: 0.15, y: 0.82 },
+      { id: 'api', name: 'API', role: 'webhook', x: 0.47, y: 0.52, mx: 0.6 },
+      { id: 'crm', name: 'Битрикс24 · заявка', role: 'workflow', x: 0.82, y: 0.3 },
+      { id: 'mgr', name: 'Telegram · менеджеру', role: 'output', x: 0.82, y: 0.76 }
+    ], edges: [
+      { a: 'site', b: 'api', ev: 'order' },
+      { a: 'tg', b: 'api', ev: 'order' },
+      { a: 'app', b: 'api', ev: 'order' },
+      { a: 'api', b: 'crm', ev: 'лид + корзина.xlsx', grp: 'go' },
+      { a: 'api', b: 'mgr', ev: 'sendMessage', grp: 'go' }
     ] },
     'ai-gateway': { src: ['site', 'crm', 'bot'], duplex: true, nodes: [
       { id: 'site', name: 'Сайт', role: 'trigger', x: 0.12, y: 0.2 },
@@ -851,16 +871,16 @@
       { a: 'src', b: 'tab', ev: 'row.append' },
       { a: 'tab', b: 'tg', ev: 'sendMessage' }
     ] },
-    // кейсы (cases.html; два — и в «Кейсах» на главной), b24-digest и catalog — ещё и шаблоны каталога
+    // catalog — кейс «Работ» и шаблон каталога «Каталог из прайса»; b24-digest (выше) — только шаблон каталога
     'catalog': { src: ['csv'], seq: true, nodes: [
-      { id: 'csv', name: 'Прайс · CSV', role: 'trigger', x: 0.15, y: 0.27 },
-      { id: 'agent', name: 'LibreChat · агент', role: 'ai', x: 0.5, y: 0.27 },
-      { id: 'n8n', name: 'n8n · сервер', role: 'workflow', x: 0.84, y: 0.27 },
-      { id: 'ai', name: 'Карточка и SEO', role: 'ai', x: 0.84, y: 0.73 },
-      { id: 'site', name: 'Сайт · каталог', role: 'output', x: 0.5, y: 0.73 },
-      { id: 'tg', name: 'Telegram · отчёт', role: 'output', x: 0.15, y: 0.73 }
+      { id: 'csv', name: 'Файл с товарами', role: 'trigger', x: 0.15, y: 0.3 },
+      { id: 'agent', name: 'Чат с агентом', role: 'ai', x: 0.5, y: 0.3 },
+      { id: 'n8n', name: 'n8n · сервер', role: 'workflow', x: 0.84, y: 0.3 },
+      { id: 'ai', name: 'AI · SEO-описание', role: 'ai', x: 0.84, y: 0.74, mx: 0.8 },
+      { id: 'site', name: 'Сайт · каталог', role: 'output', x: 0.5, y: 0.74, mx: 0.45 },
+      { id: 'tg', name: 'Telegram · отчёт', role: 'output', x: 0.15, y: 0.74 }
     ], edges: [
-      { a: 'csv', b: 'agent', ev: 'upload.csv' },
+      { a: 'csv', b: 'agent', ev: 'upload' },
       { a: 'agent', b: 'n8n', ev: 'import()' },
       { a: 'n8n', b: 'ai', ev: 'items[]' },
       { a: 'ai', b: 'site', ev: 'REST · POST' },
@@ -938,6 +958,9 @@
     var g = cv.getContext('2d'), win = cv.parentNode, card = win.closest('.glass') || win, lab = win.querySelector('[data-flow-label]');
     var st = { w: 0, h: 0, d: 0 }, on = false, G = null, ct = 0, stage = '', prev = '', CYC = 7, gl = '', swapAt = 0, held = false;
     var RUN = cfg.rand === 'duplex' ? 'sync' : 'run';
+    // схема панели разбора работы (cases.html, [data-cp]): облегчённый режим её не держит — пауза петель при прокрутке
+    // страницы (env.hold) к прокрутке тела панели отношения не имеет (TASK-cases-panel.md, 4.6)
+    var inPanel = !!cv.closest('[data-cp]');
     function compact() { return st.w < 340; }
     // низ подписи окна (.win-tag в левом верхнем углу) относительно холста + 8 px: выше узлы не ставим; карточка скрыта — 0
     function topPad() {
@@ -963,7 +986,7 @@
     function tick(dt) {
       if (!on || env.rm || !G || asleep) return;
       if (offscreen(cv, env)) return;
-      if (env.hold && held) return;
+      if (env.hold && held && !inPanel) return;
       if (G.t >= G.first) held = true;
       if (swapAt > 0) { swapAt -= dt; if (swapAt <= 0) rebuild(); }
       var hov = card.matches(':hover');
@@ -991,6 +1014,8 @@
       if (env.rm) draw();
     }
     function sleep() { asleep = true; }
+    // проснуться без пересборки — с того же места (панель кейса закрылась, схемы сетки под ней снова идут; pt:wake)
+    function resume() { if (on) asleep = false; else wake(); }
     // фильтр показал карточку (assets/filter.js → pt:shown → движок): схема собирается заново с первого узла
     function restart() {
       if (!on || asleep) return;
@@ -1007,7 +1032,7 @@
       swapAt = 0.4;
     }
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (G) { G.layout(g, st.w, st.h, compact(), topPad()); if (on && env.rm) draw(); } });
-    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, relang: relang, restart: restart };
+    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, resume: resume, relang: relang, restart: restart };
   }
 
   // ---------- «Поток»: световые ленты под матовым стеклом, при наведении — схема устройства ----------
