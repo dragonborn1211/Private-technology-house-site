@@ -87,7 +87,7 @@
           { k: 'box', x: 0.725, y: 0.61, w: 0.04, h: 0.13, c: 'acc2', r: 0.006 }, { k: 'box', x: 0.79, y: 0.63, w: 0.04, h: 0.11, c: 'acc', r: 0.006 }, { k: 'box', x: 0.855, y: 0.59, w: 0.04, h: 0.15, c: 'acc2', r: 0.006 },
           { k: 'bar', x: 0.06, y: 0.86, w: 0.14, h: 0.014, a: 0.25 }, { k: 'bar', x: 0.24, y: 0.86, w: 0.14, h: 0.014, a: 0.25 }, { k: 'bar', x: 0.42, y: 0.86, w: 0.14, h: 0.014, a: 0.25 }
         ] },
-      { name: 'Студия «Лён»', bg: '#F4EEEA', ink: '#3A2E2A', acc: '#B98E7C', acc2: '#8C6A5D', soft: '#E8D8CF', ff: '"Cormorant Garamond", Georgia, serif', fw: '500', st: 'italic',
+      { name: 'Студия «Лён»', bg: '#F4EEEA', ink: '#3A2E2A', acc: '#B98E7C', acc2: '#8C6A5D', soft: '#E8D8CF', ff: "Georgia, 'Times New Roman', serif", fw: '500', st: 'italic',
         h1: ['Красота', 'в деталях.'], hc: ['ink', 'acc2'], hx: 0.06, hy: 0.665, hs: 0.1, lh: 1.0, al: 'left',
         els: [
           { k: 'logo', x: 0.06, y: 0.115, s: 0.06, t: 'Лён' },

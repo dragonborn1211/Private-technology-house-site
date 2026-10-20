@@ -1532,8 +1532,9 @@ console.log('\nревью, 1: первые секунды');
   if (bad.length) fail('ревью, 1: ' + bad.join('; '));
   else console.log(`  ✓ пульт скрыт до вспышки, подпись «Собрать заново»; объект виден с ${go.t} мс (стадия рамок, до s-done); заливка кнопки ${tf} мс, её текст ${tt} мс`);
 }
-// Ревью, разделы 2–3: шрифты со своего сервера — ни одного запроса к googleapis / gstatic, Manrope 300 и Cormorant italic
-// загрузились из assets/fonts; иконки сайта и превью ссылки — у всех страниц иконки и theme-color, у всех, кроме 404, og:*
+// Ревью, разделы 2–3: шрифты со своего сервера — ни одного запроса к googleapis / gstatic, Manrope 300 и JetBrains Mono
+// загрузились из assets/fonts; TASK-one-font.md: Cormorant нет — ни файла, ни preload, ни элемента, у которого он первый в
+// font-family (все страницы RU / EN, на «Работах» — и с открытой панелью кейса); иконки сайта и превью ссылки — у всех страниц иконки и theme-color, у всех, кроме 404, og:*
 // (og:title = <title>, og:description = description, og:url = canonical); /favicon.svg, /favicon.ico, /apple-touch-icon.png,
 // /assets/og.jpg и иконки 192 / 512 отдают 200; в EN og:title и og:description переведены, og:locale — en_US.
 console.log('\nревью, 2–3: свои шрифты, иконка сайта, превью ссылки');
@@ -1543,15 +1544,16 @@ console.log('\nревью, 2–3: свои шрифты, иконка сайта
     const h = src[f], head = h.slice(0, h.indexOf('</head>'));
     if (/googleapis|gstatic/.test(h)) bad.push(`${f}: ссылка на Google Fonts`);
     const pre = [...head.matchAll(/<link rel="preload" href="([^"]+)" as="font" type="font\/woff2" crossorigin>/g)].map((m) => m[1].replace(/^\//, ''));
-    // TASK-qa.md: ещё начертания H1 — Manrope 300 latin (пробелы и латиница в H1) и Cormorant italic cyrillic: иначе H1
-    // сначала набирался вперемешку со шрифтом-заменой и на 412 px переносился иначе (сдвиг раскладки)
-    if (pre.join() !== 'assets/fonts/manrope-cyrillic-300-normal.woff2,assets/fonts/manrope-cyrillic-400-normal.woff2,assets/fonts/manrope-latin-300-normal.woff2,assets/fonts/cormorant-garamond-cyrillic-500-italic.woff2') bad.push(`${f}: preload шрифтов ${pre.join(', ') || 'нет'}`);
+    // TASK-qa.md: ещё начертание H1 — Manrope 300 latin (пробелы и латиница в H1): иначе H1 сначала набирался вперемешку со
+    // шрифтом-заменой и на 412 px переносился иначе (сдвиг раскладки). Cormorant больше нет (TASK-one-font.md)
+    if (pre.join() !== 'assets/fonts/manrope-cyrillic-300-normal.woff2,assets/fonts/manrope-cyrillic-400-normal.woff2,assets/fonts/manrope-latin-300-normal.woff2') bad.push(`${f}: preload шрифтов ${pre.join(', ') || 'нет'}`);
     for (const re of [/<link rel="icon" href="\/?favicon\.svg" type="image\/svg\+xml">/, /<link rel="icon" href="\/?favicon\.ico" sizes="any">/, /<link rel="apple-touch-icon" href="\/?apple-touch-icon\.png">/, /<meta name="theme-color" content="#0A121A">/]) if (!re.test(head)) bad.push(`${f}: нет ${re.source.slice(0, 40)}`);
     const og = (k) => (new RegExp(`<meta property="og:${k}" content="([^"]*)">`).exec(head) || [])[1];
     if (f === '404.html') { if (/og:/.test(head)) bad.push('404.html: og:* не нужны'); continue; }
     const t = (/<title>(.*?)<\/title>/.exec(head) || [])[1], d = (/<meta name="description" content="([^"]*)">/.exec(head) || [])[1], c = (/<link rel="canonical" href="([^"]*)">/.exec(head) || [])[1];
     if (og('title') !== t || og('description') !== d || og('url') !== c || og('image') !== 'https://privatechouse.ru/assets/og.jpg' || og('image:width') !== '1200' || og('image:height') !== '630' || og('type') !== 'website' || og('locale') !== 'ru_RU' || !/<meta name="twitter:card" content="summary_large_image">/.test(head)) bad.push(`${f}: og:* не совпадают с title / description / canonical`);
   }
+  if (/Cormorant/i.test(readFileSync(new URL('../assets/site.css', import.meta.url), 'utf8'))) bad.push('site.css: Cormorant ещё упомянут');
   for (const u of ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png', 'assets/og.jpg', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png']) {
     const r = await fetch(BASE + u); if (r.status !== 200) bad.push(`/${u}: ${r.status}`);
   }
@@ -1564,12 +1566,17 @@ console.log('\nревью, 2–3: свои шрифты, иконка сайта
       await page.goto(BASE + (f === '404.html' ? 'nonexistent/deep/path' : f) + q);
       const r = await page.evaluate(async () => {
         await document.fonts.ready;
-        await Promise.all([document.fonts.load('300 16px Manrope', 'Аб'), document.fonts.load('italic 500 16px "Cormorant Garamond"', 'Аб'), document.fonts.load('400 16px "JetBrains Mono"', 'Аб')]);
+        await Promise.all([document.fonts.load('300 16px Manrope', 'Аб'), document.fonts.load('400 16px "JetBrains Mono"', 'Аб')]);
+        if (window.PTCases) { window.PTCases.open('case-resonara'); await new Promise((ok) => setTimeout(ok, 300)); }
+        // первым в font-family нигде не Cormorant (и в псевдоэлементах)
+        const corm = []; for (const e of document.querySelectorAll('*')) for (const ps of [null, '::before', '::after']) { const ff = getComputedStyle(e, ps).fontFamily; if (/^\s*["']?Cormorant/i.test(ff)) corm.push((e.className && e.className.baseVal === undefined ? e.tagName.toLowerCase() + '.' + String(e.className).split(' ')[0] : e.tagName.toLowerCase()) + (ps || '')); }
         const og = (k) => { const m = document.querySelector(`meta[property="og:${k}"]`); return m ? m.content : null; };
-        return { m3: document.fonts.check('300 16px Manrope', 'Аб'), cg: document.fonts.check('italic 500 16px "Cormorant Garamond"', 'Аб'), jb: document.fonts.check('400 16px "JetBrains Mono"', 'Аб'), t: og('title'), d: og('description'), loc: og('locale') };
+        return { m3: document.fonts.check('300 16px Manrope', 'Аб'), jb: document.fonts.check('400 16px "JetBrains Mono"', 'Аб'), corm: [...new Set(corm)].slice(0, 6), t: og('title'), d: og('description'), loc: og('locale') };
       });
       if (ext.length) bad.push(`${f}${q}: запросы к Google — ${ext.length}`);
-      if (!r.m3 || !r.cg || !r.jb) bad.push(`${f}${q}: шрифты не загрузились (${JSON.stringify(r)})`);
+      if (!r.m3 || !r.jb) bad.push(`${f}${q}: шрифты не загрузились (${JSON.stringify(r)})`);
+      if (r.corm.length) bad.push(`${f}${q}: Cormorant у ${r.corm.join(', ')}`);
+      if (fonts.some((u) => /cormorant/i.test(u))) bad.push(`${f}${q}: грузится Cormorant`);
       if (fonts.some((u) => !/\/assets\/fonts\//.test(u))) bad.push(`${f}${q}: шрифт не из assets/fonts`);
       if (q && (/[А-Яа-яЁё]/.test(r.t + r.d) || r.loc !== 'en_US')) bad.push(`${f}${q}: og:* не переведены (${r.t} / ${r.loc})`);
       if (f === 'index.html' && !q) info.push(`главная: ${fonts.length} файлов шрифтов из assets/fonts`);
@@ -1578,7 +1585,7 @@ console.log('\nревью, 2–3: свои шрифты, иконка сайта
   }
   await quick.close();
   if (bad.length) fail('ревью, 2–3: ' + bad.join('; '));
-  else console.log(`  ✓ запросов к Google нет, шрифты из assets/fonts (${info.join('; ')}), preload — начертания первого экрана (Manrope 300 / 400, Cormorant italic); иконки, theme-color и og:* на местах (404 — без og), файлы отдают 200, в EN og:* переведены`);
+  else console.log(`  ✓ запросов к Google нет, шрифты из assets/fonts (${info.join('; ')}), preload — начертания первого экрана (Manrope 300 / 400), Cormorant нет ни у одного элемента (RU / EN, панель кейса); иконки, theme-color и og:* на местах (404 — без og), файлы отдают 200, в EN og:* переведены`);
 }
 // Ревью, раздел 4 — тексты: «ИИ-» нигде (в названиях и подписях — «AI»); описание главной и лид каталога (с его описанием)
 // — новые; у «Приложений» — «Формат: разово», у «Сопровождения» нет «Стоимости», теги автоматизации — с чем соединяем

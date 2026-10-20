@@ -11,13 +11,11 @@
 @font-face{font-family:'Manrope';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/manrope-latin-500-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2010-2026,U+2190-2193,U+2197,U+20BD}
 @font-face{font-family:'Manrope';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/manrope-cyrillic-600-normal.woff2) format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
 @font-face{font-family:'Manrope';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/manrope-latin-600-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2010-2026,U+2190-2193,U+2197,U+20BD}
-@font-face{font-family:'Cormorant Garamond';font-style:italic;font-weight:500;font-display:swap;src:url(fonts/cormorant-garamond-cyrillic-500-italic.woff2) format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
-@font-face{font-family:'Cormorant Garamond';font-style:italic;font-weight:500;font-display:swap;src:url(fonts/cormorant-garamond-latin-500-italic.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2010-2026,U+2190-2193,U+2197,U+20BD}
 @font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/jetbrains-mono-cyrillic-400-normal.woff2) format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
 @font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/jetbrains-mono-latin-400-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2010-2026,U+2190-2193,U+2197,U+20BD}
 @font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-cyrillic-500-normal.woff2) format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
 @font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-latin-500-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2010-2026,U+2190-2193,U+2197,U+20BD}
-/* Запасные гарнитуры с метриками своих шрифтов (TASK-qa.md, CLS): пока Manrope / Cormorant / JetBrains Mono грузятся
+/* Запасные гарнитуры с метриками своих шрифтов (TASK-qa.md, CLS): пока Manrope / JetBrains Mono грузятся
    (font-display: swap), текст набран системным шрифтом той же ширины и высоты строки — строки не переносятся иначе,
    и после загрузки ничего не прыгает (было: H1 «Сделано и работает.» в Segoe UI шире на строку, секция ниже сдвигалась
    на 40 px). Числа — по ширине текста сайта и метрикам веб-шрифтов (canvas measureText); Android без этих шрифтов
@@ -26,7 +24,6 @@
 @font-face{font-family:'Manrope fb';font-weight:400;src:local('Arial'),local('ArialMT'),local('Helvetica'),local('Roboto');size-adjust:100.8%;ascent-override:106.2%;descent-override:29.8%;line-gap-override:0%}
 @font-face{font-family:'Manrope fb';font-weight:500;src:local('Arial'),local('ArialMT'),local('Helvetica'),local('Roboto');size-adjust:102.4%;ascent-override:104.5%;descent-override:29.3%;line-gap-override:0%}
 @font-face{font-family:'Manrope fb';font-weight:600;src:local('Arial Bold'),local('Arial-BoldMT'),local('Helvetica Bold'),local('Roboto Bold');size-adjust:98.1%;ascent-override:109.1%;descent-override:30.6%;line-gap-override:0%}
-@font-face{font-family:'Cormorant fb';font-style:italic;src:local('Georgia Italic'),local('Georgia-Italic');size-adjust:77.0%;ascent-override:119.5%;descent-override:37.7%;line-gap-override:0%}
 @font-face{font-family:'JetBrains fb';src:local('Courier New'),local('CourierNewPSMT');size-adjust:100%;ascent-override:102%;descent-override:30%;line-gap-override:0%}
 html{scroll-behavior:smooth;scrollbar-width:none}
 html::-webkit-scrollbar{display:none}
@@ -81,7 +78,7 @@ body{margin:0;background:#0A121A}
 @keyframes ptScan{0%{top:0;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
 .mono{font-family:'JetBrains Mono','JetBrains fb',monospace;font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:#8FAEC0}
 .mono.k{color:#8ED8F8}
-.it{font-family:'Cormorant Garamond','Cormorant fb',Georgia,serif;font-style:italic;font-weight:500;font-size:1.12em;letter-spacing:-.01em;padding-right:.06em;background-image:linear-gradient(90deg,#8ED8F8 0%,#7FA8FF 20%,#B7A6F2 40%,#F6F8FA 55%,#9FE5D1 75%,#8ED8F8 100%);background-size:200% 100%;background-repeat:repeat-x;-webkit-background-clip:text;background-clip:text;color:transparent;animation:ptShim 4s linear infinite}
+.it{background-image:linear-gradient(90deg,#8ED8F8 0%,#7FA8FF 20%,#B7A6F2 40%,#F6F8FA 55%,#9FE5D1 75%,#8ED8F8 100%);background-size:200% 100%;background-repeat:repeat-x;-webkit-background-clip:text;background-clip:text;color:transparent;animation:ptShim 4s linear infinite}
 @keyframes ptShim{from{background-position:0% 50%}to{background-position:200% 50%}}
 /* перелив стартует, когда секция собралась; на первом экране он постоянный, в остальных секциях — два прохода,
    потом статичный градиент: меньше одновременного движения на странице */
@@ -115,8 +112,9 @@ body{margin:0;background:#0A121A}
 .card-link:hover{color:#8ED8F8!important}
 .h2{margin:0;font-weight:300;font-size:clamp(34px,4.4vw,64px);line-height:1.04;letter-spacing:-.035em;color:#EEF3F6}
 /* акцент в заголовках разделов (просьба владельца, вариант B: «сейчас они тупо белые»): вторая фраза или последнее слово —
-   курсив Cormorant с градиентом палитры, как в H1, но без перелива. data-grad — частицы букв того же цвета (engine.js) */
-.hx{font-family:'Cormorant Garamond','Cormorant fb',Georgia,serif;font-style:italic;font-weight:500;font-size:1.1em;letter-spacing:-.01em;padding-right:.06em;background-image:linear-gradient(90deg,#8ED8F8 0%,#7FA8FF 30%,#B7A6F2 60%,#9FE5D1 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+   тот же шрифт, что у заголовка, выделение только градиентом палитры, как в H1, но без перелива (TASK-one-font.md: один
+   шрифт на сайте). data-grad — частицы букв того же цвета (engine.js) */
+.hx{background-image:linear-gradient(90deg,#8ED8F8 0%,#7FA8FF 30%,#B7A6F2 60%,#9FE5D1 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
 @media (min-width:761px){.hx{white-space:nowrap}}
 .lead{margin:0;max-width:520px;font-size:17px;line-height:1.6;color:#9DB0BC}
 .glass{background-color:rgba(228,237,242,.035);border:1px solid rgba(188,211,222,.14);box-shadow:inset 0 1px 0 rgba(246,248,250,.06),0 30px 60px -30px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
@@ -376,7 +374,7 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 /* подпись: заголовок и описание активного принципа — один блок, гаснет и появляется целиком (.is-swap, модуль) */
 .obj-cw{min-width:0;max-width:430px;transition:opacity .15s ease}
 .obj-cw.is-swap{opacity:0}
-.obj-ct{width:fit-content;max-width:100%;margin:0 0 6px;font:italic 500 30px/1.05 'Cormorant Garamond','Cormorant fb',Georgia,serif;letter-spacing:-.01em;color:var(--acc);text-shadow:0 0 28px color-mix(in srgb,var(--acc) 35%,transparent)}
+.obj-ct{width:fit-content;max-width:100%;margin:0 0 6px;font:400 26px/1.15 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:-.02em;color:var(--acc);text-shadow:0 0 28px color-mix(in srgb,var(--acc) 35%,transparent)}
 .hero-obj[data-slot="5"] .obj-ct{background-image:linear-gradient(90deg,#8ED8F8,#B7A6F2 50%,#9FE5D1);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none}
 .obj-cap{margin:0;font:400 15px/1.5 Manrope,'Manrope fb',system-ui,sans-serif;color:#BCD3DE;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .nav2{display:flex;align-items:center;gap:10px;flex:none}
@@ -590,7 +588,7 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .sv-fmt{flex:1 1 400px;align-self:center;display:flex;flex-direction:column;padding:8px;border-radius:28px}
 .sv-f{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:8px 20px;padding:20px 22px 16px;border-radius:21px}
 .sv-f + .sv-f{border-top:1px solid rgba(188,211,222,.1);border-top-left-radius:0;border-top-right-radius:0}
-.pt a.sv-fw{justify-self:start;font:italic 500 40px/1 'Cormorant Garamond','Cormorant fb',Georgia,serif;letter-spacing:-.01em;color:var(--c);text-shadow:0 0 26px color-mix(in srgb,var(--c) 30%,transparent);transition:text-shadow .3s ease}
+.pt a.sv-fw{justify-self:start;font:300 34px/1 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:-.03em;color:var(--c);text-shadow:0 0 26px color-mix(in srgb,var(--c) 30%,transparent);transition:text-shadow .3s ease}
 .pt a.sv-fw:hover{text-shadow:0 0 30px color-mix(in srgb,var(--c) 65%,transparent)}
 .sv-fm{font:500 11px/1.4 'JetBrains Mono','JetBrains fb',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8FAEC0;white-space:nowrap}
 .sv-fl{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:0 20px;margin-top:2px;font-size:14px;font-weight:500}
@@ -669,7 +667,7 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 @media (max-width:760px){
 .sv-head{padding-top:4px}
 .sv-h1{font-size:40px}
-.pt a.sv-fw{font-size:34px}
+.pt a.sv-fw{font-size:30px}
 .sv-f{padding:16px 16px 10px}
 .sv-fl{gap:0 18px}
 .sv-mod{padding:24px 18px 22px;border-radius:24px}
@@ -862,12 +860,10 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 /* страница услуг: заголовки групп «Разово» / «Ежемесячно» — крупно, тем же приёмом, что в сводке первого экрана
    (TASK-clarity.md, A1); подпись группы мелко рядом */
 .gh{margin:0;display:flex;align-items:baseline;gap:6px 18px;flex-wrap:wrap}
-.gh-w{font:italic 500 clamp(44px,5vw,72px)/1 'Cormorant Garamond','Cormorant fb',Georgia,serif;letter-spacing:-.01em;color:var(--c);text-shadow:0 0 30px color-mix(in srgb,var(--c) 30%,transparent)}
+.gh-w{font:300 clamp(34px,3.4vw,48px)/1 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:-.035em;color:var(--c);text-shadow:0 0 30px color-mix(in srgb,var(--c) 30%,transparent)}
 .gh-m{font:500 12px/1.4 'JetBrains Mono','JetBrains fb',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8FAEC0}
 .row-h.gx{padding-top:28px;margin-bottom:28px;align-items:flex-end}
 .row-h.gx .row-t{font-size:16px}
-/* главная: группы направлений — те же «Разово / Ежемесячно», что на услугах, но мельче (TASK-review.md, раздел 5) */
-[data-sec="directions"] .gh-w{font-size:clamp(34px,3.4vw,48px)}
 /* «Как устроена подписка»: строки «Сайт / Сценарий / Агент» вровень во всех трёх карточках */
 .sv-path .list b{font-weight:500;color:#EEF3F6;margin-right:3px}
 /* 404 */
@@ -949,7 +945,7 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .who-top{display:flex;gap:18px;align-items:center}
 .who-ph{flex:none;width:96px;height:120px;border-radius:18px;object-fit:cover;border:1px solid rgba(188,211,222,.18);background:linear-gradient(160deg,#1A2A36,#0E1720);filter:grayscale(.3) contrast(1.05)}
 .who-ph.mono{position:relative;display:flex;align-items:center;justify-content:center;filter:none;border:1px solid transparent;background:linear-gradient(160deg,#1A2A36,#0E1720) padding-box,conic-gradient(from 200deg,#8ED8F8,#7FA8FF,#B7A6F2,#9FE5D1,#8ED8F8) border-box;box-shadow:0 0 34px -12px rgba(142,216,248,.55),inset 0 1px 0 rgba(246,248,250,.06)}
-.who-ph.mono b{font:italic 500 46px/1 'Cormorant Garamond','Cormorant fb',Georgia,serif;background:linear-gradient(120deg,#8ED8F8,#7FA8FF 45%,#B7A6F2 75%,#9FE5D1);-webkit-background-clip:text;background-clip:text;color:transparent}
+.who-ph.mono b{font:300 44px/1 Manrope,'Manrope fb',system-ui,sans-serif;background:linear-gradient(120deg,#8ED8F8,#7FA8FF 45%,#B7A6F2 75%,#9FE5D1);-webkit-background-clip:text;background-clip:text;color:transparent}
 .who-ph.mono::before{content:"";position:absolute;inset:14px;border:1px solid;border-image:linear-gradient(135deg,rgba(142,216,248,.75),rgba(183,166,242,.55)) 1;transform:rotate(45deg) scale(.72)}
 .pt-on .sec .who-ph{transition:opacity .9s ease}
 .pt-on .sec:not(.s-done) .who-ph{opacity:0}

@@ -480,7 +480,7 @@ async function fonts() {
     await page.goto(urlOf('index.html', 'en') + '&intro=instant'); await page.waitForTimeout(400);
     const en = await page.evaluate((L) => L.map((s) => (window.PTI18N ? window.PTI18N.t(s) : s)), lits);
     await ctx.close();
-    for (const s of new Set([...lits, ...en])) for (const [fam, st, w] of [['Manrope', 'normal', 300], ['Manrope', 'normal', 500], ['Manrope', 'normal', 600], ['JetBrains Mono', 'normal', 500], ['Cormorant Garamond', 'italic', 500]]) { add(fam, st, w, s, 'строка scenes.js'); add(fam, st, w, s.toUpperCase(), 'строка scenes.js'); }
+    for (const s of new Set([...lits, ...en])) for (const [fam, st, w] of [['Manrope', 'normal', 300], ['Manrope', 'normal', 500], ['Manrope', 'normal', 600], ['JetBrains Mono', 'normal', 500]]) { add(fam, st, w, s, 'строка scenes.js'); add(fam, st, w, s.toUpperCase(), 'строка scenes.js'); }
   }
   await b.close();
   const miss = [], old = new Map(); let total = 0;
