@@ -1046,8 +1046,10 @@
           }
         }
       }
-      // после кадра — часть растра букв первого экрана (glAhead): пока у кадра есть запас до 10 мс, но не меньше одной части
-      function loop(now) { raf = 0; if (!alive || !active) return; var t0 = performance.now(); frame(now); if (glJob) glTick(t0 + 10, true); if (!rm) raf = requestAnimationFrame(loop); }
+      // после кадра — часть растра букв первого экрана (glAhead): пока у кадра есть запас до 10 мс, но не меньше одной части.
+      // Пока идёт ранняя оценка кадров (probe, до стадии рамок) — только запас: обязательная часть удлиняла её кадры, и на
+      // слабом телефоне их к стадии рамок не набиралось на решение — облегчение включалось на секунды позже
+      function loop(now) { raf = 0; if (!alive || !active) return; var t0 = performance.now(); frame(now); if (glJob) glTick(t0 + 10, !probe); if (!rm) raf = requestAnimationFrame(loop); }
       function start() { if (raf || !alive || !active || rm) return; prev = performance.now(); raf = requestAnimationFrame(loop); }
       // Взрыв подвала ждёт, пока соберётся всё в очереди (popWait): частицы нужны следующей сборке. На телефоне подвал виден
       // сразу с секциями над ним и собирается первым (у него свой наблюдатель без отступа) — раньше взрыв там не случался
