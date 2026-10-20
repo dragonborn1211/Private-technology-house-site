@@ -16,7 +16,10 @@ const port = +process.argv[2] || 8080;
 const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2', '.ico': 'image/x-icon', '.xml': 'application/xml; charset=utf-8', '.txt': 'text/plain; charset=utf-8' };
 
 createServer(async (req, res) => {
-  let rel = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '') || 'index.html';
+  // кривая кодировка адреса (%zz) — 404, а не падение: исключение в async-обработчике роняло весь сервер, и проверки дальше
+  // получали ERR_CONNECTION_REFUSED
+  let rel = '';
+  try { rel = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '') || 'index.html'; } catch { rel = '..'; }
   if (/^[\w-]+$/.test(rel)) rel += '.html';
   const file = path.resolve(root, rel);
   // tools/ref/ — эталоны (только локально, в .gitignore), на хостинг не идут
@@ -33,4 +36,4 @@ createServer(async (req, res) => {
     if (/\.(html|css|js|svg|xml|txt)$/.test(ext) && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) { body = gzipSync(body); h['Content-Encoding'] = 'gzip'; }
     res.writeHead(code, h).end(body);
   }
-}).listen(port, () => console.log(`http://localhost:${port}`));
+}).on('clientError', (e, sock) => sock.destroy()).listen(port, () => console.log(`http://localhost:${port}`));
