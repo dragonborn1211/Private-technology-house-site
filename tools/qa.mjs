@@ -647,11 +647,13 @@ const SCEN = {
         const cards = [...document.querySelectorAll('.obj-grid .obj')].filter((c) => !c.hidden && c.getClientRects().length).map((c) => c.getBoundingClientRect());
         let over = 0; for (let i = 0; i < cards.length; i++) for (let j = i + 1; j < cards.length; j++) { const a = cards[i], c = cards[j]; if (a.left < c.right - 2 && c.left < a.right - 2 && a.top < c.bottom - 2 && c.top < a.bottom - 2) over++; }
         const grid = document.querySelector('.obj-grid').getBoundingClientRect(), low = Math.max(...cards.map((c) => c.bottom));
-        return { n: cards.length, over, hash: location.hash, cut: low > grid.bottom + 2, pressed: (document.querySelector('.fl-b[aria-pressed="true"]') || {}).dataset?.filter };
+        // ряда из одной карточки нет: число видимых чётное, или демо на всю ширину (B3, filter.js), или сетка в одну колонку
+        const demo = document.getElementById('case-demo'), wide = !!demo && demo.classList.contains('is-wide') && demo.getBoundingClientRect().width > grid.width * 0.9, cols = new Set(cards.map((c) => Math.round(c.left))).size;
+        return { n: cards.length, over, hash: location.hash, cut: low > grid.bottom + 2, wide, cols, pressed: (document.querySelector('.fl-b[aria-pressed="true"]') || {}).dataset?.filter };
       });
       if (r.over) bad.push(`${pg}: после быстрых кликов карточки налезают (${r.over})`);
       if (r.cut) bad.push(`${pg}: сетка ниже карточек обрезана`);
-      if (pg === 'cases.html' && r.n % 2) bad.push(`${pg}: видно ${r.n} — нечётно`);
+      if (pg === 'cases.html' && r.n % 2 && !r.wide && r.cols > 1) bad.push(`${pg}: видно ${r.n} — нечётно, демо не на всю ширину`);
       if ((r.pressed || '') !== (r.hash.replace(/^#(f-)?/, '') || '')) bad.push(`${pg}: нажата «${r.pressed}», хеш «${r.hash}»`);
       bad.push(...errs.map((e) => pg + ': ' + e)); await ctx.close();
     }
