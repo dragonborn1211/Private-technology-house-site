@@ -83,11 +83,14 @@
       }
       // смонтировать и, если вступление уже дошло до объекта, запустить его сборку
       function heroWake() { if (!heroLazy || !alive) return; heroNow(); if (objPend) { objPend = false; objStart(false); } }
+      // из простоя и от прокрутки: монтаж и запуск — в соседних кадрах (вместе — задача ~90 мс на слабом телефоне сразу после
+      // вступления). Касание панели — heroWake: обработчикам модуля нужен запущенный объект в том же клике
+      function heroWakeSoft() { if (!heroLazy || !alive) return; heroNow(); if (objPend) { objPend = false; requestAnimationFrame(function () { if (alive) objStart(false); }); } }
       // вступление кончилось — смонтировать в простое (не позже чем через 2 с)
       function heroIdle() {
         if (!heroLazy || heroIdleT) return;
         heroIdleT = setTimeout(function () {
-          if (window.requestIdleCallback) window.requestIdleCallback(heroWake, { timeout: 2000 }); else setTimeout(heroWake, 200);
+          if (window.requestIdleCallback) window.requestIdleCallback(heroWakeSoft, { timeout: 2000 }); else setTimeout(heroWakeSoft, 200);
         }, 0);
       }
       // «Собрать заново» и смена языка: объекта ещё нет — смонтировать сразу
@@ -389,13 +392,43 @@
       // Растр букв — самая дорогая часть замера, а нужен он только стадии «буквы» (phText). Поэтому он считается
       // лениво и один раз на геометрию. Раньше он пересчитывался уже на стадии сетки первого экрана (после догрузки
       // шрифтов кэш сбрасывается) и давал заметный рывок.
-      function ensureGl(s) { if (s.geo && !s.geo.gl) { s.geo.gl = glyphs(s.geo.words); s.prep = null; } }
+      // растр букв: начатый заранее (prefetch, glAhead) — досчитать остаток, а не начинать заново (части склеивает catGl, растр
+      // тот же, что целиком)
+      function ensureGl(s) {
+        if (!s.geo || s.geo.gl) return;
+        var job = s.prep, ws = s.geo.words;
+        if (job && job.geo === s.geo && job.parts.length) { if (job.i < ws.length) job.parts.push(glyphs(ws.slice(job.i))); s.geo.gl = catGl(job.parts); }
+        else s.geo.gl = glyphs(ws);
+        s.prep = null;
+      }
       // Замер и растр букв секции — заранее, пока она в полутора экранах ниже (IntersectionObserver), в простое браузера и
       // частями по словам: на стадии букв растр уже готов, и сборка не дёргается (растр — до 40 мс на слабом устройстве, замер
       // — до 10). Геометрия та же: кэш по layoutGen, ширине, месту секции в документе и шрифтам. Не успели — ensureGl посчитает
       // сразу, как раньше. Часть — слова на ~6 мс, между частями браузер рисует кадры
       var ric = window.requestIdleCallback ? function (fn) { return window.requestIdleCallback(fn, { timeout: 600 }); } : function (fn) { return setTimeout(function () { fn({ timeRemaining: function () { return 8; }, didTimeout: true }); }, 30); };
       function prefetchNear() { preOn = true; near.forEach(prefetch); }
+      // Растр букв первого экрана — заранее, со стадии сетки, а не целиком в переходе к стадии текста: там это была самая
+      // долгая задача вступления (на слабом телефоне ~75 мс). Частями по 4 слова: в простое между кадрами (requestIdleCallback
+      // без таймаута) и в конце кадра движка, пока у кадра есть запас (frame → glTick; не меньше одной части за кадр — на
+      // компьютере кадры вступления заняты объектом «Кодекса», простоя нет). Не успел — ensureGl досчитает остаток. Картинка та
+      // же: точки растра и так каждый раз случайно сдвинуты в пределах шага сетки; раскладка сменилась (догрузились шрифты) —
+      // начатое бросаем
+      var glJob = null;
+      function glAhead(s) {
+        if (rm || !s.geo || s.geo.gl || s.prep) return;
+        glJob = s.prep = { s: s, geo: s.geo, parts: [], i: 0 };
+        if (window.requestIdleCallback) window.requestIdleCallback(function idle(dl) { if (glJob && glTick(performance.now() + dl.timeRemaining() - 3, false)) window.requestIdleCallback(idle); });
+      }
+      // части растра до момента end; once — хотя бы одна часть. true — ещё не всё
+      function glTick(end, once) {
+        var job = glJob; if (!job || !alive) return false;
+        var s = job.s, geo = job.geo, ws = geo.words;
+        if (s.prep !== job || s.geo !== geo || geo.gl) { if (s.prep === job) s.prep = null; glJob = null; return false; }
+        // свободное время кадра — по 4 слова; кадр и так тяжёлый — обязательная часть поменьше, 2 слова
+        while (job.i < ws.length && (once || performance.now() < end)) { var part = ws.slice(job.i, job.i + (once && performance.now() >= end ? 2 : 4)); once = false; job.i += part.length; job.parts.push(glyphs(part)); }
+        if (job.i < ws.length) return true;
+        geo.gl = catGl(job.parts); s.prep = null; glJob = null; return false;
+      }
       function prefetch(s) {
         if (rm || s === hero || (s.state !== 'idle' && s.state !== 'queued') || s.prep || (s.geo && s.geo.gl)) return;
         var job = s.prep = { parts: [], i: 0 };
@@ -1013,7 +1046,8 @@
           }
         }
       }
-      function loop(now) { raf = 0; if (!alive || !active) return; frame(now); if (!rm) raf = requestAnimationFrame(loop); }
+      // после кадра — часть растра букв первого экрана (glAhead): пока у кадра есть запас до 10 мс, но не меньше одной части
+      function loop(now) { raf = 0; if (!alive || !active) return; var t0 = performance.now(); frame(now); if (glJob) glTick(t0 + 10, true); if (!rm) raf = requestAnimationFrame(loop); }
       function start() { if (raf || !alive || !active || rm) return; prev = performance.now(); raf = requestAnimationFrame(loop); }
       // Взрыв подвала ждёт, пока соберётся всё в очереди (popWait): частицы нужны следующей сборке. На телефоне подвал виден
       // сразу с секциями над ним и собирается первым (у него свой наблюдатель без отступа) — раньше взрыв там не случался
@@ -1074,7 +1108,7 @@
         runId++; running = s; s.state = 'run'; s.replay = false; heroRp = !!replay; measure(s);
         var o = replay ? -0.6 : 0, K = replay ? PRESENT_K : HERO_K, LD = LINE * K;
         if (!replay) { burst(); log(s, 'boot · ' + fmtN() + ' particles'); probeStart(K); }
-        atRun((0.6 + o) * K, function () { root.classList.add('g-on'); measure(s); phGrid(s, BLD, false); log(s, '01 · grid.init(12)'); });
+        atRun((0.6 + o) * K, function () { root.classList.add('g-on'); measure(s); phGrid(s, BLD, false); glAhead(s); log(s, '01 · grid.init(12)'); });
         function done() { setStage(s, 'done'); s.state = 'done'; phFade(BLD); if (replay) heroReplay(); else objStart(false); if (!replay && !pultShown) pultLater(); log(s, '✓ ready'); setProg(); secDone(s.el); }
         // объект — на стадии рамок, когда линия прошла середину экрана и рамка панели уже нарисована (TASK-review.md 1.3)
         function objGo() { if (replay) return; s.el.classList.add('obj-go'); objStart(false); }
@@ -1368,12 +1402,12 @@
       // объект первого экрана: модуль сам создаёт в секции холсты [data-gl]/[data-ov] (data-pt-skip, без кликов),
       // подписи панели, стрелки и строку принципов; ошибка модуля не должна ронять сборку сайта
       var objPanel = hero.el.querySelector('[data-obj]');
-      heroLazy = !!(window.PTHero && objPanel && !rm && MODE !== 'instant' && (root.clientWidth || window.innerWidth) <= 760 && 'IntersectionObserver' in window);
+      heroLazy = !!(window.PTHero && objPanel && !rm && MODE !== 'instant' && window.matchMedia && window.matchMedia('(max-width: 760px)').matches && 'IntersectionObserver' in window);
       if (heroLazy) {
         // «вошла в экран» — от прокрутки: на большинстве телефонов (390–430 px) верх панели и так виден на 25–60 % с первого
         // кадра, и монтаж пришёлся бы на вступление. Без прокрутки — после вступления (heroIdle)
         var y0 = window.scrollY || 0;
-        heroIO = new IntersectionObserver(function (es) { if (Math.abs((window.scrollY || 0) - y0) > 8 && es.some(function (e) { return e.intersectionRatio >= 0.25; })) heroWake(); }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
+        heroIO = new IntersectionObserver(function (es) { if (Math.abs((window.scrollY || 0) - y0) > 8 && es.some(function (e) { return e.intersectionRatio >= 0.25; })) heroWakeSoft(); }, { threshold: [0, 0.25, 0.5, 0.75, 1] });
         heroIO.observe(objPanel);
         // касание панели до монтажа: смонтировать и запустить сразу — обработчики модуля получат этот же клик
         hero.el.addEventListener('click', function (e) { if (heroLazy && e.target.closest && e.target.closest('[data-obj]')) { objPend = true; heroWake(); } }, true);

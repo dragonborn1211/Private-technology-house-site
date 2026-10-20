@@ -121,7 +121,9 @@
     else if (!run) cur = tgt = window.scrollY;
     show();
   }, { passive: true });
-  window.addEventListener('resize', function () { tgt = clamp(tgt); update(); });
+  // ресайз: граница прокрутки — только пока едем (стоим — цель возьмётся из scrollY при следующем колесе), полоса — только
+  // видимая (скрытую измерит show()). Раньше — два замера высоты страницы на каждый resize, в том числе на загрузке
+  window.addEventListener('resize', function () { if (run) tgt = clamp(tgt); if (bar && bar.classList.contains('on')) update(); });
 
   // ---------- скроллбар: скрыт, пока страницу не прокручивают; гаснет через 1.2 с после остановки ----------
   function update() {
@@ -141,7 +143,7 @@
   bar.addEventListener('pointerleave', function () { hover = false; });
   thumb.addEventListener('pointerdown', function (e) {
     if (e.button) return;
-    e.preventDefault(); sync();
+    e.preventDefault(); sync(); update();
     drag = { y: e.clientY, s: window.scrollY }; thumb.classList.add('drag');
     thumb.setPointerCapture(e.pointerId);
   });
@@ -158,5 +160,6 @@
     var r = thumb.getBoundingClientRect(), y = window.scrollY + (e.clientY < r.top ? -1 : 1) * window.innerHeight * 0.85;
     if (window.PTScroll) to(y); else window.scrollTo({ top: y, behavior: 'smooth' });
   });
-  update();
+  // полоса скрыта до первой прокрутки, и show() меряет её сам. Замер здесь раскладывал всю страницу посреди её загрузки
+  // (0.1–0.15 с при CPU ×4), а сразу за ним движок снимает .pt-boot — и раскладка считалась заново
 })();

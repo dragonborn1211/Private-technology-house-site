@@ -955,7 +955,8 @@
   // Случайная (cfg.rand): цикл 7 с — собралась → 2–3 импульса → рассыпалась пылью → следующая.
   function makeFlow(cv, env, cfg) {
     if (!cv || !cv.getContext) return null;
-    var g = cv.getContext('2d'), win = cv.parentNode, card = win.closest('.glass') || win, lab = win.querySelector('[data-flow-label]');
+    // 2D-холст — при первом пробуждении: до него схема не рисует, а на старте страницы холсты всех схем создавались разом
+    var g = null, win = cv.parentNode, card = win.closest('.glass') || win, lab = win.querySelector('[data-flow-label]');
     var st = { w: 0, h: 0, d: 0 }, on = false, G = null, ct = 0, stage = '', prev = '', CYC = 7, gl = '', swapAt = 0, held = false;
     var RUN = cfg.rand === 'duplex' ? 'sync' : 'run';
     // схема панели разбора работы (cases.html, [data-cp]): облегчённый режим её не держит — пауза петель при прокрутке
@@ -1009,7 +1010,7 @@
     function wake() {
       asleep = false; held = false;
       if (on) { if (!env.rm && G) { if (cfg.rand || gl !== lang()) rebuild(); else G.build(false); } return; }
-      on = true; fitCanvas(cv, st); next(true);
+      on = true; if (!g) g = cv.getContext('2d'); fitCanvas(cv, st); next(true);
       if (lab) lab.classList.add('on');
       if (env.rm) draw();
     }

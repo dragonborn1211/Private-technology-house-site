@@ -381,6 +381,10 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 .obj-cap{margin:0;font:400 15px/1.5 Manrope,'Manrope fb',system-ui,sans-serif;color:#BCD3DE;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .nav2{display:flex;align-items:center;gap:10px;flex:none}
 .nb{position:relative;display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;padding:0;border-radius:50%;border:1px solid rgba(188,211,222,.2);background-color:rgba(10,18,26,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#EEF3F6;cursor:pointer}
+/* телефон: касание стрелки или вкладки подсвечивало всю панель — у неё самой обработчик клика и cursor:pointer, и браузер
+   (Chrome на Android) рисовал подсветку касания на ней целиком. Подсветки касания в панели нет; отклик — у самой стрелки */
+.hero-obj,.hero-obj *{-webkit-tap-highlight-color:transparent}
+@media (hover:none){.nb:active{background-color:rgba(188,211,222,.16);border-color:color-mix(in srgb,var(--acc,#8ED8F8) 55%,transparent)}}
 .nb,.pt-on .sec .nb.fr{transition:background-color .9s ease,border-color .3s ease,box-shadow .3s ease}
 .nb .ar{width:20px;height:20px;transition:transform .3s cubic-bezier(.3,.7,.2,1),opacity .9s ease}
 .nb:hover{border-color:color-mix(in srgb,var(--acc) 70%,transparent);box-shadow:0 0 24px -6px var(--acc)}

@@ -10,7 +10,9 @@
   // ---------- липкая шапка ----------
   // Пока первый экран в кадре — скрыта. Ниже: прокрутка вверх показывает, вниз прячет. После перехода по якорю
   // (меню, кнопки) остаётся видимой, пока человек сам не начнёт прокручивать.
-  var lastY = window.scrollY, shown = false, pinned = false, raf = 0;
+  // прошлая позиция — с первого обновления, а не при загрузке: чтение scrollY здесь раскладывало всю страницу посреди разбора
+  // HTML, а сразу за этим движок снимает .pt-boot — и раскладка считалась заново (~75 мс при CPU ×4 на телефоне)
+  var lastY = null, shown = false, pinned = false, raf = 0;
   function show(v) {
     if (!bar || v === shown) return;
     shown = v; bar.classList.toggle('on', v);
@@ -18,7 +20,7 @@
   }
   function update() {
     raf = 0;
-    var y = window.scrollY, dy = y - lastY; lastY = y;
+    var y = window.scrollY, dy = lastY === null ? 0 : y - lastY; lastY = y;
     // закрепление после якоря снимает только сам человек (колесо, палец, клавиши): в начале поездки к секции первый
     // экран ещё в кадре, и сброс здесь гасил шапку
     if (hero && hero.getBoundingClientRect().bottom > 0) show(false);
