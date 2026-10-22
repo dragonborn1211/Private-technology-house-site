@@ -1268,9 +1268,10 @@ console.log('\nясность, часть A: заголовки групп ус�
     for (const f of ['services.html', 'process.html']) {
       await page.goto(BASE + f + '?intro=instant'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(200);
       const r = await page.evaluate(() => ({
-        rows: [...document.querySelectorAll('.sv-fl')].map((n) => new Set([...n.querySelectorAll('a')].map((a) => Math.round(a.getBoundingClientRect().top))).size),
+        rows: [...document.querySelectorAll('.sv-fl')].map((n) => new Set([...n.querySelectorAll('a')].map((a) => Math.round(a.getBoundingClientRect().top))).size + (n.children.length === 4 ? ':' + new Set([...n.children].map((a) => Math.round(a.getBoundingClientRect().left))).size : '')),
         heads: [...document.querySelectorAll('.pr-head')].map((h) => { const t = h.querySelector('.sv-t').getBoundingClientRect(), g = h.querySelector('.sv-lab').getBoundingClientRect(); return g.top >= t.bottom - 1 ? 1 : 0; }) }));
-      if (r.rows.some((n) => n !== 1)) bad.push(`${f} ${w}: строки направлений в сводке ${r.rows.join(',')}`);
+      // TASK-polish-3.md, 4: у «Разово» на услугах четыре направления — на телефоне сеткой 2 × 2 (2 строки, 2 столбца), остальное — строкой
+      if (r.rows.join(',') !== (f === 'services.html' ? '2:2,1' : '1,1')) bad.push(`${f} ${w}: строки направлений в сводке ${r.rows.join(',')}`);
       if (r.heads.some((x) => !x)) bad.push(`${f} ${w}: рисунок не под названием в шапках ${r.heads.join('')}`);
     }
     await page.close();
@@ -1625,12 +1626,12 @@ console.log('\nревью, 4: тексты');
   if (meta('apps') !== 'Цена от 150 000 ₽ вторая платформа +50 000 ₽, десктоп +100 000 ₽ Формат разово') bad.push(`«Приложения»: ${meta('apps')}`);
   if (meta('care') !== 'Цена от 10 000 ₽ в месяц Формат ежемесячно') bad.push(`«Сопровождение»: ${meta('care')}`);
   const chips = (/<article[^>]*id="automation"[\s\S]*?<ul class="sv-chips"[^>]*>([\s\S]*?)<\/ul>/.exec(sv) || [])[1] || '';
-  // владелец 2026-10-22: ещё сервисы — меньше пустоты в левой колонке модуля
-  if (chips.replace(/<\/li><li>/g, ' · ').replace(/<\/?li>/g, '') !== 'Битрикс24 · amoCRM · Telegram · WhatsApp · MAX · Wildberries · Ozon · Авито · Яндекс Маркет · МойСклад · СДЭК · ЮKassa · YCLIENTS · Тильда · WordPress · Яндекс Метрика · Таблицы · Яндекс Диск · Почта') bad.push(`теги автоматизации: ${chips}`);
+  // TASK-polish-3.md, 3: по 2–3 сервиса из группы, последний чип — «и любые сервисы с API» пунктиром
+  if (chips.replace(/&nbsp;/g, ' ').replace(/<\/li><li[^>]*>/g, ' · ').replace(/<\/?li[^>]*>/g, '') !== 'Битрикс24 · Telegram · WhatsApp · Wildberries · Ozon · Авито · Яндекс Метрика · Таблицы · и любые сервисы с API' || !/<li class="sv-etc">и&nbsp;любые сервисы с&nbsp;API<\/li><\/ul>$/.test(chips + '</ul>')) bad.push(`теги автоматизации: ${chips}`);
   if (!/<h3 class="sv-sh">Сборка<\/h3><p class="sv-sd">[^<]*n8n/.test(strip(src['process.html']))) bad.push('инструменты на «Как работаем», шаг «Сборка»');
   for (const f of ['index.html', 'cases.html']) if (!strip(src[f]).includes('<span class="obj-h">Ваш сайт — следующий</span>') || !strip(src[f]).includes('<span class="obj-d">Соберём такой же под вашу компанию →</span>') || /Следующий объект/.test(src[f])) bad.push(`${f}: демо-карточка`);
   if (!/<span class="cx-w">Защита<\/span><\/span><span class="usp-n" hidden>Защита данных<\/span>/.test(src['index.html'])) bad.push('вкладка 04 «Кодекса»');
-  for (const [k, v] of [['Защита данных', 'Data protection'], ['Защита', 'Security'], ['Шесть направлений в двух форматах.', 'Six services, two formats.'], ['Ваш сайт — следующий', 'Your site could be next'], [D, 'Websites, apps, Bitrix24 and Telegram integrations, automation and AI assistants. Estimate before we start, the code is yours.']])
+  for (const [k, v] of [['Защита данных', 'Data protection'], ['Защита', 'Security'], ['Все направления — в двух форматах.', 'All services, two formats.'], ['Ваш сайт — следующий', 'Your site could be next'], [D, 'Websites, apps, Bitrix24 and Telegram integrations, automation and AI assistants. Estimate before we start, the code is yours.']])
     if (!I.includes(`'${k}': '${v.replace(/'/g, "\\'")}'`)) bad.push(`EN: ${k} → ${v}`);
   if (/accountable|responsible for it/.test(I) || (I.match(/and it\\'s on us\./g) || []).length !== 2) bad.push('EN: «…and it\'s on us.» не в двух местах (третья строка ушла с группами главной)');
   if (bad.length) fail('ревью, 4: ' + bad.join('; '));
@@ -2065,7 +2066,7 @@ console.log('\nстраница услуг без повторов');
     // чипы: «Сайты», «Редизайн» (TASK-redesign-prices.md), «Автоматизация» и «AI» (с чем работают — владелец 2026-10-22)
     if (r.chips !== 'sites:1 redesign:1 apps:0 servers:0 care:0 automation:1 ai:1') bad.push(`${w}: чипы ${r.chips}`);
     if (r.jump) bad.push(`${w}: ряд переходов .sv-jump на странице`);
-    if (r.links.map((l) => l.h).join(',') !== '#sites,#apps,#servers,#care,#automation,#ai' || r.links.some((l) => !l.ok || l.ht < 40)) bad.push(`${w}: ссылки карточки форматов ${r.links.map((l) => `${l.h}${l.ok ? '' : '?'}:${l.ht}`).join(' ')}`);
+    if (r.links.map((l) => l.h).join(',') !== '#sites,#redesign,#apps,#servers,#care,#automation,#ai' || r.links.some((l) => !l.ok || l.ht < 40)) bad.push(`${w}: ссылки карточки форматов ${r.links.map((l) => `${l.h}${l.ok ? '' : '?'}:${l.ht}`).join(' ')}`);
     if (r.fw !== '#projects,#subscription') bad.push(`${w}: слова форматов ведут на ${r.fw}`);
     if (r.terms) bad.push(`${w}: остались сроки автоматизации`);
     if (r.code > 3) bad.push(`${w}: «код и доступ» в тексте ${r.code} раз`);
@@ -2150,7 +2151,7 @@ console.log('\nрисунки направлений');
     const pg = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await pg.goto('file://' + path.join(root, 'services.html') + '?intro=instant'); await pg.waitForTimeout(300);
     const m = await pg.evaluate(() => ({ n: document.querySelectorAll('.sv-lab .glyph-mini').length, on: document.querySelectorAll('.sv-lab .glyph-mini.is-on.is-now').length, icons: document.querySelectorAll('.svc-ic').length, dots: document.querySelectorAll('.sv-fmt .sv-fl .sv-dot').length }));
-    if (m.n !== 7 || m.on !== 7 || m.icons || m.dots !== 6) bad.push(`страница услуг: мини ${m.n}, на месте ${m.on}, иконок ${m.icons}, точек в карточке форматов ${m.dots}`);
+    if (m.n !== 7 || m.on !== 7 || m.icons || m.dots !== 7) bad.push(`страница услуг: мини ${m.n}, на месте ${m.on}, иконок ${m.icons}, точек в карточке форматов ${m.dots}`);
     await pg.evaluate(() => { const e = document.getElementById('sites'); window.scrollTo({ top: e.getBoundingClientRect().top + scrollY - 20, behavior: 'instant' }); }); await pg.waitForTimeout(300);
     await pg.screenshot({ path: path.join(shots, 's1440-sites.png') });
     await pg.close();
@@ -2615,7 +2616,7 @@ console.log('\nпанель «Частые вопросы»');
       return { n: f.querySelectorAll('details.fq').length, opened: f.querySelectorAll('details.fq[open]').length, plate: nb(document.querySelector('.faq-link .fk').textContent), count: nb(f.querySelector('.cp-count').textContent),
         groups: [...f.querySelectorAll('.cp-grp')].map((g) => g.id + ':' + g.querySelectorAll('.fq').length).join(','), old: document.querySelectorAll('.sv-q, [data-sec="faq"] details').length,
         inSec: !!f.closest('[data-sec]'), dlg: [sh.getAttribute('role'), sh.getAttribute('aria-modal'), sh.getAttribute('aria-labelledby')].join(',') }; });
-    if (c.n !== 9 || c.opened || c.plate !== `Частые вопросы · ${c.n}` || c.count !== `Частые вопросы · ${c.n}` || c.groups !== 'faq-sites:5,faq-sub:4' || c.old || c.inSec || c.dlg !== 'dialog,true,faq-t') bad.push('разметка: ' + JSON.stringify(c));
+    if (c.n !== 9 || c.opened || c.plate !== 'Частые вопросы' || c.count !== `Частые вопросы · ${c.n}` || c.groups !== 'faq-sites:5,faq-sub:4' || c.old || c.inSec || c.dlg !== 'dialog,true,faq-t') bad.push('разметка: ' + JSON.stringify(c));
     await toFaq(page); await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(shots, 'faq-plate-1440.png') });
     const y0 = await page.evaluate(() => Math.round(scrollY));
@@ -2748,7 +2749,7 @@ console.log('\nпанель «Частые вопросы»');
     await ctx.close();
   }
   if (bad.length) fail('панель «Частые вопросы»: ' + bad.join('; '));
-  else console.log('  ✓ плашки на услугах и в каталоге («9» = числу вопросов), панель: адрес #faq, фокус, ответы клик / Enter, плюс → минус, колесо крутит тело, Tab внутри; закрывают Esc, ×, подложка, «Назад», свайп — фокус на плашку; каталог — на группе «Подписка и шаблоны», фильтр на месте; «Вопросы» в подвале — на месте, с главной — services#faq после сборки; Метрика faq_open { page } только после «Принять»; EN без кириллицы; без JS — вопросы на месте плашки');
+  else console.log('  ✓ плашки на услугах и в каталоге (без числа; «9» в счётчике панели = числу вопросов), панель: адрес #faq, фокус, ответы клик / Enter, плюс → минус, колесо крутит тело, Tab внутри; закрывают Esc, ×, подложка, «Назад», свайп — фокус на плашку; каталог — на группе «Подписка и шаблоны», фильтр на месте; «Вопросы» в подвале — на месте, с главной — services#faq после сборки; Метрика faq_open { page } только после «Принять»; EN без кириллицы; без JS — вопросы на месте плашки');
 }
 function woff2Cmap(file) {
   const buf = readFileSync(file);
@@ -2801,19 +2802,19 @@ function woff2Cmap(file) {
 console.log('\nцены');
 {
   const bad = [], nb = (t) => t.replace(/\s+/g, ' ').trim();
-  const W = { sites: 'от 120 000 ₽', redesign: 'от 150 000 ₽', apps: 'от 150 000 ₽', servers: 'от 5 000 ₽ за задачу', care: 'от 10 000 ₽ в месяц', automation: 'от 5 000 ₽ в месяц', ai: 'от 5 000 ₽ в месяц' };
+  const W = { sites: 'от 120 000 ₽', redesign: 'от 85 000 ₽', apps: 'от 150 000 ₽', servers: 'от 5 000 ₽ за задачу', care: 'от 10 000 ₽ в месяц', automation: 'от 5 000 ₽ в месяц', ai: 'от 5 000 ₽ в месяц' };
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(BASE + 'index.html?intro=instant'); await page.waitForTimeout(400);
   const home = await page.evaluate(() => [...document.querySelectorAll('a.svc')].map((a) => [a.getAttribute('href').split('#')[1], (a.querySelector('.svc-pr') || {}).textContent || '']));
   // TASK-redesign-prices.md: у «Сайтов-презентаций» ещё «· редизайн от 65 000 ₽»
-  if (home.length !== 6 || home.some(([id, t]) => nb(t) !== W[id] + (id === 'sites' ? ' · редизайн от 150 000 ₽' : ''))) bad.push('главная: ' + JSON.stringify(home));
+  if (home.length !== 6 || home.some(([id, t]) => nb(t) !== W[id] + (id === 'sites' ? ' · редизайн от 85 000 ₽' : ''))) bad.push('главная: ' + JSON.stringify(home));
   await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(400);
   const sv = await page.evaluate(() => [...document.querySelectorAll('article.sv-mod')].map((m) => { const f = m.querySelector('.sv-meta > div'); return { id: m.id, cls: f.className, dt: f.querySelector('dt').textContent, dd: f.querySelector('dd').firstChild.textContent, small: (f.querySelector('dd small') || {}).textContent || '' }; }));
   const smallW = { apps: 'вторая платформа +50 000 ₽, десктоп +100 000 ₽', servers: 'n8n или LibreChat под ключ — от 15 000 ₽' };
   if (sv.length !== 7 || sv.some((m) => m.cls !== 'sv-pr' || m.dt !== 'Цена' || nb(m.dd) !== W[m.id] || nb(m.small) !== (smallW[m.id] || ''))) bad.push('услуги, «Цена»: ' + JSON.stringify(sv));
   const pf = await page.evaluate(() => [...document.querySelectorAll('#after .sv-pf')].map((e) => (e.firstChild.textContent + ' / ' + e.querySelector('small').textContent).replace(/\s+/g, ' ').trim()).join(' | '));
   if (pf !== 'Без доплат / всё входит в цену сайта | +30 000 ₽ / разово, к цене сайта | от 10 000 ₽ / в месяц') bad.push('«Когда сайт готов»: ' + pf);
-  for (const [f, q, want] of [['services.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, редизайн — от 150 000 ₽, приложение — от 150 000 ₽'], ['automations.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, редизайн — от 150 000 ₽, приложение — от 150 000 ₽']]) {
+  for (const [f, q, want] of [['services.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, редизайн — от 85 000 ₽, приложение — от 150 000 ₽'], ['automations.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, редизайн — от 85 000 ₽, приложение — от 150 000 ₽']]) {
     await page.goto(BASE + f + '?intro=instant'); await page.waitForTimeout(300);
     const a = await page.evaluate((q) => { const d = [...document.querySelectorAll('[data-faq] .fq')].find((x) => x.querySelector('summary').textContent.trim() === q); return d ? d.querySelector('p').textContent.replace(/\s+/g, ' ').trim() : ''; }, q);
     if (!a.startsWith(want)) bad.push(`${f}: «${q}» — ${a.slice(0, 60)}`);
@@ -2852,6 +2853,50 @@ console.log('\nцены');
   }
   if (bad.length) fail('цены: ' + [...new Set(bad)].join('; '));
   else console.log('  ✓ цены «от …» на главной (шесть карточек), «Цена» первой в условиях шести модулей (пояснения — у приложений и серверов), «Когда сайт готов», «Сколько стоит?» на услугах и в каталоге; в «Работах» цен нет, «до …», диапазонов и скидок нет; на 320–1440 RU / EN число не рвётся, условия не налезают, цена не задевает стрелку, теги и рисунок');
+}
+// TASK-polish-3.md: «Что делаем» — пояснение под ценой переносится и не выходит за карточку на 390 / 360 / 320 (было nowrap: правила
+// узких окон стояли раньше основного), чипы на 390 — «Автоматизация» не больше 3 рядов, AI — не больше 2, чип «и любые сервисы
+// с API» пунктиром; в шапке — «Редизайн» и «Все направления — в двух форматах.»; плашка «Частые вопросы» — крупно, без числа,
+// стрелка — SVG
+console.log('\n«Что делаем»: пояснения цен, чипы, шапка');
+{
+  const bad = [];
+  for (const lang of ['', '&lang=en']) for (const w of [390, 360, 320]) {
+    const pg = await browser.newPage({ viewport: { width: w, height: 844 } });
+    await pg.goto(BASE + 'services.html?intro=instant' + lang); await pg.evaluate(() => document.fonts.ready); await pg.waitForTimeout(300);
+    const r = await pg.evaluate(() => {
+      const over = [...document.querySelectorAll('.sv-mod')].flatMap((m) => { const c = m.getBoundingClientRect(); return [...m.querySelectorAll('.sv-meta, .sv-meta *')].filter((e) => { const q = e.getBoundingClientRect(); return q.width && (q.right > c.right - 1 || e.scrollWidth > e.clientWidth + 1); }).map((e) => m.id + ' ' + e.tagName.toLowerCase()); });
+      const rows = (id) => new Set([...document.querySelectorAll(`#${id} .sv-chips li`)].map((l) => Math.round(l.getBoundingClientRect().top))).size;
+      const etc = document.querySelector('#automation .sv-chips li:last-child'), cs = getComputedStyle(etc), prev = etc.previousElementSibling.getBoundingClientRect(), eb = etc.getBoundingClientRect();
+      return { over, auto: rows('automation'), ai: rows('ai'), dash: cs.borderTopStyle, h: Math.round(eb.height) === Math.round(prev.height), fs: getComputedStyle(etc).fontSize };
+    });
+    if (r.over.length) bad.push(`${w}${lang ? ' EN' : ''}: условия за краем карточки — ${[...new Set(r.over)].join(', ')}`);
+    if (w === 390 && (r.auto > 3 || r.ai > 2)) bad.push(`390${lang ? ' EN' : ''}: рядов чипов — автоматизация ${r.auto}, AI ${r.ai}`);
+    if (r.dash !== 'dashed' || !r.h || parseFloat(r.fs) < 11) bad.push(`${w}: чип «и любые сервисы с API» ${JSON.stringify(r)}`);
+    await pg.close();
+  }
+  const sv = readFileSync(path.join(root, 'services.html'), 'utf8').replace(/\r\n/g, '\n');
+  const ai = ((/<ul class="sv-chips" aria-label="С чем работают">([\s\S]*?)<\/ul>/.exec(sv) || [])[1] || '').replace(/&nbsp;/g, ' ').replace(/<\/li><li>/g, ' · ').replace(/<\/?li>/g, '');
+  if (ai !== 'Telegram · Веб-чат на сайте · Документы и прайсы · Битрикс24 · Авито · Телефония') bad.push('чипы AI: ' + ai);
+  if (/amoCRM|МойСклад|СДЭК|ЮKassa|YCLIENTS|Тильда|WordPress|Яндекс Маркет|Яндекс Диск|<li>MAX<\/li>|<li>Почта<\/li>/.test(sv)) bad.push('убранные сервисы остались в чипах');
+  const I = readFileSync(path.join(root, 'assets', 'i18n.js'), 'utf8');
+  for (const k of ['МойСклад', 'СДЭК', 'ЮKassa', 'Тильда', 'Яндекс Маркет', 'Яндекс Диск']) if (I.includes(`'${k}':`)) bad.push(`словарь: мёртвый ключ «${k}»`);
+  if (!sv.includes('<span>Все направления&nbsp;— в&nbsp;двух форматах. ') || /Шесть направлений/.test(sv)) bad.push('лид шапки');
+  if (!/<a href="#sites"><i class="sv-dot"[^>]*><\/i>Сайты<\/a><a href="#redesign"><i class="sv-dot"[^>]*><\/i>Редизайн<\/a><a href="#apps">/.test(sv)) bad.push('«Редизайн» в сводке форматов');
+  for (const f of ['services.html', 'automations.html']) {
+    const h = readFileSync(path.join(root, f), 'utf8');
+    if (!h.includes('<span class="fk">Частые вопросы</span>') || /<span class="fa"[^>]*>→/.test(h) || !/<span class="fa" aria-hidden="true"><svg viewBox="0 0 24 24">/.test(h)) bad.push(`${f}: плашка вопросов`);
+  }
+  {
+    const pg = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    await pg.goto(BASE + 'services.html?intro=instant'); await pg.evaluate(() => document.fonts.ready); await pg.waitForTimeout(300);
+    const r = await pg.evaluate(() => { const fk = getComputedStyle(document.querySelector('.faq-link .fk')), st = getComputedStyle(document.querySelector('#sub-how .sv-t')), p = document.querySelector('.faq-link').getBoundingClientRect(), t = document.querySelector('.faq-link .ft').getBoundingClientRect();
+      return { fk: fk.fontSize + ' ' + fk.fontWeight + ' ' + fk.fontFamily.split(',')[0], st: st.fontSize + ' ' + st.fontWeight + ' ' + st.fontFamily.split(',')[0], mid: Math.round((t.left + t.right) / 2 - (p.left + p.right) / 2) }; });
+    if (r.fk !== r.st || Math.abs(r.mid) > 2) bad.push('плашка вопросов на 1440: ' + JSON.stringify(r));
+    await pg.close();
+  }
+  if (bad.length) fail('«Что делаем» (TASK-polish-3): ' + bad.join('; '));
+  else console.log('  ✓ пояснения цен переносятся и не выходят за карточку на 390 / 360 / 320 (RU / EN), чипы на 390: автоматизация ≤ 3 ряда, AI ≤ 2, «и любые сервисы с API» пунктиром, убранных сервисов и их ключей нет; «Редизайн» в сводке, «Все направления — в двух форматах.»; плашка вопросов — кегль «Как устроена подписка», текст по центру, стрелка SVG');
 }
 await browser.close();
 // сервер — до самого конца: им пользуются и последние блоки (режимы сборки, схемы, панель разбора работы)
