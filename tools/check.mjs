@@ -43,7 +43,7 @@
 // форматов (порядок, зона нажатия 40 px), нет сроков автоматизации, «код и доступ» — не больше 3 раз. Облегчённый режим
 // включается при кадрах ~150 мс (≤ 20 с), снимает размытие со стёкол и не включается в обычном прогоне.
 // Страницы (TASK-pages.md): кейсы — на cases.html (фильтр кликом и по хешу, схемы после смены фильтра нарисованы, NDA
-// видна всегда, два кейса в <template>), каталог automations.html (семь шаблонов и «Под ваш процесс», фильтр, ссылки с
+// видна всегда, два кейса в <template>), каталог automations.html (восемь шаблонов и «Под ваш процесс», фильтр, ссылки с
 // главной и услуг на существующие карточки, «Работает у клиента» → существующие кейсы, вопросы = JSON-LD), 404.html через
 // tools/serve.mjs (статус 404 на вложенном адресе, ресурсы от корня грузятся, EN); меню из четырёх пунктов в трёх местах
 // каждой страницы, общий подвал (разметка совпадает); услуги без кейсов и схем, не длиннее 7,0 / 13,5 экрана; главная —
@@ -844,7 +844,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
 }
 
 // кейсы: фильтр кликом и по хешу, схемы после смены фильтра в правильном размере, NDA всегда видна, без JS — все
-// карточки; два кейса в <template>; каталог: семь шаблонов и «Под ваш процесс», фильтр, якоря с главной и услуг
+// карточки; два кейса в <template>; каталог: восемь шаблонов и «Под ваш процесс», фильтр, якоря с главной и услуг
 console.log('\nкейсы и готовые автоматизации');
 {
   const bad = [];
@@ -882,20 +882,20 @@ console.log('\nкейсы и готовые автоматизации');
   await page.clock.runFor(4000);
   let st = await state(page);
   const caseIds = st.vis;
-  if (caseIds.join(',') !== 'case-resonara,case-antares,case-call-audit,case-studio-os,case-catalog,case-agents,case-tg-crm' || st.always !== 'case-nda,case-demo' || st.pressed !== '' || st.btns !== 'all,sites,automation,ai,integrations') bad.push(`кейсы: ${JSON.stringify(st)}`);
+  if (caseIds.join(',') !== 'case-resonara,case-antares,case-call-audit,case-studio-os,case-seo-report,case-catalog,case-agents,case-tg-crm' || st.always !== 'case-nda,case-demo' || st.pressed !== '' || st.btns !== 'all,sites,automation,ai,integrations') bad.push(`кейсы: ${JSON.stringify(st)}`);
   const tpl = await page.evaluate(() => { const t = document.querySelector('template[data-hidden-cases]'); return t ? [...t.content.querySelectorAll('.obj')].map((c) => c.querySelector('canvas').dataset.flow + ':' + c.querySelector('.win-tag').textContent.trim()).join(',') : ''; });
   if (tpl !== 'ai-gateway:Инфраструктура · Cloudflare') bad.push(`скрытые кейсы: ${tpl}`);
   const clash = await page.evaluate(() => ['sites', 'automation', 'ai', 'integrations'].filter((i) => document.getElementById(i)));
   if (clash.length) bad.push(`на cases.html есть id, совпадающие с фильтром: ${clash.join(', ')}`);
   await page.click('[data-filter="ai"]'); await page.clock.runFor(800);
   st = await state(page);
-  if (st.vis.join(',') !== 'case-call-audit,case-studio-os,case-agents' || st.always !== 'case-nda,case-demo' || st.pressed !== 'ai' || st.hash !== '#ai') bad.push(`кейсы, фильтр «AI»: ${JSON.stringify(st)}`);
+  if (st.vis.join(',') !== 'case-call-audit,case-studio-os,case-seo-report,case-agents' || st.always !== 'case-nda,case-demo' || st.pressed !== 'ai' || st.hash !== '#ai') bad.push(`кейсы, фильтр «AI»: ${JSON.stringify(st)}`);
   bad.push(...(await flowsOk(page)).map((x) => 'после «AI» ' + x));
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(100); await page.clock.runFor(300);
   await page.screenshot({ path: path.join(shots, 'cases-ai-1440.png'), fullPage: true });
   await page.click('[data-filter=""]'); await page.clock.runFor(800);
   st = await state(page);
-  if (st.vis.length !== 7 || st.hash !== '') bad.push(`кейсы, «Все»: ${JSON.stringify(st)}`);
+  if (st.vis.length !== 8 || st.hash !== '') bad.push(`кейсы, «Все»: ${JSON.stringify(st)}`);
   await page.click('[data-filter="integrations"]'); await page.clock.runFor(800);
   st = await state(page);
   if (st.vis.join(',') !== 'case-tg-crm' || st.hash !== '#integrations') bad.push(`кейсы, «Интеграции»: ${JSON.stringify(st)}`);
@@ -906,17 +906,17 @@ console.log('\nкейсы и готовые автоматизации');
   page = await open('cases.html#ai');
   await page.clock.runFor(4000);
   st = await state(page);
-  if (st.vis.join(',') !== 'case-call-audit,case-studio-os,case-agents' || st.pressed !== 'ai') bad.push(`cases.html#ai: ${JSON.stringify(st)}`);
+  if (st.vis.join(',') !== 'case-call-audit,case-studio-os,case-seo-report,case-agents' || st.pressed !== 'ai') bad.push(`cases.html#ai: ${JSON.stringify(st)}`);
   await page.click('[data-filter="automation"]'); await page.clock.runFor(800);
   st = await state(page);
-  if (st.vis.join(',') !== 'case-studio-os,case-catalog' || st.hash !== '#automation') bad.push(`cases.html#ai → «Автоматизация»: ${JSON.stringify(st)}`);
+  if (st.vis.join(',') !== 'case-studio-os,case-seo-report,case-catalog' || st.hash !== '#automation') bad.push(`cases.html#ai → «Автоматизация»: ${JSON.stringify(st)}`);
   bad.push(...(await flowsOk(page)).map((x) => 'cases.html#ai → «Автоматизация» ' + x));
   page.errs.forEach((e) => bad.push('cases.html#ai: ' + e));
   await page.close();
   page = await open('cases.html#automation');
   await page.clock.runFor(1500);
   st = await state(page);
-  if (st.vis.join(',') !== 'case-studio-os,case-catalog' || st.always !== 'case-nda,case-demo' || st.pressed !== 'automation') bad.push(`cases.html#automation: ${JSON.stringify(st)}`);
+  if (st.vis.join(',') !== 'case-studio-os,case-seo-report,case-catalog' || st.always !== 'case-nda,case-demo' || st.pressed !== 'automation') bad.push(`cases.html#automation: ${JSON.stringify(st)}`);
   await page.close();
   // без JS: все карточки видны, фильтра нет
   {
@@ -925,24 +925,24 @@ console.log('\nкейсы и готовые автоматизации');
     await pg.goto(BASE + 'cases.html');
     const r = await pg.locator('[data-cat]').evaluateAll((els) => els.filter((e) => !e.hidden && getComputedStyle(e).display !== 'none').length);
     const fh = await pg.locator('[data-filters]').evaluate((e) => e.hidden);
-    if (r !== 7 || !fh) bad.push(`без JS: видно кейсов ${r}, фильтр скрыт ${fh}`);
+    if (r !== 8 || !fh) bad.push(`без JS: видно кейсов ${r}, фильтр скрыт ${fh}`);
     await ctx.close();
   }
   // --- automations.html
   page = await open('automations.html');
   await page.clock.runFor(4000);
   st = await state(page);
-  const T = ['site-leads', 'voice-task', 'reviews', 'b24-report', 'catalog', 'avito-bot', 'price-monitor'];
+  const T = ['site-leads', 'voice-task', 'reviews', 'b24-report', 'seo-report', 'catalog', 'avito-bot', 'price-monitor'];
   if (st.vis.join(',') !== T.join(',') || st.always !== 'your-process' || st.btns !== 'all,leads,tasks,goods,reports,ai') bad.push(`каталог: ${JSON.stringify(st)}`);
   const cards = await page.evaluate(() => [...document.querySelectorAll('[data-cat]')].map((c) => ({ id: c.id, flow: c.querySelector('canvas[data-flow]').dataset.flow, need: /^Нужно от\s+вас: \S/.test(c.querySelector('.tp-need').textContent), go: !!c.querySelector('a.tp-go[data-tg^="Хочу подключить «"]'), cases: [...c.querySelectorAll('a[href^="cases#"], a[href^="cases.html#"]')].map((a) => a.getAttribute('href').split('#')[1]), obj: /Объект №/.test(c.textContent) })));
   const cid = idsOf('cases.html');
   cards.forEach((c) => { if (!c.need || !c.go || c.obj || c.cases.some((x) => !cid.has(x))) bad.push(`шаблон ${c.id}: «Нужно от вас» ${c.need}, «Подключить» ${c.go}, «Объект №» ${c.obj}, кейсы ${c.cases.join(',')}`); });
   const links = cards.filter((c) => c.cases.length).map((c) => c.id + '→' + c.cases.join('')).join(',');
-  if (links !== 'site-leads→case-tg-crm,catalog→case-catalog') bad.push(`«Работает у клиента»: ${links}`);
-  if (cards.map((c) => c.flow).join(',') !== 'site-leads,voice-task,reviews,b24-digest,catalog,avito-bot,price-monitor') bad.push(`схемы шаблонов: ${cards.map((c) => c.flow).join(',')}`);
+  if (links !== 'site-leads→case-tg-crm,seo-report→case-seo-report,catalog→case-catalog') bad.push(`«Работает у клиента»: ${links}`);
+  if (cards.map((c) => c.flow).join(',') !== 'site-leads,voice-task,reviews,b24-digest,seo-report,catalog,avito-bot,price-monitor') bad.push(`схемы шаблонов: ${cards.map((c) => c.flow).join(',')}`);
   await page.click('[data-filter="reports"]'); await page.clock.runFor(800);
   st = await state(page);
-  if (st.vis.join(',') !== 'b24-report,price-monitor' || st.always !== 'your-process' || st.hash !== '#f-reports') bad.push(`каталог, «Отчёты»: ${JSON.stringify(st)}`);
+  if (st.vis.join(',') !== 'b24-report,seo-report,price-monitor' || st.always !== 'your-process' || st.hash !== '#f-reports') bad.push(`каталог, «Отчёты»: ${JSON.stringify(st)}`);
   bad.push(...(await flowsOk(page)).map((x) => 'каталог «Отчёты» ' + x));
   await page.click('[data-filter=""]'); await page.clock.runFor(800);
   const faq = await page.evaluate(() => { const nb = (t) => t.replace(/\s+/g, ' ').trim(); const ld = [...document.querySelectorAll('script[type="application/ld+json"]')].map((x) => JSON.parse(x.textContent)); const f = ld.find((x) => x['@type'] === 'FAQPage'); return { types: ld.map((x) => x['@type']).join(','), ok: !!f && f.mainEntity.map((q) => nb(q.name) + '|' + nb(q.acceptedAnswer.text)).join('#') === [...document.querySelectorAll('.sv-q')].map((d) => nb(d.querySelector('summary').textContent) + '|' + nb(d.querySelector('p').textContent)).join('#'), n: f ? f.mainEntity.length : 0 }; });
@@ -980,7 +980,7 @@ console.log('\nкейсы и готовые автоматизации');
     await ctx.close();
   }
   if (bad.length) fail('кейсы и каталог: ' + bad.join('; '));
-  else console.log('  ✓ кейсы: семь, «Под NDA» и демо-сайты, фильтр кликом и по хешу (#ai, #automation, «Интеграции»), схемы после смены фильтра нарисованы в размер, без JS видны все, AI-шлюз в <template>; каталог: семь шаблонов и «Под ваш процесс», «Нужно от вас», «Подключить», «Работает у клиента» → существующие кейсы, фильтр «Отчёты» (#f-reports), якоря с главной и услуг — на карточки не под шапкой, вопросы = JSON-LD; JSON-LD в EN без кириллицы');
+  else console.log('  ✓ кейсы: восемь, «Под NDA» и демо-сайты, фильтр кликом и по хешу (#ai, #automation, «Интеграции»), схемы после смены фильтра нарисованы в размер, без JS видны все, AI-шлюз в <template>; каталог: восемь шаблонов и «Под ваш процесс», «Нужно от вас», «Подключить», «Работает у клиента» → существующие кейсы, фильтр «Отчёты» (#f-reports), якоря с главной и услуг — на карточки не под шапкой, вопросы = JSON-LD; JSON-LD в EN без кириллицы');
 }
 
 // новые страницы, как страница услуг: секции собираются на трёх ширинах RU и двух EN, ошибок нет, кириллицы в EN нет
@@ -1313,11 +1313,12 @@ console.log('\nясность, B1–B3: фильтры и якоря с аним
     await page.waitForTimeout(1500);
     await page.locator('.obj-grid').screenshot({ path: path.join(shots, 'automations-leads-1440.png') });
     await page.click('[data-filter=""]'); await page.waitForTimeout(900);
-    if (await page.evaluate(() => document.getElementById('your-process').classList.contains('is-wide'))) bad.push('каталог, «Все»: «Нет нужного шаблона?» осталась широкой');
+    // восемь шаблонов + «Нет нужного шаблона?» — девять карточек, нечётно: последняя на всю ширину (TASK-seo-case.md, 2.2)
+    if (!(await page.evaluate(() => document.getElementById('your-process').classList.contains('is-wide')))) bad.push('каталог, «Все» (девять карточек): «Нет нужного шаблона?» не на всю ширину');
     // быстрые клики подряд: итог — последний фильтр, без зависших трансформаций
     await page.click('[data-filter="tasks"]'); await page.waitForTimeout(60); await page.click('[data-filter="ai"]'); await page.waitForTimeout(40); await page.click('[data-filter="reports"]'); await page.waitForTimeout(900);
     const q = await page.evaluate(() => ({ vis: [...document.querySelectorAll('.obj-grid .obj')].filter((c) => !c.hidden).map((c) => c.id).join(','), tr: [...document.querySelectorAll('.obj-grid .obj')].filter((c) => getComputedStyle(c).transform !== 'none' || getComputedStyle(c).opacity !== '1').length }));
-    if (q.vis !== 'b24-report,price-monitor,your-process' || q.tr) bad.push(`каталог, быстрые клики: ${JSON.stringify(q)}`);
+    if (q.vis !== 'b24-report,seo-report,price-monitor,your-process' || q.tr) bad.push(`каталог, быстрые клики: ${JSON.stringify(q)}`);
     await page.close();
   }
   // reduced motion: сразу, resize один
@@ -1327,7 +1328,7 @@ console.log('\nясность, B1–B3: фильтры и якоря с аним
     await page.goto(BASE + 'cases.html'); await page.waitForTimeout(400);
     await page.evaluate(() => { window.__rz = 0; window.addEventListener('resize', () => window.__rz++); document.querySelector('[data-filter="ai"]').click(); });
     const r = await page.evaluate(() => ({ rz: window.__rz, an: document.querySelector('.obj-grid').getAnimations({ subtree: true }).filter((a) => a.constructor.name === 'Animation').length, vis: [...document.querySelectorAll('.obj-grid .obj')].filter((c) => !c.hidden).length }));
-    if (r.rz !== 1 || r.an || r.vis !== 5) bad.push(`кейсы, reduced motion: ${JSON.stringify(r)}`);
+    if (r.rz !== 1 || r.an || r.vis !== 6) bad.push(`кейсы, reduced motion: ${JSON.stringify(r)}`);
     await ctx.close();
   }
   // якорь на этой же странице: доезжает быстрее секунды и цель откликается; с другой страницы — отклик после сборки цели
@@ -1639,8 +1640,9 @@ console.log('\nревью, 5–9: группы на главной, NDA, сле�
   for (const f of PAGES) if (!/<body>\n<a class="skip" href="#main">Перейти к(?: |&nbsp;)содержанию<\/a>\n/.test(src[f]) || (src[f].match(/ id="main" tabindex="-1"/g) || []).length !== 1) bad.push(`${f}: «Перейти к содержанию» / #main`);
   // с «Кто делает» (TASK-about-analytics.md): на десктопе заголовок контакта — две строки (+0.18), на телефоне карточка (+0.6)
   // база — после TASK-polish-2.md (карточка основателя и строка «Или:» в контакте: +76 px на телефоне, +60 на десктопе);
-  // «Работы» — после TASK-cases-panel.md (седьмая карточка и «Смотреть работу →» / «Как устроено →» под каждой)
-  const LEN = { 'index.html': [5.25, 8.8], 'services.html': [7.4, 11.55], 'process.html': [3.3, 7.15], 'cases.html': [4.5, 7.3], 'automations.html': [4.95, 8.6] };
+  // «Работы» — после TASK-cases-panel.md (седьмая карточка и «Смотреть работу →» / «Как устроено →» под каждой); «Работы» и
+  // «Готовые решения» — после TASK-seo-case.md (восьмая работа и восьмой шаблон: на телефоне ещё карточка, на 1440 у каталога ряд)
+  const LEN = { 'index.html': [5.25, 8.8], 'services.html': [7.4, 11.55], 'process.html': [3.3, 7.15], 'cases.html': [4.7, 7.95], 'automations.html': [5.35, 9.35] };
   const quick = await chromium.launch();
   for (const [w, h] of [[1440, 900], [390, 844]]) {
     const page = await quick.newPage({ viewport: { width: w, height: h } });
@@ -2411,7 +2413,7 @@ console.log('\nпанель разбора работы');
       prev: cp.querySelector('[data-cp-prev]').disabled, next: cp.querySelector('[data-cp-next]').disabled, lock: document.documentElement.classList.contains('cp-lock'), y: Math.round(scrollY),
       focus: ae === cp.querySelector('.cp-sheet') ? 'sheet' : (ae.closest('[id^="case-"]') || {}).id || ae.tagName, title: document.title, label: cp.querySelector('.cp-sheet').getAttribute('aria-labelledby') };
   });
-  const IDS = ['case-resonara', 'case-antares', 'case-call-audit', 'case-studio-os', 'case-catalog', 'case-agents', 'case-tg-crm'];
+  const IDS = ['case-resonara', 'case-antares', 'case-call-audit', 'case-studio-os', 'case-seo-report', 'case-catalog', 'case-agents', 'case-tg-crm'];
   // 1440: открыть каждую, закрыть Esc
   {
     const { ctx, page } = await mkp({ width: 1440, height: 900 });
@@ -2423,8 +2425,8 @@ console.log('\nпанель разбора работы');
       const y0 = await page.evaluate(() => Math.round(scrollY));
       await page.click(`#${id} [data-cp-open]`); await page.waitForTimeout(900);
       const s = await cst(page);
-      if (!s.open || s.art !== id || s.hash !== '#' + id || s.n !== `0${i + 1}/07` || !s.lock || s.focus !== 'sheet' || s.y !== y0 || s.label !== 'cp-t-' + id.slice(5) || !/ — Работы \| Private Technology House$/.test(s.title)) bad.push(`${id}: открыта ${JSON.stringify(s)}`);
-      if (id === 'case-call-audit' || id === 'case-resonara' || id === 'case-studio-os') { await page.waitForTimeout(1500); await page.screenshot({ path: path.join(shots, `panel-1440-${id.slice(5)}.png`) }); }
+      if (!s.open || s.art !== id || s.hash !== '#' + id || s.n !== `0${i + 1}/08` || !s.lock || s.focus !== 'sheet' || s.y !== y0 || s.label !== 'cp-t-' + id.slice(5) || !/ — Работы \| Private Technology House$/.test(s.title)) bad.push(`${id}: открыта ${JSON.stringify(s)}`);
+      if (id === 'case-call-audit' || id === 'case-resonara' || id === 'case-studio-os' || id === 'case-seo-report') { await page.waitForTimeout(1500); await page.screenshot({ path: path.join(shots, `panel-1440-${id.slice(5)}.png`) }); }
       await page.keyboard.press('Escape'); await page.waitForTimeout(800);
       const c = await cst(page);
       if (c.open || c.hash !== '' || c.lock || c.focus !== id || c.y !== y0 || !/^Работы — /.test(c.title) || !(await page.evaluate(() => document.querySelector('[data-cp]').hidden))) bad.push(`${id}: закрыта Esc ${JSON.stringify(c)}`);
@@ -2433,13 +2435,13 @@ console.log('\nпанель разбора работы');
     await page.click('#case-resonara [data-cp-open]'); await page.waitForTimeout(700);
     let s = await cst(page); if (!s.prev || s.next) bad.push('первая: ← должна быть неактивна');
     await page.keyboard.press('ArrowRight'); await page.waitForTimeout(200); s = await cst(page);
-    if (s.art !== 'case-antares' || s.n !== '02/07' || s.hash !== '#case-antares') bad.push('→: ' + JSON.stringify(s));
+    if (s.art !== 'case-antares' || s.n !== '02/08' || s.hash !== '#case-antares') bad.push('→: ' + JSON.stringify(s));
     await page.click('.cp-nx'); await page.waitForTimeout(200); s = await cst(page);
     if (s.art !== 'case-call-audit') bad.push('«Следующая работа»: ' + s.art);
     for (let k = 0; k < 6; k++) await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(200); s = await cst(page);
     const foot = await page.evaluate(() => [...document.querySelectorAll('.cp-foot > *')].map((x) => x.className).join(','));
-    if (s.art !== 'case-tg-crm' || s.n !== '07/07' || !s.next || foot !== 'cp-cta') bad.push(`последняя: ${JSON.stringify(s)}, подвал ${foot}`);
+    if (s.art !== 'case-tg-crm' || s.n !== '08/08' || !s.next || foot !== 'cp-cta') bad.push(`последняя: ${JSON.stringify(s)}, подвал ${foot}`);
     let out = 0;
     for (let k = 0; k < 14; k++) { await page.keyboard.press('Tab'); if (!(await page.evaluate(() => !!document.activeElement.closest('[data-cp]')))) out++; }
     if (out) bad.push(`Tab ушёл из панели ${out} раз`);
@@ -2471,11 +2473,12 @@ console.log('\nпанель разбора работы');
     await page.goto(BASE + 'cases.html?intro=instant#ai'); await page.waitForTimeout(1500);
     await page.click('#case-call-audit [data-cp-open]'); await page.waitForTimeout(700);
     let s = await cst(page); const n0 = s.n;
-    await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight'); await page.waitForTimeout(200); s = await cst(page);
+    for (let k = 0; k < 3; k++) await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(200); s = await cst(page);
     const n1 = s.n, art = s.art, nx = s.next;
     await page.keyboard.press('Escape'); await page.waitForTimeout(700); s = await cst(page);
     const fl = await page.evaluate(() => document.querySelector('.fl-b[aria-pressed="true"]').dataset.filter);
-    if (n0 !== '01/03' || n1 !== '03/03' || art !== 'case-agents' || !nx || s.hash !== '#ai' || fl !== 'ai') bad.push(`фильтр «AI»: ${n0} → ${n1} ${art}, закрыта: ${s.hash} ${fl}`);
+    if (n0 !== '01/04' || n1 !== '04/04' || art !== 'case-agents' || !nx || s.hash !== '#ai' || fl !== 'ai') bad.push(`фильтр «AI»: ${n0} → ${n1} ${art}, закрыта: ${s.hash} ${fl}`);
     await ctx.close();
   }
   // прямая ссылка: панель — после сборки секции cases
@@ -2491,9 +2494,17 @@ console.log('\nпанель разбора работы');
   {
     const { ctx, page } = await mkp({ width: 390, height: 844 }, { ctx: { isMobile: true, hasTouch: true, deviceScaleFactor: 2 } });
     await page.goto(BASE + 'cases.html?intro=instant'); await page.waitForTimeout(1500);
-    for (const id of ['case-resonara', 'case-call-audit', 'case-studio-os']) {
+    for (const id of ['case-resonara', 'case-call-audit', 'case-studio-os', 'case-seo-report']) {
       await page.evaluate((id) => document.getElementById(id).scrollIntoView({ block: 'center', behavior: 'instant' }), id); await page.waitForTimeout(250);
       await page.tap(`#${id} [data-cp-open]`); await page.waitForTimeout(2600);
+      // SEO-кейс (TASK-seo-case.md, 1.2): телефон с сообщением — под отчётом по центру, а не поверх; подпись «Пример на тестовых данных» есть
+      if (id === 'case-seo-report') {
+        const k = await page.evaluate(() => { const a = document.querySelector('[data-case="case-seo-report"]'), sh = a.querySelector('.cp-shot.is-stack'), im = sh.querySelector(':scope > img').getBoundingClientRect(), ph = sh.querySelector('.cp-phone').getBoundingClientRect(), n = sh.nextElementSibling; return { below: Math.round(ph.top - im.bottom), mid: Math.round(ph.left + ph.width / 2 - (im.left + im.width / 2)), w: Math.round(ph.width), note: n && n.classList.contains('cp-shot-note') ? n.textContent.replace(/\s+/g, ' ').trim() : '' }; });
+        if (k.below < 0 || Math.abs(k.mid) > 2 || k.w < 180 || k.note !== 'Пример на тестовых данных.') bad.push('SEO на 390: телефон и отчёт ' + JSON.stringify(k));
+        await page.evaluate(() => { const ph = document.querySelector('[data-case="case-seo-report"] .cp-phone'); ph.scrollIntoView({ block: 'center', behavior: 'instant' }); }); await page.waitForTimeout(400);
+        await page.screenshot({ path: path.join(shots, 'panel-390-seo-report-phone.png') });
+        await page.evaluate(() => { document.querySelector('[data-cp-body]').scrollTop = 0; }); await page.waitForTimeout(200);
+      }
       if (id === 'case-resonara') {
         const g = await page.evaluate(() => { const r = document.querySelector('.cp-sheet').getBoundingClientRect(); return { l: r.left, r: Math.round(r.right), b: Math.round(r.bottom), t: Math.round(r.top) }; });
         if (g.l !== 0 || g.r !== 390 || g.b !== 844 || g.t < 30 || g.t > 120) bad.push('шторка на 390: ' + JSON.stringify(g));
@@ -2531,7 +2542,7 @@ console.log('\nпанель разбора работы');
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, javaScriptEnabled: false });
     const pg = await ctx.newPage(); await pg.goto(BASE + 'cases.html');
     const r = await pg.evaluate(() => ({ arts: [...document.querySelectorAll('.cp-art')].filter((a) => a.getBoundingClientRect().height > 100).length, bar: getComputedStyle(document.querySelector('.cp-bar')).display, scrim: getComputedStyle(document.querySelector('.cp-scrim')).display, pos: getComputedStyle(document.querySelector('.cp')).position }));
-    if (r.arts !== 7 || r.bar !== 'none' || r.scrim !== 'none' || r.pos !== 'static') bad.push('без JS: ' + JSON.stringify(r));
+    if (r.arts !== 8 || r.bar !== 'none' || r.scrim !== 'none' || r.pos !== 'static') bad.push('без JS: ' + JSON.stringify(r));
     await ctx.close();
   }
   // Метрика: case_open только после «Принять»
@@ -2544,7 +2555,7 @@ console.log('\nпанель разбора работы');
     await ctx.close();
   }
   if (bad.length) fail('панель разбора работы: ' + bad.join('; '));
-  else console.log('  ✓ семь карточек открывают свои статьи (адрес, счётчик, фокус, заголовок вкладки), ← → и клавиши листают видимые при фильтре, края и подвал последней; Esc, ×, подложка и «Назад» закрывают, фокус на карточке, хеш фильтра на месте; под панелью схемы сетки не рисуют, схема статьи рисует, колесо крутит тело; телефон — шторка и свайп; EN без кириллицы; прямая ссылка — после сборки секции; без JS — статьи под сеткой; case_open — только после «Принять»');
+  else console.log('  ✓ восемь карточек открывают свои статьи (адрес, счётчик, фокус, заголовок вкладки), ← → и клавиши листают видимые при фильтре, края и подвал последней; Esc, ×, подложка и «Назад» закрывают, фокус на карточке, хеш фильтра на месте; под панелью схемы сетки не рисуют, схема статьи рисует, колесо крутит тело; телефон — шторка и свайп; EN без кириллицы; прямая ссылка — после сборки секции; без JS — статьи под сеткой; case_open — только после «Принять»');
 }
 await browser.close();
 // сервер — до самого конца: им пользуются и последние блоки (режимы сборки, схемы, панель разбора работы)

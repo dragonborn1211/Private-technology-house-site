@@ -722,18 +722,33 @@
 
   // ---------- конфигурации схем: canvas[data-flow="id"] ----------
   var FLOWS = {
+    // «Утренний разбор задач» (TASK-seo-case.md, 2.1): диалога с ботом нет — AI пишет комментарий в каждую задачу и сводку в Telegram
     'b24-digest': { src: ['b24'], nodes: [
-      { id: 'b24', name: 'Битрикс24 · задачи', role: 'trigger', x: 0.2, y: 0.28 },
-      { id: 'wh', name: 'Webhook', role: 'webhook', x: 0.52, y: 0.28 },
-      { id: 'n8n', name: 'n8n', role: 'workflow', x: 0.82, y: 0.28 },
-      { id: 'ai', name: 'AI · анализ', role: 'ai', x: 0.36, y: 0.72 },
-      { id: 'tg', name: 'Telegram', role: 'output', x: 0.76, y: 0.72 }
+      { id: 'b24', name: 'Битрикс24 · задачи', role: 'trigger', x: 0.18, y: 0.3 },
+      { id: 'n8n', name: 'n8n · сервер', role: 'workflow', x: 0.5, y: 0.3 },
+      { id: 'ai', name: 'AI · разбор', role: 'ai', x: 0.82, y: 0.3 },
+      { id: 'com', name: 'Битрикс24 · комментарий', role: 'output', x: 0.7, y: 0.75 },
+      { id: 'tg', name: 'Telegram · сводка', role: 'output', x: 0.3, y: 0.75 }
     ], edges: [
-      { a: 'b24', b: 'wh', ev: 'task.updated' },
-      { a: 'wh', b: 'n8n', ev: 'POST /webhook' },
-      { a: 'n8n', b: 'ai', ev: 'summarize()' },
-      { a: 'ai', b: 'tg', ev: 'sendMessage' },
-      { a: 'tg', b: 'ai', ev: 'вопрос → ответ', k: 'q', p: 0.6 }
+      { a: 'b24', b: 'n8n', ev: 'утро · 08:00' },
+      { a: 'n8n', b: 'ai', ev: 'tasks[]' },
+      { a: 'ai', b: 'com', ev: 'task.comment', grp: 'out' },
+      { a: 'ai', b: 'tg', ev: 'sendMessage', grp: 'out' }
+    ] },
+    // кейс «SEO-отчёт сам приходит в Telegram» и шаблон «SEO-отчёт в Telegram» (TASK-seo-case.md): три источника → AI → две ветки
+    'seo-report': { src: ['ym', 'wm', 'ps'], nodes: [
+      { id: 'ym', name: 'Яндекс Метрика', role: 'trigger', x: 0.15, y: 0.2 },
+      { id: 'wm', name: 'Вебмастер · позиции', role: 'trigger', x: 0.15, y: 0.5 },
+      { id: 'ps', name: 'PageSpeed · CRM', role: 'trigger', x: 0.15, y: 0.8 },
+      { id: 'ai', name: 'AI · выводы и план', role: 'ai', x: 0.5, y: 0.5 },
+      { id: 'tg', name: 'Telegram · сводка', role: 'output', x: 0.84, y: 0.28 },
+      { id: 'html', name: 'Отчёт · страница', role: 'output', x: 0.84, y: 0.74 }
+    ], edges: [
+      { a: 'ym', b: 'ai', ev: 'визиты · отказы' },
+      { a: 'wm', b: 'ai', ev: 'индекс · топ-10' },
+      { a: 'ps', b: 'ai', ev: 'LCP · заявки' },
+      { a: 'ai', b: 'tg', ev: 'пн 09:00', grp: 'out' },
+      { a: 'ai', b: 'html', ev: 'report.html', grp: 'out' }
     ] },
     // кейсы «Работ» (cases.html; call-audit — и в «Кейсах» главной): схемы по фактам, TASK-cases-panel.md, 2
     // mx — узкое окно (< 340 px, телефон 320–390): длинные слова («Мини-приложение», «SEO-описание») сводили соседние узлы

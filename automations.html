@@ -26,7 +26,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="ru_RU">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="assets/site.css?v=63946d6a">
+<link rel="stylesheet" href="assets/site.css?v=a4d8878c">
 <noscript><style>.pt-boot .sec > *,.pt-boot .sec .wrap > *{opacity:1}.flow-win[role="img"]::after{content:attr(aria-label);position:absolute;inset:56px 28px 28px;display:flex;align-items:center;justify-content:center;text-align:center;font:500 13px/1.7 'JetBrains Mono','JetBrains fb',monospace;color:#8FAEC0}[data-mini-label]{opacity:1;left:50%;top:50%;bottom:auto;transform:translate(-50%,-50%)}.hero-obj::after{content:"[ " attr(aria-label) " ]";position:absolute;left:24px;right:24px;top:45%;text-align:center;font:500 13px/1.7 'JetBrains Mono','JetBrains fb',monospace;color:#8FAEC0}.hero-obj .nb,.hero-obj [data-ring],.hero-obj .ps{display:none!important}</style></noscript>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Главная", "item": "https://privatechouse.ru/"}, {"@type": "ListItem", "position": 2, "name": "Готовые решения", "item": "https://privatechouse.ru/automations"}]}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Что нужно от нас, чтобы подключить?", "acceptedAnswer": {"@type": "Answer", "text": "Доступ к сервисам, которые связываем: вебхук Битрикс24, бот в Telegram, ключ кабинета маркетплейса. Остальное настраиваем сами."}}, {"@type": "Question", "name": "Где это работает?", "acceptedAnswer": {"@type": "Answer", "text": "На нашем сервере в России. Мы следим, чтобы сценарий работал, и правим его, если у сервиса поменялся API."}}, {"@type": "Question", "name": "Можно доработать шаблон под нас?", "acceptedAnswer": {"@type": "Answer", "text": "Да. Шаблон служит отправной точкой: поля, сообщения и правила настраиваем под ваш процесс."}}, {"@type": "Question", "name": "Сколько стоит?", "acceptedAnswer": {"@type": "Answer", "text": "Зависит от шаблона и объёма. Назовём после короткого созвона, подписка оплачивается фиксированным платежом раз в месяц."}}, {"@type": "Question", "name": "Что будет, если отказаться?", "acceptedAnswer": {"@type": "Answer", "text": "Сценарий останавливается вместе с подпиской; ваши данные выгрузим по запросу."}}]}</script>
@@ -156,13 +156,25 @@
 </span>
 </article>
 <article class="glass fr obj" id="b24-report" data-cat="tasks reports">
-<span class="flow-win fr" role="img" aria-label="Схема: Битрикс24, задачи → Webhook → n8n → AI, анализ → Telegram; из Telegram вопрос возвращается к AI"><canvas data-flow="b24-digest" aria-hidden="true"></canvas><span class="win-tag" data-pt-skip style="--tc: #9FE5D1">Битрикс24 · Telegram</span></span>
+<span class="flow-win fr" role="img" aria-label="Схема: задачи Битрикс24 → n8n на сервере → AI разбирает задачи → комментарий в каждой задаче и сводка в Telegram"><canvas data-flow="b24-digest" aria-hidden="true"></canvas><span class="win-tag" data-pt-skip style="--tc: #9FE5D1">Битрикс24 · Telegram</span></span>
 <span class="obj-tx">
 <span class="obj-h">Утренний разбор задач</span>
-<span class="obj-d">По&nbsp;утрам в&nbsp;Telegram приходит сводка по&nbsp;задачам Битрикс24 с&nbsp;выводами. Боту можно задать вопрос по&nbsp;любой задаче.</span>
+<span class="obj-d">По&nbsp;утрам в&nbsp;Telegram приходит сводка по&nbsp;задачам Битрикс24 с&nbsp;выводами. В&nbsp;каждую задачу AI&nbsp;оставляет комментарий: что&nbsp;ускорить и&nbsp;что&nbsp;сделать лучше.</span>
 <span class="tp-need"><b>Нужно от&nbsp;вас:</b> вебхук Битрикс24</span>
 <span class="tp-act">
 <a href="https://t.me/dragonborne0" target="_blank" rel="noopener" data-tg="Хочу подключить «Утренний разбор задач»." class="tp-go"><span>Подключить&nbsp;→</span></a>
+</span>
+</span>
+</article>
+<article class="glass fr obj" id="seo-report" data-cat="reports ai">
+<span class="flow-win fr" role="img" aria-label="Схема: Яндекс Метрика, Вебмастер с позициями, PageSpeed и заявки из CRM → AI пишет выводы и план → сводка в Telegram и полный отчёт страницей"><canvas data-flow="seo-report" aria-hidden="true"></canvas><span class="win-tag" data-pt-skip style="--tc: #9FE5D1">AI&nbsp;· Метрика · Вебмастер</span></span>
+<span class="obj-tx">
+<span class="obj-h">SEO-отчёт в&nbsp;Telegram</span>
+<span class="obj-d">Раз в&nbsp;неделю: визиты, позиции, скорость сайта и&nbsp;заявки, выводы и&nbsp;план от&nbsp;AI. Полный отчёт&nbsp;— страницей по&nbsp;ссылке.</span>
+<span class="tp-need"><b>Нужно от&nbsp;вас:</b> доступ к&nbsp;Яндекс Метрике и&nbsp;Вебмастеру</span>
+<span class="tp-act">
+<a href="https://t.me/dragonborne0" target="_blank" rel="noopener" data-tg="Хочу подключить «SEO-отчёт в Telegram»." class="tp-go"><span>Подключить&nbsp;→</span></a>
+<a href="cases#case-seo-report" class="tp-go"><span>Работает у&nbsp;клиента: SEO-отчёт сам приходит в&nbsp;Telegram&nbsp;→</span></a>
 </span>
 </span>
 </article>
@@ -371,10 +383,10 @@
 <div class="lang-beam" data-lang-beam aria-hidden="true"></div>
 <div class="scan-beam" data-scan-beam aria-hidden="true"></div>
 </div>
-<script src="assets/i18n.js?v=809cc0ed"></script>
+<script src="assets/i18n.js?v=daf464d8"></script>
 <script src="assets/scroll.js?v=13e65530"></script>
 <script src="assets/nav.js?v=b7bf2be1"></script>
-<script src="assets/scenes.js?v=8ea8cb86"></script>
+<script src="assets/scenes.js?v=81e1dcde"></script>
 <script src="assets/filter.js?v=5860b5d6"></script>
 <script src="assets/engine.js?v=d3748dd3" onerror="document.getElementById('pt-site').classList.remove('pt-boot')"></script>
 <script src="assets/consent.js?v=b0ab97cf"></script>

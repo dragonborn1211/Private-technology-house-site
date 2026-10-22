@@ -230,6 +230,10 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 .cp-hint{font-size:14px;line-height:1.5;color:#8FAEC0;max-width:300px}
 .cp-hint .h-touch{display:none}
 @media (hover:none){.cp-hint .h-mouse{display:none}.cp-hint .h-touch{display:inline}}
+/* SEO-кейс (TASK-seo-case.md): подпись «Пример на тестовых данных» под кадром; на телефоне сообщение Telegram должно
+   читаться — телефон стоит под отчётом по центру, а не поверх (.cp-shot.is-stack) */
+.cp-shot-note{margin-top:38px}
+@media (max-width:760px){.cp-shot.is-stack{padding-bottom:0}.cp-shot.is-stack .cp-phone{position:relative;right:auto;bottom:auto;display:block;width:64%;margin:16px auto -1px;border-radius:30px 30px 0 0;border-bottom:0}.cp-shot.is-stack .cp-phone img{border-radius:24px 24px 0 0}.cp-shot.is-stack + .cp-shot-note{margin-top:14px}}
 .cp-feat{margin:0;padding:0;list-style:none;display:grid;gap:14px}
 .cp-feat li{display:grid;grid-template-columns:minmax(0,0.9fr) minmax(0,1.25fr);gap:20px;align-items:start;padding:14px;border-radius:20px;background:linear-gradient(180deg,rgba(23,36,48,.6),rgba(14,24,33,.6));border:1px solid rgba(188,211,222,.12)}
 .cp-feat img{display:block;width:100%;height:auto;aspect-ratio:16/10;object-fit:cover;border-radius:12px;border:1px solid rgba(188,211,222,.1)}
