@@ -88,10 +88,13 @@
         k = e.createElement(t); a = e.getElementsByTagName(t)[0]; k.async = 1; k.src = r; a.parentNode.insertBefore(k, a);
       })(window, document, 'script', 'https://mc.yandex.ru/metrika/tag.js', 'ym');
       window.ym(YM_ID, 'init', { clickmap: true, trackLinks: true, accurateTrackBounce: true, webvisor: true });
+      var p = pend; pend = []; p.forEach(function (g) { goal(g[0], g[1]); });
     };
     if (window.requestIdleCallback) window.requestIdleCallback(go, { timeout: 3000 }); else setTimeout(go, 200);
   }
-  function goal(id, params) { if (ymOn && window.ym) window.ym(YM_ID, 'reachGoal', id, params); }
+  // цель до кода счётчика (он ставится в простое) — в очередь, после init; до «Принять» — никуда
+  var pend = [];
+  function goal(id, params) { if (!ymOn) return; if (window.ym) window.ym(YM_ID, 'reachGoal', id, params); else pend.push([id, params]); }
   // формат услуги — по модулю / блоку (страница услуг, «Как работаем», главная) или по адресу ссылки
   var FMT = { sites: 'разово', apps: 'разово', servers: 'разово', projects: 'разово', 'p-sites': 'разово', 'p-servers': 'разово',
     care: 'подписка', automation: 'подписка', ai: 'подписка', subscription: 'подписка', subs: 'подписка', 'sub-how': 'подписка', 'p-care': 'подписка', 'p-automation': 'подписка', templates: 'подписка',
@@ -150,6 +153,13 @@
   // панель разбора работы (assets/cases.js) открыла кейс — цель case_open, slug без «case-» (только после «Принять»: goal сам
   // проверяет); нажатие на призыв в панели — обычная цель tg
   window.addEventListener('pt:case', function (e) { goal('case_open', { 'case': String((e && e.detail) || '') }); });
+  // панель «Частые вопросы» (faq.js): page — где открыли (или откуда пришли по ссылке «Вопросы» в подвале)
+  // по ссылке из подвала другой страницы панель открывается раньше, чем Метрика успевает загрузиться (первый экран при переходе
+  // к #faq не собирается) — цель ждёт загрузки
+  window.addEventListener('pt:faq', function (e) {
+    var p = { page: String((e && e.detail) || '') };
+    if (ymOn || get() !== 'yes') goal('faq_open', p); else whenReady(function () { goal('faq_open', p); });
+  });
 
   var c = get();
   if (c === 'yes') whenReady(loadYm);

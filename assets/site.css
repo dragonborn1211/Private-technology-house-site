@@ -245,6 +245,30 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 /* призыв: в разметке — в конце кейса (без JS виден там); с JS его копия живёт в липком подвале панели */
 .cp-cta{display:flex;flex-wrap:wrap;gap:12px;margin:40px 0 0}
 .cp.js .cp-art .cp-cta{display:none}
+/* «Частые вопросы» (TASK-faq-panel.md): на странице — плашка-ссылка .faq-link вместо блока вопросов; клик открывает панель
+   [data-faq] (стили .cp-* панели кейсов, assets/faq.js). Ответы — <details>, плюс в круге становится минусом */
+.faq-link{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:18px 28px;padding:22px 28px;border-radius:22px;background:linear-gradient(180deg,rgba(23,36,48,.62),rgba(14,24,33,.62));border:1px solid rgba(188,211,222,.14);color:#EEF3F6;text-decoration:none;transition:border-color .25s ease}
+.faq-link:hover{border-color:rgba(142,216,248,.45)}
+.faq-link .fk{font:500 11px/1.4 'JetBrains Mono','JetBrains fb',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8ED8F8}
+.faq-link .ft{font-size:18px;font-weight:500;line-height:1.35}
+.faq-link .ft span{display:block;margin-top:4px;font-size:15px;font-weight:400;color:#9DB0BC}
+.faq-link .fa{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(188,211,222,.24);font-size:18px;color:#8ED8F8}
+@media (max-width:760px){.faq-link{grid-template-columns:minmax(0,1fr) auto;padding:18px 20px}.faq-link .fk{grid-column:1/-1}}
+.cp-faq .cp-grp{margin:34px 0 0}
+.cp-faq .cp-grp:first-of-type{margin-top:28px}
+.cp-faq .fq{border-bottom:1px solid rgba(188,211,222,.12)}
+.cp-faq .fq:first-of-type{border-top:1px solid rgba(188,211,222,.12)}
+.cp-faq .fq summary{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:60px;padding:15px 0;list-style:none;cursor:pointer;font-size:17px;font-weight:500;line-height:1.35;color:#EEF3F6}
+.cp-faq .fq summary::-webkit-details-marker{display:none}
+.cp-faq .fq summary:focus-visible{outline:2px solid var(--cp-tc,#8ED8F8);outline-offset:2px;border-radius:6px}
+.cp-faq .fq summary i{flex:none;width:28px;height:28px;border-radius:50%;border:1px solid rgba(188,211,222,.22);position:relative}
+.cp-faq .fq summary i::before,.cp-faq .fq summary i::after{content:"";position:absolute;left:50%;top:50%;width:10px;height:1.5px;margin:-.75px 0 0 -5px;background:#BCD3DE}
+.cp-faq .fq summary i::after{transform:rotate(90deg);transition:transform .25s ease}
+.cp-faq .fq[open] summary i::after{transform:none}
+.cp-faq .fq p{margin:-2px 0 20px;font-size:15.5px;line-height:1.6;color:#9DB0BC}
+/* подвал панели вопросов: подпись не кнопка — «Следующей работы» нет */
+.cp-faq-wrap .cp-nx{cursor:default}.cp-faq-wrap .cp-nx:hover span{color:inherit}
+@media (prefers-reduced-motion:reduce){.cp-faq .fq summary i::after{transition:none}}
 .cp-foot{flex:none;display:flex;align-items:center;gap:16px;padding:14px 20px 14px 40px;border-top:1px solid rgba(188,211,222,.1);background:rgba(10,18,26,.92)}
 .cp-foot:empty{display:none}
 .cp-foot .cp-cta{margin:0;flex-wrap:nowrap}

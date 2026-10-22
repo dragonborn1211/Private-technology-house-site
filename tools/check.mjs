@@ -535,7 +535,7 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
   if (r.glyphs !== 6 || r.icons) bad.push(`рисунков в карточках ${r.glyphs}, иконок в квадратах ${r.icons}`);
   if (r.process || r.procLinks.length !== 4 || r.procLinks.some((h) => h !== 'process') || r.contact !== 'Контакт') bad.push(`«Как работаем»: секция ${r.process}, ссылки ${r.procLinks.join(', ')}, контакт «${r.contact}»`);
   const sv = readFileSync(path.join(root, 'services.html'), 'utf8');
-  if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 6 || /svc-ic/.test(sv) || (sv.match(/<a href="process"[^>]*>Как работаем<\/a>/g) || []).length !== 4) bad.push('страница услуг: шесть мини-рисунков, нет иконок, «Как работаем» → process.html (три меню и подвал)');
+  if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 7 || /svc-ic/.test(sv) || (sv.match(/<a href="process"[^>]*>Как работаем<\/a>/g) || []).length !== 4) bad.push('страница услуг: семь мини-рисунков (шесть направлений и редизайн), нет иконок, «Как работаем» → process.html (три меню и подвал)');
   for (const f of readdirSync(path.join(root, 'assets')).filter((x) => x.endsWith('.js'))) if (/addEventListener\(\s*['"](before)?unload['"]/.test(readFileSync(path.join(root, 'assets', f), 'utf8'))) bad.push(`${f}: unload / beforeunload отключает кэш «Назад»`);
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8'), rb = readFileSync(path.join(root, 'robots.txt'), 'utf8');
   if (['', 'services', 'cases', 'automations', 'process'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 5 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
@@ -592,17 +592,11 @@ for (const [w, h, tag, lang] of [[1440, 900, 's1440', 'ru'], [1700, 930, 's1700'
       const missing = [...document.querySelectorAll('a[href^="#"]')].map((a) => a.getAttribute('href')).filter((hh) => hh.length > 1 && !document.getElementById(hh.slice(1)));
       const ld = [...document.querySelectorAll('script[type="application/ld+json"]')].map((sc) => { try { return JSON.parse(sc.textContent); } catch (e) { return { error: e.message }; } });
       const faq = ld.find((x) => x['@type'] === 'FAQPage'), org = ld.find((x) => x['@type'] === 'Organization'), nb = (t) => t.replace(/\s+/g, ' ').trim();
-      const qs = faq ? faq.mainEntity.map((q) => nb(q.name)) : [], sums = [...document.querySelectorAll('.sv-q summary')].map((x) => nb(x.textContent));
-      return { missing, errs: ld.filter((x) => x.error).length, types: ld.map((x) => x['@type']).join(','), offers: org && org.hasOfferCatalog ? org.hasOfferCatalog.itemListElement.length : 0, faqOk: qs.length === 5 && qs.join('|') === sums.join('|'), qs: qs.length, sums: sums.length };
+      const qs = faq ? faq.mainEntity.map((q) => nb(q.name) + '|' + nb(q.acceptedAnswer.text)) : [], sums = [...document.querySelectorAll('[data-faq] .fq')].map((d) => nb(d.querySelector('summary').textContent) + '|' + nb(d.querySelector('p').textContent));
+      return { missing, errs: ld.filter((x) => x.error).length, types: ld.map((x) => x['@type']).join(','), offers: org && org.hasOfferCatalog ? org.hasOfferCatalog.itemListElement.length : 0, faqOk: qs.length === 9 && qs.join('#') === sums.join('#'), qs: qs.length, sums: sums.length };
     });
     if (st.missing.length) bad.push(`якоря без цели: ${st.missing.join(', ')}`);
     if (st.errs || st.types !== 'BreadcrumbList,Organization,FAQPage' || st.offers !== 6 || !st.faqOk) bad.push(`JSON-LD: ошибок ${st.errs}, типы ${st.types}, услуг ${st.offers}, вопросы ${st.qs} / ${st.sums}, совпадают ${st.faqOk}`);
-    // <details>: клик открывает, Enter закрывает; Enter на другом — открывает
-    const q = page.locator('.sv-q summary');
-    await q.nth(0).click(); await page.waitForTimeout(450); const o1 = await page.evaluate(() => { const d = document.querySelectorAll('.sv-q')[0]; return d.open && getComputedStyle(d.querySelector('p')).opacity === '1'; });
-    await q.nth(0).press('Enter'); const o2 = await page.evaluate(() => document.querySelectorAll('.sv-q')[0].open);
-    await q.nth(1).focus(); await page.keyboard.press('Enter'); const o3 = await page.evaluate(() => document.querySelectorAll('.sv-q')[1].open);
-    if (!o1 || o2 || !o3) bad.push(`<details>: клик ${o1 ? 'открыл, ответ виден' : 'не открыл или ответ невидим'}, Enter ${!o2 ? 'закрыл' : 'не закрыл'}, Enter на втором ${o3}`);
     // якоря шапки и переходов: модуль встаёт под липкой шапкой с зазором (scroll-margin-top 88), а не под неё
     const tops = [];
     for (const id of ['projects', 'sites', 'apps', 'servers', 'subscription', 'care', 'automation', 'ai']) {
@@ -625,7 +619,7 @@ for (const [w, h, tag, lang] of [[1440, 900, 's1440', 'ru'], [1700, 930, 's1700'
   errs.forEach((e) => bad.push(e));
   await page.close();
   if (bad.length) fail(`${tag}: ` + bad.join('; '));
-  else console.log(`  ✓ ${tag}: ${secs.length} секций собраны, ошибок нет${lang === 'en' ? ', кириллицы нет' : ''}${tag === 's1440' ? '; якоря, <details>, JSON-LD, смена языка' : ''}${w === 390 ? '; ↻ только на первом экране' : ''}`);
+  else console.log(`  ✓ ${tag}: ${secs.length} секций собраны, ошибок нет${lang === 'en' ? ', кириллицы нет' : ''}${tag === 's1440' ? '; якоря, JSON-LD — девять вопросов панели, JSON-LD, смена языка' : ''}${w === 390 ? '; ↻ только на первом экране' : ''}`);
 }
 // переход с главной по якорю: секции выше цели готовы сразу, цель собирается первой — готова за 3.5 с
 {
@@ -784,7 +778,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
   // TASK-clarity.md: на телефоне «Что входит» свёрнуто; с «Кто делает» (TASK-about-analytics.md) — +0.6 экрана на телефоне;
   // TASK-prices.md: строка «Цена» первой в условиях шести модулей (у приложений и серверов — с пояснением) — +0.35 на телефоне;
   // TASK-redesign-prices.md: седьмое направление «Редизайн сайта» и крупная цена — +0.7 / +1.3
-  for (const [w, h, lim] of [[1440, 900, 8.3], [390, 844, 13.4]]) {
+  for (const [w, h, lim] of [[1440, 900, 7.8], [390, 844, 13.6]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + 'services.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
@@ -949,9 +943,11 @@ console.log('\nкейсы и готовые автоматизации');
   if (st.vis.join(',') !== 'b24-report,seo-report,price-monitor' || st.always !== 'your-process' || st.hash !== '#f-reports') bad.push(`каталог, «Отчёты»: ${JSON.stringify(st)}`);
   bad.push(...(await flowsOk(page)).map((x) => 'каталог «Отчёты» ' + x));
   await page.click('[data-filter=""]'); await page.clock.runFor(800);
-  const faq = await page.evaluate(() => { const nb = (t) => t.replace(/\s+/g, ' ').trim(); const ld = [...document.querySelectorAll('script[type="application/ld+json"]')].map((x) => JSON.parse(x.textContent)); const f = ld.find((x) => x['@type'] === 'FAQPage'); return { types: ld.map((x) => x['@type']).join(','), ok: !!f && f.mainEntity.map((q) => nb(q.name) + '|' + nb(q.acceptedAnswer.text)).join('#') === [...document.querySelectorAll('.sv-q')].map((d) => nb(d.querySelector('summary').textContent) + '|' + nb(d.querySelector('p').textContent)).join('#'), n: f ? f.mainEntity.length : 0 }; });
-  if (faq.types !== 'BreadcrumbList,FAQPage' || !faq.ok || faq.n !== 5) bad.push(`каталог, JSON-LD: ${JSON.stringify(faq)}`);
-  // сроков нет; цена — только «от 5 000 ₽» (TASK-prices.md: шаг «Работает» и вопрос «Сколько стоит?»)
+  // TASK-faq-panel.md: вопросов на странице нет — плашка открывает общую панель сразу на группе «Подписка и шаблоны»; FAQPage — только
+  // на услугах (один ответ не размечаем на двух страницах)
+  const faq = await page.evaluate(() => ({ types: [...document.querySelectorAll('script[type="application/ld+json"]')].map((x) => JSON.parse(x.textContent)['@type']).join(','), plate: (document.querySelector('#faq [data-faq-open]') || {}).dataset?.faqOpen, n: document.querySelectorAll('[data-faq] .fq').length, old: document.querySelectorAll('.sv-q').length }));
+  if (faq.types !== 'BreadcrumbList' || faq.plate !== 'faq-sub' || faq.n !== 9 || faq.old) bad.push(`каталог, вопросы: ${JSON.stringify(faq)}`);
+  // сроков нет; цена — только «от 5 000 ₽» (TASK-prices.md: шаг «Работает»; вопросы — в панели, она скрыта)
   const atext = await page.evaluate(() => document.body.innerText);
   if (/\d+\s*(дн|час|недел)/.test(atext)) bad.push('каталог: сроки в тексте');
   if (/₽/.test(atext.replace(/[Оо]т\s5\s000\s₽/g, ''))) bad.push('каталог: цены, кроме «от 5 000 ₽»');
@@ -1162,13 +1158,13 @@ console.log('\nструктура: услуги, «Как работаем», с
     await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(300);
     const r = await page.evaluate(() => ({ order: [...document.querySelectorAll('[data-sec]')].map((s) => s.dataset.sec).join(','),
       after: document.querySelectorAll('#after .sv-path').length, subs: document.querySelectorAll('#sub-how .sv-path').length,
-      h2: [...document.querySelectorAll('h2')].map((h) => h.textContent.trim()), q: document.querySelectorAll('.sv-q').length,
-      quit: /отказаться от\s+подписки/.test([...document.querySelectorAll('.sv-q summary')].map((x) => x.textContent).join(' ')),
+      h2: [...document.querySelectorAll('h2')].map((h) => h.textContent.trim()), q: document.querySelectorAll('[data-faq] .fq').length + document.querySelectorAll('.sv-q').length * 100,
+      quit: /отказаться от\s+подписки/.test([...document.querySelectorAll('[data-faq] .fq summary')].map((x) => x.textContent).join(' ')),
       proc: [...document.querySelectorAll('[data-sec="process"] a')].filter((a) => a.getAttribute('href') === 'process').length,
       steps: document.querySelectorAll('[data-sec="process"] .sv-step').length, care: !!document.querySelector('#after a[href="#care"]'),
       sm: ['after', 'sub-how', 'process'].map((i) => getComputedStyle(document.getElementById(i).querySelector('[style*="scroll-margin-top"]') || document.getElementById(i)).scrollMarginTop).join(',') }));
     if (r.order !== 'hero,process,sites,redesign,apps,servers,after,care,automation,ai,subs,faq,contact,foot') bad.push(`услуги: порядок ${r.order}`);
-    if (r.after !== 3 || r.subs !== 3 || r.h2.includes('После запуска') || r.q !== 5 || r.quit || r.proc !== 1 || r.steps !== 4 || !r.care || r.sm !== '88px,88px,88px') bad.push(`услуги: ${JSON.stringify({ after: r.after, subs: r.subs, q: r.q, quit: r.quit, proc: r.proc, steps: r.steps, care: r.care, sm: r.sm })}`);
+    if (r.after !== 3 || r.subs !== 3 || r.h2.includes('После запуска') || r.q !== 9 || r.quit || r.proc !== 1 || r.steps !== 4 || !r.care || r.sm !== '88px,88px,88px') bad.push(`услуги: ${JSON.stringify({ after: r.after, subs: r.subs, q: r.q, quit: r.quit, proc: r.proc, steps: r.steps, care: r.care, sm: r.sm })}`);
     await page.close();
   }
   // «Как работаем»
@@ -1667,7 +1663,7 @@ console.log('\nревью, 5–9: группы на главной, NDA, сле�
   // «Готовые решения» — после TASK-seo-case.md (восьмая работа и восьмой шаблон: на телефоне ещё карточка, на 1440 у каталога ряд)
   // главная и «Что делаем» — после TASK-prices.md (цены в карточках и строка «Цена» в условиях модулей); «Что делаем» — после
   // TASK-redesign-prices.md (блок «Редизайн сайта», цена 26 px)
-  const LEN = { 'index.html': [5.3, 9.0], 'services.html': [8.1, 13.2], 'process.html': [3.3, 7.15], 'cases.html': [4.7, 7.95], 'automations.html': [5.35, 9.35] };
+  const LEN = { 'index.html': [5.3, 9.0], 'services.html': [7.6, 13.4], 'process.html': [3.3, 7.15], 'cases.html': [4.7, 7.95], 'automations.html': [5.05, 9.1] };
   const quick = await chromium.launch();
   for (const [w, h] of [[1440, 900], [390, 844]]) {
     const page = await quick.newPage({ viewport: { width: w, height: h } });
@@ -2149,12 +2145,12 @@ console.log('\nрисунки направлений');
   if (!rp.off || rp.on !== 6) bad.push(`после ↻: гасли ${rp.off} раз, прорисованы ${rp.on} из 6`);
   errs.forEach((e) => bad.push(e));
   await page.close();
-  // страница услуг: шесть мини-рисунков у подписей модулей
+  // страница услуг: семь мини-рисунков у подписей модулей (шесть направлений и «Редизайн сайта»)
   {
     const pg = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await pg.goto('file://' + path.join(root, 'services.html') + '?intro=instant'); await pg.waitForTimeout(300);
     const m = await pg.evaluate(() => ({ n: document.querySelectorAll('.sv-lab .glyph-mini').length, on: document.querySelectorAll('.sv-lab .glyph-mini.is-on.is-now').length, icons: document.querySelectorAll('.svc-ic').length, dots: document.querySelectorAll('.sv-fmt .sv-fl .sv-dot').length }));
-    if (m.n !== 6 || m.on !== 6 || m.icons || m.dots !== 6) bad.push(`страница услуг: мини ${m.n}, на месте ${m.on}, иконок ${m.icons}, точек в карточке форматов ${m.dots}`);
+    if (m.n !== 7 || m.on !== 7 || m.icons || m.dots !== 6) bad.push(`страница услуг: мини ${m.n}, на месте ${m.on}, иконок ${m.icons}, точек в карточке форматов ${m.dots}`);
     await pg.evaluate(() => { const e = document.getElementById('sites'); window.scrollTo({ top: e.getBoundingClientRect().top + scrollY - 20, behavior: 'instant' }); }); await pg.waitForTimeout(300);
     await pg.screenshot({ path: path.join(shots, 's1440-sites.png') });
     await pg.close();
@@ -2169,7 +2165,7 @@ console.log('\nрисунки направлений');
     await ctx.close();
   }
   if (bad.length) fail('рисунки: ' + bad.join('; '));
-  else console.log('  ✓ шесть рисунков прорисовываются со сборкой секции и не пустые, вне экрана на паузе, после ↻ — заново; на странице услуг шесть мини и точки в переходах; reduced motion — сразу, без импульсов');
+  else console.log('  ✓ шесть рисунков прорисовываются со сборкой секции и не пустые, вне экрана на паузе, после ↻ — заново; на странице услуг семь мини и точки в переходах; reduced motion — сразу, без импульсов');
 }
 
 // Режимы сборки: каждый сценарий — отдельный контекст браузера; хранилища задаются addInitScript. Время виртуальное
@@ -2584,6 +2580,176 @@ console.log('\nпанель разбора работы');
   if (bad.length) fail('панель разбора работы: ' + bad.join('; '));
   else console.log('  ✓ восемь карточек открывают свои статьи (адрес, счётчик, фокус, заголовок вкладки), ← → и клавиши листают видимые при фильтре, края и подвал последней; Esc, ×, подложка и «Назад» закрывают, фокус на карточке, хеш фильтра на месте; под панелью схемы сетки не рисуют, схема статьи рисует, колесо крутит тело; телефон — шторка и свайп; EN без кириллицы; прямая ссылка — после сборки секции; без JS — статьи под сеткой; case_open — только после «Принять»');
 }
+// TASK-faq-panel.md: «Вопросы» на услугах и в каталоге — плашка .faq-link, по клику — панель [data-faq] (как у кейсов, assets/faq.js).
+// Плашка услуг — панель с начала, каталога — на группе «Подписка и шаблоны»; «Вопросы» в подвале этих двух страниц открывает панель на
+// месте, с главной — services#faq и панель после сборки; закрывают ×, подложка, Esc, «Назад», свайп; фокус — на плашку; «9» в плашке
+// и счётчике = числу <details>; ответы закрыты, клик и Enter открывают, плюс становится минусом; колесо крутит тело, страница стоит;
+// EN без кириллицы; без JS — вопросы на месте плашки; Метрика faq_open { page } только после «Принять».
+console.log('\nпанель «Частые вопросы»');
+{
+  const bad = [];
+  const mkp = async (vp, opts = {}) => {
+    const ctx = await browser.newContext({ viewport: vp, ...(opts.ctx || {}) });
+    await ctx.route('**/mc.yandex.ru/**', (r) => r.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
+    await ctx.addInitScript((o) => {
+      try { localStorage.setItem('pt-consent', o.consent || 'no'); } catch (e) { /* нет хранилища */ }
+      if (o.stub) window.ym = function () { (window.__ym = window.__ym || []).push([].slice.call(arguments)); };
+    }, opts);
+    const page = await ctx.newPage(); page.errs = [];
+    page.on('pageerror', (e) => page.errs.push(e.message));
+    page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource|ERR_/.test(m.text())) page.errs.push(m.text()); });
+    return { ctx, page };
+  };
+  const fst = (page) => page.evaluate(() => {
+    const f = document.querySelector('[data-faq]'), body = f.querySelector('[data-cp-body]'), ae = document.activeElement;
+    return { open: f.classList.contains('is-open'), hidden: f.hidden, hash: location.hash, lock: document.documentElement.classList.contains('cp-lock'), y: Math.round(scrollY), top: body.scrollTop, max: body.scrollHeight - body.clientHeight, ch: body.clientHeight,
+      sub: Math.round(f.querySelector('#faq-sub').getBoundingClientRect().top - body.getBoundingClientRect().top),
+      focus: ae === f.querySelector('.cp-sheet') ? 'sheet' : ae.matches('.faq-link') ? 'plate' : ae.closest('.foot') ? 'foot' : ae.tagName };
+  });
+  const toFaq = (page) => page.evaluate(() => document.getElementById('faq').scrollIntoView({ block: 'center', behavior: 'instant' }));
+  // услуги, 1440: плашка, число, ответы, колесо, Tab, закрытие всеми способами, подвал
+  {
+    const { ctx, page } = await mkp({ width: 1440, height: 900 });
+    await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(1500);
+    const c = await page.evaluate(() => { const f = document.querySelector('[data-faq]'), nb = (t) => t.replace(/\s+/g, ' ').trim(), sh = f.querySelector('.cp-sheet');
+      return { n: f.querySelectorAll('details.fq').length, opened: f.querySelectorAll('details.fq[open]').length, plate: nb(document.querySelector('.faq-link .fk').textContent), count: nb(f.querySelector('.cp-count').textContent),
+        groups: [...f.querySelectorAll('.cp-grp')].map((g) => g.id + ':' + g.querySelectorAll('.fq').length).join(','), old: document.querySelectorAll('.sv-q, [data-sec="faq"] details').length,
+        inSec: !!f.closest('[data-sec]'), dlg: [sh.getAttribute('role'), sh.getAttribute('aria-modal'), sh.getAttribute('aria-labelledby')].join(',') }; });
+    if (c.n !== 9 || c.opened || c.plate !== `Частые вопросы · ${c.n}` || c.count !== `Частые вопросы · ${c.n}` || c.groups !== 'faq-sites:5,faq-sub:4' || c.old || c.inSec || c.dlg !== 'dialog,true,faq-t') bad.push('разметка: ' + JSON.stringify(c));
+    await toFaq(page); await page.waitForTimeout(400);
+    await page.screenshot({ path: path.join(shots, 'faq-plate-1440.png') });
+    const y0 = await page.evaluate(() => Math.round(scrollY));
+    await page.click('.faq-link'); await page.waitForTimeout(900);
+    let s = await fst(page);
+    if (!s.open || s.hash !== '#faq' || !s.lock || s.focus !== 'sheet' || s.y !== y0 || s.top !== 0) bad.push('плашка: ' + JSON.stringify(s));
+    await page.screenshot({ path: path.join(shots, 'faq-open-1440.png') });
+    // ответы: клик открывает (плюс → минус), Enter закрывает, Enter на другом открывает; два открыты одновременно
+    const q = page.locator('[data-faq] .fq summary');
+    await q.nth(1).click(); await page.waitForTimeout(900); // поворот плюса — 0.25 с
+    const d1 = await page.evaluate(() => { const d = document.querySelectorAll('[data-faq] .fq')[1]; return { open: d.open, vis: getComputedStyle(d.querySelector('p')).opacity === '1' && d.querySelector('p').getBoundingClientRect().height > 20, tr: getComputedStyle(d.querySelector('summary i'), '::after').transform }; });
+    await q.nth(4).focus(); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+    const two = await page.evaluate(() => document.querySelectorAll('[data-faq] .fq[open]').length);
+    await q.nth(1).focus(); await page.keyboard.press('Enter'); await page.waitForTimeout(100);
+    const d2 = await page.evaluate(() => document.querySelectorAll('[data-faq] .fq')[1].open);
+    if (!d1.open || !d1.vis || d1.tr !== 'none' || two !== 2 || d2) bad.push(`ответы: клик ${JSON.stringify(d1)}, открыто два ${two}, Enter закрыл ${!d2}`);
+    // колесо над панелью крутит её тело, страница стоит
+    await page.evaluate(() => document.querySelectorAll('[data-faq] .fq').forEach((d) => { d.open = true; }));
+    const w0 = await fst(page);
+    await page.mouse.move(1100, 500); await page.mouse.wheel(0, 600); await page.waitForTimeout(600);
+    const w1 = await fst(page);
+    if (w1.y !== y0 || w1.top < w0.top + 100) bad.push(`колесо: страница ${y0} → ${w1.y}, тело ${w0.top} → ${w1.top}`);
+    await page.evaluate(() => document.querySelectorAll('[data-faq] .fq').forEach((d) => { d.open = false; }));
+    let out = 0;
+    for (let k = 0; k < 14; k++) { await page.keyboard.press('Tab'); if (!(await page.evaluate(() => !!document.activeElement.closest('[data-faq]')))) out++; }
+    if (out) bad.push(`Tab ушёл из панели ${out} раз`);
+    const tg = await page.evaluate(() => document.querySelector('[data-faq] .cp-cta a').getAttribute('href'));
+    if (!/^https:\/\/t\.me\/dragonborne0\?text=/.test(tg)) bad.push('призыв панели: ' + tg);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(800);
+    s = await fst(page);
+    if (s.open || !s.hidden || s.hash !== '' || s.lock || s.focus !== 'plate' || s.y !== y0) bad.push('Esc: ' + JSON.stringify(s));
+    for (const [how, act] of [['×', () => page.click('[data-faq] .cp-x')], ['подложка', () => page.mouse.click(200, 450)], ['«Назад»', () => page.goBack()]]) {
+      await page.click('.faq-link'); await page.waitForTimeout(700); await act(); await page.waitForTimeout(800);
+      s = await fst(page); if (s.open || s.hash !== '' || s.lock || s.focus !== 'plate') bad.push(how + ': ' + JSON.stringify(s));
+    }
+    // «Вопросы» в подвале — панель на месте, страница не уезжает
+    await page.evaluate(() => document.querySelector('.foot').scrollIntoView({ behavior: 'instant' })); await page.waitForTimeout(900);
+    const yf = await page.evaluate(() => Math.round(scrollY));
+    await page.click('.foot a[href$="#faq"]'); await page.waitForTimeout(800);
+    s = await fst(page);
+    if (!s.open || s.y !== yf || !/\/services(\.html)?(\?|#|$)/.test(page.url())) bad.push('подвал услуг: ' + JSON.stringify(s) + ' ' + page.url());
+    await page.keyboard.press('Escape'); await page.waitForTimeout(700);
+    s = await fst(page); if (s.focus !== 'foot') bad.push('подвал услуг, фокус после Esc: ' + s.focus);
+    page.errs.forEach((e) => bad.push('услуги 1440: ' + e));
+    await ctx.close();
+  }
+  // каталог, 1440: плашка — на группе «Подписка и шаблоны», фильтр в адресе не сбивается, подвал — на месте
+  {
+    const { ctx, page } = await mkp({ width: 1440, height: 900 });
+    await page.goto(BASE + 'automations.html?intro=instant#f-reports'); await page.waitForTimeout(1500);
+    await toFaq(page); await page.waitForTimeout(400);
+    await page.click('.faq-link'); await page.waitForTimeout(900);
+    let s = await fst(page);
+    // группа — у верха тела, а если панель короче — тело докручено до конца и группа видна целиком
+    if (!s.open || s.hash !== '#faq' || s.sub < -2 || (s.sub > 40 && (s.top < s.max - 1 || s.sub > s.ch - 300))) bad.push('плашка каталога: ' + JSON.stringify(s));
+    await page.screenshot({ path: path.join(shots, 'faq-auto-open-1440.png') });
+    await page.keyboard.press('Escape'); await page.waitForTimeout(800);
+    const fl = await page.evaluate(() => [location.hash, (document.querySelector('.fl-b[aria-pressed="true"]') || {}).dataset?.filter].join());
+    if (fl !== '#f-reports,reports') bad.push('фильтр после панели: ' + fl);
+    await page.evaluate(() => document.querySelector('.foot').scrollIntoView({ behavior: 'instant' })); await page.waitForTimeout(900);
+    await page.click('.foot a[href$="#faq"]'); await page.waitForTimeout(800);
+    s = await fst(page); if (!s.open || !/automations/.test(page.url())) bad.push('подвал каталога: ' + JSON.stringify(s) + ' ' + page.url());
+    page.errs.forEach((e) => bad.push('каталог 1440: ' + e));
+    await ctx.close();
+  }
+  // главная → «Вопросы» в подвале → services#faq, панель после сборки; Метрика: faq_open { page: index } только после «Принять»
+  for (const consent of ['yes', 'no']) {
+    const { ctx, page } = await mkp({ width: 1440, height: 900 }, { consent, stub: true });
+    await page.goto(BASE + 'index.html?intro=instant'); await page.waitForTimeout(1500);
+    await page.evaluate(() => document.querySelector('.foot').scrollIntoView({ behavior: 'instant' })); await page.waitForTimeout(900);
+    await page.click('.foot a[href$="#faq"]'); await page.waitForTimeout(6500);
+    const s = await fst(page), goals = await page.evaluate(() => (window.__ym || []).filter((c) => c[1] === 'reachGoal' && c[2] === 'faq_open').map((c) => JSON.stringify(c[3])));
+    if (!s.open || s.hash !== '#faq' || !/\/services(\.html)?#faq$/.test(page.url())) bad.push(`с главной (${consent}): ${JSON.stringify(s)} ${page.url()}`);
+    if (consent === 'yes' ? goals.join() !== '{"page":"index"}' : goals.length) bad.push(`Метрика (${consent}): faq_open ${goals.join(' | ') || 'нет'}`);
+    if (consent === 'yes') {
+      await page.keyboard.press('Escape'); await page.waitForTimeout(700); await page.click('.faq-link'); await page.waitForTimeout(600);
+      const g2 = await page.evaluate(() => (window.__ym || []).filter((c) => c[1] === 'reachGoal' && c[2] === 'faq_open').map((c) => JSON.stringify(c[3])).join());
+      if (g2 !== '{"page":"index"},{"page":"services"}') bad.push('Метрика, плашка услуг: ' + g2);
+    }
+    page.errs.forEach((e) => bad.push(`с главной (${consent}): ` + e));
+    await ctx.close();
+  }
+  // телефон: шторка снизу, короткий свайп пружинит, длинный закрывает; снимки
+  {
+    const { ctx, page } = await mkp({ width: 390, height: 844 }, { ctx: { isMobile: true, hasTouch: true, deviceScaleFactor: 2 } });
+    for (const f of ['services', 'automations']) {
+      await page.goto(BASE + f + '.html?intro=instant'); await page.waitForTimeout(1500);
+      await toFaq(page); await page.waitForTimeout(400);
+      if (f === 'services') await page.screenshot({ path: path.join(shots, 'faq-plate-390.png') });
+      await page.tap('.faq-link'); await page.waitForTimeout(900);
+      const g = await page.evaluate(() => { const r = document.querySelector('[data-faq] .cp-sheet').getBoundingClientRect(); return { l: r.left, r: Math.round(r.right), b: Math.round(r.bottom), t: Math.round(r.top), sw: document.documentElement.scrollWidth }; });
+      if (g.l !== 0 || g.r !== 390 || g.b !== 844 || g.t < 30 || g.t > 120 || g.sw > 390) bad.push(`${f} 390, шторка: ` + JSON.stringify(g));
+      await page.screenshot({ path: path.join(shots, `faq-open-${f}-390.png`) });
+      await page.keyboard.press('Escape'); await page.waitForTimeout(700);
+    }
+    await page.tap('.faq-link'); await page.waitForTimeout(800);
+    const swipe = (d) => page.evaluate(async (d) => {
+      const bar = document.querySelector('[data-faq] .cp-bar'), r = bar.getBoundingClientRect(), x = r.left + 60, y = r.top + 14;
+      const ev = (t, yy) => bar.dispatchEvent(new PointerEvent(t, { pointerId: 7, pointerType: 'touch', clientX: x, clientY: yy, bubbles: true }));
+      ev('pointerdown', y); for (let k = 1; k <= 6; k++) { ev('pointermove', y + (d * k) / 6); await new Promise((res) => setTimeout(res, 50)); } ev('pointerup', y + d);
+    }, d);
+    await swipe(60); await page.waitForTimeout(600); const o1 = (await fst(page)).open;
+    await swipe(200); await page.waitForTimeout(800); const s2 = await fst(page);
+    if (!o1 || s2.open || s2.focus !== 'plate') bad.push(`свайп: короткий оставил открытой ${o1}, длинный ${JSON.stringify(s2)}`);
+    page.errs.forEach((e) => bad.push('390: ' + e));
+    await ctx.close();
+  }
+  // EN: плашки и открытая панель без кириллицы
+  {
+    const { ctx, page } = await mkp({ width: 1440, height: 900 });
+    for (const f of ['services', 'automations']) {
+      await page.goto(BASE + f + '.html?intro=instant&lang=en'); await page.waitForTimeout(1500);
+      await toFaq(page); await page.waitForTimeout(300); await page.click('.faq-link'); await page.waitForTimeout(700);
+      const r = await page.evaluate(() => { const fp = document.querySelector('[data-faq]'); fp.querySelectorAll('details').forEach((d) => { d.open = true; });
+        const t = fp.innerText + ' ' + document.querySelector('.faq-link').innerText + ' ' + [...fp.querySelectorAll('[aria-label]')].map((e) => e.getAttribute('aria-label')).join(' ');
+        return { cyr: t.match(/[А-Яа-яЁё][^ ]*/g) || [], tg: decodeURIComponent(fp.querySelector('.cp-cta a').href) }; });
+      if (r.cyr.length || !/Hello!/.test(r.tg) || /[А-Яа-яЁё]/.test(r.tg)) bad.push(`EN ${f}: ${r.cyr.slice(0, 6).join(' | ')} ${r.tg}`);
+      if (f === 'services') await page.screenshot({ path: path.join(shots, 'faq-open-en-1440.png') });
+    }
+    await ctx.close();
+  }
+  // без JS: вопросы — на месте плашки обычным блоком; плашки, подложки, полосы и подвала панели нет
+  for (const f of ['services', 'automations']) {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, javaScriptEnabled: false });
+    const pg = await ctx.newPage(); await pg.goto(BASE + f + '.html');
+    const r = await pg.evaluate(() => { const fp = document.querySelector('[data-faq]'), sec = document.getElementById('faq').getBoundingClientRect(), pr = fp.getBoundingClientRect();
+      return { h: Math.round(pr.height), below: Math.round(pr.top - sec.bottom), plate: getComputedStyle(document.querySelector('.faq-link')).display, bar: getComputedStyle(fp.querySelector('.cp-bar')).display,
+        scrim: getComputedStyle(fp.querySelector('.cp-scrim')).display, foot: getComputedStyle(fp.querySelector('.cp-foot')).display, pos: getComputedStyle(fp.querySelector('.cp-sheet')).position }; });
+    if (r.h < 400 || r.below < -2 || r.below > 200 || r.plate !== 'none' || r.bar !== 'none' || r.scrim !== 'none' || r.foot !== 'none' || r.pos !== 'static') bad.push(`без JS (${f}): ` + JSON.stringify(r));
+    await ctx.close();
+  }
+  if (bad.length) fail('панель «Частые вопросы»: ' + bad.join('; '));
+  else console.log('  ✓ плашки на услугах и в каталоге («9» = числу вопросов), панель: адрес #faq, фокус, ответы клик / Enter, плюс → минус, колесо крутит тело, Tab внутри; закрывают Esc, ×, подложка, «Назад», свайп — фокус на плашку; каталог — на группе «Подписка и шаблоны», фильтр на месте; «Вопросы» в подвале — на месте, с главной — services#faq после сборки; Метрика faq_open { page } только после «Принять»; EN без кириллицы; без JS — вопросы на месте плашки');
+}
 function woff2Cmap(file) {
   const buf = readFileSync(file);
   if (buf.toString('latin1', 0, 4) !== 'wOF2') throw new Error('не woff2: ' + file);
@@ -2629,7 +2795,7 @@ function woff2Cmap(file) {
   return set;
 }
 // Цены (TASK-prices.md): «от …» в карточках главной, строка «Цена» первой в условиях шести модулей «Что делаем», подписи
-// «Когда сайт готов», ответы «Сколько стоит?»; в «Работах» цен нет; нет «до …», диапазонов, скидок и акций. Раскладка на
+// «Когда сайт готов», ответ «Сколько это стоит?» в панели вопросов; в «Работах» цен нет; нет «до …», диапазонов, скидок и акций. Раскладка на
 // 320–1440 RU / EN: число с «₽» не рвётся на строки, условия модуля не налезают друг на друга, цена в карточке главной не задевает
 // стрелку, теги и рисунок
 console.log('\nцены');
@@ -2647,9 +2813,9 @@ console.log('\nцены');
   if (sv.length !== 7 || sv.some((m) => m.cls !== 'sv-pr' || m.dt !== 'Цена' || nb(m.dd) !== W[m.id] || nb(m.small) !== (smallW[m.id] || ''))) bad.push('услуги, «Цена»: ' + JSON.stringify(sv));
   const pf = await page.evaluate(() => [...document.querySelectorAll('#after .sv-pf')].map((e) => (e.firstChild.textContent + ' / ' + e.querySelector('small').textContent).replace(/\s+/g, ' ').trim()).join(' | '));
   if (pf !== 'Без доплат / всё входит в цену сайта | +30 000 ₽ / разово, к цене сайта | от 10 000 ₽ / в месяц') bad.push('«Когда сайт готов»: ' + pf);
-  for (const [f, q, want] of [['services.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, редизайн — от 150 000 ₽, приложение — от 150 000 ₽'], ['automations.html', 'Сколько стоит?', 'От 5 000 ₽ в месяц за сценарий.']]) {
+  for (const [f, q, want] of [['services.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, редизайн — от 150 000 ₽, приложение — от 150 000 ₽'], ['automations.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, редизайн — от 150 000 ₽, приложение — от 150 000 ₽']]) {
     await page.goto(BASE + f + '?intro=instant'); await page.waitForTimeout(300);
-    const a = await page.evaluate((q) => { const d = [...document.querySelectorAll('.sv-q')].find((x) => x.querySelector('summary').textContent.trim() === q); return d ? d.querySelector('p').textContent.replace(/\s+/g, ' ').trim() : ''; }, q);
+    const a = await page.evaluate((q) => { const d = [...document.querySelectorAll('[data-faq] .fq')].find((x) => x.querySelector('summary').textContent.trim() === q); return d ? d.querySelector('p').textContent.replace(/\s+/g, ' ').trim() : ''; }, q);
     if (!a.startsWith(want)) bad.push(`${f}: «${q}» — ${a.slice(0, 60)}`);
   }
   for (const f of ['index.html', 'services.html', 'automations.html', 'cases.html']) {

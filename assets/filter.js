@@ -29,8 +29,9 @@
   });
   var valid = btns.filter(function (b) { return !b.hidden; }).map(function (b) { return b.getAttribute('data-filter'); });
   function hash() { try { return decodeURIComponent(location.hash.slice(1)); } catch (e) { return ''; } }
-  // #case-<slug> — открытая панель разбора работы (assets/cases.js), а не фильтр: его не трогаем (TASK-cases-panel.md, 4.5)
-  function isCase(h) { return /^case-/.test(h); }
+  // #case-<slug> — открытая панель разбора работы (assets/cases.js), #faq — панель вопросов (assets/faq.js), а не фильтр: их не
+  // трогаем (TASK-cases-panel.md, 4.5; TASK-faq-panel.md, 3.2)
+  function isCase(h) { return /^case-/.test(h) || h === 'faq'; }
   function fromHash() {
     var h = hash();
     if (h.indexOf(pre) !== 0) return '';
