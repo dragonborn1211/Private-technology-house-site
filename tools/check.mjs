@@ -2885,7 +2885,7 @@ console.log('\n«Что делаем»: пояснения цен, чипы, ш�
   if (!/<a href="#sites"><i class="sv-dot"[^>]*><\/i>Сайты<\/a><a href="#redesign"><i class="sv-dot"[^>]*><\/i>Редизайн<\/a><a href="#apps">/.test(sv)) bad.push('«Редизайн» в сводке форматов');
   for (const f of ['services.html', 'automations.html']) {
     const h = readFileSync(path.join(root, f), 'utf8');
-    if (!h.includes('<span class="fk">Частые вопросы</span>') || /<span class="fa"[^>]*>→/.test(h) || !/<span class="fa" aria-hidden="true"><svg viewBox="0 0 24 24">/.test(h)) bad.push(`${f}: плашка вопросов`);
+    if (!h.includes('<span class="fk hx" data-grad="#8ED8F8,#7FA8FF,#B7A6F2,#9FE5D1">Частые вопросы</span>') || /<span class="fa"[^>]*>→/.test(h) || !/<span class="fa" aria-hidden="true"><svg viewBox="0 0 24 24">/.test(h)) bad.push(`${f}: плашка вопросов`);
   }
   {
     const pg = await browser.newPage({ viewport: { width: 1440, height: 900 } });
