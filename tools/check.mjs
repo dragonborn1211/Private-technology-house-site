@@ -780,8 +780,9 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
 {
   const bad = [], aid = idsOf('automations.html'), cid = idsOf('cases.html');
   const filtersC = new Set([...src['cases.html'].matchAll(/data-filter="([a-z]+)"/g)].map((m) => m[1]));
-  // TASK-clarity.md: на телефоне «Что входит» свёрнуто; с «Кто делает» (TASK-about-analytics.md) — +0.6 экрана на телефоне
-  for (const [w, h, lim] of [[1440, 900, 7.6], [390, 844, 11.6]]) {
+  // TASK-clarity.md: на телефоне «Что входит» свёрнуто; с «Кто делает» (TASK-about-analytics.md) — +0.6 экрана на телефоне;
+  // TASK-prices.md: строка «Цена» первой в условиях шести модулей (у приложений и серверов — с пояснением) — +0.35 на телефоне
+  for (const [w, h, lim] of [[1440, 900, 7.6], [390, 844, 12.0]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + 'services.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
@@ -828,7 +829,8 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
       if (m.btn !== 'Смотреть работы → #objects') bad.push(`кнопка первого экрана: ${m.btn}`);
       if (m.contact !== 'Контакт / Расскажите о задаче' || m.price !== 'Цены') bad.push(`контакт «${m.contact}», «Цены» «${m.price}»`);
     }
-    if (m.len > (w === 1440 ? 5.4 : 9.0)) bad.push(`главная ${w}: ${m.len.toFixed(2)} экрана (не больше ${w === 1440 ? 5.4 : 9.0})`);
+    // TASK-prices.md: цена в шести карточках «Что делаем» — +0.16 экрана на телефоне
+    if (m.len > (w === 1440 ? 5.4 : 9.2)) bad.push(`главная ${w}: ${m.len.toFixed(2)} экрана (не больше ${w === 1440 ? 5.4 : 9.2})`);
     // снимки: главная целиком и «Кейсы»
     await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
     await page.evaluate(() => document.querySelectorAll('img[loading="lazy"]').forEach((i) => { i.loading = 'eager'; })); await page.waitForTimeout(300);
@@ -947,7 +949,10 @@ console.log('\nкейсы и готовые автоматизации');
   await page.click('[data-filter=""]'); await page.clock.runFor(800);
   const faq = await page.evaluate(() => { const nb = (t) => t.replace(/\s+/g, ' ').trim(); const ld = [...document.querySelectorAll('script[type="application/ld+json"]')].map((x) => JSON.parse(x.textContent)); const f = ld.find((x) => x['@type'] === 'FAQPage'); return { types: ld.map((x) => x['@type']).join(','), ok: !!f && f.mainEntity.map((q) => nb(q.name) + '|' + nb(q.acceptedAnswer.text)).join('#') === [...document.querySelectorAll('.sv-q')].map((d) => nb(d.querySelector('summary').textContent) + '|' + nb(d.querySelector('p').textContent)).join('#'), n: f ? f.mainEntity.length : 0 }; });
   if (faq.types !== 'BreadcrumbList,FAQPage' || !faq.ok || faq.n !== 5) bad.push(`каталог, JSON-LD: ${JSON.stringify(faq)}`);
-  if (/\d+\s*(дн|час|недел)|₽/.test(await page.evaluate(() => document.body.innerText))) bad.push('каталог: сроки или цены в тексте');
+  // сроков нет; цена — только «от 5 000 ₽» (TASK-prices.md: шаг «Работает» и вопрос «Сколько стоит?»)
+  const atext = await page.evaluate(() => document.body.innerText);
+  if (/\d+\s*(дн|час|недел)/.test(atext)) bad.push('каталог: сроки в тексте');
+  if (/₽/.test(atext.replace(/[Оо]т\s5\s000\s₽/g, ''))) bad.push('каталог: цены, кроме «от 5 000 ₽»');
   page.errs.forEach((e) => bad.push('automations.html: ' + e));
   await page.close();
   // якоря с главной и услуг: карточка существует; переход — карточка собрана и не под липкой шапкой
@@ -1642,7 +1647,8 @@ console.log('\nревью, 5–9: группы на главной, NDA, сле�
   // база — после TASK-polish-2.md (карточка основателя и строка «Или:» в контакте: +76 px на телефоне, +60 на десктопе);
   // «Работы» — после TASK-cases-panel.md (седьмая карточка и «Смотреть работу →» / «Как устроено →» под каждой); «Работы» и
   // «Готовые решения» — после TASK-seo-case.md (восьмая работа и восьмой шаблон: на телефоне ещё карточка, на 1440 у каталога ряд)
-  const LEN = { 'index.html': [5.25, 8.8], 'services.html': [7.4, 11.55], 'process.html': [3.3, 7.15], 'cases.html': [4.7, 7.95], 'automations.html': [5.35, 9.35] };
+  // главная и «Что делаем» — после TASK-prices.md (цены в карточках и строка «Цена» в условиях модулей)
+  const LEN = { 'index.html': [5.3, 8.95], 'services.html': [7.4, 11.9], 'process.html': [3.3, 7.15], 'cases.html': [4.7, 7.95], 'automations.html': [5.35, 9.35] };
   const quick = await chromium.launch();
   for (const [w, h] of [[1440, 900], [390, 844]]) {
     const page = await quick.newPage({ viewport: { width: w, height: h } });
@@ -2556,6 +2562,64 @@ console.log('\nпанель разбора работы');
   }
   if (bad.length) fail('панель разбора работы: ' + bad.join('; '));
   else console.log('  ✓ восемь карточек открывают свои статьи (адрес, счётчик, фокус, заголовок вкладки), ← → и клавиши листают видимые при фильтре, края и подвал последней; Esc, ×, подложка и «Назад» закрывают, фокус на карточке, хеш фильтра на месте; под панелью схемы сетки не рисуют, схема статьи рисует, колесо крутит тело; телефон — шторка и свайп; EN без кириллицы; прямая ссылка — после сборки секции; без JS — статьи под сеткой; case_open — только после «Принять»');
+}
+// Цены (TASK-prices.md): «от …» в карточках главной, строка «Цена» первой в условиях шести модулей «Что делаем», подписи
+// «Когда сайт готов», ответы «Сколько стоит?»; в «Работах» цен нет; нет «до …», диапазонов, скидок и акций. Раскладка на
+// 320–1440 RU / EN: число с «₽» не рвётся на строки, условия модуля не налезают друг на друга, цена в карточке главной не задевает
+// стрелку, теги и рисунок
+console.log('\nцены');
+{
+  const bad = [], nb = (t) => t.replace(/\s+/g, ' ').trim();
+  const W = { sites: 'от 120 000 ₽', apps: 'от 150 000 ₽', servers: 'от 5 000 ₽ за задачу', care: 'от 10 000 ₽ в месяц', automation: 'от 5 000 ₽ в месяц', ai: 'от 5 000 ₽ в месяц' };
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(BASE + 'index.html?intro=instant'); await page.waitForTimeout(400);
+  const home = await page.evaluate(() => [...document.querySelectorAll('a.svc')].map((a) => [a.getAttribute('href').split('#')[1], (a.querySelector('.svc-pr') || {}).textContent || '']));
+  if (home.length !== 6 || home.some(([id, t]) => nb(t) !== W[id])) bad.push('главная: ' + JSON.stringify(home));
+  await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(400);
+  const sv = await page.evaluate(() => [...document.querySelectorAll('article.sv-mod')].map((m) => { const f = m.querySelector('.sv-meta > div'); return { id: m.id, cls: f.className, dt: f.querySelector('dt').textContent, dd: f.querySelector('dd').firstChild.textContent, small: (f.querySelector('dd small') || {}).textContent || '' }; }));
+  const smallW = { apps: 'вторая платформа +50 000 ₽, десктоп +100 000 ₽', servers: 'n8n или LibreChat под ключ — от 15 000 ₽' };
+  if (sv.length !== 6 || sv.some((m) => m.cls !== 'sv-pr' || m.dt !== 'Цена' || nb(m.dd) !== W[m.id] || nb(m.small) !== (smallW[m.id] || ''))) bad.push('услуги, «Цена»: ' + JSON.stringify(sv));
+  const pf = await page.evaluate(() => [...document.querySelectorAll('#after .sv-pf')].map((e) => e.textContent.replace(/\s+/g, ' ').trim()).join(' | '));
+  if (pf !== 'Без доплат | +30 000 ₽ разово | от 10 000 ₽ в месяц') bad.push('«Когда сайт готов»: ' + pf);
+  for (const [f, q, want] of [['services.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, приложение — от 150 000 ₽'], ['automations.html', 'Сколько стоит?', 'От 5 000 ₽ в месяц за сценарий.']]) {
+    await page.goto(BASE + f + '?intro=instant'); await page.waitForTimeout(300);
+    const a = await page.evaluate((q) => { const d = [...document.querySelectorAll('.sv-q')].find((x) => x.querySelector('summary').textContent.trim() === q); return d ? d.querySelector('p').textContent.replace(/\s+/g, ' ').trim() : ''; }, q);
+    if (!a.startsWith(want)) bad.push(`${f}: «${q}» — ${a.slice(0, 60)}`);
+  }
+  for (const f of ['index.html', 'services.html', 'automations.html', 'cases.html']) {
+    const t = nb(src[f].replace(/<template[\s\S]*?<\/template>/g, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' '));
+    const m = t.match(/(^|[^а-яё])до \d[\d ]*₽|\d[\d ]*\s?[–-]\s?\d[\d ]*₽|(^|[^а-яё])(скидк|акци[яиюей])/i);
+    if (m) bad.push(`${f}: «${m[0].trim()}»`);
+    if (f === 'cases.html' && /₽/.test(t)) bad.push('«Работы»: цена в тексте');
+  }
+  await page.close();
+  for (const w of [320, 390, 768, 1440]) for (const lang of ['', '&lang=en']) for (const f of ['index.html', 'services.html', 'automations.html']) {
+    const pg = await browser.newPage({ viewport: { width: w, height: 900 } });
+    await pg.goto(BASE + f + '?intro=instant' + lang); await pg.evaluate(() => document.fonts.ready); await pg.waitForTimeout(300);
+    const r = await pg.evaluate(() => {
+      const out = [], ov = (a, c) => Math.min(a.right, c.right) - Math.max(a.left, c.left) > 1 && Math.min(a.bottom, c.bottom) - Math.max(a.top, c.top) > 1;
+      const tw = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let t;
+      while ((t = tw.nextNode())) {
+        if (!/₽/.test(t.data) || !t.parentElement.getClientRects().length || t.parentElement.closest('template,script')) continue;
+        for (const m of t.data.matchAll(/(?:от|from|От|From|\+)[\s\u00a0]*\d[\d\s\u00a0,]*₽/g)) {
+          const rg = document.createRange(); rg.setStart(t, m.index); rg.setEnd(t, m.index + m[0].length);
+          if (new Set([...rg.getClientRects()].filter((q) => q.width > 0).map((q) => Math.round(q.top))).size > 1) out.push('рвётся «' + m[0].replace(/\s/g, ' ') + '»');
+          if (rg.getBoundingClientRect().right > innerWidth + 1 && !t.parentElement.closest('.sv-paths')) out.push('за краем «' + m[0].replace(/\s/g, ' ') + '»');
+        }
+      }
+      for (const dl of document.querySelectorAll('.sv-meta')) { const ds = [...dl.children].map((d) => d.getBoundingClientRect()); for (let i = 0; i < ds.length; i++) for (let j = i + 1; j < ds.length; j++) if (ov(ds[i], ds[j])) out.push('условия налезают: ' + dl.closest('[id]').id); }
+      for (const c of document.querySelectorAll('a.svc')) {
+        const pr = c.querySelector('.svc-pr'), rr = document.createRange(); rr.selectNodeContents(pr); const P = rr.getBoundingClientRect(), C = c.getBoundingClientRect();
+        for (const o of c.querySelectorAll('.svc-go, .glyph, .svc-d, li')) if (o.getClientRects().length && ov(P, o.getBoundingClientRect())) out.push('цена задевает ' + (o.getAttribute('class') || o.tagName) + ' в ' + c.getAttribute('href'));
+        if (P.right > C.right - 8 || P.bottom > C.bottom - 8) out.push('цена у края карточки ' + c.getAttribute('href'));
+      }
+      return out;
+    });
+    r.forEach((x) => bad.push(`${f}${lang ? ' EN' : ''} ${w}: ${x}`));
+    await pg.close();
+  }
+  if (bad.length) fail('цены: ' + [...new Set(bad)].join('; '));
+  else console.log('  ✓ цены «от …» на главной (шесть карточек), «Цена» первой в условиях шести модулей (пояснения — у приложений и серверов), «Когда сайт готов», «Сколько стоит?» на услугах и в каталоге; в «Работах» цен нет, «до …», диапазонов и скидок нет; на 320–1440 RU / EN число не рвётся, условия не налезают, цена не задевает стрелку, теги и рисунок');
 }
 await browser.close();
 // сервер — до самого конца: им пользуются и последние блоки (режимы сборки, схемы, панель разбора работы)
