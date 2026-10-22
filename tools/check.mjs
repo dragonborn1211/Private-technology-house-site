@@ -797,7 +797,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
     if (r.cost) bad.push(`услуги: «Стоимость» — ${r.cost}`);
     if (r.cases !== 'sites,automation,ai' || r.cases.split(',').some((c) => !filtersC.has(c))) bad.push(`услуги: «Кейсы: …» → ${r.cases}`);
     const tp = r.tpl.split(',').map((x) => x.split('#')[1]);
-    if (tp.join(',') !== 'site-leads,b24-report,price-monitor,voice-task,reviews,avito-bot' || tp.some((x) => !aid.has(x)) || r.all !== 2) bad.push(`услуги: «Готовые решения» ${r.tpl}, «Все готовые решения» ${r.all}`);
+    if (tp.join(',') !== 'site-leads,b24-report,seo-report,price-monitor,voice-task,reviews,avito-bot' || tp.some((x) => !aid.has(x)) || r.all !== 2) bad.push(`услуги: «Готовые решения» ${r.tpl}, «Все готовые решения» ${r.all}`);
     if (r.rows !== 2) bad.push('услуги: заголовки групп #projects / #subscription — не тонкие строки с отступом 88 px');
     if (w === 1440) console.log(`  · услуги: ${r.len.toFixed(2)} экрана на 1440`); else console.log(`  · услуги: ${r.len.toFixed(2)} экрана на 390`);
     await ctx.close();
@@ -1248,7 +1248,8 @@ console.log('\nясность, часть A: заголовки групп ус�
       after: document.getElementById('after').textContent.replace(/\s+/g, ' '),
       subs: [...document.querySelectorAll('#sub-how .sv-path')].map((p) => [...p.querySelectorAll('.list li')].map((li) => (li.querySelector('b') || {}).textContent || '-').join('/')),
       proc: document.querySelector('#process h2').textContent.trim() }));
-    if (r.gh.join(',') !== 'Разово:72,Ежемесячно:72') bad.push(`услуги: заголовки групп ${r.gh.join(', ')}`);
+    // TASK-one-font.md: «Разово» / «Ежемесячно» — Manrope 300 clamp(34px, 3.4vw, 48px), на 1440 — 48 (был курсив 44–72)
+    if (r.gh.join(',') !== 'Разово:48,Ежемесячно:48') bad.push(`услуги: заголовки групп ${r.gh.join(', ')}`);
     if (r.oldRow.length) bad.push(`услуги: остались мелкие заголовки групп ${r.oldRow.join(', ')}`);
     if (/Хостинг в\s+России и\s+SSL|Техническая часть 152/.test(r.after)) bad.push('услуги: «Вариант 03» пересказывает сопровождение');
     if (r.subs.join(' | ') !== 'Сайт/Сценарий/Агент | Сайт/Сценарий/Агент | Сайт/Сценарий/Данные') bad.push(`услуги: «Как устроена подписка» ${r.subs.join(' | ')}`);
@@ -1609,8 +1610,9 @@ console.log('\nревью, 4: тексты');
   if (!src['automations.html'].includes(`<meta name="description" content="${L}">`) || !strip(src['automations.html']).includes(`<span>${L}</span>`) || /Запускаем по/.test(src['automations.html'])) bad.push('лид и описание каталога');
   const sv = strip(src['services.html']);
   const meta = (id) => { const m = new RegExp(`<article[^>]*id="${id}"[\\s\\S]*?<dl class="sv-meta">([\\s\\S]*?)</dl>`).exec(sv); return m ? m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : ''; };
-  if (meta('apps') !== 'Формат разово') bad.push(`«Приложения»: ${meta('apps')}`);
-  if (meta('care') !== 'Формат ежемесячно') bad.push(`«Сопровождение»: ${meta('care')}`);
+  // TASK-prices.md: первая строка условий — «Цена» (у приложений с пояснением)
+  if (meta('apps') !== 'Цена от 150 000 ₽ вторая платформа +50 000 ₽, десктоп +100 000 ₽ Формат разово') bad.push(`«Приложения»: ${meta('apps')}`);
+  if (meta('care') !== 'Цена от 10 000 ₽ в месяц Формат ежемесячно') bad.push(`«Сопровождение»: ${meta('care')}`);
   const chips = (/<article[^>]*id="automation"[\s\S]*?<ul class="sv-chips"[^>]*>([\s\S]*?)<\/ul>/.exec(sv) || [])[1] || '';
   if (chips.replace(/<\/li><li>/g, ' · ').replace(/<\/?li>/g, '') !== 'Битрикс24 · Telegram · Wildberries · Ozon · Авито · Таблицы') bad.push(`теги автоматизации: ${chips}`);
   if (!/<h3 class="sv-sh">Сборка<\/h3><p class="sv-sd">[^<]*n8n/.test(strip(src['process.html']))) bad.push('инструменты на «Как работаем», шаг «Сборка»');
@@ -1906,7 +1908,8 @@ console.log('\nясность, B7 / B9: цвет на «Что делаем», �
     const r = await page.evaluate(() => {
       const rgb = (hex) => `rgb(${parseInt(hex.slice(1, 3), 16)}, ${parseInt(hex.slice(3, 5), 16)}, ${parseInt(hex.slice(5, 7), 16)})`;
       const c = (el) => getComputedStyle(el).getPropertyValue('--c').trim();
-      const mods = [...document.querySelectorAll('.sv-mod')].filter((m) => getComputedStyle(m.querySelector('.sv-meta dd')).color !== rgb(c(m)) || getComputedStyle(m.querySelector('.sv-info a.sv-go')).color !== rgb(c(m))).map((m) => m.id);
+      // цена (.sv-pr, TASK-prices.md) — светлая, как в макете; цветом направления — остальные условия
+      const mods = [...document.querySelectorAll('.sv-mod')].filter((m) => getComputedStyle(m.querySelector('.sv-meta > div:not(.sv-pr) dd')).color !== rgb(c(m)) || getComputedStyle(m.querySelector('.sv-info a.sv-go')).color !== rgb(c(m))).map((m) => m.id);
       const lc = [...document.querySelectorAll('.sv-head .lead .lc')].map((b) => b.textContent + ':' + getComputedStyle(b).color);
       const pf = [...document.querySelectorAll('#after .sv-pf, #sub-how .sv-pf')].map((p) => getComputedStyle(p).color === rgb(c(p.closest('.sv-path'))) ? 1 : 0).join('');
       return { mods, lc, pf };
