@@ -619,15 +619,17 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .sv-chips li{padding:7px 12px;border-radius:999px;border:1px solid color-mix(in srgb,var(--c) 24%,rgba(188,211,222,.14));font-size:12.5px;font-weight:500;line-height:1;color:#BCD3DE;transition:border-color .9s ease,background-color .9s ease}
 /* условия модуля (владелец 2026-10-22: моно-капс «ЦЕНА / СРОК / ФОРМАТ» мелкий и не нравится): подписи — Manrope 15 px
    обычным регистром; «Срок» / «Формат» — в одной строке с ценой, справа (подписи на одной линии, сверху) */
-.sv-meta{display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px 40px;margin:auto 0 0;padding-top:20px;border-top:1px solid rgba(188,211,222,.1)}
+.sv-meta{display:grid;grid-template-columns:var(--pr-w,260px) minmax(0,1fr);align-items:start;gap:16px 40px;margin:auto 0 0;padding-top:20px;border-top:1px solid rgba(188,211,222,.1)}
 .sv-meta div{display:flex;flex-direction:column;gap:6px}
 .sv-meta dt{font:400 15px/1.3 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:0;color:#8FAEC0}
 .sv-meta dd{margin:0;font-size:17px;line-height:1.3;font-weight:500;color:#EEF3F6}
+@media (min-width:1101px) and (max-width:1240px){.sv-meta .sv-pr dd small{width:auto;max-width:none;white-space:normal}}
+@media (max-width:760px){.sv-meta{grid-template-columns:minmax(0,1fr)}.sv-meta .sv-pr dd small{width:auto;max-width:none;white-space:normal}}
 /* строка «Цена» в условиях модуля (TASK-redesign-prices.md): крупно, на всю ширину — «Срок» и «Формат» ниже; пояснение
    (приложения, серверы) — кеглем описания карточки .sv-p */
-.sv-meta .sv-pr{flex:0 1 auto;max-width:100%}
+.sv-meta .sv-pr{min-width:0}
 .sv-meta .sv-pr dd{font:400 26px/1.15 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:-.02em;color:#EEF3F6}
-.sv-meta .sv-pr dd small{display:block;max-width:240px;margin-top:8px;font:400 15.5px/1.6 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:0;color:#9DB0BC}
+.sv-meta .sv-pr dd small{display:block;width:max-content;max-width:calc(100vw - 80px);white-space:nowrap;margin-top:8px;font:400 15.5px/1.6 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:0;color:#9DB0BC}
 .pt a.sv-go{display:inline-flex;align-self:flex-start;align-items:center;gap:8px;min-height:44px;margin:-8px 0 -10px;font-size:15px;font-weight:600;color:#BCD3DE;transition:color .3s ease}
 .pt a.sv-go:hover{color:var(--c)}
 .sv-go svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s cubic-bezier(.3,.7,.2,1)}
@@ -655,6 +657,8 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .sv-path{position:relative;display:flex;flex-direction:column;gap:16px;padding:30px 28px 28px;border-radius:26px}
 .sv-path.is-rec{border-color:rgba(142,216,248,.5);box-shadow:inset 0 1px 0 rgba(246,248,250,.06),0 30px 60px -30px rgba(0,0,0,.55),0 0 80px -40px #8ED8F8}
 .sv-pn{margin:0;display:flex;align-items:center;justify-content:space-between;gap:12px}
+/* «Вариант 01» / «Этап 01» (владелец 2026-10-22): не моно-капс 11 px, а обычный шрифт сайта */
+.sv-pn .mono{font:500 15px/1.3 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:0;text-transform:none;color:#8FAEC0}
 .sv-badge{padding:5px 10px;border-radius:999px;background:rgba(142,216,248,.1);border:1px solid rgba(142,216,248,.45);font:500 11px/1 'JetBrains Mono','JetBrains fb',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8ED8F8;white-space:nowrap;transition:opacity .9s ease,border-color .9s ease,background-color .9s ease}
 .sv-ph{margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em;color:#EEF3F6}
 .sv-pd{margin:0;font-size:15px;line-height:1.55;color:#9DB0BC}
@@ -992,6 +996,9 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 /* «Как работаем» (process.html): шапка направления — название крупно слева, формат и рисунок справа; внизу «Нужно от вас»
    и ссылки */
 .pr-head{align-items:center;margin-bottom:28px}
+/* линии над заголовками разделов и шагами — чуть цветом услуги (владелец 2026-10-22: «но не сильно») */
+.row-h.ln[style*="--c"]{border-top-color:color-mix(in srgb,var(--c) 38%,rgba(188,211,222,.16))}
+.sv-step.ln[style*="--c"]{border-top-color:color-mix(in srgb,var(--c) 24%,rgba(188,211,222,.16))}
 .pr-head .sv-t{order:-1;margin:0}
 .pr-head .sv-lab{gap:12px}
 .pr-head .sv-lab .mono{color:var(--c)}

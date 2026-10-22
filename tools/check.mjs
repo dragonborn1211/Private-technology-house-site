@@ -1629,7 +1629,8 @@ console.log('\nревью, 4: тексты');
   if (meta('apps') !== 'Цена от 150 000 ₽ вторая платформа +50 000 ₽, десктоп +100 000 ₽ Формат разово') bad.push(`«Приложения»: ${meta('apps')}`);
   if (meta('care') !== 'Цена от 10 000 ₽ в месяц Формат ежемесячно') bad.push(`«Сопровождение»: ${meta('care')}`);
   const chips = (/<article[^>]*id="automation"[\s\S]*?<ul class="sv-chips"[^>]*>([\s\S]*?)<\/ul>/.exec(sv) || [])[1] || '';
-  if (chips.replace(/<\/li><li>/g, ' · ').replace(/<\/?li>/g, '') !== 'Битрикс24 · Telegram · Wildberries · Ozon · Авито · Таблицы') bad.push(`теги автоматизации: ${chips}`);
+  // владелец 2026-10-22: ещё сервисы — меньше пустоты в левой колонке модуля
+  if (chips.replace(/<\/li><li>/g, ' · ').replace(/<\/?li>/g, '') !== 'Битрикс24 · amoCRM · Telegram · WhatsApp · MAX · Wildberries · Ozon · Авито · Яндекс Маркет · МойСклад · СДЭК · ЮKassa · YCLIENTS · Тильда · WordPress · Яндекс Метрика · Таблицы · Яндекс Диск · Почта') bad.push(`теги автоматизации: ${chips}`);
   if (!/<h3 class="sv-sh">Сборка<\/h3><p class="sv-sd">[^<]*n8n/.test(strip(src['process.html']))) bad.push('инструменты на «Как работаем», шаг «Сборка»');
   for (const f of ['index.html', 'cases.html']) if (!strip(src[f]).includes('<span class="obj-h">Ваш сайт — следующий</span>') || !strip(src[f]).includes('<span class="obj-d">Соберём такой же под вашу компанию →</span>') || /Следующий объект/.test(src[f])) bad.push(`${f}: демо-карточка`);
   if (!/<span class="cx-w">Защита<\/span><\/span><span class="usp-n" hidden>Защита данных<\/span>/.test(src['index.html'])) bad.push('вкладка 04 «Кодекса»');
@@ -2059,13 +2060,14 @@ console.log('\nстраница услуг без повторов');
     const page = await ctx.newPage();
     await page.goto('file://' + path.join(root, 'services.html')); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
     const r = await page.evaluate(() => {
-      const chips = ['sites', 'apps', 'servers', 'care', 'automation', 'ai'].map((id) => id + ':' + (document.querySelector(`#${id} .sv-chips`) ? 1 : 0)).join(' ');
+      const chips = ['sites', 'redesign', 'apps', 'servers', 'care', 'automation', 'ai'].map((id) => id + ':' + (document.querySelector(`#${id} .sv-chips`) ? 1 : 0)).join(' ');
       const links = [...document.querySelectorAll('.sv-fmt .sv-fl a')].map((a) => ({ h: a.getAttribute('href'), ok: !!document.getElementById(a.getAttribute('href').slice(1)), ht: Math.round(a.getBoundingClientRect().height) }));
       const vis = document.body.innerText;
       return { chips, jump: !!document.querySelector('.sv-jump'), links, fw: [...document.querySelectorAll('.sv-fmt a.sv-fw')].map((a) => a.getAttribute('href')).join(','),
         terms: /от 2 дней|от двух дней/.test(vis), code: (vis.match(/код и\s+доступ/gi) || []).length };
     });
-    if (r.chips !== 'sites:1 apps:0 servers:0 care:0 automation:1 ai:0') bad.push(`${w}: чипы ${r.chips}`);
+    // чипы: «Сайты», «Редизайн» (TASK-redesign-prices.md), «Автоматизация» и «AI» (с чем работают — владелец 2026-10-22)
+    if (r.chips !== 'sites:1 redesign:1 apps:0 servers:0 care:0 automation:1 ai:1') bad.push(`${w}: чипы ${r.chips}`);
     if (r.jump) bad.push(`${w}: ряд переходов .sv-jump на странице`);
     if (r.links.map((l) => l.h).join(',') !== '#sites,#apps,#servers,#care,#automation,#ai' || r.links.some((l) => !l.ok || l.ht < 40)) bad.push(`${w}: ссылки карточки форматов ${r.links.map((l) => `${l.h}${l.ok ? '' : '?'}:${l.ht}`).join(' ')}`);
     if (r.fw !== '#projects,#subscription') bad.push(`${w}: слова форматов ведут на ${r.fw}`);
@@ -2633,19 +2635,19 @@ function woff2Cmap(file) {
 console.log('\nцены');
 {
   const bad = [], nb = (t) => t.replace(/\s+/g, ' ').trim();
-  const W = { sites: 'от 120 000 ₽', redesign: 'от 65 000 ₽', apps: 'от 150 000 ₽', servers: 'от 5 000 ₽ за задачу', care: 'от 10 000 ₽ в месяц', automation: 'от 5 000 ₽ в месяц', ai: 'от 5 000 ₽ в месяц' };
+  const W = { sites: 'от 120 000 ₽', redesign: 'от 150 000 ₽', apps: 'от 150 000 ₽', servers: 'от 5 000 ₽ за задачу', care: 'от 10 000 ₽ в месяц', automation: 'от 5 000 ₽ в месяц', ai: 'от 5 000 ₽ в месяц' };
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(BASE + 'index.html?intro=instant'); await page.waitForTimeout(400);
   const home = await page.evaluate(() => [...document.querySelectorAll('a.svc')].map((a) => [a.getAttribute('href').split('#')[1], (a.querySelector('.svc-pr') || {}).textContent || '']));
   // TASK-redesign-prices.md: у «Сайтов-презентаций» ещё «· редизайн от 65 000 ₽»
-  if (home.length !== 6 || home.some(([id, t]) => nb(t) !== W[id] + (id === 'sites' ? ' · редизайн от 65 000 ₽' : ''))) bad.push('главная: ' + JSON.stringify(home));
+  if (home.length !== 6 || home.some(([id, t]) => nb(t) !== W[id] + (id === 'sites' ? ' · редизайн от 150 000 ₽' : ''))) bad.push('главная: ' + JSON.stringify(home));
   await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(400);
   const sv = await page.evaluate(() => [...document.querySelectorAll('article.sv-mod')].map((m) => { const f = m.querySelector('.sv-meta > div'); return { id: m.id, cls: f.className, dt: f.querySelector('dt').textContent, dd: f.querySelector('dd').firstChild.textContent, small: (f.querySelector('dd small') || {}).textContent || '' }; }));
   const smallW = { apps: 'вторая платформа +50 000 ₽, десктоп +100 000 ₽', servers: 'n8n или LibreChat под ключ — от 15 000 ₽' };
   if (sv.length !== 7 || sv.some((m) => m.cls !== 'sv-pr' || m.dt !== 'Цена' || nb(m.dd) !== W[m.id] || nb(m.small) !== (smallW[m.id] || ''))) bad.push('услуги, «Цена»: ' + JSON.stringify(sv));
   const pf = await page.evaluate(() => [...document.querySelectorAll('#after .sv-pf')].map((e) => (e.firstChild.textContent + ' / ' + e.querySelector('small').textContent).replace(/\s+/g, ' ').trim()).join(' | '));
   if (pf !== 'Без доплат / всё входит в цену сайта | +30 000 ₽ / разово, к цене сайта | от 10 000 ₽ / в месяц') bad.push('«Когда сайт готов»: ' + pf);
-  for (const [f, q, want] of [['services.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, редизайн — от 65 000 ₽, приложение — от 150 000 ₽'], ['automations.html', 'Сколько стоит?', 'От 5 000 ₽ в месяц за сценарий.']]) {
+  for (const [f, q, want] of [['services.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, редизайн — от 150 000 ₽, приложение — от 150 000 ₽'], ['automations.html', 'Сколько стоит?', 'От 5 000 ₽ в месяц за сценарий.']]) {
     await page.goto(BASE + f + '?intro=instant'); await page.waitForTimeout(300);
     const a = await page.evaluate((q) => { const d = [...document.querySelectorAll('.sv-q')].find((x) => x.querySelector('summary').textContent.trim() === q); return d ? d.querySelector('p').textContent.replace(/\s+/g, ' ').trim() : ''; }, q);
     if (!a.startsWith(want)) bad.push(`${f}: «${q}» — ${a.slice(0, 60)}`);
