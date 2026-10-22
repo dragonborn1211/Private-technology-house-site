@@ -61,6 +61,7 @@ import { spawn } from 'node:child_process';
 import { readFileSync, readdirSync, mkdirSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { brotliDecompressSync } from 'node:zlib';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
@@ -781,8 +782,9 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
   const bad = [], aid = idsOf('automations.html'), cid = idsOf('cases.html');
   const filtersC = new Set([...src['cases.html'].matchAll(/data-filter="([a-z]+)"/g)].map((m) => m[1]));
   // TASK-clarity.md: на телефоне «Что входит» свёрнуто; с «Кто делает» (TASK-about-analytics.md) — +0.6 экрана на телефоне;
-  // TASK-prices.md: строка «Цена» первой в условиях шести модулей (у приложений и серверов — с пояснением) — +0.35 на телефоне
-  for (const [w, h, lim] of [[1440, 900, 7.6], [390, 844, 12.0]]) {
+  // TASK-prices.md: строка «Цена» первой в условиях шести модулей (у приложений и серверов — с пояснением) — +0.35 на телефоне;
+  // TASK-redesign-prices.md: седьмое направление «Редизайн сайта» и крупная цена — +0.7 / +1.3
+  for (const [w, h, lim] of [[1440, 900, 8.3], [390, 844, 13.4]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + 'services.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
@@ -1165,7 +1167,7 @@ console.log('\nструктура: услуги, «Как работаем», с
       proc: [...document.querySelectorAll('[data-sec="process"] a')].filter((a) => a.getAttribute('href') === 'process').length,
       steps: document.querySelectorAll('[data-sec="process"] .sv-step').length, care: !!document.querySelector('#after a[href="#care"]'),
       sm: ['after', 'sub-how', 'process'].map((i) => getComputedStyle(document.getElementById(i).querySelector('[style*="scroll-margin-top"]') || document.getElementById(i)).scrollMarginTop).join(',') }));
-    if (r.order !== 'hero,process,sites,apps,servers,after,care,automation,ai,subs,faq,contact,foot') bad.push(`услуги: порядок ${r.order}`);
+    if (r.order !== 'hero,process,sites,redesign,apps,servers,after,care,automation,ai,subs,faq,contact,foot') bad.push(`услуги: порядок ${r.order}`);
     if (r.after !== 3 || r.subs !== 3 || r.h2.includes('После запуска') || r.q !== 5 || r.quit || r.proc !== 1 || r.steps !== 4 || !r.care || r.sm !== '88px,88px,88px') bad.push(`услуги: ${JSON.stringify({ after: r.after, subs: r.subs, q: r.q, quit: r.quit, proc: r.proc, steps: r.steps, care: r.care, sm: r.sm })}`);
     await page.close();
   }
@@ -1561,6 +1563,19 @@ console.log('\nревью, 2–3: свои шрифты, иконка сайта
     if (og('title') !== t || og('description') !== d || og('url') !== c || og('image') !== 'https://privatechouse.ru/assets/og.jpg' || og('image:width') !== '1200' || og('image:height') !== '630' || og('type') !== 'website' || og('locale') !== 'ru_RU' || !/<meta name="twitter:card" content="summary_large_image">/.test(head)) bad.push(`${f}: og:* не совпадают с title / description / canonical`);
   }
   if (/Cormorant/i.test(readFileSync(new URL('../assets/site.css', import.meta.url), 'utf8'))) bad.push('site.css: Cormorant ещё упомянут');
+  // TASK-redesign-prices.md, 1: unicode-range не обещает символов, которых нет в файле (так «₽» шёл системным шрифтом: latin
+  // fontsource его не содержит, теперь его вставляет tools/subset-fonts.py из latin-ext); «₽» — во всех latin-файлах
+  {
+    const css = readFileSync(path.join(root, 'assets', 'site.css'), 'utf8'); let faces = 0;
+    for (const m of css.matchAll(/@font-face\{([^}]*)\}/g)) {
+      const f = /url\(fonts\/([^)]+)\)/.exec(m[1]); if (!f) continue; faces++;
+      const cm = woff2Cmap(path.join(root, 'assets', 'fonts', f[1])), miss = [];
+      for (const r of /unicode-range:([^;}]+)/.exec(m[1])[1].split(',')) { const [a, z] = r.trim().replace('U+', '').split('-').map((x) => parseInt(x, 16)); for (let c = a; c <= (z || a); c++) if (!cm.has(c)) miss.push(c.toString(16).toUpperCase()); }
+      if (miss.length) bad.push(`${f[1]}: в unicode-range, но нет в файле — U+${miss.slice(0, 8).join(', U+')}`);
+      if (/-latin-/.test(f[1]) && !cm.has(0x20bd)) bad.push(`${f[1]}: нет «₽»`);
+    }
+    if (faces !== 12) bad.push(`@font-face со своими файлами: ${faces}, ждали 12`);
+  }
   for (const u of ['favicon.svg', 'favicon.ico', 'apple-touch-icon.png', 'assets/og.jpg', 'assets/icons/icon-192.png', 'assets/icons/icon-512.png']) {
     const r = await fetch(BASE + u); if (r.status !== 200) bad.push(`/${u}: ${r.status}`);
   }
@@ -1649,8 +1664,9 @@ console.log('\nревью, 5–9: группы на главной, NDA, сле�
   // база — после TASK-polish-2.md (карточка основателя и строка «Или:» в контакте: +76 px на телефоне, +60 на десктопе);
   // «Работы» — после TASK-cases-panel.md (седьмая карточка и «Смотреть работу →» / «Как устроено →» под каждой); «Работы» и
   // «Готовые решения» — после TASK-seo-case.md (восьмая работа и восьмой шаблон: на телефоне ещё карточка, на 1440 у каталога ряд)
-  // главная и «Что делаем» — после TASK-prices.md (цены в карточках и строка «Цена» в условиях модулей)
-  const LEN = { 'index.html': [5.3, 8.95], 'services.html': [7.4, 11.9], 'process.html': [3.3, 7.15], 'cases.html': [4.7, 7.95], 'automations.html': [5.35, 9.35] };
+  // главная и «Что делаем» — после TASK-prices.md (цены в карточках и строка «Цена» в условиях модулей); «Что делаем» — после
+  // TASK-redesign-prices.md (блок «Редизайн сайта», цена 26 px)
+  const LEN = { 'index.html': [5.3, 9.0], 'services.html': [8.1, 13.2], 'process.html': [3.3, 7.15], 'cases.html': [4.7, 7.95], 'automations.html': [5.35, 9.35] };
   const quick = await chromium.launch();
   for (const [w, h] of [[1440, 900], [390, 844]]) {
     const page = await quick.newPage({ viewport: { width: w, height: h } });
@@ -2566,6 +2582,50 @@ console.log('\nпанель разбора работы');
   if (bad.length) fail('панель разбора работы: ' + bad.join('; '));
   else console.log('  ✓ восемь карточек открывают свои статьи (адрес, счётчик, фокус, заголовок вкладки), ← → и клавиши листают видимые при фильтре, края и подвал последней; Esc, ×, подложка и «Назад» закрывают, фокус на карточке, хеш фильтра на месте; под панелью схемы сетки не рисуют, схема статьи рисует, колесо крутит тело; телефон — шторка и свайп; EN без кириллицы; прямая ссылка — после сборки секции; без JS — статьи под сеткой; case_open — только после «Принять»');
 }
+function woff2Cmap(file) {
+  const buf = readFileSync(file);
+  if (buf.toString('latin1', 0, 4) !== 'wOF2') throw new Error('не woff2: ' + file);
+  const numTables = buf.readUInt16BE(12);
+  const TAGS = ['cmap', 'head', 'hhea', 'hmtx', 'maxp', 'name', 'OS/2', 'post', 'cvt ', 'fpgm', 'glyf', 'loca', 'prep', 'CFF ', 'VORG', 'EBDT', 'EBLC', 'gasp', 'hdmx', 'kern', 'LTSH', 'PCLT', 'VDMX', 'vhea', 'vmtx', 'BASE', 'GDEF', 'GPOS', 'GSUB', 'EBSC', 'JSTF', 'MATH', 'CBDT', 'CBLC', 'COLR', 'CPAL', 'SVG ', 'sbix', 'acnt', 'avar', 'bdat', 'bloc', 'bsln', 'cvar', 'fdsc', 'feat', 'fmtx', 'fvar', 'gvar', 'hsty', 'just', 'lcar', 'mort', 'morx', 'opbd', 'prop', 'trak', 'Zapf', 'Silf', 'Glat', 'Gloc', 'Feat', 'Sill'];
+  let p = 48;
+  const b128 = () => { let v = 0; for (let i = 0; i < 5; i++) { const x = buf[p++]; v = v * 128 + (x & 0x7f); if (!(x & 0x80)) return v; } throw new Error('UIntBase128'); };
+  let off = 0, cm = null;
+  for (let i = 0; i < numTables; i++) {
+    const fl = buf[p++]; let tag = TAGS[fl & 0x3f];
+    if ((fl & 0x3f) === 0x3f) { tag = buf.toString('latin1', p, p + 4); p += 4; }
+    const orig = b128(), ver = fl >> 6, tr = (tag === 'glyf' || tag === 'loca') ? ver === 0 : ver !== 0;
+    const len = tr ? b128() : orig;
+    if (tag === 'cmap') cm = [off, orig];
+    off += len;
+  }
+  const data = brotliDecompressSync(buf.subarray(p, p + buf.readUInt32BE(20)));
+  const c = data.subarray(cm[0], cm[0] + cm[1]), set = new Set();
+  const n = c.readUInt16BE(2);
+  let best = null;
+  for (let i = 0; i < n; i++) {
+    const pid = c.readUInt16BE(4 + i * 8), eid = c.readUInt16BE(6 + i * 8), o = c.readUInt32BE(8 + i * 8), f = c.readUInt16BE(o);
+    const score = f === 12 ? 2 : (f === 4 && ((pid === 3 && eid === 1) || pid === 0)) ? 1 : 0;
+    if (score && (!best || score > best[0])) best = [score, o, f];
+  }
+  if (!best) return set;
+  const [, o, f] = best;
+  if (f === 12) {
+    const ng = c.readUInt32BE(o + 12);
+    for (let i = 0; i < ng; i++) { const s = c.readUInt32BE(o + 16 + i * 12), e = c.readUInt32BE(o + 20 + i * 12), g = c.readUInt32BE(o + 24 + i * 12); for (let ch = s; ch <= e; ch++) if (g + ch - s) set.add(ch); }
+  } else {
+    const sc = c.readUInt16BE(o + 6) / 2, ends = o + 14, starts = ends + sc * 2 + 2, deltas = starts + sc * 2, ros = deltas + sc * 2;
+    for (let i = 0; i < sc; i++) {
+      const e = c.readUInt16BE(ends + i * 2), s = c.readUInt16BE(starts + i * 2), d = c.readInt16BE(deltas + i * 2), ro = c.readUInt16BE(ros + i * 2);
+      for (let ch = s; ch <= e && ch !== 0xffff; ch++) {
+        let g;
+        if (!ro) g = (ch + d) & 0xffff;
+        else { const gi = c.readUInt16BE(ros + i * 2 + ro + (ch - s) * 2); g = gi ? (gi + d) & 0xffff : 0; }
+        if (g) set.add(ch);
+      }
+    }
+  }
+  return set;
+}
 // Цены (TASK-prices.md): «от …» в карточках главной, строка «Цена» первой в условиях шести модулей «Что делаем», подписи
 // «Когда сайт готов», ответы «Сколько стоит?»; в «Работах» цен нет; нет «до …», диапазонов, скидок и акций. Раскладка на
 // 320–1440 RU / EN: число с «₽» не рвётся на строки, условия модуля не налезают друг на друга, цена в карточке главной не задевает
@@ -2573,18 +2633,19 @@ console.log('\nпанель разбора работы');
 console.log('\nцены');
 {
   const bad = [], nb = (t) => t.replace(/\s+/g, ' ').trim();
-  const W = { sites: 'от 120 000 ₽', apps: 'от 150 000 ₽', servers: 'от 5 000 ₽ за задачу', care: 'от 10 000 ₽ в месяц', automation: 'от 5 000 ₽ в месяц', ai: 'от 5 000 ₽ в месяц' };
+  const W = { sites: 'от 120 000 ₽', redesign: 'от 65 000 ₽', apps: 'от 150 000 ₽', servers: 'от 5 000 ₽ за задачу', care: 'от 10 000 ₽ в месяц', automation: 'от 5 000 ₽ в месяц', ai: 'от 5 000 ₽ в месяц' };
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(BASE + 'index.html?intro=instant'); await page.waitForTimeout(400);
   const home = await page.evaluate(() => [...document.querySelectorAll('a.svc')].map((a) => [a.getAttribute('href').split('#')[1], (a.querySelector('.svc-pr') || {}).textContent || '']));
-  if (home.length !== 6 || home.some(([id, t]) => nb(t) !== W[id])) bad.push('главная: ' + JSON.stringify(home));
+  // TASK-redesign-prices.md: у «Сайтов-презентаций» ещё «· редизайн от 65 000 ₽»
+  if (home.length !== 6 || home.some(([id, t]) => nb(t) !== W[id] + (id === 'sites' ? ' · редизайн от 65 000 ₽' : ''))) bad.push('главная: ' + JSON.stringify(home));
   await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(400);
   const sv = await page.evaluate(() => [...document.querySelectorAll('article.sv-mod')].map((m) => { const f = m.querySelector('.sv-meta > div'); return { id: m.id, cls: f.className, dt: f.querySelector('dt').textContent, dd: f.querySelector('dd').firstChild.textContent, small: (f.querySelector('dd small') || {}).textContent || '' }; }));
   const smallW = { apps: 'вторая платформа +50 000 ₽, десктоп +100 000 ₽', servers: 'n8n или LibreChat под ключ — от 15 000 ₽' };
-  if (sv.length !== 6 || sv.some((m) => m.cls !== 'sv-pr' || m.dt !== 'Цена' || nb(m.dd) !== W[m.id] || nb(m.small) !== (smallW[m.id] || ''))) bad.push('услуги, «Цена»: ' + JSON.stringify(sv));
-  const pf = await page.evaluate(() => [...document.querySelectorAll('#after .sv-pf')].map((e) => e.textContent.replace(/\s+/g, ' ').trim()).join(' | '));
-  if (pf !== 'Без доплат | +30 000 ₽ разово | от 10 000 ₽ в месяц') bad.push('«Когда сайт готов»: ' + pf);
-  for (const [f, q, want] of [['services.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, приложение — от 150 000 ₽'], ['automations.html', 'Сколько стоит?', 'От 5 000 ₽ в месяц за сценарий.']]) {
+  if (sv.length !== 7 || sv.some((m) => m.cls !== 'sv-pr' || m.dt !== 'Цена' || nb(m.dd) !== W[m.id] || nb(m.small) !== (smallW[m.id] || ''))) bad.push('услуги, «Цена»: ' + JSON.stringify(sv));
+  const pf = await page.evaluate(() => [...document.querySelectorAll('#after .sv-pf')].map((e) => (e.firstChild.textContent + ' / ' + e.querySelector('small').textContent).replace(/\s+/g, ' ').trim()).join(' | '));
+  if (pf !== 'Без доплат / всё входит в цену сайта | +30 000 ₽ / разово, к цене сайта | от 10 000 ₽ / в месяц') bad.push('«Когда сайт готов»: ' + pf);
+  for (const [f, q, want] of [['services.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, редизайн — от 65 000 ₽, приложение — от 150 000 ₽'], ['automations.html', 'Сколько стоит?', 'От 5 000 ₽ в месяц за сценарий.']]) {
     await page.goto(BASE + f + '?intro=instant'); await page.waitForTimeout(300);
     const a = await page.evaluate((q) => { const d = [...document.querySelectorAll('.sv-q')].find((x) => x.querySelector('summary').textContent.trim() === q); return d ? d.querySelector('p').textContent.replace(/\s+/g, ' ').trim() : ''; }, q);
     if (!a.startsWith(want)) bad.push(`${f}: «${q}» — ${a.slice(0, 60)}`);

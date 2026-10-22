@@ -4,7 +4,9 @@
 # буквой из диапазона не откатится в системный шрифт.
 #   python -m pip install --user fonttools brotli     (инструмент разработчика, на сайт не попадает)
 #   python tools/subset-fonts.py
-# Диапазоны поменял — поменяй и unicode-range в @font-face (site.css) и проверь: node tools/qa.mjs fonts.
+# Диапазоны поменял — поменяй и unicode-range в @font-face (site.css) и проверь: node tools/qa.mjs fonts. unicode-range — только то,
+# что реально есть в файле (check.mjs, «ревью, 2–3»): ← → ↗ † ‡ ‖ и ещё десяток знаков из 2010–2026 нет в исходниках, у JetBrains
+# Mono нет Ѐ Ѝ ѐ ѝ — их набирает запасная гарнитура, в unicode-range их нет.
 import os
 from fontTools import subset
 from fontTools.ttLib import TTFont
@@ -21,6 +23,42 @@ LAT = '0020-007E,00A0-00BB,00D7,2010-2026,2190-2193,2197,20BD'
 # (calt Manrope — дефис между цифрами) и «#f-<cat>» в аннотации каталога (calt JetBrains Mono — лигатура «-<»). Свои фичи
 # (tnum, frac…) сайт не включает нигде
 FEATURES = (os.environ.get('PT_FONTS_FEATURES') or 'kern,liga,calt,ccmp,locl,mark,mkmk,clig,rlig').split(',')
+
+
+# ₽ (TASK-redesign-prices.md, 1): у Manrope и JetBrains Mono знак лежит в latin-ext, в latin-подмножестве fontsource его нет —
+# unicode-range обещал U+20BD, а браузер брал его из системного шрифта («непонятный значок» у владельца, особенно в моно).
+# Глиф берём из latin-ext того же начертания (tools/fonts-src/ext/, @fontsource 5.3.0) и вставляем в latin до подмножества:
+# остальные глифы, хинтинг и таблицы latin-файла не меняются. У ₽ в этих шрифтах простой контур без своих инструкций, prep у
+# latin и latin-ext одинаковый (проверено), hdmx / LTSH / VDMX нет
+EXT = os.path.join(SRC, 'ext')
+FROM_EXT = [0x20BD]
+
+
+def add_from_ext(font, name):
+    ext = os.path.join(EXT, name.replace('-latin-', '-latin-ext-'))
+    if '-latin-' not in name or not os.path.exists(ext):
+        return
+    src = TTFont(ext)
+    scm = src.getBestCmap()
+    order = font.getGlyphOrder()
+    for cp in FROM_EXT:
+        g = scm[cp]
+        gl = src['glyf'][g]
+        assert not gl.isComposite() and not (hasattr(gl, 'program') and gl.program and gl.program.getBytecode()), g
+        if g not in order:
+            font.setGlyphOrder(order + [g])
+            order = font.getGlyphOrder()
+        font['glyf'][g] = gl
+        font['hmtx'][g] = src['hmtx'][g]
+        for t in font['cmap'].tables:
+            if t.isUnicode():
+                t.cmap[cp] = g
+        # границы и пределы — не меньше, чем у вставленного глифа (сохраняем без пересчёта, см. ниже)
+        gl.recalcBounds(font['glyf'])
+        h, m = font['head'], font['maxp']
+        h.xMin, h.yMin, h.xMax, h.yMax = min(h.xMin, gl.xMin), min(h.yMin, gl.yMin), max(h.xMax, gl.xMax), max(h.yMax, gl.yMax)
+        m.maxPoints = max(m.maxPoints, len(gl.coordinates))
+        m.maxContours = max(m.maxContours, gl.numberOfContours)
 
 
 def unicodes(spec):
@@ -47,6 +85,7 @@ def run():
         opts.name_IDs = ['*']
         opts.name_languages = ['*']
         font = TTFont(os.path.join(SRC, name))
+        add_from_ext(font, name)
         flags = font['head'].flags
         sub = subset.Subsetter(opts)
         sub.populate(unicodes=unicodes(CYR if '-cyrillic-' in name else LAT))

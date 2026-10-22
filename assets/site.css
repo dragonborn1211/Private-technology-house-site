@@ -4,17 +4,17 @@
    кириллица, Ґ ґ, №; latin — ASCII, неразрывный пробел … «» ·, ×, тире, кавычки, многоточие, стрелки, ₽. unicode-range ниже —
    те же диапазоны. Поменял диапазон в скрипте — поменяй здесь. Заранее грузятся (preload в <head>) начертания H1 */
 @font-face{font-family:'Manrope';font-style:normal;font-weight:300;font-display:swap;src:url(fonts/manrope-cyrillic-300-normal.woff2) format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
-@font-face{font-family:'Manrope';font-style:normal;font-weight:300;font-display:swap;src:url(fonts/manrope-latin-300-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2010-2026,U+2190-2193,U+2197,U+20BD}
+@font-face{font-family:'Manrope';font-style:normal;font-weight:300;font-display:swap;src:url(fonts/manrope-latin-300-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+20BD,U+2191,U+2193}
 @font-face{font-family:'Manrope';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/manrope-cyrillic-400-normal.woff2) format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
-@font-face{font-family:'Manrope';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/manrope-latin-400-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2010-2026,U+2190-2193,U+2197,U+20BD}
+@font-face{font-family:'Manrope';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/manrope-latin-400-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+20BD,U+2191,U+2193}
 @font-face{font-family:'Manrope';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/manrope-cyrillic-500-normal.woff2) format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
-@font-face{font-family:'Manrope';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/manrope-latin-500-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2010-2026,U+2190-2193,U+2197,U+20BD}
+@font-face{font-family:'Manrope';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/manrope-latin-500-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+20BD,U+2191,U+2193}
 @font-face{font-family:'Manrope';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/manrope-cyrillic-600-normal.woff2) format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
-@font-face{font-family:'Manrope';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/manrope-latin-600-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2010-2026,U+2190-2193,U+2197,U+20BD}
-@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/jetbrains-mono-cyrillic-400-normal.woff2) format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
-@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/jetbrains-mono-latin-400-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2010-2026,U+2190-2193,U+2197,U+20BD}
-@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-cyrillic-500-normal.woff2) format('woff2');unicode-range:U+0400-045F,U+0490-0491,U+2116}
-@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-latin-500-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2010-2026,U+2190-2193,U+2197,U+20BD}
+@font-face{font-family:'Manrope';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/manrope-latin-600-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+20BD,U+2191,U+2193}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/jetbrains-mono-cyrillic-400-normal.woff2) format('woff2');unicode-range:U+0401-040C,U+040E-044F,U+0451-045C,U+045E-045F,U+0490-0491,U+2116}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/jetbrains-mono-latin-400-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+20BD,U+2191,U+2193}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-cyrillic-500-normal.woff2) format('woff2');unicode-range:U+0401-040C,U+040E-044F,U+0451-045C,U+045E-045F,U+0490-0491,U+2116}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/jetbrains-mono-latin-500-normal.woff2) format('woff2');unicode-range:U+0020-007E,U+00A0-00BB,U+00D7,U+2013-2014,U+2018-201A,U+201C-201E,U+2022,U+2026,U+20BD,U+2191,U+2193}
 /* Запасные гарнитуры с метриками своих шрифтов (TASK-qa.md, CLS): пока Manrope / JetBrains Mono грузятся
    (font-display: swap), текст набран системным шрифтом той же ширины и высоты строки — строки не переносятся иначе,
    и после загрузки ничего не прыгает (было: H1 «Сделано и работает.» в Segoe UI шире на строку, секция ниже сдвигалась
@@ -550,7 +550,9 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .svc-h{font-size:22px;font-weight:500;line-height:1.2;letter-spacing:-.01em;color:#EEF3F6}
 .svc-d{font-size:15px;line-height:1.55;color:#9DB0BC}
 /* цена в карточках «Что делаем» главной (TASK-prices.md) — цветом карточки */
-.svc-pr{display:block;margin-top:2px;font:500 15px/1.3 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:-.005em;color:var(--c,#8ED8F8)}
+.svc-pr{display:block;margin-top:2px;font:500 17px/1.3 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:-.005em;color:var(--c,#8ED8F8)}
+/* «· редизайн от 65 000 ₽» у «Сайтов-презентаций» (TASK-redesign-prices.md) */
+.svc-pr small{font-size:14px;font-weight:400;color:#8FAEC0}
 .svc-xl .svc-h{font-size:clamp(28px,2.4vw,34px);font-weight:300;letter-spacing:-.03em}
 .svc-xl .svc-d{max-width:460px}
 .svc-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
@@ -619,9 +621,11 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .sv-meta div{display:flex;flex-direction:column;gap:7px}
 .sv-meta dt{font:500 11px/1 'JetBrains Mono','JetBrains fb',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F93A6}
 .sv-meta dd{margin:0;font-size:15px;font-weight:500;color:#EEF3F6}
-/* строка «Цена» в условиях модуля: значение светлее, пояснение (приложения, серверы) — второй строкой */
-.sv-meta .sv-pr dd{font-weight:500;color:#EEF3F6}
-.sv-meta .sv-pr dd small{display:block;margin-top:4px;font-size:13px;font-weight:400;line-height:1.45;color:#8FAEC0}
+/* строка «Цена» в условиях модуля (TASK-redesign-prices.md): крупно, на всю ширину — «Срок» и «Формат» ниже; пояснение
+   (приложения, серверы) — кеглем описания карточки .sv-p */
+.sv-meta .sv-pr{flex:1 1 100%}
+.sv-meta .sv-pr dd{font:400 26px/1.15 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:-.02em;color:#EEF3F6}
+.sv-meta .sv-pr dd small{display:block;margin-top:8px;font:400 15.5px/1.6 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:0;color:#9DB0BC}
 .pt a.sv-go{display:inline-flex;align-self:flex-start;align-items:center;gap:8px;min-height:44px;margin:-8px 0 -10px;font-size:15px;font-weight:600;color:#BCD3DE;transition:color .3s ease}
 .pt a.sv-go:hover{color:var(--c)}
 .sv-go svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .3s cubic-bezier(.3,.7,.2,1)}
@@ -653,7 +657,10 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .sv-ph{margin:0;font-size:24px;font-weight:500;letter-spacing:-.015em;color:#EEF3F6}
 .sv-pd{margin:0;font-size:15px;line-height:1.55;color:#9DB0BC}
 .sv-path .list{flex:1}
-.sv-pf{margin:0;padding-top:16px;border-top:1px solid rgba(188,211,222,.1);font:500 11px/1.4 'JetBrains Mono','JetBrains fb',monospace;letter-spacing:.14em;text-transform:uppercase;color:#8FAEC0}
+/* подпись внизу вариантов «Когда сайт готов» и этапов подписки — обычный текст, не моно-капс (TASK-redesign-prices.md):
+   в моно-капсе «₽» и цифры читались плохо */
+.sv-pf{margin:0;padding-top:16px;border-top:1px solid rgba(188,211,222,.1);font:500 19px/1.3 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:-.01em;color:#8FAEC0}
+.sv-pf small{display:block;margin-top:4px;font:400 14px/1.4 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:0;color:#8FAEC0}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .sv-badge{border-color:transparent;background-color:transparent}
 /* вопросы: слева заголовок, справа список <details> */
 .sv-faq{display:grid;grid-template-columns:minmax(0,4fr) minmax(0,8fr);gap:32px 64px;align-items:start}
