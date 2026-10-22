@@ -247,8 +247,16 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 .cp.js .cp-art .cp-cta{display:none}
 /* «Частые вопросы» (TASK-faq-panel.md): на странице — плашка-ссылка .faq-link вместо блока вопросов; клик открывает панель
    [data-faq] (стили .cp-* панели кейсов, assets/faq.js). Ответы — <details>, плюс в круге становится минусом */
-.faq-link{display:grid;grid-template-columns:minmax(max-content,1fr) minmax(0,auto) minmax(max-content,1fr);align-items:center;gap:18px 32px;padding:28px 32px;border-radius:22px;background:linear-gradient(180deg,rgba(23,36,48,.62),rgba(14,24,33,.62));border:1px solid rgba(188,211,222,.14);color:#EEF3F6;text-decoration:none;transition:border-color .25s ease}
-.faq-link:hover{border-color:rgba(142,216,248,.45)}
+.faq-link{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(max-content,1fr) minmax(0,auto) minmax(max-content,1fr);align-items:center;gap:18px 32px;padding:28px 32px;border-radius:22px;background-color:rgba(16,27,37,.72);border:1px solid rgba(142,216,248,.22);box-shadow:inset 0 1px 0 rgba(142,216,248,.28),0 0 56px -22px rgba(142,216,248,.55),0 30px 60px -36px rgba(183,166,242,.45);color:#EEF3F6;text-decoration:none}
+/* подсветка: пятна голубого слева и сирени справа (::before) и рамка с переливом палитры (::after, маской — только кромка);
+   до стадии рамок их нет, как фона и рамки .fr */
+.faq-link::before{content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;background:radial-gradient(55% 150% at 0% 0%,rgba(142,216,248,.24),transparent 65%),radial-gradient(50% 150% at 100% 100%,rgba(183,166,242,.22),transparent 65%),radial-gradient(40% 120% at 50% 120%,rgba(159,229,209,.08),transparent 70%);transition:opacity .9s ease}
+.faq-link::after{content:"";position:absolute;inset:-1px;border-radius:inherit;padding:1px;pointer-events:none;background:var(--pt-grad);background-size:200% 100%;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.8;transition:opacity .9s ease;animation:pt-faq-edge 6s linear infinite}
+@keyframes pt-faq-edge{to{background-position:-200% 0}}
+.faq-link:hover::after,.faq-link:focus-visible::after{opacity:1}
+.faq-link:hover,.faq-link:focus-visible{box-shadow:inset 0 1px 0 rgba(142,216,248,.38),0 0 72px -20px rgba(142,216,248,.7),0 30px 60px -32px rgba(183,166,242,.55)}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .faq-link::before,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .faq-link::after{opacity:0}
+.pt-lite .faq-link::after,.pt-away .faq-link::after{animation-play-state:paused}
 .faq-link .fk{font:300 clamp(26px,2.4vw,36px)/1.12 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:-.03em;color:#EEF3F6;white-space:nowrap}
 .faq-link .ft{max-width:560px;text-align:center;text-wrap:balance;font-size:18px;font-weight:500;line-height:1.35}
 .faq-link .ft span{display:block;margin-top:4px;font-size:15px;font-weight:400;color:#9DB0BC}
@@ -259,7 +267,7 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .faq-link .fa{opacity:0}
 @media (max-width:900px){.faq-link{grid-template-columns:minmax(0,1fr) auto;gap:10px 20px}.faq-link .ft{grid-row:2;text-align:left;max-width:none}.faq-link .fa{grid-column:2;grid-row:1 / 3}}
 @media (max-width:760px){.faq-link{padding:22px 20px}}
-@media (prefers-reduced-motion:reduce){.faq-link .fa svg{transition:none}}
+@media (prefers-reduced-motion:reduce){.faq-link .fa svg{transition:none}.faq-link::after{animation:none}}
 .cp-faq .cp-grp{margin:34px 0 0}
 .cp-faq .cp-grp:first-of-type{margin-top:28px}
 .cp-faq .fq{border-bottom:1px solid rgba(188,211,222,.12)}
@@ -642,6 +650,9 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .sv-mod{position:relative;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:28px 64px;padding:34px 34px 34px 36px;border-radius:30px;overflow:hidden;scroll-margin-top:88px}
 .sv-mod::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background-image:radial-gradient(55% 70% at 0% 0%,color-mix(in srgb,var(--c) 11%,transparent),transparent 70%);transition:opacity .9s ease}
 .sv-info{position:relative;display:flex;flex-direction:column;gap:18px;min-width:0}
+/* чипы — посередине свободного места между описанием и условиями (владелец 2026-10-23); без :has — 1/3 сверху, 2/3 снизу */
+.sv-info > .sv-chips{margin-block:auto}
+.sv-info:has(> .sv-chips) > .sv-meta{margin-top:0}
 .sv-lab{display:flex;align-items:center;gap:14px;margin:0}
 .sv-lab .mono{color:var(--c)}
 .sv-t{margin:0;font-weight:300;font-size:clamp(26px,2.4vw,36px);line-height:1.12;letter-spacing:-.03em;color:#EEF3F6}
