@@ -2782,10 +2782,24 @@ console.log('\nperf: панель замеров, холст частиц, фл�
   await page.goto(BASE + 'cases.html?intro=instant&pt-reset'); await page.waitForTimeout(600);
   const rs = await page.evaluate(() => ({ q: sessionStorage.getItem('pt-qfix'), sc: window.PTScroll && window.PTScroll.mode, hud: sessionStorage.getItem('pt-hud') }));
   if (rs.q !== null || rs.sc !== 'soft' || rs.hud !== null) bad.push('?pt-reset: ' + JSON.stringify(rs));
+  // .pt-wait: несобранные секции обрезаны (clip-path), после первой стадии — нет; при открытой панели (cp-lock) — нет;
+  // в режиме «сразу» класса нет вовсе
+  await page.goto(BASE + 'services.html?intro=full'); await page.waitForTimeout(3500);
+  const wt = () => page.evaluate(() => [...document.querySelectorAll('[data-sec]')].map((s) => ({ n: s.dataset.sec, w: s.classList.contains('pt-wait'), c: getComputedStyle(s).clipPath, d: s.classList.contains('s-done') })));
+  const w0 = await wt();
+  if (w0[0].w || w0.slice(2).some((s) => !s.w || s.c !== 'inset(50%)')) bad.push('pt-wait до сборки: ' + JSON.stringify(w0.map((s) => s.n + ':' + s.w + ':' + s.c)));
+  await page.evaluate(() => document.documentElement.classList.add('cp-lock'));
+  if ((await page.evaluate(() => getComputedStyle(document.querySelector('[data-sec="foot"]')).clipPath)) !== 'none') bad.push('pt-wait: при cp-lock подвал обрезан');
+  await page.evaluate(() => document.documentElement.classList.remove('cp-lock'));
+  await page.evaluate(() => window.scrollTo({ top: document.querySelector('[data-sec="sites"]').getBoundingClientRect().top + scrollY - 200, behavior: 'instant' })); await page.waitForTimeout(3000);
+  const w1 = (await wt()).find((s) => s.n === 'sites');
+  if (!w1.d || w1.w || w1.c !== 'none') bad.push('pt-wait после сборки: ' + JSON.stringify(w1));
+  await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(500);
+  if ((await wt()).some((s) => s.w)) bad.push('pt-wait в режиме «сразу»');
   errs.forEach((e) => bad.push('ошибка: ' + e));
   await ctx.close();
   if (bad.length) fail('perf: ' + bad.join('; '));
-  else console.log('  ✓ perf-hud.js — только по ?hud и до конца вкладки; холст частиц в документе: окно ± 15 %, высота страницы та же; ?pt-q, ?pt-scroll=native, ?pt-reset');
+  else console.log('  ✓ perf-hud.js — только по ?hud и до конца вкладки; холст частиц в документе: окно ± 15 %, высота страницы та же; ?pt-q, ?pt-scroll=native, ?pt-reset; несобранные секции обрезаны (.pt-wait), собранные и при открытой панели — нет');
 }
 function woff2Cmap(file) {
   const buf = readFileSync(file);

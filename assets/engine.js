@@ -269,7 +269,9 @@
       function rootRect() { var r = root.getBoundingClientRect(); rootLeft = r.left; rootTop = r.top; rootDoc = r.top + (window.scrollY || 0); return r; }
       function rootFast() { rootTop = rootDoc - (window.scrollY || 0); }
       // .obj-go — объект первого экрана запущен до s-done (холсты видны раньше, site.css); снимается с готовой или погашенной секцией
-      function setStage(s, st) { var c = s.el.classList; c.remove('s-wire', 's-skel', 's-text', 's-done'); if (st) c.add('s-' + st); if (st !== 'skel' && st !== 'text') c.remove('obj-go'); }
+      // .pt-wait — секция ещё ни разу не собиралась (CSS её обрезает, браузер её не рисует); снимается первой стадией навсегда:
+      // «Собрать заново» и смена языка снимают стадии (null), но гаснуть секция должна переходами, как раньше
+      function setStage(s, st) { var c = s.el.classList; c.remove('s-wire', 's-skel', 's-text', 's-done'); if (st) { c.add('s-' + st); c.remove('pt-wait'); } if (st !== 'skel' && st !== 'text') c.remove('obj-go'); }
       function markText() {
         secs.forEach(function (s) {
           var tw = document.createTreeWalker(s.el, NodeFilter.SHOW_TEXT, null), n;
@@ -1529,6 +1531,7 @@
         }
         setProg(); typeLabel('✓ ready'); pultShown = true; pultMini(true); root.classList.add('pt-booted');
       } else {
+        secs.forEach(function (s) { if (s !== hero && s.state === 'idle') s.el.classList.add('pt-wait'); });
         if (!jumpStart()) request(hero);
         if ('IntersectionObserver' in window) {
           // Секции, ставшие видимыми в одном кадре (их сообщают два наблюдателя: io и io2 подвала), сначала все встают в
