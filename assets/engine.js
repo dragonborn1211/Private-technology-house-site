@@ -17,9 +17,14 @@
       var oc = document.createElement('canvas'), og = oc.getContext('2d', { willReadFrequently: true });
       var W = 1, VH = 1, dpr = 1, mob = false, N = 0, alive = true, active = true, raf = 0, prev = performance.now();
       var rootTop = 0, rootLeft = 0, lastTop = null;
+      // Холст частиц лежит в документе (внутри .pt, position: absolute) и едет вместе со страницей (TASK-perf.md, 2): между
+      // кадрами главного потока браузер прокручивает его вместе с текстом, и частицы не отстают от рамок. Его высота — окно и
+      // запас CM сверху и снизу (15 % окна: на быстром свайпе у краёв нет пустой полосы), в своём кадре движок ставит его на
+      // место (cvY — сдвиг холста в координатах корня). layoutVH — высота окна при последнем layout()
+      var CM = 0, CH = 1, cvY = null, layoutVH = 1;
       var mouse = { cx: -1e5, cy: -1e5 };
       var P, V, T, NT, C, CT, NC, A, AT, NA, SZ, NS, SW, M, NM, SP, TP, BUF, BLD = [];
-      var layoutGen = 0, lzT = [0, 0, 0, 0], lzQ = 0;
+      var layoutGen = 0, lzT = new Float64Array(4), lzQ = 0;
       // Дрожание частиц сборки — из таблицы случайных чисел (JN), с новой случайной точки в каждом кадре: тот же равномерный
       // шум той же силы, но без двух вызовов Math.random на каждую из 25 000 частиц (это было ~40 % времени цикла при сборке)
       var JN = new Float32Array(8192);
@@ -41,8 +46,15 @@
       // Сцены в карточках просыпаются по одной за кадр (wakeQ, frame): пробуждение схемы или демо-сайта — подгонка холста и
       // раскладка узлов, 15–20 мс на слабом устройстве; две-три в одной задаче давали рывок до 45 мс в финале сборки секции.
       // Сцена стартует на кадр-два позже — на глаз не видно. Усыплённая (пересборка, смена языка) из очереди убирается
-      var wakeQ = [];
-      function sleepScene(sc) { var k = wakeQ.indexOf(sc); if (k >= 0) wakeQ.splice(k, 1); sc.sleep(); }
+      // Кольцо фиксированной длины, а не массив с push / shift (TASK-perf.md, 3.1): смена вида массива деоптимизировала frame
+      var WQ = 64, wakeQ = new Array(WQ).fill(null), wqH = 0, wqN = 0;
+      function wakePush(sc) {
+        for (var k = 0; k < wqN; k++) if (wakeQ[(wqH + k) % WQ] === sc) return;
+        if (wqN < WQ) { wakeQ[(wqH + wqN) % WQ] = sc; wqN++; }
+      }
+      // одна сцена за кадр; усыплённые из очереди убраны (null) — пропускаем
+      function wakeNext() { while (wqN) { var sc = wakeQ[wqH]; wakeQ[wqH] = null; wqH = (wqH + 1) % WQ; wqN--; if (sc) { sc.wake(); return; } } }
+      function sleepScene(sc) { for (var k = 0; k < wqN; k++) { var j = (wqH + k) % WQ; if (wakeQ[j] === sc) wakeQ[j] = null; } sc.sleep(); }
       // «Тихие» зоны — текст первого экрана (кикер, H1, лид, кнопки, строка доверия) и текст панели «Кодекс студии»
       // (вкладки сверху, подпись снизу): пыль над ним горит слабее (CALM_A), чтобы не мешать читать, а при раскладке
       // gAmbient выбирает точку вне зон. Раньше зоны были блоками целиком и пыль в них не рисовалась вовсе: блоки занимали
@@ -53,7 +65,7 @@
       // общая рамка зон, чтобы не перебирать их для каждой точки.
       var calmEls = Array.prototype.filter.call(hero.el.querySelectorAll('[data-blk]'), function (b) { return !b.matches('[data-obj], header'); });
       var calmBox = Array.prototype.slice.call(hero.el.querySelectorAll('[data-obj] .obj-top, [data-obj] .obj-cw'));
-      var calm = [], calmB = [0, 0, 0, 0], calmGen = -1, CALM_A = 0.3;
+      var calm = new Float64Array(0), calmB = new Float64Array(4), calmGen = -1, CALM_A = 0.3;
       // Фоновая пыль (просьба владельца: «чтобы всегда на заднем фоне были частицы; при анимации их чуть меньше, после каждой —
       // обратно»). Свой запас точек AMB — доля DUSTA / DUSTM от всех частиц (столько пыли было видно после сборки и раньше), в
       // сборке он не участвует: секции собирают остальные (BLD), и пыль не пропадает на каждой сборке. Пока идёт сборка (первый
@@ -93,6 +105,8 @@
           if (window.requestIdleCallback) window.requestIdleCallback(heroWakeSoft, { timeout: 2000 }); else setTimeout(heroWakeSoft, 200);
         }, 0);
       }
+      // не нужное первому экрану — после его сборки, в простое браузера (не позже чем через 2 с)
+      function idleOnce(fn) { setTimeout(function () { if (!alive) return; if (window.requestIdleCallback) window.requestIdleCallback(fn, { timeout: 2000 }); else setTimeout(fn, 200); }, 0); }
       // «Собрать заново» и смена языка: объекта ещё нет — смонтировать сразу
       function heroReplay() { heroNow(); if (!heroObj) return; objPend = false; objOn = true; heroObj.replay(); }
       function objStart(instant) {
@@ -121,6 +135,17 @@
       var INTRO_LINES = true, BURST_FULL = true, LINE = 1.0, heroSweep = null, burstEnd = 0, beamH = root.querySelector('[data-scan-beam]');
       if (INTRO_LINES) root.classList.add('pt-lines');
       try { lite = +sessionStorage.getItem('pt-q') || 0; } catch (e) {}
+      // Флаги проверки (TASK-perf.md, 0.2), держатся до конца вкладки; ?pt-reset — сброс. ?pt-q=0|1|2 — уровень облегчения
+      // зафиксирован: автоматика (probe, watchQuality) его не меняет и не пишет в pt-q
+      var QFIX = -1;
+      try {
+        var fq = location.search;
+        if (/[?&]pt-reset(?:[=&]|$)/.test(fq)) { sessionStorage.removeItem('pt-qfix'); sessionStorage.removeItem('pt-q'); lite = 0; }
+        var mq = /[?&]pt-q=([012])(?:&|$)/.exec(fq);
+        if (mq) sessionStorage.setItem('pt-qfix', mq[1]);
+        var fx = sessionStorage.getItem('pt-qfix');
+        if (fx === '0' || fx === '1' || fx === '2') { QFIX = +fx; lite = QFIX; }
+      } catch (e) { /* хранилище запрещено — без флагов */ }
       if (lite >= 2) dprCap = 1;
       // Режим сборки (TASK-glyphs-transitions.md, раздел 3). full — первое знакомство с сайтом или прошло больше 30 дней
       // с последней полной сборки: вспышка, две линии, сборка частицами. fast — страница сайта, которую в этой вкладке ещё
@@ -463,15 +488,15 @@
       function setC(o, c) { o.r = c[0]; o.g = c[1]; o.b = c[2]; }
       function calmZones() {
         if (calmGen === layoutGen) return calm;
-        calmGen = layoutGen; calm = [];
-        var rl = root.getBoundingClientRect(), rg = document.createRange();
-        function add(r, pad) { if (r.width > 0 && r.height > 0) calm.push(r.left - rl.left - pad, r.top - rl.top - pad, r.right - rl.left + pad, r.bottom - rl.top + pad); }
+        calmGen = layoutGen;
+        var rl = root.getBoundingClientRect(), rg = document.createRange(), cz = [];
+        function add(r, pad) { if (r.width > 0 && r.height > 0) cz.push(r.left - rl.left - pad, r.top - rl.top - pad, r.right - rl.left + pad, r.bottom - rl.top + pad); }
         calmEls.forEach(function (b) {
           var tw = document.createTreeWalker(b, NodeFilter.SHOW_TEXT), t;
           while ((t = tw.nextNode())) { if (!/\S/.test(t.nodeValue)) continue; rg.selectNodeContents(t); Array.prototype.forEach.call(rg.getClientRects(), function (r) { add(r, 2); }); }
         });
         calmBox.forEach(function (b) { add(b.getBoundingClientRect(), 6); });
-        calmB = [1e9, 1e9, -1e9, -1e9];
+        calm = new Float64Array(cz); calmB[0] = 1e9; calmB[1] = 1e9; calmB[2] = -1e9; calmB[3] = -1e9;
         for (var k = 0; k < calm.length; k += 4) { calmB[0] = Math.min(calmB[0], calm[k]); calmB[1] = Math.min(calmB[1], calm[k + 1]); calmB[2] = Math.max(calmB[2], calm[k + 2]); calmB[3] = Math.max(calmB[3], calm[k + 3]); }
         return calm;
       }
@@ -504,17 +529,23 @@
       // если бы раскладка шла целиком: частица из поздней части сменит цель на кадр-два позже — на глаз не видно. Всё, что
       // трогает цели (новая раскладка, гашение, финал, взрыв, мгновенная сборка, смена языка), сначала доводит отложенное
       // (flushFill), поэтому порядок событий прежний. Первый экран, смена языка и мгновенные стадии — целиком, как раньше.
-      var fillJob = null;
+      // TASK-perf.md, 3.2: часть, которая не помещается в FILL_MS, дорабатывает в следующих кадрах (раньше — ровно по трети:
+      // на слабом устройстве треть 25 000 целей не помещалась в кадр). opt — всегда одной формы (fopt), job — тоже: объекты
+      // разной формы деоптимизировали fillRun («wrong map»)
+      var fillJob = null, FILL_MS = 4, FILL_CHUNK = 1500;
+      function fopt(instant, axis, y0, h, spread, rnd, part) { return { instant: !!instant, axis: axis, y0: y0 || 0, h: h || 1, spread: spread || 0, rnd: rnd || 0, part: !!part }; }
       function flushFill() { var j = fillJob; if (j) { fillJob = null; fillRun(j, j.idx.length); } }
+      function fillSlice(job, until) {
+        do fillRun(job, FILL_CHUNK); while (job.k < job.idx.length && performance.now() < until);
+        if (job.k >= job.idx.length) { if (fillJob === job) fillJob = null; } else fillJob = job;
+      }
       function fill(idx, gens, opt) {
         flushFill();
         var tot = 0, cum = [];
         gens.forEach(function (g) { tot += g.w; cum.push(tot); });
         var job = { idx: idx, gens: gens, cum: cum, tot: tot, opt: opt, now: performance.now(), k: 0 };
         if (!opt.part || opt.instant || rm) { fillRun(job, idx.length); return; }
-        job.step = Math.ceil(idx.length / 3);
-        fillRun(job, job.step);
-        if (job.k < idx.length) fillJob = job;
+        fillSlice(job, job.now + FILL_MS);
       }
       function fillRun(job, cnt) {
         var idx = job.idx, gens = job.gens, cum = job.cum, tot = job.tot, opt = job.opt, now = job.now, end = Math.min(idx.length, job.k + cnt);
@@ -535,15 +566,15 @@
         job.k = end;
       }
       function sweep(s, inst, spread) {
-        if (s === hero && heroSweep) return heroSweep.axis === 'x' ? { instant: inst, axis: 'x', spread: heroSweep.spread, rnd: 0.06 } : { instant: inst, axis: 'y', y0: -rootTop, h: VH, spread: heroSweep.spread, rnd: 0.06 };
-        return s === hero ? { instant: inst, axis: 'x', spread: spread * 0.8, rnd: 0.1 } : { instant: inst, axis: 'y', y0: s.geo.box.y, h: Math.min(s.geo.box.h, VH * 1.4), spread: spread * runK, rnd: 0.12 * runK, part: true }; }
+        if (s === hero && heroSweep) return heroSweep.axis === 'x' ? fopt(inst, 'x', 0, 1, heroSweep.spread, 0.06, false) : fopt(inst, 'y', -rootTop, VH, heroSweep.spread, 0.06, false);
+        return s === hero ? fopt(inst, 'x', 0, 1, spread * 0.8, 0.1, false) : fopt(inst, 'y', s.geo.box.y, Math.min(s.geo.box.h, VH * 1.4), spread * runK, 0.12 * runK, true); }
       function phGrid(s, idx, inst) {
         var cols = [];
         Array.prototype.forEach.call(root.querySelectorAll('.pt-col'), function (el) { var r = el.getBoundingClientRect(); if (r.width > 0) cols.push(r.left - rootLeft, r.right - rootLeft); });
         Array.prototype.forEach.call(root.querySelectorAll('.pt-edge'), function (el) { var r = el.getBoundingClientRect(); if (r.left - rootLeft > 2 && r.left - rootLeft < W - 2) cols.push(r.left - rootLeft); });
         if (!cols.length) cols = [0, W];
         var y0 = s.geo.box.y, hh = Math.min(s.geo.box.h, VH);
-        fill(idx, [{ w: 1, f: function (o) { o.x = cols[(Math.random() * cols.length) | 0] + (Math.random() - 0.5) * 1.2; o.y = y0 + Math.random() * hh; setC(o, Math.random() < 0.6 ? COL.glass : DUST[(Math.random() * DUST.length) | 0]); o.a = 0.55; o.s = 1.5; o.m = 0; } }], { instant: inst, axis: 'y', y0: y0, h: hh, spread: 0.35, rnd: 0.12 });
+        fill(idx, [{ w: 1, f: function (o) { o.x = cols[(Math.random() * cols.length) | 0] + (Math.random() - 0.5) * 1.2; o.y = y0 + Math.random() * hh; setC(o, Math.random() < 0.6 ? COL.glass : DUST[(Math.random() * DUST.length) | 0]); o.a = 0.55; o.s = 1.5; o.m = 0; } }], fopt(inst, 'y', y0, hh, 0.35, 0.12, false));
         cur = { s: s, f: phGrid, idx: idx };
       }
       function phWire(s, idx, inst) {
@@ -583,7 +614,7 @@
         cur = null;
       }
       function phAmbient(idx, inst) {
-        fill(idx, [{ w: 1, f: function (o) { gAmbient(o); o.m = 0; o.a = 0; } }], { instant: inst, axis: 'x', spread: 0, rnd: inst ? 0 : 0.5 });
+        fill(idx, [{ w: 1, f: function (o) { gAmbient(o); o.m = 0; o.a = 0; } }], fopt(inst, 'x', 0, 1, 0, inst ? 0 : 0.5, false));
         at(inst ? 0 : 1.6, function () { if (running) return; flushFill(); for (var k = 0; k < idx.length; k++) { var i = idx[k]; if (SW[i]) NM[i] = 1; else M[i] = 1; } });
       }
       // Тихий финал сборки — у всех секций, кроме подвала: частицы догасают на месте, а уже невидимыми переезжают в случайные
@@ -756,16 +787,17 @@
         gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.clearColor(0, 0, 0, 0);
       }
       function layout() {
-        W = Math.max(1, root.clientWidth || window.innerWidth || 1); VH = Math.max(1, window.innerHeight || 800); mob = W < 760;
+        W = Math.max(1, root.clientWidth || window.innerWidth || 1); VH = layoutVH = Math.max(1, window.innerHeight || 800); mob = W < 760;
         env.mob = mob; env.vh = VH;
         dpr = Math.min(window.devicePixelRatio || 1, dprCap);
-        if (canvas) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(VH * dpr); }
+        CM = Math.round(VH * 0.15); CH = VH + 2 * CM; cvY = null;
+        if (canvas) { canvas.width = Math.round(W * dpr); canvas.height = Math.round(CH * dpr); canvas.style.height = CH + 'px'; }
         if (c2) c2.setTransform(dpr, 0, 0, dpr, 0, 0);
         if (!N) alloc();
         if (gl && buf) { gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, BUF.byteLength, gl.DYNAMIC_DRAW); }
         if (smk) { smk.width = Math.ceil(W * 0.5); smk.height = Math.ceil(VH * 0.5); smokeLive = false; }
         fitSites();
-        for (var si = 0; si < scenes.length; si++) scenes[si].resize();
+        if (!sro) for (var si = 0; si < scenes.length; si++) scenes[si].resize();
       }
       // Адаптивное качество: окна по 2 с; если в двух окнах подряд медиана кадра дольше 24 мс (меньше ~42 fps),
       // спускаемся на уровень. Медиана, а не среднее: одиночный рывок (загрузка картинки, сборка секции) на быстрой
@@ -779,7 +811,7 @@
       // стадии рамок: стекла и размытия ещё нет), меряем кадры: медиана дольше 34 мс (меньше ~30 к/с) — сразу уровень 1
       // (без размытия стекла и дымного следа), дольше 50 мс (меньше 20 к/с) — уровень 2 (частицы в 1×). Анимация та же.
       var probe = null;
-      function probeStart(K) { if (rm || lite >= 2) return; var t = performance.now(); probe = { from: t + 120, to: t + 1000 * 1.6 * K * 0.94, w: [] }; }
+      function probeStart(K) { if (rm || lite >= 2 || QFIX >= 0) return; var t = performance.now(); probe = { from: t + 120, to: t + 1000 * 1.6 * K * 0.94, w: [] }; }
       function probeFrame(now, raw) {
         if (!probe || now < probe.from) return;
         if (raw > 0 && raw < 1) probe.w.push(raw);
@@ -799,7 +831,7 @@
       function probeNow() { probeDecide(3); }
       function watchQuality(now, raw) {
         if (raw > 1 || document.hidden) { qT = 0; qW.length = 0; return; }
-        if (lite >= 2 || now - bootAt < 3000) return;
+        if (lite >= 2 || QFIX >= 0 || now - bootAt < 3000) return;
         qT += raw; qW.push(raw);
         if (qT < 2) return;
         qW.sort(function (a, b) { return a - b; });
@@ -813,76 +845,91 @@
         if (n >= 2 && dprCap !== 1) { dprCap = 1; layout(); }
         try { sessionStorage.setItem('pt-q', String(n)); } catch (e) {}
       }
+      // Кадр. Цикл частиц — отдельная функция stepParticles (TASK-perf.md, 3.1): в ней только типизированные массивы и числа.
+      // Всё редкое (проверка прерывания, раскладка целей, след, пробуждение и кадры сцен, зоны «тихого» текста) — здесь, до
+      // или после неё: деоптимизация в редком месте раньше выбивала цикл по 26 000 частиц в медленный режим на несколько кадров
       function frame(now) {
         var raw = Math.max(0, (now - prev) / 1000), dt = Math.min(0.05, raw); prev = now;
         if (!rm) { probeFrame(now, raw); watchQuality(now, raw); }
         // мягкая прокрутка (assets/scroll.js) сдвигает страницу до замера: частицы не отстают от контента
         if (window.PTScroll) window.PTScroll.tick(now);
         rootFast();
-        if (running && queue.length && now > abortAt) {
-          abortAt = now + 200;
-          var rr = running.el.getBoundingClientRect();
-          if (rr.bottom < 0 || rr.top > VH || (rr.top < 0 && rr.bottom < VH * 0.12)) abortRun();
-        }
+        if (running && queue.length && now > abortAt) checkAbort(now);
         var shift = lastTop == null ? 0 : lastTop - rootTop; lastTop = rootTop;
+        // холст — на место: окно и запас CM сверху и снизу (пишем, только когда сдвиг меняется)
+        var ty = Math.round(-rootTop - CM);
+        if (ty !== cvY) { cvY = ty; if (canvas) canvas.style.transform = 'translate3d(0,' + ty + 'px,0)'; }
         // фоновая пыль: пока идёт сборка (и 0.4 с после — между секциями в очереди не мигает) — реже, потом снова вся
         if (running) dustT = now;
         var dl = now - dustT < 400 ? 0 : 1;
         if (booted && dl !== dustLvl) { dustLvl = dl; dustSet(dl === 1); }
-        if (fillJob) { var fj = fillJob; fillRun(fj, fj.step); if (fj.k >= fj.idx.length && fillJob === fj) fillJob = null; }
-        var f = Math.min(3, dt * 60), damp = Math.pow(0.855, f), k = 0.015 * f, dd = Math.pow(0.975, f);
-        // курсор — «свет» (TASK-clarity.md, B4): слабый толчок от курсора и закручивание вокруг него — частицы обтекают его и
-        // не улетают (раньше толчок ×1.6 выметал пыль, и вокруг мыши оставалось пустое пятно); свободная пыль в круге ярче и
-        // чуть крупнее. На телефоне курсора нет — эффекта нет
-        var mx = mouse.cx - rootLeft, my = mouse.cy - rootTop, R = mob ? 0 : 110, R2 = R * R;
-        var ca = Math.min(1, dt * 3.5), aa = Math.min(1, dt * 3), ts = now * 0.00035, vt = -rootTop, n = 0;
+        if (fillJob) fillSlice(fillJob, performance.now() + FILL_MS);
+        var f = Math.min(3, dt * 60);
         // первый экран собран и не пересобирается — свободные точки пыли над его текстом горят слабее (CALM_A)
-        var calmOn = hero.state === 'done' && calmZones().length > 0;
-        // Невидимые частицы (погасли и гаснут дальше) на экран не попадают, их движение не видно. Свободные только едут
-        // вместе со страницей и остаются в пределах экрана (перенос с края на край) — оттуда их возьмёт следующая сборка или
-        // пыль. Погасшие на буквах после сборки (до переноса в случайную точку, 1.3–2 с) стоят на месте: пружина уже
-        // привела их к цели. Цвет и затухание скорости — по очереди, четверть за кадр, с накопленным временем своей четверти
-        // (lzT). Раньше свободным считался тот же дрейф, что и видимым (два Math.random, синус и косинус), а погасшим на
-        // буквах — пружина: две трети времени цикла в покое. Видимые частицы считаются каждый кадр, как раньше; назначенная
-        // смена цели (SW) проверяется раньше, так что частица, которой пора загореться, считается полностью.
+        var calmOn = hero.state === 'done' && calmZones().length > 0 ? 1 : 0;
+        // невидимые частицы — по очереди, четверть за кадр, с накопленным временем своей четверти (lzT)
         lzQ = (lzQ + 1) & 3;
         for (var q = 0; q < 4; q++) lzT[q] += dt;
-        var ldt = lzT[lzQ], lf = Math.min(12, ldt * 60), ldd = Math.pow(0.975, lf), lca = Math.min(1, ldt * 3.5), laa = Math.min(1, ldt * 3);
+        var ldt = lzT[lzQ], lf = Math.min(12, ldt * 60);
         lzT[lzQ] = 0;
-        var jn = (Math.random() * 8192) | 0;
-        for (var i = 0; i < N; i++) {
+        // курсор — «свет» (TASK-clarity.md, B4); на телефоне курсора нет — R = 0
+        var n = stepParticles(now, f, shift, mouse.cx - rootLeft, mouse.cy - rootTop, mob ? 0 : 110, Math.min(1, dt * 3.5), Math.min(1, dt * 3), now * 0.00035,
+          lzQ, Math.min(1, ldt * 3.5), Math.min(1, ldt * 3), Math.pow(0.975, lf), calmOn, (Math.random() * 8192) | 0);
+        drawSmoke(dt, f);
+        wakeNext();
+        tickScenes(dt);
+        render(n);
+      }
+      // собираемая секция ушла с экрана, а видимые ждут — дособрать её сразу (раз в 200 мс)
+      function checkAbort(now) {
+        abortAt = now + 200;
+        var rr = running.el.getBoundingClientRect();
+        if (rr.bottom < 0 || rr.top > VH || (rr.top < 0 && rr.bottom < VH * 0.12)) abortRun();
+      }
+      function tickScenes(dt) { for (var si = 0; si < scenes.length; si++) scenes[si].tick(dt); }
+      // Невидимые частицы (погасли и гаснут дальше) на экран не попадают, их движение не видно. Свободные только едут вместе со
+      // страницей и остаются в пределах экрана (перенос с края на край) — оттуда их возьмёт следующая сборка или пыль. Погасшие
+      // на буквах после сборки (до переноса в случайную точку, 1.3–2 с) стоят на месте: пружина уже привела их к цели. Цвет и
+      // затухание скорости — по очереди, четверть за кадр (lzq), с накопленным временем своей четверти. Видимые частицы
+      // считаются каждый кадр; назначенная смена цели (SW) проверяется раньше, так что частица, которой пора загореться,
+      // считается полностью. Случайный шум — из таблицы JN (и у свободной пыли: тот же шум той же силы, без Math.random на
+      // каждую частицу). Координаты на холсте — от его верха (cvY); отсекаем по холсту с запасом CM
+      function stepParticles(now, f, shift, mx, my, R, ca, aa, ts, lzq, lca, laa, ldd, calmOn, jn) {
+        var P_ = P, V_ = V, T_ = T, NT_ = NT, C_ = C, CT_ = CT, NC_ = NC, A_ = A, AT_ = AT, NA_ = NA, SZ_ = SZ, NS_ = NS, SW_ = SW, M_ = M, NM_ = NM, SP_ = SP, TP_ = TP, B = BUF, J = JN;
+        var damp = Math.pow(0.855, f), k = 0.015 * f, dd = Math.pow(0.975, f), R2 = R * R, vt = -rootTop, vh = VH, w = W, cy0 = cvY, ch = CH, still = rm, bEnd = burstEnd, n = 0, cnt = N;
+        for (var i = 0; i < cnt; i++) {
           var p = i * 2, c = i * 3;
-          if (SW[i] && now >= SW[i]) {
-            T[p] = NT[p]; T[p + 1] = NT[p + 1]; CT[c] = NC[c]; CT[c + 1] = NC[c + 1]; CT[c + 2] = NC[c + 2];
-            AT[i] = NA[i]; SZ[i] = NS[i]; M[i] = NM[i]; SW[i] = 0;
-            if (TP[i]) { TP[i] = 0; P[p] = T[p]; P[p + 1] = T[p + 1]; V[p] = V[p + 1] = 0; A[i] = 0; C[c] = CT[c]; C[c + 1] = CT[c + 1]; C[c + 2] = CT[c + 2]; }
-            else if (!M[i] && !rm) { V[p] += (Math.random() - 0.5) * 3; V[p + 1] += (Math.random() - 0.5) * 3; }
+          if (SW_[i] && now >= SW_[i]) {
+            T_[p] = NT_[p]; T_[p + 1] = NT_[p + 1]; CT_[c] = NC_[c]; CT_[c + 1] = NC_[c + 1]; CT_[c + 2] = NC_[c + 2];
+            AT_[i] = NA_[i]; SZ_[i] = NS_[i]; M_[i] = NM_[i]; SW_[i] = 0;
+            if (TP_[i]) { TP_[i] = 0; P_[p] = T_[p]; P_[p + 1] = T_[p + 1]; V_[p] = V_[p + 1] = 0; A_[i] = 0; C_[c] = CT_[c]; C_[c + 1] = CT_[c + 1]; C_[c + 2] = CT_[c + 2]; }
+            else if (!M_[i] && !still) { V_[p] += J[jn = (jn + 1) & 8191] * 3; V_[p + 1] += J[jn = (jn + 1) & 8191] * 3; }
           }
-          if (AT[i] === 0 && A[i] < 0.01) {
-            if (M[i]) {
-              var ly = P[p + 1] + shift;
-              if (ly < vt - 30) ly += VH + 60; else if (ly > vt + VH + 30) ly -= VH + 60;
-              P[p + 1] = ly;
+          if (AT_[i] === 0 && A_[i] < 0.01) {
+            if (M_[i]) {
+              var ly = P_[p + 1] + shift;
+              if (ly < vt - 30) ly += vh + 60; else if (ly > vt + vh + 30) ly -= vh + 60;
+              P_[p + 1] = ly;
             }
-            if ((i & 3) === lzQ) {
-              C[c] += (CT[c] - C[c]) * lca; C[c + 1] += (CT[c + 1] - C[c + 1]) * lca; C[c + 2] += (CT[c + 2] - C[c + 2]) * lca;
-              A[i] += (AT[i] - A[i]) * laa; V[p] *= ldd; V[p + 1] *= ldd;
+            if ((i & 3) === lzq) {
+              C_[c] += (CT_[c] - C_[c]) * lca; C_[c + 1] += (CT_[c + 1] - C_[c + 1]) * lca; C_[c + 2] += (CT_[c + 2] - C_[c + 2]) * lca;
+              A_[i] += (AT_[i] - A_[i]) * laa; V_[p] *= ldd; V_[p + 1] *= ldd;
             }
             continue;
           }
-          var x = P[p], y = P[p + 1], vx = V[p], vy = V[p + 1];
-          if (M[i]) {
+          var x = P_[p], y = P_[p + 1], vx = V_[p], vy = V_[p + 1];
+          if (M_[i]) {
             y += shift;
-            vx += (Math.random() - 0.5) * 0.05 * f + Math.sin(y * 0.0045 + ts + SP[i]) * 0.012 * f;
-            vy += (Math.random() - 0.5) * 0.05 * f + Math.cos(x * 0.0045 - ts) * 0.012 * f;
+            vx += J[jn = (jn + 1) & 8191] * 0.05 * f + Math.sin(y * 0.0045 + ts + SP_[i]) * 0.012 * f;
+            vy += J[jn = (jn + 1) & 8191] * 0.05 * f + Math.cos(x * 0.0045 - ts) * 0.012 * f;
             vx *= dd; vy *= dd;
-          } else if (rm) { x = T[p]; y = T[p + 1]; vx = vy = 0; }
+          } else if (still) { x = T_[p]; y = T_[p + 1]; vx = vy = 0; }
           else {
-            var dx = T[p] - x, dy = T[p + 1] - y;
+            var dx = T_[p] - x, dy = T_[p + 1] - y;
             vx = (vx + dx * k) * damp; vy = (vy + dy * k) * damp;
             var d2 = dx * dx + dy * dy;
-            if (d2 > 400) { var dl = Math.sqrt(d2), sw = Math.min(1, dl / 260) * 0.45 * f * SP[i]; vx -= dy / dl * sw; vy += dx / dl * sw; }
-            var jf = 0.025 * f; vx += JN[jn = (jn + 1) & 8191] * jf; vy += JN[jn = (jn + 1) & 8191] * jf;
+            if (d2 > 400) { var dl = Math.sqrt(d2), sw = Math.min(1, dl / 260) * 0.45 * f * SP_[i]; vx -= dy / dl * sw; vy += dx / dl * sw; }
+            var jf = 0.025 * f; vx += J[jn = (jn + 1) & 8191] * jf; vy += J[jn = (jn + 1) & 8191] * jf;
           }
           var ex = x - mx, ey = y - my, e2 = ex * ex + ey * ey;
           var lt = 0, ox = 0, oy = 0;
@@ -891,25 +938,22 @@
             // Частицы сборки держит пружина — толчок и закручивание в скорость. Свободную пыль держит только затухание 0.975:
             // те же добавки копились, точка раскручивалась и вылетала из круга, и вокруг мыши (обычно посреди экрана) было
             // пусто. Ей — сдвиг, а не скорость: медленно обтекает курсор по кругу (до ~1 px за кадр у центра) и не улетает.
-            if (M[i]) { lt = 1 - ed / R; ox = -ey / ed * lt * 0.9 * f; oy = ex / ed * lt * 0.9 * f; }
+            if (M_[i]) { lt = 1 - ed / R; ox = -ey / ed * lt * 0.9 * f; oy = ex / ed * lt * 0.9 * f; }
             else { vx += ex / ed * es - ey / ed * sv; vy += ey / ed * es + ex / ed * sv; }
           }
           x += vx * f + ox; y += vy * f + oy;
-          if (M[i] && now > burstEnd) { if (x < -4) x += W + 8; else if (x > W + 4) x -= W + 8; if (y < vt - 30) y += VH + 60; else if (y > vt + VH + 30) y -= VH + 60; }
-          P[p] = x; P[p + 1] = y; V[p] = vx; V[p + 1] = vy;
-          C[c] += (CT[c] - C[c]) * ca; C[c + 1] += (CT[c + 1] - C[c + 1]) * ca; C[c + 2] += (CT[c + 2] - C[c + 2]) * ca;
-          A[i] += (AT[i] - A[i]) * aa;
-          var sx = x + rootLeft, sy = y + rootTop;
-          if (A[i] < 0.01 || sy < -8 || sy > VH + 8 || sx < -8 || sx > W + 8) continue;
-          var cz = calmOn && M[i] && inCalm(x, y) ? CALM_A : 1;
+          if (M_[i] && now > bEnd) { if (x < -4) x += w + 8; else if (x > w + 4) x -= w + 8; if (y < vt - 30) y += vh + 60; else if (y > vt + vh + 30) y -= vh + 60; }
+          P_[p] = x; P_[p + 1] = y; V_[p] = vx; V_[p + 1] = vy;
+          C_[c] += (CT_[c] - C_[c]) * ca; C_[c + 1] += (CT_[c + 1] - C_[c + 1]) * ca; C_[c + 2] += (CT_[c + 2] - C_[c + 2]) * ca;
+          A_[i] += (AT_[i] - A_[i]) * aa;
+          var cy = y - cy0;
+          if (A_[i] < 0.01 || cy < -8 || cy > ch + 8 || x < -8 || x > w + 8) continue;
+          var cz = calmOn && M_[i] && inCalm(x, y) ? CALM_A : 1;
           var b = n * 7; n++;
-          BUF[b] = sx; BUF[b + 1] = sy; BUF[b + 2] = C[c]; BUF[b + 3] = C[c + 1]; BUF[b + 4] = C[c + 2];
-          BUF[b + 5] = (lt ? Math.min(0.9, A[i] * (1 + 1.4 * lt)) : A[i]) * cz; BUF[b + 6] = lt ? SZ[i] * (1 + 0.25 * lt) : SZ[i];
+          B[b] = x; B[b + 1] = cy; B[b + 2] = C_[c]; B[b + 3] = C_[c + 1]; B[b + 4] = C_[c + 2];
+          B[b + 5] = (lt ? Math.min(0.9, A_[i] * (1 + 1.4 * lt)) : A_[i]) * cz; B[b + 6] = lt ? SZ_[i] * (1 + 0.25 * lt) : SZ_[i];
         }
-        drawSmoke(dt, f);
-        if (wakeQ.length) wakeQ.shift().wake();
-        for (var si = 0; si < scenes.length; si++) scenes[si].tick(dt);
-        render(n);
+        return n;
       }
       function makeSprites() {
         for (var h = 0; h < 36; h++) {
@@ -978,7 +1022,9 @@
         clearTimeout(holdT); holdT = setTimeout(function () { env.hold = false; }, 150);
       }
       function onScrollSites() { lastScroll = performance.now(); sites.forEach(function (fr) { clearTimeout(fr._intent); }); }
+      var sitesBound = false;
       function bindSites() {
+        if (sitesBound) return; sitesBound = true;
         sites.forEach(function (fr) {
           var card = fr.closest('.obj') || fr.parentNode;
           var move = function (e) {
@@ -999,11 +1045,11 @@
         fitSites(el);
         // схемы панели разбора работы ([data-cp], cases.html) секция не будит: панель закрыта, холст нулевой — их будит сама
         // панель (pt:wake), когда показывает статью
-        scenes.forEach(function (sc) { if (el.contains(sc.cv) && !sc.cv.closest('[data-cp]')) { if (rm) sc.wake(); else if (wakeQ.indexOf(sc) < 0) wakeQ.push(sc); } });
+        scenes.forEach(function (sc) { if (el.contains(sc.cv) && !sc.cv.closest('[data-cp]')) { if (rm) sc.wake(); else wakePush(sc); } });
         secDone(el);
       }
       // секция собрана — событие для отклика на цели якоря (scroll.js, arrive): цель в несобранной секции ждёт его
-      function secDone(el) { if (el === hero.el) heroIdle(); try { window.dispatchEvent(new CustomEvent('pt:secdone', { detail: el })); } catch (e) { /* старый браузер */ } }
+      function secDone(el) { if (el === hero.el) { heroIdle(); idleOnce(bindSites); } try { window.dispatchEvent(new CustomEvent('pt:secdone', { detail: el })); } catch (e) { /* старый браузер */ } }
       // панель разбора работы (assets/cases.js, TASK-cases-panel.md, 4.6). pt:sleep — сцены внутри detail засыпают (сетка под
       // открытой панелью, статья, с которой ушли), живые превью гаснут: под подложкой их кадры не нужны. pt:wake — просыпаются
       // с того же места (resume); ещё не просыпавшиеся — как обычно, но только в собранной секции. Заново с первого узла —
@@ -1035,10 +1081,10 @@
           gl.enableVertexAttribArray(U.aP); gl.vertexAttribPointer(U.aP, 2, gl.FLOAT, false, 28, 0);
           gl.enableVertexAttribArray(U.aC); gl.vertexAttribPointer(U.aC, 4, gl.FLOAT, false, 28, 8);
           gl.enableVertexAttribArray(U.aS); gl.vertexAttribPointer(U.aS, 1, gl.FLOAT, false, 28, 24);
-          gl.uniform2f(U.uR, W, VH); gl.uniform1f(U.uD, dpr);
+          gl.uniform2f(U.uR, W, CH); gl.uniform1f(U.uD, dpr);
           gl.drawArrays(gl.POINTS, 0, n);
         } else if (c2) {
-          c2.clearRect(0, 0, W, VH); c2.globalCompositeOperation = 'lighter';
+          c2.clearRect(0, 0, W, CH); c2.globalCompositeOperation = 'lighter';
           for (var j = 0; j < n; j++) {
             var b = j * 7, s = BUF[b + 6];
             c2.fillStyle = 'rgba(' + Math.round(BUF[b + 2] * 255) + ',' + Math.round(BUF[b + 3] * 255) + ',' + Math.round(BUF[b + 4] * 255) + ',' + BUF[b + 5].toFixed(3) + ')';
@@ -1318,7 +1364,7 @@
         });
         if (frs.length) gens.push({ w: Math.max(1, gw) * 0.3, f: gFrames(frs, 0.6, 1.35) });
         if (!gens.length) gens.push({ w: 1, f: gAmbient });
-        fill(idx, gens, { instant: false, axis: 'x', spread: spread, rnd: 0.08 });
+        fill(idx, gens, fopt(false, 'x', 0, 1, spread, 0.08, false));
         cur = null;
       }
       // Смена языка на экране. Частицы ложатся на буквы текущего текста и контуры рамок, и гаснет всё сразу: у секций
@@ -1381,14 +1427,46 @@
         if (rm) return;
         if (lastPX != null) {
           var dx = e.clientX - lastPX, dy = e.clientY - lastPY, d = Math.sqrt(dx * dx + dy * dy), n = Math.min(14, Math.floor(d / 3));
-          if (!lite) for (var k = 1; k <= n; k++) emit(lastPX + dx * k / n, lastPY + dy * k / n, dx, dy);
+          if (!lite && n) { if (!SPR.length) makeSprites(); for (var k = 1; k <= n; k++) emit(lastPX + dx * k / n, lastPY + dy * k / n, dx, dy); }
           if (n) { lastPX = e.clientX; lastPY = e.clientY; }
         } else { lastPX = e.clientX; lastPY = e.clientY; }
         start();
       }
       function onOut(e) { if (!e.relatedTarget) { mouse.cx = -1e5; mouse.cy = -1e5; lastPX = lastPY = null; } }
       function reapply() { if (cur && running === cur.s) { measure(cur.s); cur.f(cur.s, cur.idx, true); } }
-      function onResize() { layoutGen++; layout(); rootRect(); reapply(); if (rm) { snap(); frame(performance.now()); } }
+      // Телефон: при прокрутке браузер прячет и показывает адресную строку — меняется только высота окна, а раскладка страницы
+      // та же (vh считается от большого окна). Раньше каждый такой resize сбрасывал замеры всех секций, пересоздавал холсты и
+      // перезапускал текущую стадию сборки (рывок всех частиц, ~100 мс на телефоне). Теперь — только новая высота для отсечения
+      // частиц: холст с запасом CM и так закрывает окно. Настоящий ресайз (другая ширина, поворот, окно на компьютере) — как
+      // раньше, но не чаще раза в 120 мс, последний — обязательно
+      var rzT = 0, rzAt = 0, coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+      function onResize() {
+        var w = root.clientWidth || window.innerWidth || 1, h = window.innerHeight || 800;
+        if (coarse && w === W && Math.abs(h - layoutVH) <= CM) { if (h !== VH) { VH = h; env.vh = h; } return; }
+        var now = performance.now(); clearTimeout(rzT);
+        if (now - rzAt >= 120) resizeNow(); else rzT = setTimeout(resizeNow, 120 - (now - rzAt));
+      }
+      function resizeNow() { rzT = 0; rzAt = performance.now(); layoutGen++; layout(); rootRect(); reapply(); if (rm) { snap(); frame(performance.now()); } }
+      // Сцены в карточках пересчитываются по размеру своего окна (ResizeObserver), а не по каждому resize окна: высота окна
+      // (адресная строка) их не касается; окно, показанное фильтром или панелью, получает размер само. Первое сообщение
+      // наблюдателя — размер при старте: его уже взял layout()
+      var sro = null;
+      function watchScenes() {
+        if (sro || !scenes.length || !('ResizeObserver' in window)) return;
+        var boxes = [], lists = [], seen = [];
+        scenes.forEach(function (sc) { var b = sc.cv.parentNode || sc.cv, k = boxes.indexOf(b); if (k < 0) { boxes.push(b); lists.push([sc]); seen.push(''); } else lists[k].push(sc); });
+        sro = new ResizeObserver(function (es) {
+          for (var e = 0; e < es.length; e++) {
+            var k = boxes.indexOf(es[e].target), r = es[e].contentRect, key = Math.round(r.width) + 'x' + Math.round(r.height);
+            if (k < 0) continue;
+            var was = seen[k]; seen[k] = key;
+            if (!was || was === key) continue;
+            env.mob = (root.clientWidth || window.innerWidth) < 760;
+            for (var j = 0; j < lists[k].length; j++) lists[k][j].resize();
+          }
+        });
+        boxes.forEach(function (b) { sro.observe(b); });
+      }
       // Догрузка шрифтов только сбрасывает кэш замеров: следующая стадия возьмёт свежую геометрию. Мгновенный
       // перезапуск текущей стадии (reapply) давал рывок всех частиц, если шрифт приходил посреди сборки.
       function onFonts() { layoutGen++; }
@@ -1414,10 +1492,9 @@
         // касание панели до монтажа: смонтировать и запустить сразу — обработчики модуля получат этот же клик
         hero.el.addEventListener('click', function (e) { if (heroLazy && e.target.closest && e.target.closest('[data-obj]')) { objPend = true; heroWake(); } }, true);
       } else try { heroObj = window.PTHero ? window.PTHero.mount(hero.el, { autostart: false }) : null; } catch (e) { heroObj = null; console.warn(e); }
-      makeSprites(); initGL(); layout(); rootRect();
+      initGL(); layout(); rootRect(); watchScenes();
       btns.forEach(function (b) { b.addEventListener('click', replay); });
       langLinks.forEach(function (a) { a.addEventListener('click', onLang); });
-      bindSites();
       if (lite) root.classList.add('pt-lite');
       window.addEventListener('wheel', onSkip, { passive: true });
       window.addEventListener('touchmove', onSkip, { passive: true });
@@ -1478,6 +1555,8 @@
       // «Назад» из кэша браузера (bfcache): страница вернулась целиком, сборка уже готова — только возобновляем кадры.
       // unload / beforeunload не вешаем: они отключают bfcache
       window.addEventListener('pageshow', function (e) { if (e.persisted) { prev = performance.now(); start(); } });
+      // панель замеров (?hud, assets/perf-hud.js): разрешение холста частиц и вид прокрутки колесом
+      window.PTPerf = { dpr: function () { return dpr; }, scroll: function () { return window.PTScroll && window.PTScroll.mode === 'soft' ? 'soft' : 'native'; } };
       return {
         setActive: function (v) { active = v; if (v) start(); },
         destroy: function () {
@@ -1490,7 +1569,7 @@
           window.removeEventListener('pointermove', onMove);
           window.removeEventListener('pointerdown', onMove);
           window.removeEventListener('pointerout', onOut);
-          window.removeEventListener('resize', onResize); window.removeEventListener('scroll', onHold); clearTimeout(holdT);
+          window.removeEventListener('resize', onResize); window.removeEventListener('scroll', onHold); clearTimeout(holdT); clearTimeout(rzT); if (sro) sro.disconnect();
           window.removeEventListener('scroll', onJumpScroll); window.removeEventListener('pt:jump', onJumpEv); clearTimeout(pumpT);
           window.removeEventListener('pt:shown', onShown); window.removeEventListener('pt:wake', onWakeEv); window.removeEventListener('pt:sleep', onSleepEv);
           window.removeEventListener('wheel', onSkip); window.removeEventListener('touchmove', onSkip);

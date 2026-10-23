@@ -16,13 +16,29 @@
   var de = document.documentElement;
   var rm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var LERP = 0.08;
+  // ?pt-scroll=native (TASK-perf.md, 0.2; держится до конца вкладки, ?pt-scroll=soft или ?pt-reset — обратно): колесо — нативное,
+  // без мягкой прокрутки. Якоря (to()) и свой скроллбар — как всегда. Меню и панели держат страницу и так (overflow: hidden
+  // у html.pt-lock / html.cp-lock)
+  var NATIVE = false;
+  try {
+    var fq = location.search, ss = window.sessionStorage;
+    if (/[?&]pt-reset(?:[=&]|$)/.test(fq)) ss.removeItem('pt-scroll');
+    var fm = /[?&]pt-scroll=(native|soft)(?:&|$)/.exec(fq);
+    if (fm) { if (fm[1] === 'native') ss.setItem('pt-scroll', 'native'); else ss.removeItem('pt-scroll'); }
+    NATIVE = ss.getItem('pt-scroll') === 'native';
+  } catch (e) { /* хранилище запрещено — мягкая */ }
   // начальная позиция не читается: чтение scrollY здесь заставляло браузер разложить всю страницу прямо посреди разбора
   // HTML (долгая задача на слабом телефоне). Её берут колесо (cur = tgt = scrollY, пока не едем), to() и обработчик scroll
   var cur = 0, tgt = 0, run = false, tw = null, last = -1, raf = 0, ours = 0;
   var bar = document.querySelector('[data-sbar]'), thumb = bar && bar.querySelector('[data-sbar-thumb]');
   var hideT = 0, drag = null, hover = false, th = 0;
 
-  function max() { return Math.max(0, de.scrollHeight - window.innerHeight); }
+  // Высота страницы и дорожки полосы — в переменных (TASK-perf.md, 3.3): обработчик scroll и колесо читали scrollHeight и
+  // clientHeight на каждом событии — принудительный пересчёт раскладки, если движок в этом кадре что-то менял. Обновляются по
+  // ResizeObserver на странице и по resize; положение ползунка — только из scrollY
+  var docH = 0, trackH = 0;
+  function sizes() { docH = de.scrollHeight; trackH = bar ? bar.clientHeight : 0; }
+  function max() { if (!docH) sizes(); return Math.max(0, docH - window.innerHeight); }
   function clamp(v) { return v < 0 ? 0 : Math.min(v, max()); }
   function put(y) { ours = y; window.scrollTo({ top: y, behavior: 'instant' }); }
   function ease(p) { return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; }
@@ -81,7 +97,7 @@
   }
 
   if (!rm) {
-    window.addEventListener('wheel', function (e) {
+    if (!NATIVE) window.addEventListener('wheel', function (e) {
       if (e.ctrlKey || e.defaultPrevented) return;
       // открыто меню (nav.js, html.pt-lock) — страница стоит
       if (de.classList.contains('pt-lock')) { e.preventDefault(); return; }
@@ -113,7 +129,7 @@
       to(el.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(el).scrollMarginTop) || 0), function () { arrive(el); });
       if (history.pushState) history.pushState(null, '', '#' + id);
     });
-    window.PTScroll = { tick: step, to: to, arrive: arrive };
+    window.PTScroll = { tick: step, to: to, arrive: arrive, mode: NATIVE ? 'native' : 'soft' };
   }
   window.addEventListener('scroll', function () {
     // прокрутил кто-то другой (клавиатура, тач, поиск, перетаскивание ползунка) — отдаём управление
@@ -123,14 +139,19 @@
   }, { passive: true });
   // ресайз: граница прокрутки — только пока едем (стоим — цель возьмётся из scrollY при следующем колесе), полоса — только
   // видимая (скрытую измерит show()). Раньше — два замера высоты страницы на каждый resize, в том числе на загрузке
-  window.addEventListener('resize', function () { if (run) tgt = clamp(tgt); if (bar && bar.classList.contains('on')) update(); });
+  window.addEventListener('resize', function () { if (docH) sizes(); if (run) tgt = clamp(tgt); if (bar && bar.classList.contains('on')) update(); });
+  if ('ResizeObserver' in window) {
+    var sro = new ResizeObserver(function () { if (docH) sizes(); });
+    if (document.body) sro.observe(document.body);
+    var site = document.getElementById('pt-site'); if (site) sro.observe(site);
+  }
 
   // ---------- скроллбар: скрыт, пока страницу не прокручивают; гаснет через 1.2 с после остановки ----------
   function update() {
     if (!bar) return false;
-    var m = max(), track = bar.clientHeight;
+    var m = max(), track = trackH || (trackH = bar.clientHeight);
     if (m < 1) { bar.classList.remove('on'); return false; }
-    th = Math.max(36, Math.round(track * window.innerHeight / de.scrollHeight));
+    th = Math.max(36, Math.round(track * window.innerHeight / docH));
     thumb.style.height = th + 'px';
     thumb.style.transform = 'translateY(' + ((track - th) * Math.min(1, window.scrollY / m)).toFixed(1) + 'px)';
     return true;
@@ -149,7 +170,7 @@
   });
   thumb.addEventListener('pointermove', function (e) {
     if (!drag) return;
-    var free = bar.clientHeight - th;
+    var free = (trackH || bar.clientHeight) - th;
     window.scrollTo({ top: drag.s + (e.clientY - drag.y) * (free > 0 ? max() / free : 0), behavior: 'instant' });
   });
   thumb.addEventListener('pointerup', end);

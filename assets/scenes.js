@@ -371,7 +371,8 @@
       if (env.rm) { drawStatic(); return; }
       ct = 0; stage = -1; RC = []; setStage(0);
     }
-    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, resume: resume, relang: relang };
+    // форма объекта сцены у всех фабрик одна (TASK-perf.md, 3.1): движок перебирает их в каждом кадре
+    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, resume: resume, relang: relang, restart: null };
   }
 
   // ---------- схемы: общий движок узлов, связей и импульсов ----------
@@ -1156,7 +1157,7 @@
     document.addEventListener('pointerdown', function (e) { if (card.classList.contains('is-open') && !card.contains(e.target)) { card.classList.remove('is-open'); poke(); } }, { passive: true });
     ['pointerenter', 'pointerleave', 'focusin', 'focusout'].forEach(function (ev) { card.addEventListener(ev, poke); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (on) { G.layout(g, st.w, st.h, st.w < 340); if (env.rm) still(); } });
-    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, relang: relang };
+    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, resume: null, relang: relang, restart: null };
   }
 
   window.PTScenes = {

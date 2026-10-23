@@ -179,11 +179,20 @@
         function onMove(e) { var r = root.getBoundingClientRect(); core.mouse.x = e.clientX - r.left; core.mouse.y = e.clientY - r.top; core.mouse.in = core.mouse.x > 0 && core.mouse.x < r.width && core.mouse.y > 0 && core.mouse.y < r.height; if (scene.onPointer) scene.onPointer(core.mouse.x, core.mouse.y); }
         function onOut(e) { if (!e.relatedTarget) { core.mouse.in = false; core.mouse.x = core.mouse.y = -1e5; if (scene.onPointer) scene.onPointer(-1e5, -1e5); } }
         function onResize() { env.mob = (root.clientWidth || window.innerWidth) < 760; if (env.n) env.mob = env.mob || false; core.layout(); if (env.rm) frame(performance.now()); }
+        // Пересчёт — когда меняется размер секции или панели (ResizeObserver), а не на каждый resize окна: на телефоне адресная
+        // строка при прокрутке меняет высоту окна, а панель «Кодекса» от неё не зависит (правка по TASK-perf.md, 1). Без
+        // ResizeObserver — как раньше
+        var ro = null, roKey = '';
+        function sizeKey() { return root.clientWidth + 'x' + root.clientHeight + ':' + panel.clientWidth + 'x' + panel.clientHeight; }
         window.addEventListener('pointermove', onMove, { passive: true });
         window.addEventListener('pointerdown', onMove, { passive: true });
         window.addEventListener('pointerout', onOut);
-        window.addEventListener('resize', onResize);
         core.layout(); if (scene.start) scene.start();
+        if ('ResizeObserver' in window) {
+          roKey = sizeKey();
+          ro = new ResizeObserver(function () { var k = sizeKey(); if (k === roKey || !alive) return; roKey = k; onResize(); });
+          ro.observe(root); ro.observe(panel);
+        } else window.addEventListener('resize', onResize);
         if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (alive) { core.layout(); if (scene.fonts) scene.fonts(); } });
         frame(performance.now()); start();
         return {
@@ -192,7 +201,7 @@
           destroy: function () {
             alive = false; if (raf) cancelAnimationFrame(raf); if (scene.destroy) scene.destroy(); core.release();
             window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerdown', onMove);
-            window.removeEventListener('pointerout', onOut); window.removeEventListener('resize', onResize);
+            window.removeEventListener('pointerout', onOut); window.removeEventListener('resize', onResize); if (ro) ro.disconnect();
           }
         };
       }

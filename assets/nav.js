@@ -7,12 +7,28 @@
   // граница липкой шапки — первый экран; на странице без движка (privacy.html) — блок шапки [data-top]
   var hero = root.querySelector('[data-sec="hero"], [data-top]'), pult = root.querySelector('[data-pult]');
 
+  // ---------- панель замеров ?hud (TASK-perf.md, 0.1) ----------
+  // Только по ?hud (дальше держится до конца вкладки) — без флага файл не грузится вовсе; ?hud=0 и ?pt-reset — выключить.
+  // Путь — от этого скрипта: на 404 страницы лежат по любому адресу
+  try {
+    var hq = location.search, hs = window.sessionStorage, me = document.currentScript;
+    if (/[?&]pt-reset(?:[=&]|$)/.test(hq) || /[?&]hud=0(?:&|$)/.test(hq)) hs.removeItem('pt-hud');
+    else if (/[?&]hud(?:[=&]|$)/.test(hq) || hs.getItem('pt-hud') === '1') {
+      var hud = document.createElement('script');
+      hud.src = me && me.src ? me.src.replace(/nav\.js(?:\?.*)?$/, 'perf-hud.js') : 'assets/perf-hud.js';
+      document.head.appendChild(hud);
+    }
+  } catch (e) { /* хранилище запрещено — без панели */ }
+
   // ---------- липкая шапка ----------
   // Пока первый экран в кадре — скрыта. Ниже: прокрутка вверх показывает, вниз прячет. После перехода по якорю
   // (меню, кнопки) остаётся видимой, пока человек сам не начнёт прокручивать.
   // прошлая позиция — с первого обновления, а не при загрузке: чтение scrollY здесь раскладывало всю страницу посреди разбора
   // HTML, а сразу за этим движок снимает .pt-boot — и раскладка считалась заново (~75 мс при CPU ×4 на телефоне)
   var lastY = null, shown = false, pinned = false, raf = 0;
+  // первый экран в кадре — по IntersectionObserver, а не getBoundingClientRect в каждом кадре прокрутки (TASK-perf.md, 3.3)
+  var heroIn = true;
+  if (hero && 'IntersectionObserver' in window) new IntersectionObserver(function (es) { heroIn = es[es.length - 1].isIntersecting; onScroll(); }, { threshold: 0 }).observe(hero);
   function show(v) {
     if (!bar || v === shown) return;
     shown = v; bar.classList.toggle('on', v);
@@ -23,14 +39,14 @@
     var y = window.scrollY, dy = lastY === null ? 0 : y - lastY; lastY = y;
     // закрепление после якоря снимает только сам человек (колесо, палец, клавиши): в начале поездки к секции первый
     // экран ещё в кадре, и сброс здесь гасил шапку
-    if (hero && hero.getBoundingClientRect().bottom > 0) show(false);
+    if (hero && heroIn) show(false);
     else if (pinned || dy < -1) show(true);
     else if (dy > 1) show(false);
     guardPult();
   }
   function onScroll() { if (!raf) raf = requestAnimationFrame(update); }
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll);
+  window.addEventListener('resize', function () { gDoc = null; pBox = null; onScroll(); });
   root.addEventListener('click', function (e) {
     var a = e.target.closest && e.target.closest('a[href^="#"]');
     if (a && a.getAttribute('href').length > 1) pinned = true;
@@ -151,6 +167,16 @@
   // ниже свёрнутый пульт ложился поверх карточек всех секций.
   var guard = hero ? Array.prototype.slice.call(hero.querySelectorAll('[data-obj], .hero-act .btn, .hero-act .lnk, .trust, .sv-fmt, .sv-step')) : [];
   var phone = window.matchMedia ? window.matchMedia('(max-width: 760px)') : null;
+  // Места кнопки и границы первого экрана — в переменных, в координатах документа (TASK-perf.md, 3.3): раньше каждый кадр
+  // прокрутки читал offset* пульта и getBoundingClientRect всех границ. Перемеряем на resize, при смене раскладки страницы
+  // (ResizeObserver) и при смене классов пульта; первый экран не в кадре — границы не нужны
+  var gDoc = null, hDoc = 0, pBox = null;
+  function measureGuard() {
+    var sy = window.scrollY; gDoc = [];
+    for (var k = 0; k < guard.length; k++) { var r = guard[k].getBoundingClientRect(); gDoc.push([r.left, r.top + sy, r.right, r.bottom + sy, r.width]); }
+    hDoc = hero ? hero.getBoundingClientRect().bottom + sy : 0;
+  }
+  if (hero && 'ResizeObserver' in window) new ResizeObserver(function () { gDoc = null; }).observe(root);
   function guardPult() {
     if (!pult) return;
     var off = false;
@@ -159,14 +185,19 @@
       // плашке выходило бы «легла на контент» — кнопка пряталась сразу после пересборки и не возвращалась
       // место кнопки — без трансформации: при первом сворачивании она катится в угол (engine.js, rollPult), и по
       // getBoundingClientRect выходило бы «стоит по центру внизу» — кнопка пряталась и не возвращалась до прокрутки
-      var bl = pult.offsetLeft, bb = pult.offsetTop + pult.offsetHeight, p = { left: bl, right: bl + 44, top: bb - 44, bottom: bb };
-      // телефон: только пока под кнопкой сам первый экран. Первый экран страницы услуг короче окна, и раньше (правило
-      // «первый экран целиком ушёл вверх») ↻ ложилась на заголовок и текст следующей секции
-      if (phone && phone.matches && hero && hero.getBoundingClientRect().bottom < p.bottom) off = true;
-      for (var k = 0; k < guard.length && !off; k++) { var r = guard[k].getBoundingClientRect(); off = r.width > 0 && r.right > p.left && r.left < p.right && r.bottom > p.top && r.top < p.bottom; }
+      if (!pBox) { var bl = pult.offsetLeft, bb = pult.offsetTop + pult.offsetHeight; pBox = { left: bl, right: bl + 44, top: bb - 44, bottom: bb }; }
+      var p = pBox, sy = window.scrollY;
+      if (hero && !heroIn) off = !!(phone && phone.matches);
+      else {
+        if (!gDoc) measureGuard();
+        // телефон: только пока под кнопкой сам первый экран. Первый экран страницы услуг короче окна, и раньше (правило
+        // «первый экран целиком ушёл вверх») ↻ ложилась на заголовок и текст следующей секции
+        if (phone && phone.matches && hero && hDoc - sy < p.bottom) off = true;
+        for (var k = 0; k < gDoc.length && !off; k++) { var g = gDoc[k]; off = g[4] > 0 && g[2] > p.left && g[0] < p.right && g[3] - sy > p.top && g[1] - sy < p.bottom; }
+      }
     }
     if (pult.classList.contains('is-off') !== off) pult.classList.toggle('is-off', off);
   }
-  if (pult && 'MutationObserver' in window) new MutationObserver(guardPult).observe(pult, { attributes: true, attributeFilter: ['class'] });
+  if (pult && 'MutationObserver' in window) new MutationObserver(function () { pBox = null; guardPult(); }).observe(pult, { attributes: true, attributeFilter: ['class'] });
   update();
 })();

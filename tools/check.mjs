@@ -2751,6 +2751,42 @@ console.log('\nпанель «Частые вопросы»');
   if (bad.length) fail('панель «Частые вопросы»: ' + bad.join('; '));
   else console.log('  ✓ плашки на услугах и в каталоге (без числа; «9» в счётчике панели = числу вопросов), панель: адрес #faq, фокус, ответы клик / Enter, плюс → минус, колесо крутит тело, Tab внутри; закрывают Esc, ×, подложка, «Назад», свайп — фокус на плашку; каталог — на группе «Подписка и шаблоны», фильтр на месте; «Вопросы» в подвале — на месте, с главной — services#faq после сборки; Метрика faq_open { page } только после «Принять»; EN без кириллицы; без JS — вопросы на месте плашки');
 }
+// TASK-perf.md: панель замеров assets/perf-hud.js грузится только по ?hud (и держится до конца вкладки, ?hud=0 — выключить);
+// холст частиц — в документе (position: absolute внутри .pt, сдвиг translate3d), высота — окно и запас 15 % сверху и снизу;
+// высота документа от холста не растёт; ?pt-q=1 фиксирует облегчение, ?pt-scroll=native — колесо без мягкой прокрутки
+console.log('\nperf: панель замеров, холст частиц, флаги');
+{
+  const bad = [];
+  for (const f of ['index.html', 'services.html', 'cases.html', 'automations.html', 'process.html', '404.html']) {
+    const h = readFileSync(path.join(root, f), 'utf8');
+    if (!/<canvas data-pt-canvas aria-hidden="true" style="position: absolute; top: 0; left: 0; width: 100%; height: 100vh; display: block; pointer-events: none; z-index: 30; will-change: transform"><\/canvas>/.test(h)) bad.push(`${f}: стиль холста частиц`);
+    if (/perf-hud/.test(h)) bad.push(`${f}: perf-hud.js в разметке`);
+  }
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await ctx.newPage(), hud = [], errs = [];
+  page.on('request', (r) => { if (/perf-hud\.js/.test(r.url())) hud.push(r.url()); });
+  page.on('pageerror', (e) => errs.push(e.message));
+  await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(800);
+  const h0 = await page.evaluate(() => document.documentElement.scrollHeight);
+  if (hud.length) bad.push('без флага загружен perf-hud.js');
+  await page.evaluate(() => window.scrollTo({ top: 1500, behavior: 'instant' })); await page.waitForTimeout(400);
+  const cv = await page.evaluate(() => { const c = document.querySelector('[data-pt-canvas]'), r = c.getBoundingClientRect(), cs = getComputedStyle(c); return { pos: cs.position, top: Math.round(r.top), h: Math.round(r.height), vh: innerHeight, sh: document.documentElement.scrollHeight }; });
+  if (cv.pos !== 'absolute' || Math.abs(cv.top + Math.round(cv.vh * 0.15)) > 2 || Math.abs(cv.h - (cv.vh + 2 * Math.round(cv.vh * 0.15))) > 2 || cv.sh !== h0) bad.push('холст частиц: ' + JSON.stringify(cv) + ' было ' + h0);
+  await page.goto(BASE + 'services.html?intro=instant&hud'); await page.waitForTimeout(800);
+  await page.goto(BASE + 'cases.html?intro=instant'); await page.waitForTimeout(800);
+  const box = await page.evaluate(() => !!window.__ptHud);
+  if (!hud.length || !box) bad.push(`?hud: загрузок ${hud.length}, панель на следующей странице ${box}`);
+  await page.goto(BASE + 'cases.html?intro=instant&hud=0&pt-q=1&pt-scroll=native'); await page.waitForTimeout(800);
+  const fl = await page.evaluate(() => ({ lite: document.getElementById('pt-site').classList.contains('pt-lite'), q: sessionStorage.getItem('pt-qfix'), sc: window.PTScroll && window.PTScroll.mode, perf: window.PTPerf && window.PTPerf.scroll() }));
+  if (!fl.lite || fl.q !== '1' || fl.sc !== 'native' || fl.perf !== 'native') bad.push('флаги: ' + JSON.stringify(fl));
+  await page.goto(BASE + 'cases.html?intro=instant&pt-reset'); await page.waitForTimeout(600);
+  const rs = await page.evaluate(() => ({ q: sessionStorage.getItem('pt-qfix'), sc: window.PTScroll && window.PTScroll.mode, hud: sessionStorage.getItem('pt-hud') }));
+  if (rs.q !== null || rs.sc !== 'soft' || rs.hud !== null) bad.push('?pt-reset: ' + JSON.stringify(rs));
+  errs.forEach((e) => bad.push('ошибка: ' + e));
+  await ctx.close();
+  if (bad.length) fail('perf: ' + bad.join('; '));
+  else console.log('  ✓ perf-hud.js — только по ?hud и до конца вкладки; холст частиц в документе: окно ± 15 %, высота страницы та же; ?pt-q, ?pt-scroll=native, ?pt-reset');
+}
 function woff2Cmap(file) {
   const buf = readFileSync(file);
   if (buf.toString('latin1', 0, 4) !== 'wOF2') throw new Error('не woff2: ' + file);
