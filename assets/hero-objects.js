@@ -177,10 +177,12 @@
         if (!gcv || !ocv || !panel) return null;
         var env = { rm: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches), mob: (root.clientWidth || window.innerWidth) < 760, n: +(root.getAttribute('data-n') || 0) };
         var core = makeCore(root, gcv, ocv, panel, env), scene = makeScene(core, root, env);
-        var raf = 0, alive = true, active = true, prev = performance.now();
+        // held — пауза на время прокрутки в облегчённом режиме (движок, TASK-perf): отдельно от active (вне экрана), чтобы одна
+        // не снимала другую
+        var raf = 0, alive = true, active = true, held = false, prev = performance.now();
         function frame(now) { var dt = Math.min(0.05, Math.max(0, (now - prev) / 1000)); prev = now; core.step(env.rm ? 0 : dt); }
-        function loop(now) { raf = 0; if (!alive || !active) return; frame(now); if (!env.rm) raf = requestAnimationFrame(loop); }
-        function start() { if (raf || !alive || !active) return; prev = performance.now(); raf = requestAnimationFrame(loop); }
+        function loop(now) { raf = 0; if (!alive || !active || held) return; frame(now); if (!env.rm) raf = requestAnimationFrame(loop); }
+        function start() { if (raf || !alive || !active || held) return; prev = performance.now(); raf = requestAnimationFrame(loop); }
         function onMove(e) { var r = root.getBoundingClientRect(); core.mouse.x = e.clientX - r.left; core.mouse.y = e.clientY - r.top; core.mouse.in = core.mouse.x > 0 && core.mouse.x < r.width && core.mouse.y > 0 && core.mouse.y < r.height; if (scene.onPointer) scene.onPointer(core.mouse.x, core.mouse.y); }
         function onOut(e) { if (!e.relatedTarget) { core.mouse.in = false; core.mouse.x = core.mouse.y = -1e5; if (scene.onPointer) scene.onPointer(-1e5, -1e5); } }
         function onResize() { env.mob = (root.clientWidth || window.innerWidth) < 760; if (env.n) env.mob = env.mob || false; core.layout(); if (env.rm) frame(performance.now()); }
@@ -203,6 +205,7 @@
         return {
           scene: scene, core: core,
           setActive: function (v) { active = v; if (v) start(); },
+          hold: function (v) { v = !!v; if (held === v) return; held = v; if (scene.hold) scene.hold(v); if (!v) start(); },
           destroy: function () {
             alive = false; if (raf) cancelAnimationFrame(raf); if (scene.destroy) scene.destroy(); core.release();
             window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerdown', onMove);
@@ -781,7 +784,10 @@
           begin: begin,
           replay: function () { if (!started) { begin(false); return; } core.kick(core.all(), 0.35); setSlot(slot, 'build'); },
           go: function (k) { if (started) setSlot(k); },
-          relabel: labels
+          relabel: labels,
+          // пауза на время прокрутки (hold): полоска активной вкладки — анимация компоновщика, она шла бы дальше без объекта и
+          // после прокрутки отскакивала назад к slotT
+          hold: function (v) { if (!fa) return; if (v) fa.pause(); else if (e < 0.5) fa.play(); }
         };
       }
       return boot(root, makeScene);
@@ -800,7 +806,7 @@
       root.__ptHeroOpts = opts || {}; ensureCanvas(root);
       var h = factory(root); if (!h) return null;
       if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { es.forEach(function (e) { h.setActive(e.isIntersecting); }); }, { threshold: 0.01 }).observe(root);
-      return { count: h.core.N, start: function (instant) { h.scene.begin(!!instant); }, replay: function () { h.scene.replay(); }, go: function (k) { h.scene.go(k); }, relabel: function () { h.scene.relabel(); }, setActive: h.setActive, destroy: h.destroy };
+      return { count: h.core.N, start: function (instant) { h.scene.begin(!!instant); }, replay: function () { h.scene.replay(); }, go: function (k) { h.scene.go(k); }, relabel: function () { h.scene.relabel(); }, setActive: h.setActive, hold: h.hold, destroy: h.destroy };
     }
   };
 })();

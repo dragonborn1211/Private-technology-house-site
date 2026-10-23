@@ -1016,10 +1016,14 @@
       // через 150 мс после остановки идут дальше. Пыль и частицы сборки не трогаем. Человек в этот момент листает — паузы
       // не видно, а кадр прокрутки легче
       var holdT = 0;
+      // Объект «Кодекса» в облегчённом режиме на время прокрутки тоже стоит (владелец 2026-10-23, TASK-perf, телефон: на первом
+      // экране упор в объект — без него прокрутка шла 60 к/с, с ним ~40). Пальцем листают — паузы не видно; через 150 мс он
+      // продолжает с того же места, полоска вкладки — тоже
       function onHold() {
         if (!lite) return;
         env.hold = true;
-        clearTimeout(holdT); holdT = setTimeout(function () { env.hold = false; }, 150);
+        if (heroObj && heroObj.hold) heroObj.hold(true);
+        clearTimeout(holdT); holdT = setTimeout(function () { env.hold = false; if (heroObj && heroObj.hold) heroObj.hold(false); }, 150);
       }
       function onScrollSites() { lastScroll = performance.now(); sites.forEach(function (fr) { clearTimeout(fr._intent); }); }
       var sitesBound = false;
