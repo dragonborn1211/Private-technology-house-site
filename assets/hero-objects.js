@@ -116,6 +116,9 @@
           var k = me.k * f60, damp = Math.pow(me.damp, f60), ca = Math.min(1, dt * 3.5), aa = Math.min(1, dt * 3), od = Math.pow(0.9, f60);
           var R = env.mob ? 55 : 85, R2 = R * R, n = 0, S = me.S, cxx = me.cx, cyy = me.cy, dpr = me.dpr;
           var dyn = me.dyn, tt = me.t;
+          // TASK-perf: постоянные кадра — вне цикла; частицу, которая и так не будет видна (яркость без множителя глубины, а он
+          // не больше 1, — меньше 0.01), не проецируем: её физика идёт как прежде, а проекция и запись в буфер ей не нужны
+          var ab = me.ab, tk = me.tk, tq = 1 - tk, tn0 = me.tint[0], tn1 = me.tint[1], tn2 = me.tint[2], ps = me.ps;
           for (var i = 0; i < N; i++) {
             var j = i * 3;
             if (SW[i] > 0 && me.t >= SW[i]) apply(i);
@@ -130,7 +133,9 @@
               C[j] += (CT[j] - C[j]) * ca; C[j + 1] += (CT[j + 1] - C[j + 1]) * ca; C[j + 2] += (CT[j + 2] - C[j + 2]) * ca;
               A[i] += (AT[i] - A[i]) * aa;
             }
-            var g = G[i], sc = gScale[g], x = P[j] * sc, y = P[j + 1] + gLift[g], z = P[j + 2] * sc;
+            var g = G[i], a0 = ab * A[i] * DB[i] * gBright[g] * gOn[g];
+            if (a0 < 0.01) { if (!env.rm) { O[i * 2] *= od; O[i * 2 + 1] *= od; } continue; }
+            var sc = gScale[g], x = P[j] * sc, y = P[j + 1] + gLift[g], z = P[j + 2] * sc;
             var rx = x * rc.cy + z * rc.sy, rz0 = -x * rc.sy + z * rc.cy, ry = y * rc.cp - rz0 * rc.sp, rz = y * rc.sp + rz0 * rc.cp, ff = D / (D - rz);
             var sx = cxx + rx * ff * S, sy = cyy - ry * ff * S, o2 = i * 2;
             if (!env.rm) {
@@ -138,11 +143,11 @@
               if (e2 < R2) { var ed = Math.sqrt(e2) || 1, es = (1 - ed / R) * 2.2 * f60; O[o2] += ex / ed * es; O[o2 + 1] += ey / ed * es; }
               O[o2] *= od; O[o2 + 1] *= od;
             }
-            var a = me.ab * A[i] * DB[i] * gBright[g] * gOn[g] * (0.42 + 0.58 * clamp((rz + 1.1) / 2.2, 0, 1));
+            var a = a0 * (0.42 + 0.58 * clamp((rz + 1.1) / 2.2, 0, 1));
             if (a < 0.01) continue;
             var b = n * 7; n++;
-            BUF[b] = sx + O[o2]; BUF[b + 1] = sy + O[o2 + 1]; var tk = me.tk, lu = (C[j] * 0.3 + C[j + 1] * 0.5 + C[j + 2] * 0.2) * 1.18 * tk, tq = 1 - tk;
-            BUF[b + 2] = C[j] * tq + me.tint[0] * lu; BUF[b + 3] = C[j + 1] * tq + me.tint[1] * lu; BUF[b + 4] = C[j + 2] * tq + me.tint[2] * lu; BUF[b + 5] = a; BUF[b + 6] = SZ[i] * ff * dpr * me.ps;
+            BUF[b] = sx + O[o2]; BUF[b + 1] = sy + O[o2 + 1]; var lu = (C[j] * 0.3 + C[j + 1] * 0.5 + C[j + 2] * 0.2) * 1.18 * tk;
+            BUF[b + 2] = C[j] * tq + tn0 * lu; BUF[b + 3] = C[j + 1] * tq + tn1 * lu; BUF[b + 4] = C[j + 2] * tq + tn2 * lu; BUF[b + 5] = a; BUF[b + 6] = SZ[i] * ff * dpr * ps;
           }
           for (var e = 0; e < exN; e++) { var eb = e * 7, nb = n * 7; n++; BUF[nb] = EX[eb]; BUF[nb + 1] = EX[eb + 1]; BUF[nb + 2] = EX[eb + 2]; BUF[nb + 3] = EX[eb + 3]; BUF[nb + 4] = EX[eb + 4]; BUF[nb + 5] = EX[eb + 5]; BUF[nb + 6] = EX[eb + 6] * dpr; }
           draw(n);
@@ -244,6 +249,9 @@
         (function () {
           var PR = [0.4, 0.42, 0.33, 0.29, 0.22, 0.18, 0.155, 0.14, 0.13, 0.125, 0.128, 0.15, 0.2, 0.15, 0.21, 0.27], Y0 = -0.86, Y1 = 0.6, RS = 0.45;
           var stT = 0, cut = -0.9, sparks = [], rays = 0, tgt = [0.76, 0.76], tgtT = 0, tglow = 0, SQ = 0.38;
+          // TASK-perf: у точки токарной поверхности высота и угол постоянны — косинус, синус и профиль считаем один раз (раньше —
+          // для каждой из 5 200 / 10 000 частиц в каждом кадре); кэш сверяется со значениями частицы, новая раскладка его обновит
+          var qU = new Float32Array(core.N).fill(NaN), qV = new Float32Array(core.N).fill(NaN), qC = new Float64Array(core.N), qS = new Float64Array(core.N), qR = new Float64Array(core.N);
           function prof(y) { return crv(PR, (y - Y0) / (Y1 - Y0)); }
           var DIRS = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
           // ход — не дальше двух клеток: дальняя клетка на узкой панели уходила за её край, прямо на текст
@@ -262,7 +270,11 @@
             },
             f: function (A, i, t, o) {
               var q = A[i + 3], y, r, th;
-              if (q < 2) { y = A[i]; th = A[i + 1]; var on = y <= cut; r = on ? prof(y) : RS; o.x = r * Math.cos(th); o.z = r * Math.sin(th); o.y = y; o.b = on ? 1 : 0.28; if (Math.abs(y - cut) < 0.02) o.b = 2.2; }
+              if (q < 2) {
+                y = A[i]; th = A[i + 1]; var on = y <= cut, qj = i >> 2;
+                if (qU[qj] !== y || qV[qj] !== th) { qU[qj] = y; qV[qj] = th; qC[qj] = Math.cos(th); qS[qj] = Math.sin(th); qR[qj] = prof(y); }
+                r = on ? qR[qj] : RS; o.x = r * qC[qj]; o.z = r * qS[qj]; o.y = y; o.b = on ? 1 : 0.28; if (Math.abs(y - cut) < 0.02) o.b = 2.2;
+              }
               else if (q < 3) { var rr = A[i] * 0.26; th = A[i + 1]; o.x = rr * Math.cos(th); o.z = rr * Math.sin(th); o.y = 0.585 + 0.08 * (1 - A[i] * A[i]); o.b = cut > 0.62 ? 1 : 0; }
               else if (q < 4) { th = A[i]; var sp = A[i + 1], rr2 = 0.27 + 0.02 * sp; o.x = rr2 * Math.cos(th) + A[i + 2] * 0.01; o.z = rr2 * Math.sin(th); o.y = 0.6 + sp * 0.09; o.b = cut > 0.64 ? 1 : 0; }
               else if (q < 5) { o.x = A[i]; o.y = 0.74 + A[i + 1]; o.z = A[i + 2]; o.b = cut > 0.7 ? 1 : 0; }
