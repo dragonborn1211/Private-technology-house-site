@@ -99,8 +99,14 @@ else {
       else if (v[m[1]] && m[3] !== v[m[1]]) bad.push(`${f}: ${m[1]}?v=${m[3]}, а файл — ${v[m[1]]}`);
     }
   }
+  // ссылки с меткой внутри assets/*.js (nav.js → perf-hud.js, TASK-hud2)
+  const { INNER } = await import('./bump.mjs');
+  for (const f of readdirSync(path.join(root, 'assets')).filter((x) => x.endsWith('.js'))) {
+    for (const m of readFileSync(path.join(root, 'assets', f), 'utf8').matchAll(INNER)) if (v[m[2]] && m[3] !== v[m[2]]) bad.push(`assets/${f}: ${m[2]}?v=${m[3]}, а файл — ${v[m[2]]}`);
+  }
+  if (!/perf-hud\.js\?v=/.test(readFileSync(path.join(root, 'assets', 'nav.js'), 'utf8'))) bad.push('nav.js грузит perf-hud.js без метки версии');
   if (bad.length) fail(`версии ресурсов (запусти node tools/bump.mjs): ${bad.slice(0, 8).join('; ')}`);
-  else console.log('  ✓ версии стилей и скриптов в адресах совпадают с файлами на всех страницах');
+  else console.log('  ✓ версии стилей и скриптов в адресах совпадают с файлами на всех страницах и в ссылках внутри assets (perf-hud.js в nav.js)');
 }
 
 // отпечатки холстов-сцен, попавших под селектор (0 — холст пустой); кладётся в страницу до её скриптов

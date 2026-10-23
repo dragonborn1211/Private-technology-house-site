@@ -803,6 +803,8 @@
     'От 5 000 ₽ в месяц за сценарий. Точная цена зависит от шаблона и объёма — назовём после короткого созвона.': 'From\u00a05,000\u00a0₽ a\u00a0month per workflow. The exact price depends on the template and the workload; we’ll name it after a short call.',
     // TASK-redesign-prices.md: блок «Редизайн сайта», подписи «Когда сайт готов», редизайн в цене главной и в «Сколько это стоит?»
     'Редизайн сайта': 'Website redesign',
+    // ссылка «Редизайн» в «Двух форматах» (TASK-polish-3.md, 4); без ключа в EN оставалась по-русски
+    'Редизайн': 'Redesign',
     'Сайт уже есть, но выглядит устаревшим или не приносит заявок. Переделываем дизайн и подачу, а адрес и позиции в поиске сохраняем.': 'You already have a site, but it looks dated or doesn’t bring in leads. We rework the design and presentation and keep the address and search rankings.',
     'Разбор сайта': 'Site audit',
     'Новый дизайн': 'New design',

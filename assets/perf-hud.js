@@ -155,7 +155,8 @@
   }
   // строки короткие: на телефоне панель в ширину экрана, текст переносится. full — с подробностями (для «Копировать»)
   function summary(full) {
-    var m = mode(), ld = load(), P = window.PTPerf || {}, L = [location.pathname + location.search.replace(/[?&]hud\b[^&]*/, '') + ' · ' + hz + ' Гц · ' + m[0], m[1], ld.mode];
+    var u = new URLSearchParams(location.search); u.delete('hud'); var qs = u.toString();
+    var m = mode(), ld = load(), P = window.PTPerf || {}, L = [location.pathname + (qs ? '?' + qs : '') + ' · ' + hz + ' Гц · ' + m[0], m[1], ld.mode];
     if (win) {
       var secs = (win.done ? win.sum : performance.now() - win.t) / 1000;
       L.push('Замер ' + (win.done ? '10 с' : secs.toFixed(0) + ' с…') + ': ' + (win.n / Math.max(0.001, win.sum / 1000)).toFixed(0) + ' к/с');

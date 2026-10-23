@@ -9,13 +9,15 @@
 
   // ---------- панель замеров ?hud (TASK-perf.md, 0.1) ----------
   // Только по ?hud (дальше держится до конца вкладки) — без флага файл не грузится вовсе; ?hud=0 и ?pt-reset — выключить.
-  // Путь — от этого скрипта: на 404 страницы лежат по любому адресу
+  // Путь — от этого скрипта: на 404 страницы лежат по любому адресу. Метка версии — как у остальных файлов (иначе после
+  // выкладки телефон брал старую панель из кэша); её проставляет tools/bump.mjs, check.mjs сверяет
+  var HUD = 'perf-hud.js?v=043d405a';
   try {
     var hq = location.search, hs = window.sessionStorage, me = document.currentScript;
     if (/[?&]pt-reset(?:[=&]|$)/.test(hq) || /[?&]hud=0(?:&|$)/.test(hq)) hs.removeItem('pt-hud');
     else if (/[?&]hud(?:[=&]|$)/.test(hq) || hs.getItem('pt-hud') === '1') {
       var hud = document.createElement('script');
-      hud.src = me && me.src ? me.src.replace(/nav\.js(?:\?.*)?$/, 'perf-hud.js') : 'assets/perf-hud.js';
+      hud.src = me && me.src ? me.src.replace(/nav\.js(?:\?.*)?$/, HUD) : 'assets/' + HUD;
       document.head.appendChild(hud);
     }
   } catch (e) { /* хранилище запрещено — без панели */ }
