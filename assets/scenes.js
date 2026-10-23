@@ -13,7 +13,12 @@
   // перевод подписей на холстах (assets/i18n.js); без словаря — русский как есть
   function tr(s) { return window.PTI18N ? window.PTI18N.t(s) : s; }
   function lang() { return window.PTI18N ? window.PTI18N.lang : 'ru'; }
-  function offscreen(cv, env) { var b = cv.getBoundingClientRect(); return b.bottom < -20 || b.top > env.vh + 20; }
+  // На экране ли холст сцены (запас 20 px сверху и снизу) — по IntersectionObserver, а не getBoundingClientRect в каждом кадре
+  // (TASK-perf): замер посреди кадра заставлял браузер досчитывать стили и раскладку, а при сборке соседней секции — лишний раз
+  // (×6: до 40–68 мс за сборку «Готовых решений», пока выше виден демо-сайт). Без наблюдателя — замер, как раньше
+  var VIS = 'IntersectionObserver' in window ? new IntersectionObserver(function (es) { es.forEach(function (e) { e.target.__ptVis = e.isIntersecting; }); }, { rootMargin: '20px 0px' }) : null;
+  function watchVis(cv) { if (VIS) { cv.__ptVis = false; VIS.observe(cv); } }
+  function offscreen(cv, env) { if (VIS) return !cv.__ptVis; var b = cv.getBoundingClientRect(); return b.bottom < -20 || b.top > env.vh + 20; }
   // подгоняет буфер холста под размер окна-родителя; true — если размер поменялся
   function fitCanvas(cv, st) {
     var p = cv.parentNode, w = Math.max(1, p.clientWidth), h = Math.max(1, p.clientHeight), d = Math.min(window.devicePixelRatio || 1, 2);
@@ -34,9 +39,13 @@
   // ---------- «ваш проект»: по кругу собираются демо-сайты ----------
   function makeMini(cv, env) {
     if (!cv || !cv.getContext) return null;
+    watchVis(cv);
     var mx = cv.getContext('2d'), lab = cv.parentNode.querySelector('[data-mini-label]');
     var oc3 = document.createElement('canvas'), og3 = oc3.getContext('2d', { willReadFrequently: true });
     var MW = 1, MH = 1, md = 1, NP = 0, on = false, ct = 0, stage = -1, ti = 0, gridA = 0, wireA = 0, siteA = 0, RC = [], held = false;
+    // quiet — частиц на холсте не видно и смен цели не ждём (снимает любая стадия); drawn — прозрачность (×255) готового сайта,
+    // нарисованного одним в прошлом кадре (−1 — кадр был другим или холст очищен)
+    var quiet = false, drawn = -1;
     var X, Y, VX, VY, TX, TY, A, AT, CI, FR, NX, NY, NA, NC, NF, SWT;
     var GP = [], GRGB = [];
     function gi(hex) { var k = GP.indexOf(hex); if (k >= 0) return k; GP.push(hex); GRGB.push([parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]); return GP.length - 1; }
@@ -242,7 +251,7 @@
       }
     }
     function setStage(s, instant) {
-      stage = s; var tp = TPL[ti];
+      stage = s; quiet = false; var tp = TPL[ti];
       if (s === 0) {
         RC = rectsMemo(tp); prepSamples();
         var L = []; for (var q = 0; q <= 6; q++) L.push(MW * (0.06 + q * 0.88 / 6));
@@ -286,7 +295,7 @@
       var p = cv.parentNode, w = Math.max(1, p.clientWidth), h = Math.max(1, p.clientHeight);
       if (Math.abs(w - MW) < 0.5 && Math.abs(h - MH) < 0.5 && NP) return;
       var sx = w / MW, sy = h / MH;
-      MW = w; MH = h; md = Math.min(window.devicePixelRatio || 1, 2);
+      MW = w; MH = h; md = Math.min(window.devicePixelRatio || 1, 2); drawn = -1;
       cv.width = Math.round(MW * md); cv.height = Math.round(MH * md);
       if (!NP) {
         NP = env.mob ? 1400 : 2600;
@@ -303,15 +312,19 @@
     function drawStatic() { mx.setTransform(md, 0, 0, md, 0, 0); mx.clearRect(0, 0, MW, MH); drawSite(mx, TPL[0], 1); if (lab) lab.textContent = tr(TPL[0].name) + ' · ✓ ready'; }
     function tick(dt) {
       if (!on || env.rm || asleep) return;
-      var br = cv.getBoundingClientRect();
-      if (br.bottom < -20 || br.top > env.vh + 20) return;
+      if (offscreen(cv, env)) return;
       if (env.hold && held) return;
       ct += dt;
       while (stage < STG.length - 1 && ct >= STG[stage + 1]) setStage(stage + 1);
       if (stage >= 4) held = true;
       if (ct >= CYC) { ti = (ti + 1) % TPL.length; ct = 0; stage = -1; RC = []; setStage(0); }
-      var f = Math.min(3, dt * 60), damp = Math.pow(0.84, f), k = 0.02 * f, dd = Math.pow(0.955, f), ea = Math.min(1, dt * 4);
-      for (var i = 0; i < NP; i++) {
+      // Демо-сайт готов (стадии 4–5), частицы погасли (TASK-perf): их движение не видно, а на стадии 6 они все встают заново —
+      // их не считаем и не перебираем. Картинка в это время — только сайт: перерисовываем его, лишь когда меняется его
+      // прозрачность (шагами 1/255, как хранит холст). Раньше ~3 с из каждого цикла в 8.3 с сцена каждый кадр двигала 1 400
+      // невидимых точек и рисовала тот же сайт заново
+      var calm = quiet && (stage === 4 || stage === 5);
+      var f = Math.min(3, dt * 60), damp = Math.pow(0.84, f), k = 0.02 * f, dd = Math.pow(0.955, f), ea = Math.min(1, dt * 4), live = 0;
+      for (var i = 0; i < (calm ? 0 : NP); i++) {
         if (SWT[i] && ct >= SWT[i]) { TX[i] = NX[i]; TY[i] = NY[i]; AT[i] = NA[i]; CI[i] = NC[i]; FR[i] = NF[i]; SWT[i] = 0; }
         var x = X[i], y = Y[i], vx = VX[i], vy = VY[i];
         if (FR[i]) {
@@ -324,10 +337,17 @@
         }
         X[i] = x; Y[i] = y; VX[i] = vx; VY[i] = vy;
         A[i] += (AT[i] - A[i]) * ea;
+        if (A[i] >= 0.02 || SWT[i]) live++;
       }
+      if (!calm) quiet = live === 0;
       var gT = stage >= 0 && stage <= 3 ? 1 : 0, wT = stage === 1 || stage === 2 ? 1 : 0, sT = stage === 4 || stage === 5 ? 1 : 0;
       gridA += (gT - gridA) * Math.min(1, dt * 3); wireA += (wT - wireA) * Math.min(1, dt * 3);
       siteA += (sT - siteA) * Math.min(1, dt * (sT ? 2.4 : 9));
+      if (calm && gridA <= 0.004 && (wireA <= 0.004 || !RC.length) && siteA > 0.004) {
+        var sk = Math.round(siteA * 255);
+        if (sk === drawn) return;
+        drawn = sk;
+      } else drawn = -1;
       mx.setTransform(md, 0, 0, md, 0, 0); mx.clearRect(0, 0, MW, MH);
       var tp = TPL[ti];
       if (siteA > 0.004) drawSite(mx, tp, siteA);
@@ -344,7 +364,7 @@
       // прозрачность — шагами 1/255 (холст и так хранит её с этой точностью) и только когда меняется: у собранных частиц
       // она почти у всех одна, и 2 600 вызовов на кадр стали единицами — картинка та же
       var lc = -1, la = -1, ps = env.mob ? 1.4 : 1.3;
-      for (var j = 0; j < NP; j++) {
+      for (var j = 0; j < (calm ? 0 : NP); j++) {
         if (A[j] < 0.02) continue;
         if (CI[j] !== lc) { lc = CI[j]; mx.fillStyle = GP[lc]; }
         var qa = Math.round(A[j] * 255); if (qa !== la) { la = qa; mx.globalAlpha = qa / 255; }
@@ -365,6 +385,10 @@
     function sleep() { asleep = true; }
     // проснуться без пересборки — с того же места (панель кейса закрылась, сетка под ней снова идёт; pt:wake)
     function resume() { if (on) asleep = false; else wake(); }
+    // подготовка заранее (движок зовёт её в простое, пока секция ниже экрана; TASK-perf): размер холста, частицы и контуры
+    // первого шаблона — замер текста его шрифтами. Первый замер шрифтом демо-сайта (Georgia) на слабом телефоне — ~12 мс, и он
+    // приходился на кадр проявления секции. wake берёт готовое (те же resize и rectsMemo) — картинка та же
+    function prep() { if (on || env.rm) return; resize(); rectsMemo(TPL[ti]); }
     // смена языка: текущий демо-сайт собирается заново с сетки, уже с текстами на новом языке
     function relang() {
       if (!on) return;
@@ -372,7 +396,7 @@
       ct = 0; stage = -1; RC = []; setStage(0);
     }
     // форма объекта сцены у всех фабрик одна (TASK-perf.md, 3.1): движок перебирает их в каждом кадре
-    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, resume: resume, relang: relang, restart: null };
+    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, resume: resume, relang: relang, restart: null, prep: prep };
   }
 
   // ---------- схемы: общий движок узлов, связей и импульсов ----------
@@ -971,6 +995,7 @@
   // Случайная (cfg.rand): цикл 7 с — собралась → 2–3 импульса → рассыпалась пылью → следующая.
   function makeFlow(cv, env, cfg) {
     if (!cv || !cv.getContext) return null;
+    watchVis(cv);
     // 2D-холст — при первом пробуждении: до него схема не рисует, а на старте страницы холсты всех схем создавались разом
     var g = null, win = cv.parentNode, card = win.closest('.glass') || win, lab = win.querySelector('[data-flow-label]');
     var st = { w: 0, h: 0, d: 0 }, on = false, G = null, ct = 0, stage = '', prev = '', CYC = 7, gl = '', swapAt = 0, held = false;
@@ -987,10 +1012,24 @@
     }
     cv.__ptBoxes = function () { return G ? G.boxes() : []; };
     function label(s) { stage = s; if (lab && G) lab.textContent = G.title + ' · ' + s; }
+    // Подготовка заранее (движок зовёт её в простое, пока секция ниже экрана; TASK-perf): контекст, размер холста и раскладка
+    // схемы — замер подписей узлов (на слабом телефоне ~10 мс) и расстановка (~5 мс). Раньше всё это шло в кадре проявления
+    // секции. Первое пробуждение берёт готовую раскладку, если с тех пор не сменились размер, язык и шрифты (подпись окна в обоих
+    // случаях ещё не доехала на место — topPad тот же). Случайные схемы — только контекст и размер
+    var ready = null;
+    function readyKey() { return st.w + '|' + st.h + '|' + st.d + '|' + lang() + '|' + (document.fonts ? document.fonts.status : ''); }
+    function prep() {
+      if (on || env.rm || ready) return;
+      if (!g) g = cv.getContext('2d'); fitCanvas(cv, st);
+      if (cfg.rand) return;
+      var P = makeGraph(cfg); P.layout(g, st.w, st.h, compact(), topPad()); ready = { G: P, k: readyKey() };
+    }
     function next(first) {
       var spec = cfg.rand ? (first && env.rm ? chainSpec(cfg.still, cfg.rand === 'duplex') : randSpec(cfg.rand, prev)) : cfg;
       prev = spec.title || '';
-      G = makeGraph(spec); gl = lang(); G.layout(g, st.w, st.h, compact(), topPad()); G.build(env.rm); ct = 0;
+      if (first && ready && ready.k === readyKey()) { G = ready.G; gl = lang(); }
+      else { G = makeGraph(spec); gl = lang(); G.layout(g, st.w, st.h, compact(), topPad()); }
+      ready = null; G.build(env.rm); ct = 0;
       if (cfg.rand) label(env.rm ? 'ready' : 'build');
     }
     function draw() { g.setTransform(st.d, 0, 0, st.d, 0, 0); g.clearRect(0, 0, st.w, st.h); if (G) G.draw(g, 1, false); }
@@ -1049,7 +1088,7 @@
       swapAt = 0.4;
     }
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (G) { G.layout(g, st.w, st.h, compact(), topPad()); if (on && env.rm) draw(); } });
-    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, resume: resume, relang: relang, restart: restart };
+    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, resume: resume, relang: relang, restart: restart, prep: prep };
   }
 
   // ---------- «Поток»: световые ленты под матовым стеклом, при наведении — схема устройства ----------
@@ -1067,6 +1106,7 @@
   ] };
   function makeFlowLight(cv, env) {
     if (!cv || !cv.getContext) return null;
+    watchVis(cv);
     var g = cv.getContext('2d'), win = cv.parentNode, card = win.closest('[data-flowcard]') || win, frost = win.querySelector('[data-frost]');
     var st = { w: 0, h: 0, d: 0 }, on = false, t = 0, sa = 0, was = false, R = [], B = new Float32Array(8), G = makeGraph(LOCK), touch = '';
     function seed() {
@@ -1157,7 +1197,7 @@
     document.addEventListener('pointerdown', function (e) { if (card.classList.contains('is-open') && !card.contains(e.target)) { card.classList.remove('is-open'); poke(); } }, { passive: true });
     ['pointerenter', 'pointerleave', 'focusin', 'focusout'].forEach(function (ev) { card.addEventListener(ev, poke); });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (on) { G.layout(g, st.w, st.h, st.w < 340); if (env.rm) still(); } });
-    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, resume: null, relang: relang, restart: null };
+    return { cv: cv, tick: tick, resize: resize, wake: wake, sleep: sleep, resume: null, relang: relang, restart: null, prep: null };
   }
 
   window.PTScenes = {

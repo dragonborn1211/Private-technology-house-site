@@ -433,7 +433,17 @@
       // — до 10). Геометрия та же: кэш по layoutGen, ширине, месту секции в документе и шрифтам. Не успели — ensureGl посчитает
       // сразу, как раньше. Часть — слова на ~6 мс, между частями браузер рисует кадры
       var ric = window.requestIdleCallback ? function (fn) { return window.requestIdleCallback(fn, { timeout: 600 }); } : function (fn) { return setTimeout(function () { fn({ timeRemaining: function () { return 8; }, didTimeout: true }); }, 30); };
-      function prefetchNear() { preOn = true; near.forEach(prefetch); }
+      function prefetchNear() { preOn = true; near.forEach(function (s) { prefetch(s); prepScenes(s); }); }
+      // Сцены секции (демо-сайты, схемы) — подготовить заранее, по одной за простой (sc.prep: контекст, размер холста, замер
+      // текста и раскладка): их первое пробуждение в кадре проявления секции было самым долгим кадром сборки «Работ» на телефоне
+      // (×6: 76 мс, из них ~25 — первый замер текста шрифтами сцены). Картинка та же: пробуждение берёт готовое
+      var prepped = [];
+      function prepScenes(s) {
+        if (rm) return;
+        var list = scenes.filter(function (sc) { return sc.prep && prepped.indexOf(sc) < 0 && s.el.contains(sc.cv) && !sc.cv.closest('[data-cp]'); });
+        prepped.push.apply(prepped, list);
+        (function one() { var sc = list.shift(); if (sc) ric(function () { if (alive && (s.state === 'idle' || s.state === 'queued')) sc.prep(); one(); }); })();
+      }
       // Растр букв первого экрана — заранее, со стадии сетки, а не целиком в переходе к стадии текста: там это была самая
       // долгая задача вступления (на слабом телефоне ~75 мс). Частями по 4 слова: в простое между кадрами (requestIdleCallback
       // без таймаута) и в конце кадра движка, пока у кадра есть запас (frame → glTick; не меньше одной части за кадр — на
@@ -1551,7 +1561,7 @@
           io4.observe(hero.el);
           // секции в полутора экранах ниже — замер и растр букв заранее (prefetch)
           io3 = new IntersectionObserver(function (es) {
-            es.forEach(function (e) { for (var i = 0; i < secs.length; i++) if (secs[i].el === e.target) { var s = secs[i], k = near.indexOf(s); if (e.isIntersecting) { if (k < 0) near.push(s); if (preOn) prefetch(s); } else if (k >= 0) near.splice(k, 1); } });
+            es.forEach(function (e) { for (var i = 0; i < secs.length; i++) if (secs[i].el === e.target) { var s = secs[i], k = near.indexOf(s); if (e.isIntersecting) { if (k < 0) near.push(s); if (preOn) { prefetch(s); prepScenes(s); } } else if (k >= 0) near.splice(k, 1); } });
           }, { rootMargin: '0px 0px 150% 0px', threshold: 0 });
           secs.forEach(function (s) { io3.observe(s.el); });
         } else secs.forEach(function (s) { request(s); });
