@@ -2796,10 +2796,30 @@ console.log('\nperf: панель замеров, холст частиц, фл�
   if (!w1.d || w1.w || w1.c !== 'none') bad.push('pt-wait после сборки: ' + JSON.stringify(w1));
   await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(500);
   if ((await wt()).some((s) => s.w)) bad.push('pt-wait в режиме «сразу»');
+  // TASK-hud2.md: PTPerf.boot / late / first (в «сразу» first известен сразу); ?pt-q=2 — холсты сцен в 1×
+  const pf = await page.evaluate(() => ({ boot: typeof window.PTPerf.boot, late: window.PTPerf.late, first: window.PTPerf.first }));
+  if (pf.boot !== 'number' || pf.late !== false || typeof pf.first !== 'number') bad.push('PTPerf: ' + JSON.stringify(pf));
+  for (const [q, want] of [['?intro=instant&pt-reset', 2], ['?intro=instant&pt-q=2', 1]]) {
+    const c2 = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true });
+    const p2 = await c2.newPage(); await p2.goto(BASE + 'index.html' + q);
+    for (let i = 0; i < 12; i++) { await p2.evaluate(() => window.scrollBy({ top: innerHeight * 0.7, behavior: 'instant' })); await p2.waitForTimeout(400); }
+    const r = await p2.evaluate(() => [...document.querySelectorAll('canvas[data-flow],canvas[data-mini]')].filter((c) => c.width > 300).map((c) => +(c.width / c.parentNode.clientWidth).toFixed(2)));
+    if (!r.length || r.some((x) => Math.abs(x - want) > 0.02)) bad.push(`сцены ${q}: ×${r.join(', ×')}, ждали ×${want}`);
+    await c2.close();
+  }
+  // скрипты опоздали (engine.js через 4.6 с): без флага — «сразу», ?intro=full перебивает LATE, PTPerf.late = true
+  for (const [q, want] of [['', 'instant'], ['?intro=full', 'full']]) {
+    const c3 = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    await c3.route('**/assets/engine.js*', async (r) => { await new Promise((ok) => setTimeout(ok, 4600)); await r.continue(); });
+    const p3 = await c3.newPage(); await p3.goto(BASE + 'index.html' + q, { waitUntil: 'load' }); await p3.waitForTimeout(300);
+    const s3 = await p3.evaluate(() => ({ mode: document.getElementById('pt-site').getAttribute('data-intro'), late: window.PTPerf && window.PTPerf.late }));
+    if (s3.mode !== want || s3.late !== true) bad.push(`поздние скрипты ${q || 'без флага'}: ${JSON.stringify(s3)}, ждали ${want}`);
+    await c3.close();
+  }
   errs.forEach((e) => bad.push('ошибка: ' + e));
   await ctx.close();
   if (bad.length) fail('perf: ' + bad.join('; '));
-  else console.log('  ✓ perf-hud.js — только по ?hud и до конца вкладки; холст частиц в документе: окно ± 15 %, высота страницы та же; ?pt-q, ?pt-scroll=native, ?pt-reset; несобранные секции обрезаны (.pt-wait), собранные и при открытой панели — нет');
+  else console.log('  ✓ perf-hud.js — только по ?hud и до конца вкладки; холст частиц в документе: окно ± 15 %, высота страницы та же; ?pt-q, ?pt-scroll=native, ?pt-reset; несобранные секции обрезаны (.pt-wait), собранные и при открытой панели — нет; PTPerf.boot / late / first; ?pt-q=2 — сцены в 1×; поздние скрипты — «сразу», ?intro=full перебивает');
 }
 function woff2Cmap(file) {
   const buf = readFileSync(file);

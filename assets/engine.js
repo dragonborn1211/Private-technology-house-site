@@ -8,7 +8,8 @@
       var countEl = root.querySelector('[data-pt-count]');
       var rm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
       // hold — облегчённый режим и идёт прокрутка: декоративные петли сцен стоят (TASK-qa-decisions.md, 3; см. onHold)
-      var env = { rm: rm, mob: false, vh: 800, hold: false };
+      // low — облегчение уровня 2: сцены в карточках рисуются в 1× разрешении, как частицы (TASK-hud2.md, 4)
+      var env = { rm: rm, mob: false, vh: 800, hold: false, low: false };
       var gl = null, c2 = null;
       if (canvas) {
         try { gl = canvas.getContext('webgl', { antialias: false, alpha: true, premultipliedAlpha: true }) || canvas.getContext('experimental-webgl', { alpha: true }); } catch (e) { gl = null; }
@@ -146,7 +147,7 @@
         var fx = sessionStorage.getItem('pt-qfix');
         if (fx === '0' || fx === '1' || fx === '2') { QFIX = +fx; lite = QFIX; }
       } catch (e) { /* хранилище запрещено — без флагов */ }
-      if (lite >= 2) dprCap = 1;
+      if (lite >= 2) { dprCap = 1; env.low = true; }
       // Режим сборки (TASK-glyphs-transitions.md, раздел 3). full — первое знакомство с сайтом или прошло больше 30 дней
       // с последней полной сборки: вспышка, две линии, сборка частицами. fast — страница сайта, которую в этой вкладке ещё
       // не открывали (переход главная → услуги), или новый визит в течение 30 дней: один луч, за ним всё проявляется,
@@ -170,12 +171,15 @@
       // стиля здесь стоило лишнего пересчёта стилей всей страницы. Время — часы анимаций документа (от начала загрузки, как
       // performance.now): их не подменяют поддельные часы проверок (у Playwright performance.now не начинается заново на
       // следующей странице), и считают они время, пока страница рисовалась, — а запасной CSS виден только тогда
-      var LATE = root.classList.contains('pt-boot') && (function () { var t = document.timeline && document.timeline.currentTime; return typeof t === 'number' ? t : performance.now(); })() > 3800;
+      // BOOT — когда это считалось (для панели замеров, PTPerf.boot; TASK-hud2.md, 2)
+      var BOOT = performance.now(), LATE = root.classList.contains('pt-boot') && (function () { var t = document.timeline && document.timeline.currentTime; return typeof t === 'number' ? t : performance.now(); })() > 3800;
       var MODE = (function () {
         var q = /[?&]intro=(full|fast|instant)(?:&|$)/.exec(location.search);
         if (rm) return 'rm';
-        if (LATE) return 'instant';
+        // явный ?intro=full|fast перебивает LATE (TASK-hud2.md, 3): на медленной загрузке вступление можно посмотреть
+        // принудительно — для проверок; без флага поздние скрипты, как раньше, дают «сразу»
         if (q) return q[1];
+        if (LATE) return 'instant';
         // повторный заход — быстрая сборка (просьба владельца: «очень сильно упростить и ускорить»); первый — полная
         if (!AUTO_MODE) return REPEAT ? 'fast' : 'full';
         try {
@@ -854,7 +858,8 @@
       function setLite(n) {
         lite = n; root.classList.toggle('pt-lite', n >= 1);
         if (n >= 1 && sctx) { sL.fill(0); sctx.setTransform(1, 0, 0, 1, 0, 0); sctx.clearRect(0, 0, smk.width, smk.height); smokeLive = false; }
-        if (n >= 2 && dprCap !== 1) { dprCap = 1; layout(); }
+        // уровень 2: частицы и сцены — в 1× (layout сам перемеряет сцены, только если нет ResizeObserver)
+        if (n >= 2 && dprCap !== 1) { dprCap = 1; env.low = true; layout(); if (sro) for (var si = 0; si < scenes.length; si++) scenes[si].resize(); }
         try { sessionStorage.setItem('pt-q', String(n)); } catch (e) {}
       }
       // Кадр. Цикл частиц — отдельная функция stepParticles (TASK-perf.md, 3.1): в ней только типизированные массивы и числа.
@@ -1065,7 +1070,10 @@
         secDone(el);
       }
       // секция собрана — событие для отклика на цели якоря (scroll.js, arrive): цель в несобранной секции ждёт его
-      function secDone(el) { if (el === hero.el) { heroIdle(); idleOnce(bindSites); } try { window.dispatchEvent(new CustomEvent('pt:secdone', { detail: el })); } catch (e) { /* старый браузер */ } }
+      // firstT — когда первый экран впервые собран (мс от начала загрузки; в «сразу» и reduced motion — когда секции получили
+      // s-done): панель замеров (PTPerf.first) ловила pt:secdone и в режиме «сразу» его пропускала — он раньше неё
+      var firstT;
+      function secDone(el) { if (el === hero.el) { if (firstT === undefined) firstT = Math.round(performance.now()); heroIdle(); idleOnce(bindSites); } try { window.dispatchEvent(new CustomEvent('pt:secdone', { detail: el })); } catch (e) { /* старый браузер */ } }
       // панель разбора работы (assets/cases.js, TASK-cases-panel.md, 4.6). pt:sleep — сцены внутри detail засыпают (сетка под
       // открытой панелью, статья, с которой ушли), живые превью гаснут: под подложкой их кадры не нужны. pt:wake — просыпаются
       // с того же места (resume); ещё не просыпавшиеся — как обычно, но только в собранной секции. Заново с первого узла —
@@ -1573,7 +1581,8 @@
       // unload / beforeunload не вешаем: они отключают bfcache
       window.addEventListener('pageshow', function (e) { if (e.persisted) { prev = performance.now(); start(); } });
       // панель замеров (?hud, assets/perf-hud.js): разрешение холста частиц и вид прокрутки колесом
-      window.PTPerf = { dpr: function () { return dpr; }, scroll: function () { return window.PTScroll && window.PTScroll.mode === 'soft' ? 'soft' : 'native'; } };
+      // boot, late, first — для панели замеров (TASK-hud2.md, 2); first — undefined, пока первый экран не собран
+      window.PTPerf = { dpr: function () { return dpr; }, scroll: function () { return window.PTScroll && window.PTScroll.mode === 'soft' ? 'soft' : 'native'; }, boot: BOOT, late: LATE, get first() { return firstT; } };
       return {
         setActive: function (v) { active = v; if (v) start(); },
         destroy: function () {

@@ -20,8 +20,10 @@
   function watchVis(cv) { if (VIS) { cv.__ptVis = false; VIS.observe(cv); } }
   function offscreen(cv, env) { if (VIS) return !cv.__ptVis; var b = cv.getBoundingClientRect(); return b.bottom < -20 || b.top > env.vh + 20; }
   // подгоняет буфер холста под размер окна-родителя; true — если размер поменялся
-  function fitCanvas(cv, st) {
-    var p = cv.parentNode, w = Math.max(1, p.clientWidth), h = Math.max(1, p.clientHeight), d = Math.min(window.devicePixelRatio || 1, 2);
+  // облегчение уровня 2 (env.low) — холст в 1×, как частицы движка (TASK-hud2.md, 4)
+  function sceneDpr(env) { return env.low ? 1 : Math.min(window.devicePixelRatio || 1, 2); }
+  function fitCanvas(cv, st, env) {
+    var p = cv.parentNode, w = Math.max(1, p.clientWidth), h = Math.max(1, p.clientHeight), d = sceneDpr(env);
     if (Math.abs(w - st.w) < 0.5 && Math.abs(h - st.h) < 0.5 && d === st.d) return false;
     st.w = w; st.h = h; st.d = d; cv.width = Math.round(w * d); cv.height = Math.round(h * d);
     return true;
@@ -292,10 +294,11 @@
       if (lab) lab.textContent = tr(tp.name) + ' · ' + LBL[s];
     }
     function resize() {
-      var p = cv.parentNode, w = Math.max(1, p.clientWidth), h = Math.max(1, p.clientHeight);
-      if (Math.abs(w - MW) < 0.5 && Math.abs(h - MH) < 0.5 && NP) return;
+      // размер тот же, а разрешение сменилось (облегчение уровня 2) — только буфер холста, частицы и стадия как были
+      var p = cv.parentNode, w = Math.max(1, p.clientWidth), h = Math.max(1, p.clientHeight), nd = sceneDpr(env), same = Math.abs(w - MW) < 0.5 && Math.abs(h - MH) < 0.5;
+      if (same && nd === md && NP) return;
       var sx = w / MW, sy = h / MH;
-      MW = w; MH = h; md = Math.min(window.devicePixelRatio || 1, 2); drawn = -1;
+      MW = w; MH = h; md = nd; drawn = -1;
       cv.width = Math.round(MW * md); cv.height = Math.round(MH * md);
       if (!NP) {
         NP = env.mob ? 1400 : 2600;
@@ -303,7 +306,7 @@
         A = new Float32Array(NP); AT = new Float32Array(NP); CI = new Uint8Array(NP); FR = new Uint8Array(NP);
         NX = new Float32Array(NP); NY = new Float32Array(NP); NA = new Float32Array(NP); NC = new Uint8Array(NP); NF = new Uint8Array(NP); SWT = new Float32Array(NP);
         for (var i = 0; i < NP; i++) { X[i] = TX[i] = Math.random() * MW; Y[i] = TY[i] = Math.random() * MH; FR[i] = 1; CI[i] = GLS; }
-      } else {
+      } else if (!same) {
         for (var j = 0; j < NP; j++) { X[j] *= sx; Y[j] *= sy; TX[j] *= sx; TY[j] *= sy; }
         if (on && stage >= 0 && stage <= 3) { RC = []; setStage(stage, true); }
       }
@@ -1020,7 +1023,7 @@
     function readyKey() { return st.w + '|' + st.h + '|' + st.d + '|' + lang() + '|' + (document.fonts ? document.fonts.status : ''); }
     function prep() {
       if (on || env.rm || ready) return;
-      if (!g) g = cv.getContext('2d'); fitCanvas(cv, st);
+      if (!g) g = cv.getContext('2d'); fitCanvas(cv, st, env);
       if (cfg.rand) return;
       var P = makeGraph(cfg); P.layout(g, st.w, st.h, compact(), topPad()); ready = { G: P, k: readyKey() };
     }
@@ -1056,7 +1059,7 @@
       draw();
     }
     function resize() {
-      if (!fitCanvas(cv, st)) return;
+      if (!fitCanvas(cv, st, env)) return;
       if (G) G.layout(g, st.w, st.h, compact(), topPad());
       if (on && env.rm) draw();
     }
@@ -1065,7 +1068,7 @@
     function wake() {
       asleep = false; held = false;
       if (on) { if (!env.rm && G) { if (cfg.rand || gl !== lang()) rebuild(); else G.build(false); } return; }
-      on = true; if (!g) g = cv.getContext('2d'); fitCanvas(cv, st); next(true);
+      on = true; if (!g) g = cv.getContext('2d'); fitCanvas(cv, st, env); next(true);
       if (lab) lab.classList.add('on');
       if (env.rm) draw();
     }
@@ -1075,7 +1078,7 @@
     // фильтр показал карточку (assets/filter.js → pt:shown → движок): схема собирается заново с первого узла
     function restart() {
       if (!on || asleep) return;
-      fitCanvas(cv, st); rebuild();
+      fitCanvas(cv, st, env); rebuild();
       if (env.rm) draw();
     }
     // смена языка: схема рассыпается пылью и через 0.4 с собирается заново с подписями на новом языке
@@ -1173,7 +1176,7 @@
       draw();
     }
     function resize() {
-      if (!fitCanvas(cv, st)) return;
+      if (!fitCanvas(cv, st, env)) return;
       G.layout(g, st.w, st.h, st.w < 340);
       if (on && env.rm) still();
     }
@@ -1181,7 +1184,7 @@
     function wake() {
       asleep = false;
       if (on) return;
-      on = true; fitCanvas(cv, st); seed(); G.layout(g, st.w, st.h, st.w < 340); G.build(true);
+      on = true; fitCanvas(cv, st, env); seed(); G.layout(g, st.w, st.h, st.w < 340); G.build(true);
       if (frost) frost.classList.add('on');
       if (env.rm) still();
     }
