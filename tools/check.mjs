@@ -1393,7 +1393,8 @@ console.log('\nясность, B4 / B5 / B8: свет курсора, пульт
 {
   const bad = [];
   const eng = readFileSync(path.join(root, 'assets', 'engine.js'), 'utf8');
-  if (!/R = mob \? 0 : 110/.test(eng) || !/\* 0\.35 \* f/.test(eng) || /\* 1\.6 \* f/.test(eng)) bad.push('engine.js: курсор всё ещё выметает частицы (нужны R 110, толчок 0.35, на телефоне 0)');
+  // после TASK-perf радиус — аргумент stepParticles (mob ? 0 : 110), толчок — (1 − ed / R) · 0.35 · f
+  if (!/stepParticles\([^)]*mob \? 0 : 110/.test(eng) || !/\(1 - ed \/ R\) \* 0\.35 \* f/.test(eng) || /\* 1\.6 \* f/.test(eng)) bad.push('engine.js: курсор всё ещё выметает частицы (нужны R 110, толчок 0.35, на телефоне 0)');
   if (!/function phPop\(/.test(eng) || !/s\.burst === 'pop'\) popWait = s/.test(eng) || !/phPop\(BLD, ps\)/.test(eng) || /phPuff/.test(eng)) bad.push('engine.js: нет phPop или финал подвала не через него');
   for (const f of PAGES) {
     const h = src[f], all = (h.match(/data-pt-burst/g) || []).length, pop = (h.match(/<footer data-sec="foot" class="sec foot" data-pt-burst="pop">/g) || []).length;
@@ -1633,7 +1634,7 @@ console.log('\nревью, 4: тексты');
   if (meta('care') !== 'Цена от 10 000 ₽ в месяц Формат ежемесячно') bad.push(`«Сопровождение»: ${meta('care')}`);
   const chips = (/<article[^>]*id="automation"[\s\S]*?<ul class="sv-chips"[^>]*>([\s\S]*?)<\/ul>/.exec(sv) || [])[1] || '';
   // TASK-polish-3.md, 3: по 2–3 сервиса из группы, последний чип — «и любые сервисы с API» пунктиром
-  if (chips.replace(/&nbsp;/g, ' ').replace(/<\/li><li[^>]*>/g, ' · ').replace(/<\/?li[^>]*>/g, '') !== 'Битрикс24 · Telegram · WhatsApp · Wildberries · Ozon · Авито · Яндекс Метрика · Таблицы · и любые сервисы с API' || !/<li class="sv-etc">и&nbsp;любые сервисы с&nbsp;API<\/li><\/ul>$/.test(chips + '</ul>')) bad.push(`теги автоматизации: ${chips}`);
+  if (chips.trim().replace(/&nbsp;/g, ' ').replace(/<\/li>\s*<li[^>]*>/g, ' · ').replace(/<\/?li[^>]*>/g, '') !== 'Битрикс24 · Telegram · WhatsApp · Wildberries · Ozon · Авито · Яндекс Метрика · Таблицы · и любые сервисы с API' || !/<li class="sv-etc">и&nbsp;любые сервисы с&nbsp;API<\/li>$/.test(chips.trim())) bad.push(`теги автоматизации: ${chips}`);
   if (!/<h3 class="sv-sh">Сборка<\/h3><p class="sv-sd">[^<]*n8n/.test(strip(src['process.html']))) bad.push('инструменты на «Как работаем», шаг «Сборка»');
   for (const f of ['index.html', 'cases.html']) if (!strip(src[f]).includes('<span class="obj-h">Ваш сайт — следующий</span>') || !strip(src[f]).includes('<span class="obj-d">Соберём такой же под вашу компанию →</span>') || /Следующий объект/.test(src[f])) bad.push(`${f}: демо-карточка`);
   if (!/<span class="cx-w">Защита<\/span><\/span><span class="usp-n" hidden>Защита данных<\/span>/.test(src['index.html'])) bad.push('вкладка 04 «Кодекса»');
@@ -2001,8 +2002,9 @@ console.log('\nясность, B10 / B11: «Как работаем», кноп�
     });
     if (w === 390) {
       await page.click('#sites .sv-more'); await page.waitForTimeout(500);
-      const o = await page.evaluate(() => ({ e: document.querySelector('#sites .sv-more').getAttribute('aria-expanded'), vis: [...document.querySelectorAll('#rows-sites li')].filter((li) => li.offsetHeight).length, op: getComputedStyle(document.querySelector('#rows-sites li:last-child .sv-rn')).opacity }));
-      if (o.e !== 'true' || o.vis !== 5 || o.op !== '1') bad.push(`услуги 390: после «Ещё» ${JSON.stringify(o)}`);
+      const o = await page.evaluate(() => ({ e: document.querySelector('#sites .sv-more').getAttribute('aria-expanded'), n: document.querySelectorAll('#rows-sites li').length, vis: [...document.querySelectorAll('#rows-sites li')].filter((li) => li.offsetHeight).length, op: getComputedStyle(document.querySelector('#rows-sites li:last-child .sv-rn')).opacity }));
+      // после «Ещё» видны все строки (их число — из разметки: у «Сайтов» с TASK-redesign-prices.md четыре, было пять)
+      if (o.e !== 'true' || o.vis !== o.n || o.op !== '1') bad.push(`услуги 390: после «Ещё» ${JSON.stringify(o)}`);
     }
     await page.close();
   }
@@ -2802,6 +2804,17 @@ console.log('\nperf: панель замеров, холст частиц, фл�
   if (!w1.d || w1.w || w1.c !== 'none') bad.push('pt-wait после сборки: ' + JSON.stringify(w1));
   await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(500);
   if ((await wt()).some((s) => s.w)) bad.push('pt-wait в режиме «сразу»');
+  // открыта посреди длинной секции (её верх выше экрана: обновление, возврат прокрутки) — секция собирается. Когда обрезалась
+  // сама секция, а не её дети, IntersectionObserver «видел» её только по верхнему краю, и она оставалась пустой
+  for (const pg of ['services.html', 'index.html', 'process.html']) {
+    const c4 = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+    const p4 = await c4.newPage(); await p4.goto(BASE + pg + '?intro=full'); await p4.waitForTimeout(3000);
+    const k4 = await p4.evaluate(() => { const L = [...document.querySelectorAll('[data-sec]')].slice(1, -1).sort((a, b) => b.offsetHeight - a.offsetHeight); window.scrollTo({ top: L[0].getBoundingClientRect().top + scrollY + 300, behavior: 'instant' }); return L[0].dataset.sec; });
+    await p4.waitForTimeout(400); await p4.reload(); await p4.waitForTimeout(3500);
+    const v4 = await p4.evaluate(() => [...document.querySelectorAll('[data-sec]')].filter((s) => { const b = s.getBoundingClientRect(); return b.bottom > 0 && b.top < innerHeight; }).filter((s) => !s.classList.contains('s-done')).map((s) => s.dataset.sec));
+    if (v4.length) bad.push(`${pg} 390, обновление посреди «${k4}»: не собраны ${v4.join(', ')}`);
+    await c4.close();
+  }
   // TASK-hud2.md: PTPerf.boot / late / first (в «сразу» first известен сразу); ?pt-q=2 — холсты сцен в 1×
   const pf = await page.evaluate(() => ({ boot: typeof window.PTPerf.boot, late: window.PTPerf.late, first: window.PTPerf.first }));
   if (pf.boot !== 'number' || pf.late !== false || typeof pf.first !== 'number') bad.push('PTPerf: ' + JSON.stringify(pf));
@@ -2825,7 +2838,7 @@ console.log('\nperf: панель замеров, холст частиц, фл�
   errs.forEach((e) => bad.push('ошибка: ' + e));
   await ctx.close();
   if (bad.length) fail('perf: ' + bad.join('; '));
-  else console.log('  ✓ perf-hud.js — только по ?hud и до конца вкладки; холст частиц в документе: окно ± 15 %, высота страницы та же; ?pt-q, ?pt-scroll=native, ?pt-reset; несобранные секции обрезаны (.pt-wait), собранные и при открытой панели — нет; PTPerf.boot / late / first; ?pt-q=2 — сцены в 1×; поздние скрипты — «сразу», ?intro=full перебивает');
+  else console.log('  ✓ perf-hud.js — только по ?hud и до конца вкладки; холст частиц в документе: окно ± 15 %, высота страницы та же; ?pt-q, ?pt-scroll=native, ?pt-reset; несобранные секции обрезаны (.pt-wait, их дети), собранные и при открытой панели — нет, открытая посреди секции — собирается; PTPerf.boot / late / first; ?pt-q=2 — сцены в 1×; поздние скрипты — «сразу», ?intro=full перебивает');
 }
 function woff2Cmap(file) {
   const buf = readFileSync(file);
