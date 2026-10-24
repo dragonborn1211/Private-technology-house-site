@@ -92,6 +92,7 @@
         heroLazy = false; if (heroIO) { heroIO.disconnect(); heroIO = null; } clearTimeout(heroIdleT);
         var sp = heroSplit; heroSplit = null;
         try { heroObj = sp ? sp.finish() : window.PTHero.mount(hero.el, { autostart: false }); } catch (e) { heroObj = null; console.warn(e); }
+        heroAlt();
         return heroObj;
       }
       // смонтировать и, если вступление уже дошло до объекта, запустить его сборку
@@ -150,7 +151,7 @@
       var QFIX = -1;
       try {
         var fq = location.search;
-        if (/[?&]pt-reset(?:[=&]|$)/.test(fq)) { sessionStorage.removeItem('pt-qfix'); sessionStorage.removeItem('pt-q'); lite = 0; }
+        if (/[?&]pt-reset(?:[=&]|$)/.test(fq)) { sessionStorage.removeItem('pt-qfix'); sessionStorage.removeItem('pt-q'); sessionStorage.removeItem('pt-alt'); lite = 0; }
         var mq = /[?&]pt-q=([012])(?:&|$)/.exec(fq);
         if (mq) sessionStorage.setItem('pt-qfix', mq[1]);
         var fx = sessionStorage.getItem('pt-qfix');
@@ -928,7 +929,49 @@
         qSlow = med > 0.024 ? qSlow + 1 : 0;
         if (qSlow >= 2) { qSlow = 0; setLite(lite + 1); }
       }
+      // «Через кадр» (владелец 2026-10-24, замер A15: экран 90 Гц, прокрутка главной 42–49 к/с, отдельные кадры 0.4–1.7 с, скриптов
+      // в них меньше 10 мс — упирается видеокарта). Только сенсорный экран: два окна по 2 с подряд медиана интервала кадра дольше
+      // 1.4 кадра экрана — частицы (расчёт и отрисовка), след, сцены и объект «Кодекса» идут в каждом втором кадре с удвоенным
+      // временем; каждый кадр по-прежнему — прокрутка (PTScroll.tick) и место холста частиц. Вид и скорость движения те же,
+      // реже только отрисовка. Режим держится до конца сессии (sessionStorage pt-alt). Кадр экрана — самый короткий из
+      // увиденных: нижние 10 % интервалов окна, к ближайшей обычной частоте (как у панели замеров).
+      // Подстраховка (4б): в режиме «через кадр» два кадра дольше 300 мс за 4 с — ступень облегчения вниз, между ступенями не
+      // меньше 4 с, не дальше уровня 2. Оба замера не считают первые 3 с, скрытую вкладку (и кадр возврата), смену языка и
+      // «Собрать заново» (qUntil, qReplay)
+      var TOUCH = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+      var alt = false, altOdd = false, altDt = 0, aT = 0, aW = [], aSlow = 0, scrMs = 0, aLong = [], liteAt = -1e9, qUntil = 0, qReplay = false;
+      try { alt = TOUCH && !rm && sessionStorage.getItem('pt-alt') === '1'; } catch (e) {}
+      var HZ = [60, 75, 90, 100, 120, 144, 165, 240];
+      function altWatch(now, raw) {
+        if (!TOUCH) return;
+        if (qReplay && now > qUntil && !running && !queue.length) qReplay = false;
+        if (document.hidden || now < qUntil || qReplay || now - bootAt < 3000) { aT = 0; aW.length = 0; aLong.length = 0; return; }
+        var ms = raw * 1000;
+        if (alt) {
+          if (ms <= 300 || lite >= 2 || QFIX >= 0) return;
+          aLong.push(now); while (aLong.length && now - aLong[0] > 4000) aLong.shift();
+          if (aLong.length >= 2 && now - liteAt >= 4000) { aLong.length = 0; setLite(lite + 1); }
+          return;
+        }
+        aT += raw; aW.push(ms);
+        if (aT < 2) return;
+        aW.sort(function (a, b) { return a - b; });
+        var med = aW[aW.length >> 1], lo = aW[Math.floor(aW.length * 0.1)], hz = 60;
+        aT = 0; aW.length = 0;
+        for (var h = 0; h < HZ.length; h++) if (Math.abs(1000 / HZ[h] - lo) < Math.abs(1000 / hz - lo)) hz = HZ[h];
+        if (!scrMs || 1000 / hz < scrMs) scrMs = 1000 / hz;
+        aSlow = med > 1.4 * scrMs ? aSlow + 1 : 0;
+        if (aSlow >= 2) setAlt();
+      }
+      function setAlt() {
+        alt = true; altOdd = false; altDt = 0; aLong.length = 0; heroAlt();
+        try { sessionStorage.setItem('pt-alt', '1'); } catch (e) {}
+      }
+      function heroAlt() { if (alt && heroObj && heroObj.alt) heroObj.alt(true); }
+      function qPause(ms) { qUntil = Math.max(qUntil, performance.now() + ms); }
+      document.addEventListener('visibilitychange', function () { qPause(500); });
       function setLite(n) {
+        liteAt = performance.now();
         lite = n; root.classList.toggle('pt-lite', n >= 1);
         if (n >= 1 && sctx) { sL.fill(0); sctx.setTransform(1, 0, 0, 1, 0, 0); sctx.clearRect(0, 0, smk.width, smk.height); smokeLive = false; }
         // уровень 2: частицы и сцены — в 1× (layout сам перемеряет сцены, только если нет ResizeObserver)
@@ -940,21 +983,33 @@
       // или после неё: деоптимизация в редком месте раньше выбивала цикл по 26 000 частиц в медленный режим на несколько кадров
       function frame(now) {
         var raw = Math.max(0, (now - prev) / 1000), dt = Math.min(0.05, raw); prev = now;
-        if (!rm) { probeFrame(now, raw); watchQuality(now, raw); }
+        if (!rm) { probeFrame(now, raw); watchQuality(now, raw); altWatch(now, raw); }
         // мягкая прокрутка (assets/scroll.js) сдвигает страницу до замера: частицы не отстают от контента
         if (window.PTScroll) window.PTScroll.tick(now);
         rootFast(now);
         if (running && queue.length && now > abortAt) checkAbort(now);
-        var shift = lastTop == null ? 0 : lastTop - rootTop; lastTop = rootTop;
         // холст — на место: окно и запас CM сверху и снизу (пишем, только когда сдвиг меняется)
         var ty = Math.round(-rootTop - CM);
-        if (ty !== cvY) { cvY = ty; if (canvas) canvas.style.transform = 'translate3d(0,' + ty + 'px,0)'; }
         // фоновая пыль: пока идёт сборка (и 0.4 с после — между секциями в очереди не мигает) — реже, потом снова вся
         if (running) dustT = now;
         var dl = now - dustT < 400 ? 0 : 1;
         if (booted && dl !== dustLvl) { dustLvl = dl; dustSet(dl === 1); }
         if (fillJob) fillSlice(fillJob, performance.now() + FILL_MS);
-        var f = Math.min(3, dt * 60);
+        // «через кадр»: нечётный кадр — без частиц, следа и сцен, их время уходит в следующий. Холст и в нём — на место, если
+        // на экране только пыль (она стоит относительно окна). Если частицы держат буквы (сборка и 2 с после) — холст едет со
+        // страницей, как между кадрами главного потока: иначе буквы из частиц на этот кадр отстали бы от текста. Запас холста
+        // кончается (сдвиг больше половины CM) — кадр не пропускаем
+        if (alt) {
+          altDt += dt;
+          if ((altOdd = !altOdd)) {
+            if (now - dustT >= 2000) { if (ty !== cvY) { cvY = ty; if (canvas) canvas.style.transform = 'translate3d(0,' + ty + 'px,0)'; } return; }
+            if (Math.abs(ty - cvY) < CM * 0.5) return;
+          }
+          dt = Math.min(0.1, altDt); altDt = 0;
+        }
+        var shift = lastTop == null ? 0 : lastTop - rootTop; lastTop = rootTop;
+        if (ty !== cvY) { cvY = ty; if (canvas) canvas.style.transform = 'translate3d(0,' + ty + 'px,0)'; }
+        var f = Math.min(alt ? 6 : 3, dt * 60);
         // первый экран собран и не пересобирается — свободные точки пыли над его текстом горят слабее (CALM_A)
         var calmOn = hero.state === 'done' && calmZones().length > 0 ? 1 : 0;
         // невидимые частицы — по очереди, четверть за кадр, с накопленным временем своей четверти (lzT)
@@ -1416,6 +1471,7 @@
       function replay() {
         makeScenes();
         if (rm) return;
+        qReplay = true; qPause(2000);
         // идёт сборка (на телефоне — почти при каждой прокрутке) — сначала доводим её и всё, что ждёт в очереди на экране
         // (после доведения очередь сразу берёт следующую секцию), иначе нажатие ↻ ничего не делало
         for (var guard = 0; running && guard < secs.length + 2; guard++) skipNow();
@@ -1534,6 +1590,7 @@
         I.toUrl(lang);
         var list = [];
         if (!rm) secs.forEach(function (x) { if (x.state !== 'done') return; var r = x.el.getBoundingClientRect(); if (r.bottom > 0 && r.top < VH) list.push(x); });
+        qPause(3500);
         if (list.length) morph(lang, list); else swapLang(lang, null);
       }
       function onLang(e) {
@@ -1663,6 +1720,7 @@
           // касание панели до монтажа: смонтировать и запустить сразу — обработчики модуля получат этот же клик
           hero.el.addEventListener('click', function (e) { if (heroLazy && e.target.closest && e.target.closest('[data-obj]')) { objPend = true; heroWake(); } }, true);
         } else try { heroObj = window.PTHero ? window.PTHero.mount(hero.el, { autostart: false }) : null; } catch (e) { heroObj = null; console.warn(e); }
+        heroAlt();
       }
       function bindAll() {
         btns.forEach(function (b) { b.addEventListener('click', replay); });
@@ -1756,10 +1814,11 @@
       if (AUTO_MODE) try { var seenNow = JSON.parse(sessionStorage.getItem('pt-seen') || '[]'); if (seenNow.indexOf(PAGE) < 0) { seenNow.push(PAGE); sessionStorage.setItem('pt-seen', JSON.stringify(seenNow)); } } catch (e) { /* хранилище запрещено */ }
       // «Назад» из кэша браузера (bfcache): страница вернулась целиком, сборка уже готова — только возобновляем кадры.
       // unload / beforeunload не вешаем: они отключают bfcache
-      window.addEventListener('pageshow', function (e) { if (e.persisted) { prev = performance.now(); start(); } });
+      window.addEventListener('pageshow', function (e) { if (e.persisted) { prev = performance.now(); qPause(500); start(); } });
       // панель замеров (?hud, assets/perf-hud.js): разрешение холста частиц и вид прокрутки колесом
       // boot, late, first — для панели замеров (TASK-hud2.md, 2); first — undefined, пока первый экран не собран
-      window.PTPerf = { dpr: function () { return dpr; }, scroll: function () { return window.PTScroll && window.PTScroll.mode === 'soft' ? 'soft' : 'native'; }, boot: BOOT, late: LATE, get first() { return firstT; } };
+      // q — уровень облегчения движка (панель брала его из sessionStorage и не видела ?pt-q), alt — «через кадр»
+      window.PTPerf = { dpr: function () { return dpr; }, scroll: function () { return window.PTScroll && window.PTScroll.mode === 'soft' ? 'soft' : 'native'; }, boot: BOOT, late: LATE, get first() { return firstT; }, get q() { return lite; }, get alt() { return alt; } };
       return {
         setActive: function (v) { active = v; if (v) start(); },
         destroy: function () {

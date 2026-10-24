@@ -2059,6 +2059,80 @@ console.log('\nслабые телефоны: ранняя оценка на в�
   else console.log(`  ✓ ранняя оценка на вступлении: ${info.join(', ')}`);
 }
 
+// «Через кадр» и подстраховка (владелец 2026-10-24, замер A15): на сенсорном экране медиана интервала кадра дольше 1.4 кадра
+// экрана два окна по 2 с подряд — частицы, сцены и объект «Кодекса» в каждом втором кадре (PTPerf.alt, sessionStorage pt-alt,
+// держится на следующей странице); в этом режиме два кадра дольше 300 мс за 4 с — ступень облегчения вниз, не чаще раза в 4 с, не
+// дальше уровня 2. Крючок в копии engine.js подсовывает автоматике долгие кадры (+30 мс к каждому, «вспышки» по 0.35 с); счётчики
+// кадров движка, отрисовок частиц и кадров объекта — в копиях. На обычной скорости и на компьютере режим не включается; панель
+// замеров показывает уровень из движка и «через кадр».
+console.log('\n«через кадр» и подстраховка на слабом телефоне');
+{
+  const bad = [], info = [];
+  const rp = (src, a, b) => { if (!src.includes(a)) { bad.push('нет места крючка: ' + a.slice(0, 50)); return src; } return src.replace(a, b); };
+  let eng = readFileSync(path.join(root, 'assets', 'engine.js'), 'utf8').replace(/\r\n/g, '\n');
+  let hob = readFileSync(path.join(root, 'assets', 'hero-objects.js'), 'utf8').replace(/\r\n/g, '\n');
+  eng = rp(eng, 'altWatch(now, raw); }', 'altWatch(now, window.__ptLag ? window.__ptLag(raw) : raw); window.__ef = (window.__ef || 0) + 1; }');
+  eng = rp(eng, '      function render(n) {', '      function render(n) { window.__er = (window.__er || 0) + 1; return render0(n); }\n      function render0(n) {');
+  hob = rp(hob, 'function frame(now) { var dt', 'function frame(now) { window.__hf = (window.__hf || 0) + 1; var dt');
+  hob = rp(hob, 'function loop(now) { raf = 0;', 'function loop(now) { window.__hl = (window.__hl || 0) + 1; raf = 0;');
+  const quick = await chromium.launch();
+  const PHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true };
+  const mk = async (opt, lag) => {
+    const ctx = await quick.newContext(opt);
+    await ctx.route('**/assets/engine.js*', (r) => r.fulfill({ body: eng, contentType: 'application/javascript' }));
+    await ctx.route('**/assets/hero-objects.js*', (r) => r.fulfill({ body: hob, contentType: 'application/javascript' }));
+    await ctx.addInitScript((lag) => { window.__spike = 0; window.__ptLag = (raw) => (window.__spike > 0 ? (window.__spike--, 0.35) : raw + lag); }, lag);
+    const page = await ctx.newPage(); page.on('pageerror', (e) => bad.push('ошибка: ' + e.message));
+    return [ctx, page];
+  };
+  const st = (page) => page.evaluate(() => ({ alt: window.PTPerf.alt, q: window.PTPerf.q, ss: sessionStorage.getItem('pt-alt') }));
+  const rate = async (page) => {
+    const a = await page.evaluate(() => [window.__ef, window.__er, window.__hl, window.__hf]); await page.waitForTimeout(2000);
+    const c = await page.evaluate(() => [window.__ef, window.__er, window.__hl, window.__hf]);
+    return { eng: (c[1] - a[1]) / Math.max(1, c[0] - a[0]), hero: (c[3] - a[3]) / Math.max(1, c[2] - a[2]) };
+  };
+  {
+    const [ctx, page] = await mk(PHONE, 0.03);
+    await page.goto(BASE + 'index.html?intro=full'); await page.waitForTimeout(9000);
+    const s1 = await st(page), r1 = await rate(page);
+    if (!s1.alt || s1.ss !== '1') bad.push('телефон, медленные кадры: режим не включился ' + JSON.stringify(s1));
+    if (!(r1.eng > 0.4 && r1.eng < 0.6) || !(r1.hero > 0.4 && r1.hero < 0.6)) bad.push(`телефон: не через кадр — частицы ${r1.eng.toFixed(2)}, объект ${r1.hero.toFixed(2)} кадров на кадр`);
+    const q0 = s1.q;
+    await page.evaluate(() => { window.__spike = 2; }); await page.waitForTimeout(600); const q1 = (await st(page)).q;
+    await page.evaluate(() => { window.__spike = 2; }); await page.waitForTimeout(600); const q1b = (await st(page)).q;
+    await page.waitForTimeout(3600); await page.evaluate(() => { window.__spike = 2; }); await page.waitForTimeout(600); const q2 = (await st(page)).q;
+    await page.waitForTimeout(4200); await page.evaluate(() => { window.__spike = 2; }); await page.waitForTimeout(600); const q3 = (await st(page)).q;
+    if (q1 !== q0 + 1 || q1b !== q1 || q2 !== Math.min(2, q0 + 2) || q3 !== 2) bad.push(`подстраховка: уровни ${q0} → ${q1} → (сразу) ${q1b} → (через 4 с) ${q2} → ${q3}`);
+    info.push(`телефон: «через кадр» (частицы ${r1.eng.toFixed(2)}, объект ${r1.hero.toFixed(2)}), уровни ${q0} → ${q1} → ${q1b} → ${q2} → ${q3}`);
+    await page.goto(BASE + 'services.html?intro=instant&hud'); await page.waitForTimeout(2500);
+    const s2 = await st(page);
+    const hud = await page.evaluate(() => { const d = [...document.querySelectorAll('div[data-pt-skip]')].find((x) => /ур\. /.test(x.textContent)); return d ? d.textContent : ''; });
+    if (!s2.alt || s2.q !== 2) bad.push('следующая страница: ' + JSON.stringify(s2));
+    if (!/ур\. 2 · через кадр/.test(hud)) bad.push('панель замеров: нет «ур. 2 · через кадр» — ' + hud.split('\n')[0]);
+    await page.goto(BASE + 'services.html?intro=instant&hud=0&pt-reset'); await page.waitForTimeout(800);
+    const s3 = await st(page);
+    if (s3.alt || s3.ss !== null) bad.push('?pt-reset не снял «через кадр»: ' + JSON.stringify(s3));
+    await ctx.close();
+  }
+  {
+    const [ctx, page] = await mk(PHONE, 0);
+    await page.goto(BASE + 'index.html?intro=full'); await page.waitForTimeout(9000);
+    const s1 = await st(page), r1 = await rate(page);
+    if (s1.alt || r1.eng < 0.9) bad.push(`телефон, обычная скорость: «через кадр» ${s1.alt}, частицы ${r1.eng.toFixed(2)} кадров на кадр`);
+    await ctx.close();
+  }
+  {
+    const [ctx, page] = await mk({ viewport: { width: 1440, height: 900 } }, 0.03);
+    await page.goto(BASE + 'index.html?intro=full'); await page.waitForTimeout(9000);
+    const s1 = await st(page);
+    if (s1.alt) bad.push('компьютер: «через кадр» включился');
+    await ctx.close();
+  }
+  await quick.close();
+  if (bad.length) fail('«через кадр»: ' + bad.join('; '));
+  else console.log(`  ✓ ${info.join('; ')}; на обычной скорости и на компьютере — нет; следующая страница — тот же режим, панель «ур. 2 · через кадр», ?pt-reset снимает`);
+}
+
 // Чистка страницы услуг: чипы-дубли, ряд переходов, карточка форматов со ссылками, сроки и повторы в текстах; снимки.
 console.log('\nстраница услуг без повторов');
 {

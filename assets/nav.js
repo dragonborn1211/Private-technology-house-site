@@ -11,7 +11,7 @@
   // Только по ?hud (дальше держится до конца вкладки) — без флага файл не грузится вовсе; ?hud=0 и ?pt-reset — выключить.
   // Путь — от этого скрипта: на 404 страницы лежат по любому адресу. Метка версии — как у остальных файлов (иначе после
   // выкладки телефон брал старую панель из кэша); её проставляет tools/bump.mjs, check.mjs сверяет
-  var HUD = 'perf-hud.js?v=97e91e93';
+  var HUD = 'perf-hud.js?v=1c280910';
   try {
     var hq = location.search, hs = window.sessionStorage, me = document.currentScript;
     if (/[?&]pt-reset(?:[=&]|$)/.test(hq) || /[?&]hud=0(?:&|$)/.test(hq)) hs.removeItem('pt-hud');

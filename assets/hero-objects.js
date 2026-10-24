@@ -196,9 +196,11 @@
         var panel = pre.panel, env = pre.env, core = pre.core, scene = makeScene(core, root, env);
         // held — пауза на время прокрутки в облегчённом режиме (движок, TASK-perf): отдельно от active (вне экрана), чтобы одна
         // не снимала другую
-        var raf = 0, alive = true, active = true, held = false, prev = performance.now();
-        function frame(now) { var dt = Math.min(0.05, Math.max(0, (now - prev) / 1000)); prev = now; core.step(env.rm ? 0 : dt); }
-        function loop(now) { raf = 0; if (!alive || !active || held) return; frame(now); if (!env.rm) raf = requestAnimationFrame(loop); }
+        // alt — «через кадр» (движок включает его на слабом телефоне, владелец 2026-10-24): объект считается и рисуется в каждом
+        // втором кадре, время — за оба (пропущенный кадр не двигает prev, предел шага — 0.1 с вместо 0.05)
+        var raf = 0, alive = true, active = true, held = false, prev = performance.now(), alt = false, odd = false;
+        function frame(now) { var dt = Math.min(alt ? 0.1 : 0.05, Math.max(0, (now - prev) / 1000)); prev = now; core.step(env.rm ? 0 : dt); }
+        function loop(now) { raf = 0; if (!alive || !active || held) return; if (!(alt && (odd = !odd))) frame(now); if (!env.rm) raf = requestAnimationFrame(loop); }
         function start() { if (raf || !alive || !active || held) return; prev = performance.now(); raf = requestAnimationFrame(loop); }
         function onMove(e) { var r = root.getBoundingClientRect(); core.mouse.x = e.clientX - r.left; core.mouse.y = e.clientY - r.top; core.mouse.in = core.mouse.x > 0 && core.mouse.x < r.width && core.mouse.y > 0 && core.mouse.y < r.height; if (scene.onPointer) scene.onPointer(core.mouse.x, core.mouse.y); }
         function onOut(e) { if (!e.relatedTarget) { core.mouse.in = false; core.mouse.x = core.mouse.y = -1e5; if (scene.onPointer) scene.onPointer(-1e5, -1e5); } }
@@ -225,6 +227,7 @@
           scene: scene, core: core,
           setActive: function (v) { active = v; if (v) start(); },
           hold: function (v) { v = !!v; if (held === v) return; held = v; if (scene.hold) scene.hold(v); if (!v) start(); },
+          setAlt: function (v) { alt = !!v; odd = false; },
           destroy: function () {
             alive = false; if (raf) cancelAnimationFrame(raf); if (scene.destroy) scene.destroy(); core.release();
             window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerdown', onMove);
@@ -823,7 +826,7 @@
   function wrap(root, h) {
     if (!h) return null;
     if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { es.forEach(function (e) { h.setActive(e.isIntersecting); }); }, { threshold: 0.01 }).observe(root);
-    return { count: h.core.N, start: function (instant) { h.scene.begin(!!instant); }, replay: function () { h.scene.replay(); }, go: function (k) { h.scene.go(k); }, relabel: function () { h.scene.relabel(); }, setActive: h.setActive, hold: h.hold, destroy: h.destroy };
+    return { count: h.core.N, start: function (instant) { h.scene.begin(!!instant); }, replay: function () { h.scene.replay(); }, go: function (k) { h.scene.go(k); }, relabel: function () { h.scene.relabel(); }, setActive: h.setActive, hold: h.hold, alt: h.setAlt, destroy: h.destroy };
   }
   window.PTHero = {
     mount: function (root, opts) {

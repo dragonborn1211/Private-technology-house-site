@@ -9,7 +9,8 @@
 //   Сборка  — режим вступления (полная / быстрая / сразу) и почему «сразу»: скрипты пришли позже порога.
 //   Загрузка — когда пришли HTML, стили, движок; сколько скачано, что из кэша, самый медленный файл.
 //   1-й экран — через сколько секунд от открытия страницы собрался первый экран.
-//   Режим   — уровень облегчения (0 — полный, 1 — без размытия стекла и следа, 2 — частицы в 1×), DPR, прокрутка.
+//   Режим   — уровень облегчения из движка (PTPerf.q; 0 — полный, 1 — без размытия стекла и следа, 2 — частицы в 1×),
+//             «через кадр» (PTPerf.alt: частицы, сцены и объект — в каждом втором кадре), DPR, прокрутка.
 // «Замер 10 с» обнуляет счётчики, через 10 с замораживает итог; «Копировать» — итог для чата, с подробностями: долгие кадры
 // с источником (Long Animation Frames, Chrome 123+) и тайминги файлов.
 (function () {
@@ -146,13 +147,16 @@
     setTimeout(function () { win.done = true; win.end = performance.now(); bRun.disabled = false; bRun.textContent = 'Ещё замер'; }, 10000);
   }
   function mode() {
-    var root = document.getElementById('pt-site'), lv = '?';
-    try { lv = ss.getItem('pt-q') || '0'; } catch (e) {}
-    if (root && root.classList.contains('pt-lite') && lv === '0') lv = '1+';
-    var P = window.PTPerf || {};
+    // уровень — из движка (PTPerf.q): sessionStorage не видел ?pt-q; без поля — как раньше
+    var root = document.getElementById('pt-site'), lv = '?', P = window.PTPerf || {};
+    if (P.q != null) lv = String(P.q);
+    else {
+      try { lv = ss.getItem('pt-q') || '0'; } catch (e) {}
+      if (root && root.classList.contains('pt-lite') && lv === '0') lv = '1+';
+    }
     var touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
     var sc = touch ? 'тач' : (/[?&]pt-scroll=native\b/.test(q) || (P.scroll && P.scroll() === 'native') || !window.PTScroll ? 'колесо нативное' : 'колесо мягкое');
-    return ['ур. ' + lv + ' · DPR ' + (window.devicePixelRatio || 1).toFixed(2) + (P.dpr ? ' (холст ' + P.dpr().toFixed(2) + ')' : ''),
+    return ['ур. ' + lv + (P.alt ? ' · через кадр' : '') + ' · DPR ' + (window.devicePixelRatio || 1).toFixed(2) + (P.dpr ? ' (холст ' + P.dpr().toFixed(2) + ')' : ''),
       innerWidth + '×' + innerHeight + ' · ' + sc];
   }
   // строки короткие: на телефоне панель в ширину экрана, текст переносится. full — с подробностями (для «Копировать»)
