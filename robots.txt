@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Clean-param: lang&hud&intro&pt-q&pt-scroll&pt-reset
 
 Sitemap: https://privatechouse.ru/sitemap.xml

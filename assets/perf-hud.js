@@ -73,8 +73,11 @@
       var fl = s.forcedStyleAndLayoutDuration || 0;
       return file(s.sourceURL) + (fn ? ' ' + String(fn).slice(0, 28) : '') + ' ' + s.duration.toFixed(0) + (fl >= 1 ? ' (из них раскладка ' + fl.toFixed(0) + ')' : '');
     });
+    // все скрипты кадра — сумма и число вызовов (TASK-weak-phone-3, 3): две самые долгие не показывают, что кадр набрали мелкие
+    var all = e.scripts || [], tot = all.reduce(function (t, s) { return t + s.duration; }, 0), nn = all.length;
+    var tail = nn ? '; скриптов всего ' + tot.toFixed(0) + ' мс в ' + nn + ' ' + (nn % 10 === 1 && nn % 100 !== 11 ? 'вызове' : 'вызовах') : '';
     var end = e.startTime + e.duration, lay = e.styleAndLayoutStart ? end - e.styleAndLayoutStart : 0, rn = e.renderStart ? end - e.renderStart : 0;
-    return Math.round(e.duration) + ' мс в ' + sec(e.startTime) + (scr.length ? ': ' + scr.join(', ') : ': без скриптов') +
+    return Math.round(e.duration) + ' мс в ' + sec(e.startTime) + (scr.length ? ': ' + scr.join(', ') + tail : ': без скриптов') +
       (rn > 5 ? '; отрисовка ' + rn.toFixed(0) + (lay > 5 ? ' (стили+раскладка ' + lay.toFixed(0) + ')' : '') : '');
   }
   try {

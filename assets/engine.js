@@ -84,8 +84,9 @@
       // и ферзь собирается обычной анимацией, когда его видно. Пока объекта нет, панель как до старта ферзя: рамка, вкладки,
       // подпись из разметки. «Собрать заново», смена языка и касание панели монтируют сразу. Десктоп, «сразу», reduced
       // motion — как раньше (монтаж при загрузке).
-      // heroSplit — монтаж из простоя идёт двумя задачами (PTHero.mountSplit: ядро, потом остальное; TASK-weak-phone): одной на
-      // слабом телефоне при CPU ×8 — ~75 мс. Срочный монтаж (касание, смена языка, «Собрать заново») посреди — доделывает сразу
+      // heroSplit — монтаж из простоя идёт по частям, каждая — своей задачей (PTHero.mountSplit: массивы частиц; step() — контекст
+      // и шейдеры, проверка, фигуры; finish() — остальное; TASK-weak-phone, TASK-weak-phone-3): одной на слабом телефоне было до
+      // 153 мс. Срочный монтаж (касание, смена языка, «Собрать заново») посреди — доделывает сразу
       var heroLazy = false, objPend = false, heroIO = null, heroIdleT = 0, heroSplit = null;
       function heroNow() {
         if (heroObj || !heroLazy) return heroObj;
@@ -107,6 +108,7 @@
           try { heroSplit = window.PTHero.mountSplit(hero.el, { autostart: false }); } catch (e) { heroSplit = null; console.warn(e); }
           if (heroSplit) { setTimeout(heroWakeSoft, 0); return; }
         }
+        if (heroSplit && heroSplit.step && heroSplit.step()) { setTimeout(heroWakeSoft, 0); return; }
         heroNow(); if (objPend) { objPend = false; requestAnimationFrame(function () { setTimeout(function () { if (alive) objStart(false); }, 0); }); }
       }
       // вступление кончилось — смонтировать в простое (не позже чем через 2 с)
@@ -963,8 +965,11 @@
         aSlow = med > 1.4 * scrMs ? aSlow + 1 : 0;
         if (aSlow >= 2) setAlt();
       }
+      // вместе с «через кадр» — сразу уровень 2, если он ниже (TASK-weak-phone-3, 4: у владельца на A15 с ?pt-q=2 худший кадр был
+      // 111 мс против 655 без него); ?pt-q — не трогаем
       function setAlt() {
         alt = true; altOdd = false; altDt = 0; aLong.length = 0; heroAlt();
+        if (lite < 2 && QFIX < 0) setLite(2);
         try { sessionStorage.setItem('pt-alt', '1'); } catch (e) {}
       }
       function heroAlt() { if (alt && heroObj && heroObj.alt) heroObj.alt(true); }
@@ -1593,10 +1598,13 @@
         qPause(3500);
         if (list.length) morph(lang, list); else swapLang(lang, null);
       }
+      // на английской странице (/en/…, TASK-seo) «RU» — обычный переход на русскую, «EN» — она сама
       function onLang(e) {
         if (!window.PTI18N || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        var lang = e.currentTarget.getAttribute('data-lang');
+        if (window.PTI18N.page === 'en') { if (lang === 'en') e.preventDefault(); return; }
         e.preventDefault();
-        setLang(e.currentTarget.getAttribute('data-lang'));
+        setLang(lang);
       }
       function emit(x, y, dx, dy) {
         var i = sI; sI = (sI + 1) % SMK;
@@ -1842,5 +1850,6 @@
       };
     };
       var el = document.getElementById('pt-site');
-  if (el) { try { factory(el); } catch (e) { console.error(e); el.classList.remove('pt-on', 'pt-boot'); } }
+  // старая ссылка ?lang=en уводит на английскую страницу (i18n.js, leaving) — сборку не начинаем
+  if (el && !(window.PTI18N && window.PTI18N.leaving)) { try { factory(el); } catch (e) { console.error(e); el.classList.remove('pt-on', 'pt-boot'); } }
 })();

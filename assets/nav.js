@@ -11,7 +11,7 @@
   // Только по ?hud (дальше держится до конца вкладки) — без флага файл не грузится вовсе; ?hud=0 и ?pt-reset — выключить.
   // Путь — от этого скрипта: на 404 страницы лежат по любому адресу. Метка версии — как у остальных файлов (иначе после
   // выкладки телефон брал старую панель из кэша); её проставляет tools/bump.mjs, check.mjs сверяет
-  var HUD = 'perf-hud.js?v=1c280910';
+  var HUD = 'perf-hud.js?v=f410119b';
   try {
     var hq = location.search, hs = window.sessionStorage, me = document.currentScript;
     if (/[?&]pt-reset(?:[=&]|$)/.test(hq) || /[?&]hud=0(?:&|$)/.test(hq)) hs.removeItem('pt-hud');
@@ -37,13 +37,15 @@
     if (v) bar.removeAttribute('inert'); else bar.setAttribute('inert', '');
   }
   // позиция кадра — одна на всех (PTScroll.y, TASK-weak-phone, 4); без scroll.js — scrollY
+  // Пока первый экран в кадре, позиция не нужна: шапка скрыта, а чтение scrollY заставляло браузер разложить страницу (при
+  // запуске — 125 мс при CPU ×8, ещё до раскладки движка; TASK-weak-phone-3, 1). Первый экран ушёл — с первого кадра dy = 0
   function update(now) {
     raf = 0;
-    var y = window.PTScroll && window.PTScroll.y ? window.PTScroll.y(now) : window.scrollY, dy = lastY === null ? 0 : y - lastY; lastY = y;
     // закрепление после якоря снимает только сам человек (колесо, палец, клавиши): в начале поездки к секции первый
     // экран ещё в кадре, и сброс здесь гасил шапку
-    if (hero && heroIn) show(false);
-    else if (pinned || dy < -1) show(true);
+    if (hero && heroIn) { show(false); lastY = null; guardPult(); return; }
+    var y = window.PTScroll && window.PTScroll.y ? window.PTScroll.y(now) : window.scrollY, dy = lastY === null ? 0 : y - lastY; lastY = y;
+    if (pinned || dy < -1) show(true);
     else if (dy > 1) show(false);
     guardPult();
   }
@@ -202,5 +204,6 @@
     if (pult.classList.contains('is-off') !== off) pult.classList.toggle('is-off', off);
   }
   if (pult && 'MutationObserver' in window) new MutationObserver(function () { pBox = null; guardPult(); }).observe(pult, { attributes: true, attributeFilter: ['class'] });
-  update();
+  // первое обновление — в кадре, а не при выполнении скрипта (посреди разбора страницы)
+  onScroll();
 })();

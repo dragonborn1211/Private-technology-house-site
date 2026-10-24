@@ -1,7 +1,8 @@
 // Локальный просмотр сайта: node tools/serve.mjs [порт] → http://localhost:8080
 // Отдаёт страницы корня и assets/ — ровно то, что уходит на хостинг, — и локальные эталоны tools/ref/. На несуществующий
 // адрес (в том числе вложенный: /cases/abc) — 404.html со статусом 404, как GitHub Pages. Страница и без расширения:
-// /services — это services.html (как GitHub Pages; ссылки на сайте — без .html).
+// /services — это services.html (как GitHub Pages; ссылки на сайте — без .html). Английские страницы (TASK-seo) — в en/: /en/ —
+// en/index.html, /en/services — en/services.html; /en без косой — переадресация на /en/, как у GitHub Pages.
 // Как на хостинге: текст (HTML, CSS, JS, SVG) сжат gzip — иначе локальный Lighthouse на медленной сети считает в три раза
 // больше байт; Cache-Control: no-cache (перепроверка при каждом заходе), а не no-store — с no-store браузер не кладёт
 // страницу в кэш «Назад» (bfcache).
@@ -20,11 +21,13 @@ createServer(async (req, res) => {
   // получали ERR_CONNECTION_REFUSED
   let rel = '';
   try { rel = decodeURIComponent(new URL(req.url, 'http://x').pathname).replace(/^\/+/, '') || 'index.html'; } catch { rel = '..'; }
-  if (/^[\w-]+$/.test(rel)) rel += '.html';
+  if (rel === 'en') { res.writeHead(301, { Location: '/en/' + (req.url.split('?')[1] ? '?' + req.url.split('?')[1] : '') }).end(); return; }
+  if (rel.endsWith('/')) rel += 'index.html';
+  if (/^(en\/)?[\w-]+$/.test(rel)) rel += '.html';
   const file = path.resolve(root, rel);
   // tools/ref/ — эталоны (только локально, в .gitignore), на хостинг не идут
   // в корне — страницы, sitemap / robots и иконки сайта
-  const allowed = (path.dirname(file) === root && (/\.(html|xml|txt)$/.test(file) || /^(favicon\.(svg|ico)|apple-touch-icon\.png)$/.test(path.basename(file)))) || file.startsWith(path.join(root, 'assets') + path.sep) || file.startsWith(path.join(root, 'tools', 'ref') + path.sep);
+  const allowed = (path.dirname(file) === path.join(root, 'en') && /\.html$/.test(file)) || (path.dirname(file) === root && (/\.(html|xml|txt)$/.test(file) || /^(favicon\.(svg|ico)|apple-touch-icon\.png)$/.test(path.basename(file)))) || file.startsWith(path.join(root, 'assets') + path.sep) || file.startsWith(path.join(root, 'tools', 'ref') + path.sep);
   try {
     if (!allowed) throw new Error('not allowed');
     send(200, await readFile(file), path.extname(file));

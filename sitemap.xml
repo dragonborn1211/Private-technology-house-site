@@ -2,35 +2,76 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://privatechouse.ru/</loc>
+    <lastmod>2026-10-25</lastmod>
     <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/"/>
+  </url>
+  <url>
+    <loc>https://privatechouse.ru/en/</loc>
+    <lastmod>2026-10-25</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/"/>
   </url>
   <url>
     <loc>https://privatechouse.ru/services</loc>
+    <lastmod>2026-10-25</lastmod>
     <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/services"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/services?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/services"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/services"/>
+  </url>
+  <url>
+    <loc>https://privatechouse.ru/en/services</loc>
+    <lastmod>2026-10-25</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/services"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/services"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/services"/>
   </url>
   <url>
     <loc>https://privatechouse.ru/cases</loc>
+    <lastmod>2026-10-25</lastmod>
     <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/cases"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/cases?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/cases"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/cases"/>
+  </url>
+  <url>
+    <loc>https://privatechouse.ru/en/cases</loc>
+    <lastmod>2026-10-25</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/cases"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/cases"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/cases"/>
   </url>
   <url>
     <loc>https://privatechouse.ru/automations</loc>
+    <lastmod>2026-10-25</lastmod>
     <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/automations"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/automations?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/automations"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/automations"/>
+  </url>
+  <url>
+    <loc>https://privatechouse.ru/en/automations</loc>
+    <lastmod>2026-10-25</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/automations"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/automations"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/automations"/>
   </url>
   <url>
     <loc>https://privatechouse.ru/process</loc>
+    <lastmod>2026-10-25</lastmod>
     <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/process"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/process?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/process"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/process"/>
+  </url>
+  <url>
+    <loc>https://privatechouse.ru/en/process</loc>
+    <lastmod>2026-10-25</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/process"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/process"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/process"/>
   </url>
   <url>
     <loc>https://privatechouse.ru/privacy</loc>
+    <lastmod>2026-10-25</lastmod>
   </url>
 </urlset>

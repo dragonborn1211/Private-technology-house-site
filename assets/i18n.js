@@ -1,6 +1,10 @@
 // Языки сайта. Русский — в разметке и всегда по умолчанию; английский — словарём ниже.
-// Подключается первым: если в адресе ?lang=en, текст подменяется до старта движка, и сайт сразу собирается
-// на английском. Переключение на лету (анимация, частицы) делает engine.js, вызывая PTI18N.apply(lang).
+// Английские страницы для поиска (TASK-seo) — отдельные файлы en/*.html (адреса /en/, /en/services…): их собирает
+// tools/build-en.mjs из русских этим самым файлом (apply('en'), conv, enHref). На такой странице <html lang="en"> — текст
+// уже английский, здесь переводятся только строки, которые создаёт JS (PTI18N.t). Переключение на русской странице — на
+// месте (анимация, частицы: engine.js зовёт PTI18N.apply), адрес — /en/…, ссылки на свои страницы — на /en/…; с английской
+// страницы на русскую — обычный переход. Старые ссылки ?lang=en уводят на /en/… (location.replace); у 404 английской
+// страницы нет — там, как раньше, перевод на месте.
 //
 // Словарь — «русская строка → английская». Ключ — текст узла целиком, без пробелов по краям: подменяются
 // текстовые узлы страницы, атрибуты aria-label / title / alt, заголовок вкладки и описание. Порядок узлов
@@ -874,6 +878,48 @@
     'лид + корзина.xlsx': 'lead + cart.xlsx'
   };
   var ATTRS = ['aria-label', 'title', 'alt'];
+  // страницы с английской версией; адрес английской — <база>en/<страница> (главная — <база>en/)
+  var PAGES = ['index', 'services', 'cases', 'automations', 'process'];
+  // своя страница по адресу: имя, база (папка сайта), английская ли; чужое (другой сайт, файл, политика) — null. С диска
+  // (file://, проверки) — всегда null: там язык, как раньше, — ?lang=en и перевод на месте
+  function pageOf(u) {
+    if (location.protocol === 'file:' || u.origin !== location.origin) return null;
+    var seg = u.pathname.replace(/\.html$/, '').split('/'), last = seg.pop(), en = seg[seg.length - 1] === 'en';
+    if (en) seg.pop();
+    var name = last === '' || last === 'index' ? 'index' : last;
+    return PAGES.indexOf(name) < 0 ? null : { name: name, base: seg.join('/') + '/', en: en };
+  }
+  // адрес страницы на языке; ?lang= снимается, остальной запрос и якорь — как были
+  function langHref(u, p, lang) {
+    var q = u.search.replace(/^\?/, '').split('&').filter(function (x) { return x && !/^lang=/.test(x); });
+    return p.base + (lang === 'en' ? 'en/' : '') + (p.name === 'index' ? '' : p.name) + (q.length ? '?' + q.join('&') : '') + u.hash;
+  }
+  // Адрес страницы при загрузке: относительные адреса страницы — от него. Перед сменой адреса на /en/… (toUrl) они становятся
+  // абсолютными (freeze): иначе после history.replaceState браузер считал бы их от /en/ — меню, картинки с отложенной
+  // загрузкой (снимки работ, панели) и политика вели бы в /en/assets/…, /en/privacy
+  var BASE0 = location.href, REL = /^(?:[a-z][a-z0-9+.-]*:|\/|#|\?)/i;
+  function abs(v) { try { var u = new URL(v, BASE0); return u.origin === location.origin ? u.pathname + u.search + u.hash : u.href; } catch (e) { return v; } }
+  function freeze() {
+    if (location.protocol === 'file:') return;
+    Array.prototype.forEach.call(document.body.querySelectorAll('[href],[src],[data-src],[srcset]'), function (el) {
+      ['href', 'src', 'data-src'].forEach(function (k) { var v = el.getAttribute(k); if (v && !REL.test(v)) el.setAttribute(k, abs(v)); });
+      var ss = el.getAttribute('srcset');
+      if (ss) el.setAttribute('srcset', ss.split(',').map(function (x) { var w = x.trim().split(/\s+/); if (w[0] && !REL.test(w[0])) w[0] = abs(w[0]); return w.join(' '); }).join(', '));
+    });
+  }
+  // ссылки на свои страницы — на английские (и обратно, по запомненному адресу); якоря этой страницы и переключатель — как есть
+  function links(en) {
+    if (en) freeze();
+    Array.prototype.forEach.call(document.querySelectorAll('a[href]'), function (a) {
+      if (a.hasAttribute('data-lang')) return;
+      if (!en) { if (a.__rh != null) { a.setAttribute('href', a.__rh); a.__rh = null; } return; }
+      var h = a.__rh != null ? a.__rh : a.getAttribute('href'), u, p;
+      if (!h || h.charAt(0) === '#') return;
+      try { u = new URL(h, BASE0); } catch (e) { return; }
+      if (!(p = pageOf(u)) || p.en) return;
+      a.__rh = h; a.setAttribute('href', langHref(u, p, 'en'));
+    });
+  }
 
   function norm(s) { return String(s).replace(/\s+/g, ' ').trim(); }
   // перевод строки с сохранением пробелов по краям; нет в словаре — строка как есть
@@ -928,31 +974,41 @@
         if (a.getAttribute('data-lang') === I.lang) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
       });
       Array.prototype.forEach.call(d.querySelectorAll('.lang'), function (g) { g.setAttribute('data-cur', I.lang); });
+      links(en);
       // язык сменился — то, что собирает JS по языку (ссылки в Telegram с черновиком, nav.js), пересобирается
       try { d.dispatchEvent(new CustomEvent('pt:lang', { detail: I.lang })); } catch (e) { /* старый браузер */ }
     },
     // язык из адреса: ?lang=en — английский, всё остальное — русский (по умолчанию)
     fromUrl: function () { return /[?&]lang=en(&|$)/.test(location.search) ? 'en' : 'ru'; },
-    // записать язык в адрес без перезагрузки: чтобы ссылкой на английскую версию можно было поделиться
+    // записать язык в адрес без перезагрузки: чтобы ссылкой на английскую версию можно было поделиться. У страницы с
+    // английской версией — её адрес (/en/…), у 404 — ?lang=en
     toUrl: function (lang) {
       if (!history.replaceState) return;
-      var q = location.search.replace(/^\?/, '').split('&').filter(function (p) { return p && !/^lang=/.test(p); });
-      if (lang === 'en') q.push('lang=en');
-      try { history.replaceState(history.state, '', location.pathname + (q.length ? '?' + q.join('&') : '') + location.hash); } catch (e) {}
-    }
+      var u = new URL(location.href), p = hasEn() && pageOf(u), url;
+      if (p) { if (lang === 'en') freeze(); url = langHref(u, p, lang); }
+      else {
+        var q = location.search.replace(/^\?/, '').split('&').filter(function (x) { return x && !/^lang=/.test(x); });
+        if (lang === 'en') q.push('lang=en');
+        url = location.pathname + (q.length ? '?' + q.join('&') : '') + location.hash;
+      }
+      try { history.replaceState(history.state, '', url); } catch (e) {}
+    },
+    // для tools/build-en.mjs: перевод строки (с пробелами по краям; нет в словаре — null) и адрес страницы на языке
+    conv: conv,
+    langHref: function (href, lang) { var u = new URL(href, location.href), p = pageOf(u); return p ? langHref(u, p, lang) : null; },
+    pages: PAGES
   };
+  // английская версия есть — в <head> ссылка на неё (hreflang="en"); у 404 и политики её нет
+  function hasEn() { return !!document.querySelector('link[rel="alternate"][hreflang="en"]'); }
   window.PTI18N = I;
-  // английская версия не теряется при переходе по своим ссылкам (меню, подвал, «Все кейсы»): ?lang=en дописывается
-  // в адрес ссылки в момент нажатия и снимается сразу после — разметка остаётся русской, выбор нигде не хранится
-  function carry(e) {
-    if (I.lang !== 'en') return;
-    var a = e.target.closest && e.target.closest('a[href]');
-    if (!a || a.hasAttribute('data-lang') || a.origin !== location.origin || /(^|&)lang=/.test(a.search.slice(1)) || !/(\/|\.html|\/[\w-]+)$/.test(a.pathname)) return;
-    var h = a.getAttribute('href');
-    a.search = (a.search ? a.search + '&' : '?') + 'lang=en';
-    setTimeout(function () { a.setAttribute('href', h); }, 0);
+  // page: 'en' — английская страница (/en/…, собрана заранее); 'ru' — русская (на ней язык меняется на месте)
+  I.page = document.documentElement.lang === 'en' ? 'en' : 'ru';
+  if (I.page === 'en') I.lang = 'en';
+  else if (I.fromUrl() === 'en') {
+    // старая ссылка ?lang=en — на английскую страницу (с тем же якорем); движок не запускается (leaving). С диска (file://)
+    // и у 404 — перевод на месте, как раньше
+    var to = location.protocol !== 'file:' && hasEn() && I.langHref(location.href, 'en');
+    if (to) { I.leaving = true; location.replace(to); }
+    else I.apply('en');
   }
-  document.addEventListener('click', carry, true);
-  document.addEventListener('auxclick', carry, true);
-  if (I.fromUrl() === 'en') I.apply('en');
 })();

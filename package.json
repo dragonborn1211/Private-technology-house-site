@@ -6,6 +6,7 @@
     "check": "node tools/check.mjs"
   },
   "devDependencies": {
+    "linkedom": "^0.18.14",
     "playwright": "^1.56.0"
   }
 }

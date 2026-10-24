@@ -75,7 +75,7 @@ const fail = (msg) => { failed++; console.log('  ✗ ' + msg); };
 
 // 1. Запрещённые слова (юридическое требование, см. CLAUDE.md) — во всех файлах, которые уходят на сайт.
 //    Сам список не хранится в публичном репозитории: tools/forbidden.local.txt, по слову на строку, # — комментарий.
-const siteFiles = [...readdirSync(root).filter((f) => /\.html$/i.test(f) || f === 'sitemap.xml' || f === 'robots.txt'), ...readdirSync(path.join(root, 'assets'), { recursive: true })
+const siteFiles = [...readdirSync(root).filter((f) => /\.html$/i.test(f) || f === 'sitemap.xml' || f === 'robots.txt'), ...(existsSync(path.join(root, 'en')) ? readdirSync(path.join(root, 'en')).map((f) => 'en/' + f) : []), ...readdirSync(path.join(root, 'assets'), { recursive: true })
   .map((f) => 'assets/' + String(f).replace(/\\/g, '/')).filter((f) => /\.(html|css|js|svg|json|txt)$/i.test(f))];
 const listFile = path.join(here, 'forbidden.local.txt');
 const words = existsSync(listFile) ? readFileSync(listFile, 'utf8').split(/\r?\n/).map((s) => s.trim()).filter((s) => s && !s.startsWith('#')) : [];
@@ -544,7 +544,7 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
   if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 7 || /svc-ic/.test(sv) || (sv.match(/<a href="process"[^>]*>Как работаем<\/a>/g) || []).length !== 4) bad.push('страница услуг: семь мини-рисунков (шесть направлений и редизайн), нет иконок, «Как работаем» → process.html (три меню и подвал)');
   for (const f of readdirSync(path.join(root, 'assets')).filter((x) => x.endsWith('.js'))) if (/addEventListener\(\s*['"](before)?unload['"]/.test(readFileSync(path.join(root, 'assets', f), 'utf8'))) bad.push(`${f}: unload / beforeunload отключает кэш «Назад»`);
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8'), rb = readFileSync(path.join(root, 'robots.txt'), 'utf8');
-  if (['', 'services', 'cases', 'automations', 'process'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 5 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
+  if (['', 'services', 'cases', 'automations', 'process'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 10 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
   if (!/User-agent: \*/.test(rb) || !/Sitemap: https:\/\/privatechouse\.ru\/sitemap\.xml/.test(rb)) bad.push('robots.txt');
   await page.close();
   if (bad.length) fail('главная: ' + bad.join('; '));
@@ -1232,7 +1232,7 @@ console.log('\nструктура: услуги, «Как работаем», с
     await page.close();
   }
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
-  if (['', 'services', 'cases', 'automations', 'process'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 6 || (sm.match(/hreflang="en"/g) || []).length !== 5 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy(\.html)?<\/loc>\s*<\/url>/.test(sm)) bad.push('sitemap.xml: не пять адресов с EN');
+  if (['', 'services', 'cases', 'automations', 'process'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 11 || (sm.match(/hreflang="en"/g) || []).length !== 10 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy(\.html)?<\/loc>\s*(<lastmod>[\d-]+<\/lastmod>\s*)?<\/url>/.test(sm)) bad.push('sitemap.xml: не пять страниц и пять английских с парами');
   if (bad.length) fail('структура: ' + bad.join('; '));
   else console.log(`  ✓ разлёта (data-pt-burst) нет нигде, у подвала — мягкий выдох; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — четыре секции по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — шесть адресов (политика — без EN)`);
 }
@@ -2061,8 +2061,8 @@ console.log('\nслабые телефоны: ранняя оценка на в�
 
 // «Через кадр» и подстраховка (владелец 2026-10-24, замер A15): на сенсорном экране медиана интервала кадра дольше 1.4 кадра
 // экрана два окна по 2 с подряд — частицы, сцены и объект «Кодекса» в каждом втором кадре (PTPerf.alt, sessionStorage pt-alt,
-// держится на следующей странице); в этом режиме два кадра дольше 300 мс за 4 с — ступень облегчения вниз, не чаще раза в 4 с, не
-// дальше уровня 2. Крючок в копии engine.js подсовывает автоматике долгие кадры (+30 мс к каждому, «вспышки» по 0.35 с); счётчики
+// держится на следующей странице) и сразу уровень облегчения 2 (TASK-weak-phone-3, 4); «вспышки» долгих кадров (подстраховка 4б)
+// дальше уровня 2 не ведут. Крючок в копии engine.js подсовывает автоматике долгие кадры (+30 мс к каждому, по 0.35 с); счётчики
 // кадров движка, отрисовок частиц и кадров объекта — в копиях. На обычной скорости и на компьютере режим не включается; панель
 // замеров показывает уровень из движка и «через кадр».
 console.log('\n«через кадр» и подстраховка на слабом телефоне');
@@ -2097,13 +2097,11 @@ console.log('\n«через кадр» и подстраховка на слаб
     const s1 = await st(page), r1 = await rate(page);
     if (!s1.alt || s1.ss !== '1') bad.push('телефон, медленные кадры: режим не включился ' + JSON.stringify(s1));
     if (!(r1.eng > 0.4 && r1.eng < 0.6) || !(r1.hero > 0.4 && r1.hero < 0.6)) bad.push(`телефон: не через кадр — частицы ${r1.eng.toFixed(2)}, объект ${r1.hero.toFixed(2)} кадров на кадр`);
-    const q0 = s1.q;
-    await page.evaluate(() => { window.__spike = 2; }); await page.waitForTimeout(600); const q1 = (await st(page)).q;
-    await page.evaluate(() => { window.__spike = 2; }); await page.waitForTimeout(600); const q1b = (await st(page)).q;
-    await page.waitForTimeout(3600); await page.evaluate(() => { window.__spike = 2; }); await page.waitForTimeout(600); const q2 = (await st(page)).q;
-    await page.waitForTimeout(4200); await page.evaluate(() => { window.__spike = 2; }); await page.waitForTimeout(600); const q3 = (await st(page)).q;
-    if (q1 !== q0 + 1 || q1b !== q1 || q2 !== Math.min(2, q0 + 2) || q3 !== 2) bad.push(`подстраховка: уровни ${q0} → ${q1} → (сразу) ${q1b} → (через 4 с) ${q2} → ${q3}`);
-    info.push(`телефон: «через кадр» (частицы ${r1.eng.toFixed(2)}, объект ${r1.hero.toFixed(2)}), уровни ${q0} → ${q1} → ${q1b} → ${q2} → ${q3}`);
+    if (s1.q !== 2) bad.push('«через кадр» без уровня 2: ' + JSON.stringify(s1));
+    await page.evaluate(() => { window.__spike = 2; }); await page.waitForTimeout(600);
+    await page.waitForTimeout(3600); await page.evaluate(() => { window.__spike = 2; }); await page.waitForTimeout(600); const q3 = (await st(page)).q;
+    if (q3 !== 2) bad.push('после долгих кадров уровень ' + q3);
+    info.push(`телефон: «через кадр» и уровень ${s1.q} (частицы ${r1.eng.toFixed(2)}, объект ${r1.hero.toFixed(2)} кадра на кадр), после долгих кадров — ${q3}`);
     await page.goto(BASE + 'services.html?intro=instant&hud'); await page.waitForTimeout(2500);
     const s2 = await st(page);
     const hud = await page.evaluate(() => { const d = [...document.querySelectorAll('div[data-pt-skip]')].find((x) => /ур\. /.test(x.textContent)); return d ? d.textContent : ''; });
@@ -2131,6 +2129,96 @@ console.log('\n«через кадр» и подстраховка на слаб
   await quick.close();
   if (bad.length) fail('«через кадр»: ' + bad.join('; '));
   else console.log(`  ✓ ${info.join('; ')}; на обычной скорости и на компьютере — нет; следующая страница — тот же режим, панель «ур. 2 · через кадр», ?pt-reset снимает`);
+}
+
+// Английские страницы для поиска (TASK-seo): en/*.html свежие (tools/build-en.mjs в памяти = файлы), без кириллицы (кроме
+// подписи «Русский» у ссылки переключателя с lang="ru"), lang="en", canonical и og:url на себя, og:locale en_US + ru_RU,
+// предзагрузка — латинские шрифты; пары hreflang одинаковые на обеих страницах и взаимные; sitemap — те же пары, политика без
+// пар; JSON-LD разбирается на всех страницах, на главной — Organization (#org) и WebSite, на «Что делаем» — тот же @id и
+// FAQPage; ссылки английских страниц не ведут на русские, кроме переключателя, политика — /privacy; robots — Clean-param.
+// В браузере: /?lang=en#contact уводит на /en/#contact; RU → EN на месте (адрес /en/…, меню на /en/…, политика /privacy);
+// с английской на русскую — переходом.
+console.log('\nанглийские страницы для поиска (TASK-seo)');
+{
+  const bad = [];
+  const { buildAll, PAGES, SITE, ruPath, enPath } = await import('./build-en.mjs');
+  const lf = (x) => x.replace(/\r\n/g, '\n');
+  for (const [f, html] of Object.entries(buildAll())) {
+    let cur = ''; try { cur = readFileSync(path.join(root, f), 'utf8'); } catch {}
+    if (lf(cur) !== lf(html)) bad.push(f.replace(/\\/g, '/') + ' устарел или нет — node tools/bump.mjs');
+  }
+  const head = (x) => ({ lang: (x.match(/<html lang="([^"]+)"/) || [])[1], canon: (x.match(/<link rel="canonical" href="([^"]+)"/) || [])[1],
+    url: (x.match(/<meta property="og:url" content="([^"]+)"/) || [])[1],
+    alt: Object.fromEntries([...x.matchAll(/<link rel="alternate" hreflang="([^"]+)" href="([^"]+)"/g)].map((m) => [m[1], m[2]])) });
+  const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
+  const smUrls = Object.fromEntries([...sm.matchAll(/<url>([\s\S]*?)<\/url>/g)].map((m) => [(m[1].match(/<loc>([^<]+)<\/loc>/) || [])[1],
+    Object.fromEntries([...m[1].matchAll(/hreflang="([^"]+)" href="([^"]+)"/g)].map((x) => [x[1], x[2]]))]));
+  for (const n of PAGES) {
+    const ru = readFileSync(path.join(root, n + '.html'), 'utf8'), en = readFileSync(path.join(root, 'en', n + '.html'), 'utf8');
+    const hr = head(ru), he = head(en), want = { ru: SITE + ruPath(n), en: SITE + enPath(n), 'x-default': SITE + ruPath(n) };
+    if (JSON.stringify(hr.alt) !== JSON.stringify(want) || JSON.stringify(he.alt) !== JSON.stringify(want)) bad.push(`${n}: hreflang ${JSON.stringify(hr.alt)} / ${JSON.stringify(he.alt)}`);
+    if (hr.lang !== 'ru' || hr.canon !== want.ru || hr.url !== want.ru) bad.push(n + ': русская — lang / canonical / og:url');
+    if (he.lang !== 'en' || he.canon !== want.en || he.url !== want.en) bad.push(n + ': английская — lang / canonical / og:url ' + JSON.stringify(he));
+    if (!/<meta property="og:locale" content="en_US">/.test(en) || !/<meta (?=[^>]*property="og:locale:alternate")(?=[^>]*content="ru_RU")[^>]*>/.test(en)) bad.push(n + ': og:locale');
+    const pre = [...en.matchAll(/<link rel="preload" href="([^"]+)" as="font"/g)].map((m) => m[1]);
+    if (!pre.length || pre.some((h) => !/^\/assets\/fonts\/[\w-]*-latin-/.test(h))) bad.push(n + ': предзагрузка ' + pre.join(' '));
+    for (const u of [want.ru, want.en]) if (JSON.stringify(smUrls[u]) !== JSON.stringify(want)) bad.push('sitemap: ' + u + ' ' + JSON.stringify(smUrls[u]));
+    // кириллица — нигде, кроме подписи «Русский» у ссылки с lang="ru"
+    const cyr = en.replace(/<a [^>]*lang="ru"[^>]*>/g, (m) => m.replace(/aria-label="Русский"/, '')).match(/[А-Яа-яЁё][^<>"]{0,30}/);
+    if (cyr) bad.push(`en/${n}.html: кириллица «${cyr[0]}»`);
+    // ссылки: свои — на /en/…, на русскую — только переключатель, политика — /privacy, файлы — от корня
+    for (const m of en.matchAll(/<a\b[^>]*\bhref="([^"]*)"[^>]*>/g)) {
+      const h = m[1];
+      if (/^(#|https?:|tel:|mailto:)/.test(h) || h.startsWith('/en/') || h === '/privacy') continue;
+      if (/data-lang="ru"/.test(m[0]) && h === ruPath(n)) continue;
+      bad.push(`en/${n}.html: ссылка ${h}`);
+    }
+    const relf = en.match(/\b(?:src|href|srcset)="(?!\/|#|https?:|data:|tel:|mailto:)[^"]+"/);
+    if (relf) bad.push(`en/${n}.html: путь не от корня ${relf[0]}`);
+  }
+  if (!(SITE + '/privacy' in smUrls) || Object.keys(smUrls[SITE + '/privacy']).length) bad.push('sitemap: политика');
+  if (Object.keys(smUrls).length !== PAGES.length * 2 + 1) bad.push('sitemap: адресов ' + Object.keys(smUrls).length);
+  // JSON-LD — на всех страницах разбирается, @context и @type на месте
+  const lds = (f) => [...readFileSync(path.join(root, f), 'utf8').matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+  let nld = 0;
+  for (const f of [...readdirSync(root).filter((f) => f.endsWith('.html')), ...PAGES.map((n) => 'en/' + n + '.html')]) {
+    for (const t of lds(f)) {
+      nld++;
+      try { const o = JSON.parse(t); if (o['@context'] !== 'https://schema.org' || !o['@type']) bad.push(f + ': JSON-LD без @context / @type'); } catch (e) { bad.push(f + ': JSON-LD не разбирается'); }
+    }
+  }
+  const ldo = (f) => lds(f).map((t) => JSON.parse(t));
+  for (const [f, lang] of [['index.html', 'ru'], ['en/index.html', 'en']]) {
+    const L = ldo(f), org = L.find((o) => o['@type'] === 'Organization'), ws = L.find((o) => o['@type'] === 'WebSite');
+    if (!org || org['@id'] !== SITE + '/#org' || org.url !== SITE + '/' || org.logo !== SITE + '/apple-touch-icon.png' || org.areaServed !== 'RU' || !(org.sameAs || []).some((u) => /^https:\/\/t\.me\//.test(u)) || !org.name) bad.push(f + ': Organization ' + JSON.stringify(org));
+    if (!ws || !ws.name || ws.inLanguage !== lang || ws.url !== SITE + (lang === 'en' ? '/en/' : '/')) bad.push(f + ': WebSite ' + JSON.stringify(ws));
+  }
+  for (const f of ['services.html', 'en/services.html']) {
+    const L = ldo(f), org = L.find((o) => o['@type'] === 'Organization'), faq = L.find((o) => o['@type'] === 'FAQPage');
+    if (!org || org['@id'] !== SITE + '/#org' || !org.hasOfferCatalog) bad.push(f + ': Organization');
+    if (!faq || (f.startsWith('en/') && /[А-Яа-яЁё]/.test(JSON.stringify(faq)))) bad.push(f + ': FAQPage');
+  }
+  if (!/^Clean-param: lang&hud&intro&pt-q&pt-scroll&pt-reset$/m.test(readFileSync(path.join(root, 'robots.txt'), 'utf8'))) bad.push('robots.txt: Clean-param');
+  {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const page = await ctx.newPage(); const errs = []; page.on('pageerror', (e) => errs.push(e.message));
+    await page.goto(BASE + '?lang=en#contact'); await page.waitForTimeout(1000);
+    const u1 = await page.evaluate(() => location.pathname + location.hash);
+    if (u1 !== '/en/#contact') bad.push('/?lang=en#contact → ' + u1);
+    await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(1000);
+    await page.click('.hero-hdr [data-lang="en"]'); await page.waitForTimeout(3500);
+    const r = await page.evaluate(() => ({ u: location.pathname, lang: document.documentElement.lang, m: [...document.querySelectorAll('.hero-hdr nav a')].map((a) => a.getAttribute('href')).join(' '),
+      pv: [...document.querySelectorAll('footer a')].map((a) => a.getAttribute('href')).find((h) => /privacy$/.test(h)) }));
+    if (r.u !== '/en/services' || r.lang !== 'en' || r.m !== '/en/services /en/cases /en/automations /en/process' || r.pv !== '/privacy') bad.push('RU → EN на месте: ' + JSON.stringify(r));
+    await page.goto(BASE + 'en/services?intro=instant'); await page.waitForTimeout(1000);
+    await Promise.all([page.waitForNavigation({ timeout: 6000 }).catch(() => null), page.click('.hero-hdr [data-lang="ru"]')]);
+    const r2 = await page.evaluate(() => ({ u: location.pathname, lang: document.documentElement.lang, p: window.PTI18N && window.PTI18N.page }));
+    if (r2.u !== '/services' || r2.lang !== 'ru' || r2.p !== 'ru') bad.push('EN → RU переходом: ' + JSON.stringify(r2));
+    if (errs.length) bad.push('ошибки: ' + errs.join(' | '));
+    await ctx.close();
+  }
+  if (bad.length) fail('английские страницы: ' + bad.join('; '));
+  else console.log(`  ✓ en/*.html свежие, без кириллицы, lang="en", canonical и og:url на себя, латинские шрифты; hreflang взаимные, sitemap совпадает (${Object.keys(smUrls).length} адресов); JSON-LD разбирается (${nld}), главная — Organization и WebSite; ссылки на русские — только переключатель; /?lang=en → /en/, RU → EN на месте, EN → RU переходом`);
 }
 
 // Чистка страницы услуг: чипы-дубли, ряд переходов, карточка форматов со ссылками, сроки и повторы в текстах; снимки.

@@ -30,10 +30,9 @@
       function rectPairs(x0, y0, x1, y1, z) { return [[[x0, y0, z], [x1, y0, z]], [[x1, y0, z], [x1, y1, z]], [[x1, y1, z], [x0, y1, z]], [[x0, y1, z], [x0, y0, z]]]; }
       function boxPairsY(hw, hd, y) { return [[[-hw, y, -hd], [hw, y, -hd]], [[hw, y, -hd], [hw, y, hd]], [[hw, y, hd], [-hw, y, hd]], [[-hw, y, hd], [-hw, y, -hd]]]; }
 
-      function makeCore(host, gcv, ocv, panel, env) {
+      function makeCore(host, gcv, ocv, panel, env, later) {
+        // контекст WebGL и шейдеры — glStart / glFinish ниже; later — их позовёт монтаж по частям (mountSplit), разными задачами
         var gl = null, c2 = null;
-        try { gl = gcv.getContext('webgl', { antialias: false, alpha: true, premultipliedAlpha: true }) || gcv.getContext('experimental-webgl', { alpha: true }); } catch (e) { gl = null; }
-        if (!gl) c2 = gcv.getContext('2d');
         var oc = ocv.getContext('2d');
         var N = env.n || (env.mob ? 5200 : 10000), D = 3.4;
         var P = new Float32Array(N * 3), V = new Float32Array(N * 3), T = new Float32Array(N * 3), NT = new Float32Array(N * 3);
@@ -49,20 +48,27 @@
           mouse: { x: -1e5, y: -1e5, in: false }, dyn: [], ya: 0, pi: 0, ps: 1, ab: 1, tint: [1, 1, 1], tk: 0, gScale: gScale, gBright: gBright, gLift: gLift, gOn: gOn, k: 0.03, damp: 0.86 };
         for (var i = 0; i < N; i++) { var o = { x: 0, y: 0, z: 0 }; sph([0, 0, 0], 1.6 + Math.random() * 1.2, o); P[i * 3] = T[i * 3] = o.x; P[i * 3 + 1] = T[i * 3 + 1] = o.y; P[i * 3 + 2] = T[i * 3 + 2] = o.z; C[i * 3] = CT[i * 3] = 0.7; C[i * 3 + 1] = CT[i * 3 + 1] = 0.8; C[i * 3 + 2] = CT[i * 3 + 2] = 0.9; SZ[i] = 1.4; }
         var prog = null, buf = null, U = {};
-        if (gl) {
-          var mk = function (type, src) { var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return gl.getShaderParameter(s, gl.COMPILE_STATUS) ? s : null; };
+        // Контекст и программа (TASK-weak-phone-3, 2): glStart — контекст, компиляция и сборка (видеокарта собирает программу
+        // у себя, не держа страницу), glFinish — проверка сборки (ждёт её), буфер и атрибуты. Монтаж по частям зовёт их разными
+        // задачами: вместе с массивами частиц и фигурами монтаж на телефоне шёл одной задачей до 153 мс. Не собралось — 2D
+        me.glStart = function () {
+          if (gl || c2) return;
+          try { gl = gcv.getContext('webgl', { antialias: false, alpha: true, premultipliedAlpha: true }) || gcv.getContext('experimental-webgl', { alpha: true }); } catch (e) { gl = null; }
+          if (!gl) { c2 = gcv.getContext('2d'); return; }
+          var mk = function (type, src) { var s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
           var vs = mk(gl.VERTEX_SHADER, 'attribute vec2 aP;attribute vec4 aC;attribute float aS;uniform vec2 uR;varying vec4 vC;void main(){vec2 c=aP/uR*2.0-1.0;gl_Position=vec4(c.x,-c.y,0.0,1.0);gl_PointSize=max(1.0,aS);vC=aC;}');
           var fs = mk(gl.FRAGMENT_SHADER, 'precision mediump float;varying vec4 vC;void main(){vec2 d=gl_PointCoord-0.5;float r=length(d);float m=smoothstep(0.5,0.22,r)+smoothstep(0.2,0.0,r)*0.5;vec3 c=vC.rgb*vC.a*m;gl_FragColor=vec4(c,max(c.r,max(c.g,c.b)));}');
-          if (vs && fs) {
-            prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
-            if (gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-              gl.useProgram(prog); buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, BUF.byteLength, gl.DYNAMIC_DRAW);
-              U.aP = gl.getAttribLocation(prog, 'aP'); U.aC = gl.getAttribLocation(prog, 'aC'); U.aS = gl.getAttribLocation(prog, 'aS'); U.uR = gl.getUniformLocation(prog, 'uR');
-              gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.clearColor(0, 0, 0, 0);
-            } else { gl = null; }
-          } else gl = null;
-          if (!gl) c2 = gcv.getContext('2d');
-        }
+          prog = gl.createProgram(); gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
+        };
+        me.glFinish = function () {
+          if (!gl || buf) return;
+          if (gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+            gl.useProgram(prog); buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, BUF.byteLength, gl.DYNAMIC_DRAW);
+            U.aP = gl.getAttribLocation(prog, 'aP'); U.aC = gl.getAttribLocation(prog, 'aC'); U.aS = gl.getAttribLocation(prog, 'aS'); U.uR = gl.getUniformLocation(prog, 'uR');
+            gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE); gl.clearColor(0, 0, 0, 0);
+          } else { gl = null; c2 = gcv.getContext('2d'); }
+        };
+        if (!later) { me.glStart(); me.glFinish(); }
         var tmp = { x: 0, y: 0, z: 0 };
         // назначить частицам idx цели из набора частей; delay(i, o) -> задержка в секундах.
         // Не мгновенно — частями не дольше ASG_MS, остальное — следующими задачами (TASK-weak-phone): все частицы разом на слабом
@@ -183,17 +189,17 @@
         }
         return me;
       }
-      // общий запуск: размеры, цикл, мышь, пауза вне экрана. Двумя шагами (TASK-weak-phone): ядро (контекст WebGL, шейдеры, массивы
-      // частиц) и всё остальное — mountSplit отдаёт их разными задачами: одной на слабом телефоне при CPU ×8 — ~75 мс
-      function bootCore(root) {
+      // общий запуск: размеры, цикл, мышь, пауза вне экрана. По частям (TASK-weak-phone, TASK-weak-phone-3) — mountSplit отдаёт их
+      // разными задачами: массивы частиц, контекст и шейдеры, проверка, фигуры, остальное; одной на слабом телефоне — до 153 мс
+      function bootCore(root, later) {
         var gcv = root.querySelector('[data-gl]'), ocv = root.querySelector('[data-ov]'), panel = root.querySelector('[data-panel]') || root.querySelector('[data-obj]');
         if (!gcv || !ocv || !panel) return null;
         var env = { rm: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches), mob: (root.clientWidth || window.innerWidth) < 760, n: +(root.getAttribute('data-n') || 0) };
-        return { panel: panel, env: env, core: makeCore(root, gcv, ocv, panel, env) };
+        return { panel: panel, env: env, core: makeCore(root, gcv, ocv, panel, env, later) };
       }
       function boot(root, makeScene) { var pre = bootCore(root); return pre && bootRest(root, pre, makeScene); }
       function bootRest(root, pre, makeScene) {
-        var panel = pre.panel, env = pre.env, core = pre.core, scene = makeScene(core, root, env);
+        var panel = pre.panel, env = pre.env, core = pre.core, scene = pre.scene || makeScene(core, root, env);
         // held — пауза на время прокрутки в облегчённом режиме (движок, TASK-perf): отдельно от active (вне экрана), чтобы одна
         // не снимала другую
         // alt — «через кадр» (движок включает его на слабом телефоне, владелец 2026-10-24): объект считается и рисуется в каждом
@@ -812,7 +818,16 @@
           hold: function (v) { if (!fa) return; if (v) fa.pause(); else if (e < 0.5) fa.play(); }
         };
       }
-      if (root.__ptHeroSplit) { var pre = bootCore(root); return pre && { next: function () { return bootRest(root, pre, makeScene); } }; }
+      // монтаж по частям: сейчас — массивы частиц; step() — по одному: контекст и сборка шейдеров, проверка и буфер, фигуры;
+      // next() — доделать оставшееся и запустить (раскладка, обработчики, цикл)
+      if (root.__ptHeroSplit) {
+        var pre = bootCore(root, true); if (!pre) return null;
+        var k = 0, steps = [function () { pre.core.glStart(); }, function () { pre.core.glFinish(); }, function () { pre.scene = makeScene(pre.core, root, pre.env); }];
+        return {
+          step: function () { if (k >= steps.length) return false; steps[k++](); return true; },
+          next: function () { while (k < steps.length) steps[k++](); return bootRest(root, pre, makeScene); }
+        };
+      }
       return boot(root, makeScene);
   };
   function ensureCanvas(root) {
@@ -834,14 +849,15 @@
       root.__ptHeroOpts = opts || {}; ensureCanvas(root);
       return wrap(root, factory(root));
     },
-    // то же двумя шагами (TASK-weak-phone): сейчас — ядро, finish() — остальное; finish() отдаёт тот же объект, что mount
+    // то же по частям (TASK-weak-phone, TASK-weak-phone-3): сейчас — массивы частиц; step() — следующая часть (контекст и
+    // шейдеры, проверка, фигуры; false — частей больше нет); finish() — остальное разом, отдаёт тот же объект, что mount
     mountSplit: function (root, opts) {
       if (!root) return null;
       root.__ptHeroOpts = opts || {}; ensureCanvas(root);
       root.__ptHeroSplit = true; var s; try { s = factory(root); } finally { root.__ptHeroSplit = false; }
       if (!s) return null;
       var api = null, done = false;
-      return { finish: function () { if (!done) { done = true; api = wrap(root, s.next()); } return api; } };
+      return { step: function () { return !done && s.step(); }, finish: function () { if (!done) { done = true; api = wrap(root, s.next()); } return api; } };
     }
   };
 })();
