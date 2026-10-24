@@ -35,9 +35,15 @@
   function sizes() { docH = de.scrollHeight; trackH = bar ? bar.clientHeight : 0; }
   function max() { if (!docH) sizes(); return Math.max(0, docH - window.innerHeight); }
   function clamp(v) { return v < 0 ? 0 : Math.min(v, max()); }
-  function put(y) { ours = y; window.scrollTo({ top: y, behavior: 'instant' }); }
+  // Одно чтение scrollY за кадр на всех (TASK-weak-phone, 4): этот модуль, шапка (nav.js) и движок берут позицию кадра отсюда —
+  // PTScroll.y(now), now — метка кадра rAF (у всех вызовов одного кадра она одна). Чтение scrollY заставляет браузер досчитать
+  // раскладку, если что-то менялось: в обработчике scroll на каждое событие у владельца (Galaxy A15) — 16–33 мс. Сдвинули
+  // страницу сами (put) — следующее чтение заново
+  var fy = 0, fyT = -1;
+  function frameY(now) { if (now == null || now !== fyT) { fyT = now == null ? -1 : now; fy = window.scrollY || 0; } return fy; }
+  function put(y) { ours = y; window.scrollTo({ top: y, behavior: 'instant' }); fyT = -1; }
   function ease(p) { return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; }
-  function sync() { run = false; tw = null; cur = tgt = window.scrollY; }
+  function sync(y) { run = false; tw = null; cur = tgt = y == null ? window.scrollY : y; }
 
   // ---------- отклик на цели якоря ----------
   // рамка: сама цель, её ближайший предок с рамкой или первый такой потомок. Линии-разделители (data-fr-line) — не
@@ -124,14 +130,20 @@
       to(el.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(el).scrollMarginTop) || 0), function () { arrive(el); });
       if (history.pushState) history.pushState(null, '', '#' + id);
     });
-    window.PTScroll = { tick: step, to: to, arrive: arrive, mode: NATIVE ? 'native' : 'soft' };
+    window.PTScroll = { tick: tick, to: to, arrive: arrive, mode: NATIVE ? 'native' : 'soft', y: frameY };
   }
-  window.addEventListener('scroll', function () {
+  // обработчик scroll — только флаг; позиция и ползунок — в кадре (onScrollFrame: свой rAF или кадр движка через tick)
+  var sDirty = false, sraf = 0;
+  function onScrollFrame(now) {
+    sraf = 0; if (!sDirty) return; sDirty = false;
+    var y = frameY(now);
     // прокрутил кто-то другой (клавиатура, тач, поиск, перетаскивание ползунка) — отдаём управление
-    if (run && Math.abs(window.scrollY - ours) > 2) sync();
-    else if (!run) cur = tgt = window.scrollY;
-    show();
-  }, { passive: true });
+    if (run && Math.abs(y - ours) > 2) sync(y);
+    else if (!run) cur = tgt = y;
+    show(y);
+  }
+  function tick(now) { step(now); if (sDirty) onScrollFrame(now); }
+  window.addEventListener('scroll', function () { sDirty = true; if (!sraf) sraf = requestAnimationFrame(onScrollFrame); }, { passive: true });
   // ресайз: граница прокрутки — только пока едем (стоим — цель возьмётся из scrollY при следующем колесе), полоса — только
   // видимая (скрытую измерит show()). Раньше — два замера высоты страницы на каждый resize, в том числе на загрузке
   window.addEventListener('resize', function () { if (docH) sizes(); if (run) tgt = clamp(tgt); if (bar && bar.classList.contains('on')) update(); });
@@ -142,17 +154,19 @@
   }
 
   // ---------- скроллбар: скрыт, пока страницу не прокручивают; гаснет через 1.2 с после остановки ----------
-  function update() {
+  // высота ползунка — только когда она меняется (высота страницы, дорожки, окна), сдвиг — от позиции кадра
+  var thSet = -1;
+  function update(y) {
     if (!bar) return false;
     var m = max(), track = trackH || (trackH = bar.clientHeight);
     if (m < 1) { bar.classList.remove('on'); return false; }
     th = Math.max(36, Math.round(track * window.innerHeight / docH));
-    thumb.style.height = th + 'px';
-    thumb.style.transform = 'translateY(' + ((track - th) * Math.min(1, window.scrollY / m)).toFixed(1) + 'px)';
+    if (th !== thSet) { thSet = th; thumb.style.height = th + 'px'; }
+    thumb.style.transform = 'translateY(' + ((track - th) * Math.min(1, (y == null ? window.scrollY : y) / m)).toFixed(1) + 'px)';
     return true;
   }
   function hide() { if (drag || hover) { hideT = setTimeout(hide, 600); return; } bar.classList.remove('on'); }
-  function show() { if (!update()) return; bar.classList.add('on'); clearTimeout(hideT); hideT = setTimeout(hide, 1200); }
+  function show(y) { if (!update(y)) return; if (!bar.classList.contains('on')) bar.classList.add('on'); clearTimeout(hideT); hideT = setTimeout(hide, 1200); }
   if (!bar || !thumb) return;
   function end() { if (!drag) return; drag = null; thumb.classList.remove('drag'); show(); }
   bar.addEventListener('pointerenter', function () { hover = true; });

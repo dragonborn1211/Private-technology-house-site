@@ -64,20 +64,32 @@
           if (!gl) c2 = gcv.getContext('2d');
         }
         var tmp = { x: 0, y: 0, z: 0 };
-        // назначить частицам idx цели из набора частей; delay(i, o) -> задержка в секундах
+        // назначить частицам idx цели из набора частей; delay(i, o) -> задержка в секундах.
+        // Не мгновенно — частями не дольше ASG_MS, остальное — следующими задачами (TASK-weak-phone): все частицы разом на слабом
+        // телефоне (CPU ×8) — ~56 мс одной задачей, запуск объекта. Время смены цели у всех — от момента назначения (t0), как
+        // если бы назначили разом; ещё не назначенные живут с прежней целью (до первого объекта они невидимы). На компьютере
+        // успевает за один раз. Новое назначение отменяет недоделанное
+        var aq = null, ASG_MS = 12;
         me.assign = function (idx, parts, delay, instant, shid) {
-          shid = shid || 0;
-          for (var k = 0; k < idx.length; k++) {
+          var q = { idx: idx, parts: parts, delay: delay, inst: !!(env.rm || instant), shid: shid || 0, k: 0, t0: me.t };
+          aq = q; assignRun(q);
+        };
+        function assignRun(q) {
+          if (aq !== q) return;
+          var idx = q.idx, parts = q.parts, delay = q.delay, shid = q.shid, inst = q.inst, end = inst ? Infinity : performance.now() + ASG_MS;
+          for (var k = q.k; k < idx.length; k++) {
+            if (!inst && k > q.k && (k & 63) === 0 && performance.now() > end) { q.k = k; setTimeout(function () { assignRun(q); }, 0); return; }
             var i = idx[k], pt = parts.pick(), b4 = i * 4; tmp.u = Math.random(); tmp.v = Math.random(); tmp.w = 0; tmp.q = 0; pt.gen(tmp);
             NUA[b4] = tmp.u; NUA[b4 + 1] = tmp.v; NUA[b4 + 2] = tmp.w; NUA[b4 + 3] = tmp.q; NSH[i] = shid;
             if (shid && me.dyn[shid]) me.dyn[shid](NUA, b4, me.t, tmp);
             var c = typeof pt.col === 'function' ? pt.col(tmp) : pt.col;
             NT[i * 3] = tmp.x; NT[i * 3 + 1] = tmp.y; NT[i * 3 + 2] = tmp.z; NC[i * 3] = c[0]; NC[i * 3 + 1] = c[1]; NC[i * 3 + 2] = c[2];
             NA[i] = pt.a * (0.75 + Math.random() * 0.25); NS[i] = pt.s * (Math.random() < 0.04 ? 2.4 : 1.55); NG[i] = tmp.g != null ? tmp.g : pt.g; tmp.g = null;
-            SW[i] = env.rm || instant ? -1 : me.t + (delay ? delay(i, tmp, NG[i]) : 0) + 1e-4;
-            if (env.rm || instant) apply(i);
+            SW[i] = inst ? -1 : q.t0 + (delay ? delay(i, tmp, NG[i]) : 0) + 1e-4;
+            if (inst) apply(i);
           }
-        };
+          aq = null;
+        }
         function apply(i) { var b4 = i * 4; UA[b4] = NUA[b4]; UA[b4 + 1] = NUA[b4 + 1]; UA[b4 + 2] = NUA[b4 + 2]; UA[b4 + 3] = NUA[b4 + 3]; SH[i] = NSH[i]; var j = i * 3; T[j] = NT[j]; T[j + 1] = NT[j + 1]; T[j + 2] = NT[j + 2]; CT[j] = NC[j]; CT[j + 1] = NC[j + 1]; CT[j + 2] = NC[j + 2]; AT[i] = NA[i]; SZ[i] = NS[i]; G[i] = NG[i]; SW[i] = 0; if (env.rm) { P[j] = T[j]; P[j + 1] = T[j + 1]; P[j + 2] = T[j + 2]; C[j] = CT[j]; C[j + 1] = CT[j + 1]; C[j + 2] = CT[j + 2]; A[i] = AT[i]; } }
         me.release = function () { try { var ex = gl && gl.getExtension('WEBGL_lose_context'); if (ex) ex.loseContext(); } catch (e) {} };
         me.snapAll = function () { for (var i = 0; i < N; i++) { var j = i * 3; P[j] = T[j]; P[j + 1] = T[j + 1]; P[j + 2] = T[j + 2]; V[j] = V[j + 1] = V[j + 2] = 0; C[j] = CT[j]; C[j + 1] = CT[j + 1]; C[j + 2] = CT[j + 2]; A[i] = AT[i]; } };
@@ -171,12 +183,17 @@
         }
         return me;
       }
-      // общий запуск: размеры, цикл, мышь, пауза вне экрана
-      function boot(root, makeScene) {
+      // общий запуск: размеры, цикл, мышь, пауза вне экрана. Двумя шагами (TASK-weak-phone): ядро (контекст WebGL, шейдеры, массивы
+      // частиц) и всё остальное — mountSplit отдаёт их разными задачами: одной на слабом телефоне при CPU ×8 — ~75 мс
+      function bootCore(root) {
         var gcv = root.querySelector('[data-gl]'), ocv = root.querySelector('[data-ov]'), panel = root.querySelector('[data-panel]') || root.querySelector('[data-obj]');
         if (!gcv || !ocv || !panel) return null;
         var env = { rm: !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches), mob: (root.clientWidth || window.innerWidth) < 760, n: +(root.getAttribute('data-n') || 0) };
-        var core = makeCore(root, gcv, ocv, panel, env), scene = makeScene(core, root, env);
+        return { panel: panel, env: env, core: makeCore(root, gcv, ocv, panel, env) };
+      }
+      function boot(root, makeScene) { var pre = bootCore(root); return pre && bootRest(root, pre, makeScene); }
+      function bootRest(root, pre, makeScene) {
+        var panel = pre.panel, env = pre.env, core = pre.core, scene = makeScene(core, root, env);
         // held — пауза на время прокрутки в облегчённом режиме (движок, TASK-perf): отдельно от active (вне экрана), чтобы одна
         // не снимала другую
         var raf = 0, alive = true, active = true, held = false, prev = performance.now();
@@ -201,7 +218,9 @@
           ro.observe(root); ro.observe(panel);
         } else window.addEventListener('resize', onResize);
         if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { if (alive) { core.layout(); if (scene.fonts) scene.fonts(); } });
-        frame(performance.now()); start();
+        // первый кадр — в цикле модуля (start), а не тут же при монтаже (TASK-weak-phone): до запуска объекта он пустой, а монтаж
+        // на слабом телефоне и так долгая задача (при CPU ×8 кадр — ещё 24 мс к ~80)
+        start();
         return {
           scene: scene, core: core,
           setActive: function (v) { active = v; if (v) start(); },
@@ -790,6 +809,7 @@
           hold: function (v) { if (!fa) return; if (v) fa.pause(); else if (e < 0.5) fa.play(); }
         };
       }
+      if (root.__ptHeroSplit) { var pre = bootCore(root); return pre && { next: function () { return bootRest(root, pre, makeScene); } }; }
       return boot(root, makeScene);
   };
   function ensureCanvas(root) {
@@ -800,13 +820,25 @@
       root.insertBefore(c, root.firstChild);
     });
   }
+  function wrap(root, h) {
+    if (!h) return null;
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { es.forEach(function (e) { h.setActive(e.isIntersecting); }); }, { threshold: 0.01 }).observe(root);
+    return { count: h.core.N, start: function (instant) { h.scene.begin(!!instant); }, replay: function () { h.scene.replay(); }, go: function (k) { h.scene.go(k); }, relabel: function () { h.scene.relabel(); }, setActive: h.setActive, hold: h.hold, destroy: h.destroy };
+  }
   window.PTHero = {
     mount: function (root, opts) {
       if (!root) return null;
       root.__ptHeroOpts = opts || {}; ensureCanvas(root);
-      var h = factory(root); if (!h) return null;
-      if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { es.forEach(function (e) { h.setActive(e.isIntersecting); }); }, { threshold: 0.01 }).observe(root);
-      return { count: h.core.N, start: function (instant) { h.scene.begin(!!instant); }, replay: function () { h.scene.replay(); }, go: function (k) { h.scene.go(k); }, relabel: function () { h.scene.relabel(); }, setActive: h.setActive, hold: h.hold, destroy: h.destroy };
+      return wrap(root, factory(root));
+    },
+    // то же двумя шагами (TASK-weak-phone): сейчас — ядро, finish() — остальное; finish() отдаёт тот же объект, что mount
+    mountSplit: function (root, opts) {
+      if (!root) return null;
+      root.__ptHeroOpts = opts || {}; ensureCanvas(root);
+      root.__ptHeroSplit = true; var s; try { s = factory(root); } finally { root.__ptHeroSplit = false; }
+      if (!s) return null;
+      var api = null, done = false;
+      return { finish: function () { if (!done) { done = true; api = wrap(root, s.next()); } return api; } };
     }
   };
 })();

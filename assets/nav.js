@@ -11,7 +11,7 @@
   // Только по ?hud (дальше держится до конца вкладки) — без флага файл не грузится вовсе; ?hud=0 и ?pt-reset — выключить.
   // Путь — от этого скрипта: на 404 страницы лежат по любому адресу. Метка версии — как у остальных файлов (иначе после
   // выкладки телефон брал старую панель из кэша); её проставляет tools/bump.mjs, check.mjs сверяет
-  var HUD = 'perf-hud.js?v=043d405a';
+  var HUD = 'perf-hud.js?v=97e91e93';
   try {
     var hq = location.search, hs = window.sessionStorage, me = document.currentScript;
     if (/[?&]pt-reset(?:[=&]|$)/.test(hq) || /[?&]hud=0(?:&|$)/.test(hq)) hs.removeItem('pt-hud');
@@ -36,9 +36,10 @@
     shown = v; bar.classList.toggle('on', v);
     if (v) bar.removeAttribute('inert'); else bar.setAttribute('inert', '');
   }
-  function update() {
+  // позиция кадра — одна на всех (PTScroll.y, TASK-weak-phone, 4); без scroll.js — scrollY
+  function update(now) {
     raf = 0;
-    var y = window.scrollY, dy = lastY === null ? 0 : y - lastY; lastY = y;
+    var y = window.PTScroll && window.PTScroll.y ? window.PTScroll.y(now) : window.scrollY, dy = lastY === null ? 0 : y - lastY; lastY = y;
     // закрепление после якоря снимает только сам человек (колесо, палец, клавиши): в начале поездки к секции первый
     // экран ещё в кадре, и сброс здесь гасил шапку
     if (hero && heroIn) show(false);

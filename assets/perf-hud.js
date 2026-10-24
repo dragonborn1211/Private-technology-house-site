@@ -45,7 +45,7 @@
     if (iv.length < 20) return;
     var s = iv.map(function (x) { return x[1]; }).sort(function (a, b) { return a - b; });
     var m = s[s.length >> 2];
-    hz = [60, 75, 90, 120, 144, 165, 240].reduce(function (b, h) { return Math.abs(1000 / h - m) < Math.abs(1000 / b - m) ? h : b; }, 60);
+    hz = [60, 75, 90, 100, 120, 144, 165, 240].reduce(function (b, h) { return Math.abs(1000 / h - m) < Math.abs(1000 / b - m) ? h : b; }, 60);
   }, 2000);
 
   // ---- долгие задачи ----
@@ -68,7 +68,9 @@
     var scr = (e.scripts || []).slice().sort(function (a, b) { return b.duration - a.duration; }).slice(0, 2).map(function (s) {
       // запуск файла целиком — «запуск»; иначе имя функции или тип вызова (таймер, кадр, событие) без адресов
       var fn = s.invokerType === 'classic-script' || s.invokerType === 'module-script' ? 'запуск' : (s.sourceFunctionName || String(s.invoker || '').replace(/https?:\/\/\S+/g, '').trim());
-      return file(s.sourceURL) + (fn ? ' ' + String(fn).slice(0, 28) : '') + ' ' + s.duration.toFixed(0);
+      // из них принудительный пересчёт стилей и раскладки, который вызвал сам скрипт (чтение scrollY, размеров после записи)
+      var fl = s.forcedStyleAndLayoutDuration || 0;
+      return file(s.sourceURL) + (fn ? ' ' + String(fn).slice(0, 28) : '') + ' ' + s.duration.toFixed(0) + (fl >= 1 ? ' (из них раскладка ' + fl.toFixed(0) + ')' : '');
     });
     var end = e.startTime + e.duration, lay = e.styleAndLayoutStart ? end - e.styleAndLayoutStart : 0, rn = e.renderStart ? end - e.renderStart : 0;
     return Math.round(e.duration) + ' мс в ' + sec(e.startTime) + (scr.length ? ': ' + scr.join(', ') : ': без скриптов') +
@@ -154,9 +156,12 @@
       innerWidth + '×' + innerHeight + ' · ' + sc];
   }
   // строки короткие: на телефоне панель в ширину экрана, текст переносится. full — с подробностями (для «Копировать»)
+  // тайминги загрузки почти не меняются — пересчёт раз в 2 с (для «Копировать» — свежие); текст панели — раз в 1 с (TASK-weak-phone, 5)
+  var ldC = null, ldT = 0;
+  function loadC() { var n = performance.now(); if (!ldC || n - ldT > 2000) { ldC = load(); ldT = n; } return ldC; }
   function summary(full) {
     var u = new URLSearchParams(location.search); u.delete('hud'); var qs = u.toString();
-    var m = mode(), ld = load(), P = window.PTPerf || {}, L = [location.pathname + (qs ? '?' + qs : '') + ' · ' + hz + ' Гц · ' + m[0], m[1], ld.mode];
+    var m = mode(), ld = full ? load() : loadC(), P = window.PTPerf || {}, L = [location.pathname + (qs ? '?' + qs : '') + ' · ' + hz + ' Гц · ' + m[0], m[1], ld.mode];
     if (win) {
       var secs = (win.done ? win.sum : performance.now() - win.t) / 1000;
       L.push('Замер ' + (win.done ? '10 с' : secs.toFixed(0) + ' с…') + ': ' + (win.n / Math.max(0.001, win.sum / 1000)).toFixed(0) + ' к/с');
@@ -195,5 +200,5 @@
     var now = performance.now(), n = 0;
     for (var i = iv.length - 1; i >= 0 && now - iv[i][0] <= 1000; i--) n++;
     txt.textContent = n + ' к/с сейчас\n' + summary(false);
-  }, 500);
+  }, 1000);
 })();

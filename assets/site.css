@@ -32,13 +32,14 @@ body{margin:0;background:#0A121A}
 .skip{position:absolute;left:12px;top:-60px;z-index:100;padding:10px 16px;border-radius:999px;background:#EEF3F6;color:#0A121A;font:600 14px/1.2 Manrope,'Manrope fb',system-ui,sans-serif;text-decoration:none}
 .skip:focus{top:12px}
 #main:focus{outline:none}
-/* до старта движка (.pt-boot снимает engine.js) секций не видно и переходов нет: иначе браузер успевает
-   нарисовать готовую страницу, пока грузятся скрипты, и она потом гаснет поверх вспышки частиц */
+/* до старта движка (.pt-boot снимает engine.js) секций не видно: иначе браузер успевает нарисовать готовую страницу, пока
+   грузятся скрипты, и она потом гаснет поверх вспышки частиц. Переходы, которые запускает снятие .pt-boot, движок тут же
+   доводит до конца (finishBoot); правила «.pt-boot * { transition: none }» больше нет: из-за него снятие класса пересчитывало
+   переходы у каждого элемента страницы (TASK-weak-phone, при CPU ×8 ~25 мс) */
 .pt-boot .sec > :not(.wrap),.pt-boot .sec .wrap > *{opacity:0;animation:pt-late 0s 4s forwards!important}
 /* запасной путь (TASK-qa.md, 4.3): скрипты не пришли за 4 с (медленная сеть, тяжёлый телефон) — страница показывается
    без сборки; движок, пришедший позже, это видит и включает режим «сразу» (LATE в engine.js), а не прячет её снова */
 @keyframes pt-late{to{opacity:1}}
-.pt-boot *,.pt-boot *::before,.pt-boot *::after{transition:none!important}
 /* свой скроллбар (assets/scroll.js): скрыт, пока страницу не прокручивают */
 .sbar{position:fixed;top:12px;right:4px;bottom:12px;z-index:35;width:12px;opacity:0;pointer-events:none;transition:opacity .45s ease}
 .sbar.on{opacity:1;pointer-events:auto}
@@ -550,7 +551,9 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .pult-btn{flex:none;display:inline-flex;align-items:center;justify-content:center;height:38px;padding:0 16px;border-radius:999px;border:0;background:#EEF3F6;color:#0A121A;font:600 13px Manrope,'Manrope fb',system-ui,sans-serif;cursor:pointer}
 .pult-prog{position:absolute;left:16px;right:16px;bottom:0;height:1px;background:#8ED8F8;transform:scaleX(var(--prog,0));transform-origin:left;transition:transform .6s ease}
 .pult-mini{display:none;position:relative;align-items:center;justify-content:center;width:44px;height:44px;padding:0;border-radius:50%;border:1px solid rgba(188,211,222,.16);background:rgba(10,18,26,.82);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:#EEF3F6;cursor:pointer}
-.pult-ico{font:400 18px/1 Manrope,'Manrope fb',system-ui,sans-serif}
+/* ↻ нет в своих шрифтах; в Windows его и так рисует Cambria Math — названа явно: системный поиск запасного шрифта для значка
+   при CPU ×8 стоил ~0.1 с, по имени — ~0.04 (TASK-weak-phone). Где Cambria Math нет — как раньше */
+.pult-ico{font:400 18px/1 Manrope,'Manrope fb','Cambria Math',system-ui,sans-serif}
 .pult-ring{position:absolute;left:-1px;top:-1px;width:44px;height:44px;transform:rotate(-90deg);overflow:visible;pointer-events:none}
 .pult-ring circle{fill:none;stroke:#8ED8F8;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:128.8;stroke-dashoffset:calc(128.8px * (1 - var(--prog,0)));transition:stroke-dashoffset .6s ease}
 .pult.is-mini{left:18px;transform:none}
