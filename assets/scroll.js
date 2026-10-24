@@ -16,17 +16,12 @@
   var de = document.documentElement;
   var rm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var LERP = 0.08;
-  // ?pt-scroll=native (TASK-perf.md, 0.2; держится до конца вкладки, ?pt-scroll=soft или ?pt-reset — обратно): колесо — нативное,
-  // без мягкой прокрутки. Якоря (to()) и свой скроллбар — как всегда. Меню и панели держат страницу и так (overflow: hidden
-  // у html.pt-lock / html.cp-lock)
-  var NATIVE = false;
-  try {
-    var fq = location.search, ss = window.sessionStorage;
-    if (/[?&]pt-reset(?:[=&]|$)/.test(fq)) ss.removeItem('pt-scroll');
-    var fm = /[?&]pt-scroll=(native|soft)(?:&|$)/.exec(fq);
-    if (fm) { if (fm[1] === 'native') ss.setItem('pt-scroll', 'native'); else ss.removeItem('pt-scroll'); }
-    NATIVE = ss.getItem('pt-scroll') === 'native';
-  } catch (e) { /* хранилище запрещено — мягкая */ }
+  // ?pt-scroll=native (TASK-perf.md, 0.2): колесо — нативное, без мягкой прокрутки, — только на странице с этим флагом в адресе.
+  // Раньше флаг держался до конца вкладки, и после замеров владелец видел нативную прокрутку дальше (2026-10-24: «скролл
+  // неприятный, поставь плавный»); память флага стирается. Якоря (to()) и свой скроллбар — как всегда. Меню и панели держат
+  // страницу и так (overflow: hidden у html.pt-lock / html.cp-lock)
+  var NATIVE = /[?&]pt-scroll=native(?:&|$)/.test(location.search);
+  try { window.sessionStorage.removeItem('pt-scroll'); } catch (e) { /* хранилище запрещено */ }
   // начальная позиция не читается: чтение scrollY здесь заставляло браузер разложить всю страницу прямо посреди разбора
   // HTML (долгая задача на слабом телефоне). Её берут колесо (cur = tgt = scrollY, пока не едем), to() и обработчик scroll
   var cur = 0, tgt = 0, run = false, tw = null, last = -1, raf = 0, ours = 0;

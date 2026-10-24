@@ -2792,6 +2792,10 @@ console.log('\nperf: панель замеров, холст частиц, фл�
   await page.goto(BASE + 'cases.html?intro=instant&hud=0&pt-q=1&pt-scroll=native'); await page.waitForTimeout(800);
   const fl = await page.evaluate(() => ({ lite: document.getElementById('pt-site').classList.contains('pt-lite'), q: sessionStorage.getItem('pt-qfix'), sc: window.PTScroll && window.PTScroll.mode, perf: window.PTPerf && window.PTPerf.scroll() }));
   if (!fl.lite || fl.q !== '1' || fl.sc !== 'native' || fl.perf !== 'native') bad.push('флаги: ' + JSON.stringify(fl));
+  // ?pt-scroll=native — только на своей странице: следующая без флага — снова мягкая (владелец 2026-10-24)
+  await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(600);
+  const sc2 = await page.evaluate(() => window.PTScroll && window.PTScroll.mode);
+  if (sc2 !== 'soft') bad.push('?pt-scroll=native держится на следующей странице: ' + sc2);
   await page.goto(BASE + 'cases.html?intro=instant&pt-reset'); await page.waitForTimeout(600);
   const rs = await page.evaluate(() => ({ q: sessionStorage.getItem('pt-qfix'), sc: window.PTScroll && window.PTScroll.mode, hud: sessionStorage.getItem('pt-hud') }));
   if (rs.q !== null || rs.sc !== 'soft' || rs.hud !== null) bad.push('?pt-reset: ' + JSON.stringify(rs));
