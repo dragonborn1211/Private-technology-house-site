@@ -1636,7 +1636,7 @@ console.log('\nревью, 4: тексты');
   if (meta('care') !== 'Цена от 10 000 ₽ в месяц Формат ежемесячно') bad.push(`«Сопровождение»: ${meta('care')}`);
   const chips = (/<article[^>]*id="automation"[\s\S]*?<ul class="sv-chips"[^>]*>([\s\S]*?)<\/ul>/.exec(sv) || [])[1] || '';
   // TASK-polish-3.md, 3: по 2–3 сервиса из группы, последний чип — «и любые сервисы с API» пунктиром
-  if (chips.trim().replace(/&nbsp;/g, ' ').replace(/<\/li>\s*<li[^>]*>/g, ' · ').replace(/<\/?li[^>]*>/g, '') !== 'Битрикс24 · Telegram · WhatsApp · Wildberries · Ozon · Авито · Яндекс Метрика · Таблицы · и любые сервисы с API' || !/<li class="sv-etc">и&nbsp;любые сервисы с&nbsp;API<\/li>$/.test(chips.trim())) bad.push(`теги автоматизации: ${chips}`);
+  if (chips.trim().replace(/&nbsp;/g, ' ').replace(/<\/li>\s*<li[^>]*>/g, ' · ').replace(/<\/?li[^>]*>/g, '') !== 'Битрикс24 · Telegram · WhatsApp · Wildberries · Ozon · Авито · Яндекс Метрика · Таблицы · и любые сервисы с API' || !/<li class="sv-etc">и любые сервисы с API<\/li>$/.test(chips.trim()) || !src['services.html'].includes('<li class="sv-etc">и&nbsp;любые сервисы с&nbsp;API</li>')) bad.push(`теги автоматизации: ${chips}`);
   if (!/<h3 class="sv-sh">Сборка<\/h3><p class="sv-sd">[^<]*n8n/.test(strip(src['process.html']))) bad.push('инструменты на «Как работаем», шаг «Сборка»');
   for (const f of ['index.html', 'cases.html']) if (!strip(src[f]).includes('<span class="obj-h">Ваш сайт — следующий</span>') || !strip(src[f]).includes('<span class="obj-d">Соберём такой же под вашу компанию →</span>') || /Следующий объект/.test(src[f])) bad.push(`${f}: демо-карточка`);
   if (!/<span class="cx-w">Защита<\/span><\/span><span class="usp-n" hidden>Защита данных<\/span>/.test(src['index.html'])) bad.push('вкладка 04 «Кодекса»');
@@ -2795,11 +2795,11 @@ console.log('\nperf: панель замеров, холст частиц, фл�
   // .pt-wait: несобранные секции обрезаны (clip-path), после первой стадии — нет; при открытой панели (cp-lock) — нет;
   // в режиме «сразу» класса нет вовсе
   await page.goto(BASE + 'services.html?intro=full'); await page.waitForTimeout(3500);
-  const wt = () => page.evaluate(() => [...document.querySelectorAll('[data-sec]')].map((s) => ({ n: s.dataset.sec, w: s.classList.contains('pt-wait'), c: getComputedStyle(s).clipPath, d: s.classList.contains('s-done') })));
+  const wt = () => page.evaluate(() => [...document.querySelectorAll('[data-sec]')].map((s) => ({ n: s.dataset.sec, w: s.classList.contains('pt-wait'), c: getComputedStyle(s.firstElementChild).clipPath, own: getComputedStyle(s).clipPath, d: s.classList.contains('s-done') })));
   const w0 = await wt();
-  if (w0[0].w || w0.slice(2).some((s) => !s.w || s.c !== 'inset(50%)')) bad.push('pt-wait до сборки: ' + JSON.stringify(w0.map((s) => s.n + ':' + s.w + ':' + s.c)));
+  if (w0[0].w || w0.slice(2).some((s) => !s.w || s.c !== 'inset(50%)' || s.own !== 'none')) bad.push('pt-wait до сборки: ' + JSON.stringify(w0.map((s) => s.n + ':' + s.w + ':' + s.c)));
   await page.evaluate(() => document.documentElement.classList.add('cp-lock'));
-  if ((await page.evaluate(() => getComputedStyle(document.querySelector('[data-sec="foot"]')).clipPath)) !== 'none') bad.push('pt-wait: при cp-lock подвал обрезан');
+  if ((await page.evaluate(() => getComputedStyle(document.querySelector('[data-sec="foot"]').firstElementChild).clipPath)) !== 'none') bad.push('pt-wait: при cp-lock подвал обрезан');
   await page.evaluate(() => document.documentElement.classList.remove('cp-lock'));
   await page.evaluate(() => window.scrollTo({ top: document.querySelector('[data-sec="sites"]').getBoundingClientRect().top + scrollY - 200, behavior: 'instant' })); await page.waitForTimeout(3000);
   const w1 = (await wt()).find((s) => s.n === 'sites');
