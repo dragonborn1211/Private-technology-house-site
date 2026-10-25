@@ -2296,7 +2296,7 @@ console.log('\nстраницы услуг: /sites, /bitrix24, /ai');
     const ot = one((h.match(/<meta property="og:title" content="([^"]*)"/) || [])[1] || ''), od = one((h.match(/<meta property="og:description" content="([^"]*)"/) || [])[1] || '');
     if (tt !== t || !dd.startsWith(d) || ot !== tt || od !== dd) bad.push(`${f}: title / description`);
   }
-  const SV = { sites: ['Сайты-презентации', 120000, 6], bitrix24: ['Интеграции Битрикс24', 5000, 5], ai: ['AI-ассистенты', 5000, 5], apps: ['Приложения', 150000, 5], servers: ['Серверы', 5000, 5], care: ['Сопровождение сайта', 10000, 5] };
+  const SV = { sites: ['Сайты-презентации', 120000, 6], bitrix24: ['Интеграции', 5000, 5], ai: ['AI-ассистенты', 5000, 5], apps: ['Приложения', 150000, 5], servers: ['Серверы', 5000, 5], care: ['Сопровождение сайта', 10000, 5] };
   const panelQ = new Set([...src['services.html'].matchAll(/<summary>([\s\S]*?)<i/g)].map((m) => one(m[1]))), seen = new Set();
   for (const [n, [crumb, min, nq]] of Object.entries(SV)) {
     const h = src[n + '.html'], lds = [...h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
@@ -2314,12 +2314,12 @@ console.log('\nстраницы услуг: /sites, /bitrix24, /ai');
   }
   if (!src['sites.html'].includes('id="redesign"')) bad.push('sites: нет #redesign');
   const sv = src['services.html'];
-  for (const [h, t] of [['sites', 'Подробнее о&nbsp;сайтах'], ['sites#redesign', 'Подробнее'], ['apps', 'Подробнее о&nbsp;приложениях'], ['servers', 'Подробнее'], ['care', 'Подробнее о&nbsp;сопровождении'], ['bitrix24', 'Интеграции с&nbsp;Битрикс24'], ['ai', 'Подробнее об&nbsp;AI']]) if (!sv.includes(`<a href="${h}" class="sv-go sv-dl">${t}<svg`)) bad.push(`услуги: ссылка ${h}`);
+  for (const [h, t] of [['sites', 'Подробнее о&nbsp;сайтах'], ['sites#redesign', 'Подробнее'], ['apps', 'Подробнее о&nbsp;приложениях'], ['servers', 'Подробнее'], ['care', 'Подробнее о&nbsp;сопровождении'], ['bitrix24', 'Интеграции'], ['ai', 'Подробнее об&nbsp;AI']]) if (!sv.includes(`<a href="${h}" class="sv-go sv-dl">${t}<svg`)) bad.push(`услуги: ссылка ${h}`);
   // TASK-seo-3: на «Сопровождение» — только /care; панель вопросов на каждой странице услуг; /bitrix24 → /apps
   for (const f of PAGES) if (/href="[^"]*services(\.html)?#care"/.test(src[f])) bad.push(`${f}: ссылка на services#care`);
   for (const n of Object.keys(SV)) if (!/<a href="#faq" class="faq-link fr" data-faq-open>/.test(src[n + '.html']) || !/<div class="cp cp-faq-wrap" data-faq hidden>/.test(src[n + '.html']) || !/<script src="assets\/faq\.js/.test(src[n + '.html'])) bad.push(`${n}: вопросы не плашкой и панелью`);
   if (!src['bitrix24.html'].includes('<a href="apps" class="sv-go">Приложения<svg')) bad.push('bitrix24: ссылка «Приложения →»');
-  if (!/<span>Услуги:<\/span><a href="sites"[^>]*>Сайты-презентации<\/a><i aria-hidden="true">·<\/i><a href="apps"[^>]*>Приложения<\/a><i aria-hidden="true">·<\/i><a href="servers"[^>]*>Серверы<\/a><i aria-hidden="true">·<\/i><a href="care"[^>]*>Сопровождение<\/a><i aria-hidden="true">·<\/i><a href="bitrix24"[^>]*>Интеграции Битрикс24<\/a><i aria-hidden="true">·<\/i><a href="ai"[^>]*>AI-ассистенты<\/a>/.test(src['index.html'])) bad.push('подвал: строка «Услуги»');
+  if (!/<span>Услуги:<\/span><a href="sites"[^>]*>Сайты-презентации<\/a><i aria-hidden="true">·<\/i><a href="apps"[^>]*>Приложения<\/a><i aria-hidden="true">·<\/i><a href="servers"[^>]*>Серверы<\/a><i aria-hidden="true">·<\/i><a href="care"[^>]*>Сопровождение<\/a><i aria-hidden="true">·<\/i><a href="bitrix24"[^>]*>Интеграции<\/a><i aria-hidden="true">·<\/i><a href="ai"[^>]*>AI-ассистенты<\/a>/.test(src['index.html'])) bad.push('подвал: строка «Услуги»');
   const cs = src['cases.html'], CP = { resonara: 'sites', antares: 'sites', 'call-audit': 'bitrix24', 'tg-crm': 'bitrix24', agents: 'ai', catalog: 'ai', 'seo-report': 'ai', 'studio-os': 'ai' };
   for (const [k, v] of Object.entries(CP)) { const a = (cs.match(new RegExp(`data-case="case-${k}"[\\s\\S]*?</article>`)) || [''])[0]; if (!a.includes(`<p class="cp-svc"><a href="${v}" class="sv-go">Об&nbsp;услуге<svg`)) bad.push(`панель ${k}: «Об услуге» → ${v}`); }
   // в браузере: страница собирается, панель кейса по прямой ссылке открывается, «Об услуге» ведёт на страницу услуги

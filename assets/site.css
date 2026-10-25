@@ -1219,3 +1219,11 @@ a[href],button,summary,label,select,[role="button"],[data-obj],.cx-i,.nb,.pt .cm
 .pt .menu-nav .menu-sv a[aria-current="page"]{color:#EEF3F6}
 /* меню стало длиннее (список услуг) — пока открыта плашка cookie, низ меню можно докрутить над ней */
 html.ck-open .menu-in{padding-bottom:180px}
+/* владелец 2026-10-25: подпись «ios · android · tg» в крупном рисунке /apps ложилась на телефон; «таблетки» готовых решений —
+   крупнее и видны без наведения (кромка и лёгкая заливка цветом блока) */
+.sv-art [data-glyph="apps"] .lb{display:none}
+.pt .sv-tl a{min-height:46px;padding:0 20px;gap:10px;font-size:15px;color:#EEF3F6;border-color:color-mix(in srgb,var(--c,#8ED8F8) 55%,rgba(188,211,222,.2));background-color:color-mix(in srgb,var(--c,#8ED8F8) 7%,transparent)}
+.pt .sv-tl a:hover{background-color:color-mix(in srgb,var(--c,#8ED8F8) 14%,transparent)}
+.sv-tl{gap:10px}
+.sv-tl svg{width:16px;height:16px}
+@media (max-width:760px){.pt .sv-tl a{font-size:14px;padding:0 16px}}

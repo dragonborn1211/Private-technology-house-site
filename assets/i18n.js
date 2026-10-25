@@ -1013,7 +1013,6 @@
     'работа': 'work goes',
     'Интеграция с Битрикс24: заявки с сайта, Telegram, задачи и звонки | Private Technology House': 'Bitrix24 integration: website leads, Telegram, tasks and calls | Private Technology House',
     'Заявки с сайта и из Telegram — сразу в Битрикс24, задачи голосом, утренний разбор задач с выводами, разбор каждого звонка в карточке клиента. Настраиваем под ваш процесс, от 5 000 ₽ в месяц.': 'Leads from your website and Telegram go straight into Bitrix24, tasks by voice, a morning task review with conclusions, a review of every call in the client card. Set up for your process, from 5,000\u00a0₽ a month.',
-    'Интеграции Битрикс24': 'Bitrix24 integrations',
     'Интеграции с Битрикс24': 'Bitrix24 integrations',
     'Битрикс24 · подписка': 'Bitrix24 · subscription',
     'Интеграции с Битрикс24 —': 'Bitrix24 integrations',
