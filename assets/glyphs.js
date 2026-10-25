@@ -22,9 +22,11 @@
   function turnOn(it) { it.on = true; it.el.classList.add('is-on'); }
   function pump() { onRaf = 0; var it = onQ.shift(); if (it) turnOn(it); if (onQ.length) onRaf = requestAnimationFrame(pump); }
   function sync(it, first) {
-    var done = !it.sec || !root.classList.contains('pt-on') || it.sec.classList.contains('s-done'), q = onQ.indexOf(it);
+    // движок ещё не стартовал (pt-boot на корне) — секция не собрана: раньше модуль, запущенный до движка, считал её готовой и
+    // показывал чертёж целиком сразу, пока страница ещё собиралась (владелец 2026-10-26). Без движка — как раньше: всё на месте
+    var done = !it.sec || (!root.classList.contains('pt-on') && !root.classList.contains('pt-boot')) || it.sec.classList.contains('s-done'), q = onQ.indexOf(it);
     if (done && !it.on) {
-      if (first || rm) { if (q >= 0) onQ.splice(q, 1); it.on = true; it.el.classList.add('is-now'); it.el.classList.add('is-on'); }
+      if (first || rm || root.getAttribute('data-intro') === 'instant') { if (q >= 0) onQ.splice(q, 1); it.on = true; it.el.classList.add('is-now'); it.el.classList.add('is-on'); }
       else if (q < 0) { if (onQ.length || onRaf) onQ.push(it); else { turnOn(it); onRaf = requestAnimationFrame(pump); } }
     }
     else if (!done) { if (q >= 0) onQ.splice(q, 1); if (it.on) { it.on = false; it.el.classList.remove('is-on', 'is-now'); } }
@@ -48,5 +50,7 @@
     }
     sync(it, true);
   });
+  // классы корня (pt-boot снят, pt-on) — пересчитать: без движка (ошибка загрузки снимает pt-boot) чертёж должен проявиться
+  new MutationObserver(function () { items.forEach(function (it) { sync(it, false); }); }).observe(root, { attributes: true, attributeFilter: ['class'] });
   window.PTGlyphs = { refresh: function () { items.forEach(function (it) { sync(it, false); }); } };
 })();

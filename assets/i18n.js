@@ -726,7 +726,7 @@
     'Состав корзины уже в карточке — не нужно переспрашивать клиента.': 'The cart contents are already in the card, so there’s no need to ask the customer again.',
     'Так же подключаются Авито, Wildberries и Ozon — у них есть официальный доступ для программ (API).': 'Avito, Wildberries and Ozon connect the same way: they offer official access for software (an API).',
     'Хочу заказы в CRM →': 'I want orders in my CRM\u00a0→',
-    'Шаблон «Заявки с сайта»': '“Website leads” template',
+    'Шаблон «Заявки с сайта — в CRM и Telegram»': '“Website leads — into the CRM and Telegram” template',
     'Хочу, чтобы заказы сразу попадали в CRM и Telegram, как в кейсе на сайте.': 'I’d like orders to go straight to CRM and Telegram, like in the case on your website.',
     'Работает у клиента: Заказы сразу в CRM и Telegram →': 'Running for a client: Orders straight to CRM and Telegram\u00a0→',
     'Работает у клиента: Каталог, который заполняется сам →': 'Running for a client: A catalog that fills itself\u00a0→',
