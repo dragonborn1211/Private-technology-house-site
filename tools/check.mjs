@@ -2032,7 +2032,7 @@ console.log('\nясность, B10 / B11: «Как работаем», кноп�
 // Слабые телефоны (просьба владельца: «на дешёвых телефонах лагает самая первая анимация»): ранняя оценка на вступлении —
 // при CPU ×6 (эмуляция дешёвого телефона, 390×844, DPR 3) облегчение включается ещё до стадии рамок, пять прогонов из пяти;
 // при обычной скорости — нет; на старте сборки нет чередования «замер, запись» (lineDelays, updateSizes).
-// Порог уровня 1 — 28 мс (владелец 2026-10-24, TASK-weak-phone; было 34: при нём после TASK-perf кадры вступления при ×6
+// Порог уровня 1 на сенсорном экране — 28 мс (владелец 2026-10-24, TASK-weak-phone; было 34: при нём после TASK-perf кадры вступления при ×6
 // стояли на границе 33 / 50 мс, и проверку временно перевели на ×8)
 console.log('\nслабые телефоны: ранняя оценка на вступлении');
 {
@@ -2063,6 +2063,47 @@ console.log('\nслабые телефоны: ранняя оценка на в�
   if (!/function probeStart\(/.test(eng) || /\w\.toLocaleString\(/.test(eng)) bad.push('engine.js: нет ранней оценки или остался toLocaleString');
   if (bad.length) fail('слабые телефоны: ' + bad.join('; '));
   else console.log(`  ✓ ранняя оценка на вступлении: ${info.join(', ')}`);
+}
+
+// Компьютер — всегда полный режим без пауз (владелец 2026-10-25): на экране с мышью (pointer: fine) пауза петель при прокрутке
+// (onHold: объект «Кодекса», схемы, демо-сайты) не включается ни на каком уровне облегчения; порог ранней оценки уровня 1 — 34 мс
+// (28 — только сенсорный экран). Счёт вызовов паузы — крючком в копии engine.js. Компьютер при обычной скорости: три загрузки
+// главной с полным вступлением — облегчения нет; прокрутка на ?pt-q=2 — пауза не включалась. Телефон (сенсорный экран, ?pt-q=2) —
+// пауза при прокрутке включается (проверка самого крючка)
+console.log('\nкомпьютер: полный режим без пауз');
+{
+  const bad = [], info = [];
+  let eng = readFileSync(path.join(root, 'assets', 'engine.js'), 'utf8').replace(/\r\n/g, '\n');
+  const at = '        if (!lite || !TOUCH) return;\n';
+  if (!eng.includes(at) || !/med > \(TOUCH \? 0\.028 : 0\.034\) \? 1/.test(eng)) bad.push('engine.js: пауза не только на сенсорном экране или порог оценки не 28 / 34');
+  eng = eng.replace(at, at + '        window.__held = (window.__held || 0) + 1;\n');
+  const scrollDown = (page) => page.evaluate(() => new Promise((res) => { let i = 0; const f = () => { scrollBy(0, 40); if (++i < 60) requestAnimationFrame(f); else res(); }; requestAnimationFrame(f); }));
+  // «обычная скорость» компьютера — настоящая видеокарта: под SwiftShader (browser выше) кадр 1440 × 900 сам по себе дольше 34 мс
+  const gpu = await chromium.launch({ args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist'] });
+  for (let k = 0; k < 3; k++) {
+    const ctx = await gpu.newContext({ viewport: { width: 1440, height: 900 } });
+    const page = await ctx.newPage();
+    await page.route('**/assets/engine.js*', (r) => r.fulfill({ body: eng, contentType: 'application/javascript' }));
+    await page.goto(BASE + 'index.html'); await page.waitForTimeout(5000);
+    await scrollDown(page); await page.waitForTimeout(300);
+    const r = await page.evaluate(() => ({ lite: document.getElementById('pt-site').classList.contains('pt-lite'), q: sessionStorage.getItem('pt-q'), held: window.__held || 0, coarse: matchMedia('(pointer: coarse)').matches }));
+    if (r.lite || r.q || r.held || r.coarse) bad.push(`компьютер, прогон ${k + 1}: облегчение ${r.lite} (pt-q ${r.q}), пауза ${r.held}`);
+    await ctx.close();
+  }
+  for (const [tag, opt] of [['компьютер', { viewport: { width: 1440, height: 900 } }], ['телефон', { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }]]) {
+    const ctx = await gpu.newContext(opt);
+    const page = await ctx.newPage();
+    await page.route('**/assets/engine.js*', (r) => r.fulfill({ body: eng, contentType: 'application/javascript' }));
+    await page.goto(BASE + 'index.html?intro=instant&pt-q=2'); await page.waitForTimeout(1500);
+    await scrollDown(page); await page.waitForTimeout(300);
+    const r = await page.evaluate(() => ({ lite: document.getElementById('pt-site').classList.contains('pt-lite'), held: window.__held || 0 }));
+    if (!r.lite || (tag === 'компьютер' ? r.held : !r.held)) bad.push(`${tag}, уровень 2: пауза при прокрутке ${r.held}`);
+    info.push(`${tag} ур. 2: пауза ${r.held ? 'есть' : 'нет'}`);
+    await ctx.close();
+  }
+  await gpu.close();
+  if (bad.length) fail('компьютер без пауз: ' + bad.join('; '));
+  else console.log(`  ✓ компьютер: три полных вступления — облегчения нет, при прокрутке паузы нет; ${info.join(', ')}; порог оценки 34 мс (сенсорный — 28)`);
 }
 
 // «Через кадр» и подстраховка (владелец 2026-10-24, замер A15): на сенсорном экране медиана интервала кадра дольше 1.4 кадра
