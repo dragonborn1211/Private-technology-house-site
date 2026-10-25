@@ -869,6 +869,12 @@
     'Типовые сценарии для Битрикс24, Telegram и маркетплейсов. Выберите подходящий — подключим под ваши поля и правила.': 'Standard workflows for Bitrix24, Telegram and marketplaces. Pick one and we\'ll fit it to your fields and rules.',
     // TASK-seo-2: страницы услуг /sites, /bitrix24, /ai; новые title и description
     'Ответы на отзывы': 'Review replies',
+    // TASK-nav: панель услуг в шапке
+    'от 5 000 ₽': 'from\u00a05,000\u00a0₽',
+    'от 10 000 ₽/мес': 'from\u00a010,000\u00a0₽/mo',
+    'от 5 000 ₽/мес': 'from\u00a05,000\u00a0₽/mo',
+    'Все услуги и цены →': 'All services and prices\u00a0→',
+    'Услуги: открыть список': 'Services: open list',
     // TASK-seo-3: /apps, /servers, /care
     'Подробнее о приложениях': 'More about apps',
     'Подробнее о сопровождении': 'More about website care',

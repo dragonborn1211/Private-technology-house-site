@@ -122,6 +122,7 @@
   function cmSet(cm, v) {
     var b = cm.querySelector('.cm-btn'), p = cm.querySelector('.cm-pop');
     if (!b || !p || p.hidden === !v) return;
+    if (v && sms) smClose();
     p.hidden = !v; b.setAttribute('aria-expanded', v ? 'true' : 'false'); cm.classList.toggle('is-open', v);
     // список прижат правым краем к кнопке; на узком экране (320 px) он уходил за левый край — сдвигаем в пределы окна
     if (v) { p.style.setProperty('--cm-dx', '0px'); var r = p.getBoundingClientRect(), W = document.documentElement.clientWidth; p.style.setProperty('--cm-dx', Math.round(r.left < 12 ? 12 - r.left : (r.right > W - 12 ? W - 12 - r.right : 0)) + 'px'); }
@@ -143,6 +144,52 @@
       cms.forEach(function (cm) { var p = cm.querySelector('.cm-pop'); if (p && !p.hidden) { cmSet(cm, false); cm.querySelector('.cm-btn').focus(); } });
     });
     window.addEventListener('scroll', function () { cmClose(); }, { passive: true });
+  }
+
+  // ---------- «Что делаем» — панель услуг [data-sm] (TASK-nav) ----------
+  // Открывают: наведение на пункт (через 120 мс; уход — закрытие через 200 мс), шеврон (клик, клавиатура). Закрывают: Esc (фокус —
+  // на шеврон), клик мимо, Tab за пределы панели, прокрутка, пункт панели
+  var sms = Array.prototype.slice.call(root.querySelectorAll('[data-sm]'));
+  var hov = window.matchMedia && window.matchMedia('(hover: hover)');
+  function smSet(sm, v) {
+    var b = sm.querySelector('.nav-ch'), p = sm.querySelector('.sm-pop');
+    if (!b || !p || p.hidden === !v) return;
+    clearTimeout(sm._t);
+    if (v) { smClose(sm); cmClose(); }
+    p.hidden = !v; b.setAttribute('aria-expanded', v ? 'true' : 'false'); sm.classList.toggle('is-open', v);
+    if (v) sm._y = window.scrollY;
+  }
+  function smClose(keep) { sms.forEach(function (sm) { if (sm !== keep) smSet(sm, false); }); }
+  sms.forEach(function (sm) {
+    var b = sm.querySelector('.nav-ch'), p = sm.querySelector('.sm-pop');
+    if (!b || !p) return;
+    b.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = p.hidden; smSet(sm, open);
+      if (open && b.matches(':focus-visible')) { var a = p.querySelector('a'); if (a) a.focus(); }
+    });
+    sm.addEventListener('mouseenter', function () {
+      if (!hov || !hov.matches) return;
+      clearTimeout(sm._t); if (p.hidden) sm._t = setTimeout(function () { smSet(sm, true); }, 120);
+    });
+    sm.addEventListener('mouseleave', function () {
+      if (!hov || !hov.matches) return;
+      clearTimeout(sm._t); if (!p.hidden) sm._t = setTimeout(function () { smSet(sm, false); }, 200);
+    });
+    sm.addEventListener('focusout', function (e) { if (!p.hidden && (e.relatedTarget ? !sm.contains(e.relatedTarget) : !sm.matches(':hover'))) smSet(sm, false); });
+    p.addEventListener('click', function (e) { if (e.target.closest('a')) smSet(sm, false); });
+  });
+  if (sms.length) {
+    document.addEventListener('click', function (e) { if (!e.target.closest || !e.target.closest('[data-sm]')) smClose(); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      sms.forEach(function (sm) { var p = sm.querySelector('.sm-pop'); if (p && !p.hidden) { smSet(sm, false); sm.querySelector('.nav-ch').focus(); } });
+    });
+    // прокрутка закрывает панель, только если страница уехала больше чем на 40 px: мягкая прокрутка после колеса ещё доезжает
+    // несколько пикселей, и панель, открытая наведением, тут же гасла (позицию читаем, только пока панель открыта)
+    window.addEventListener('scroll', function () {
+      sms.forEach(function (sm) { var p = sm.querySelector('.sm-pop'); if (p && !p.hidden && Math.abs(window.scrollY - sm._y) > 40) smSet(sm, false); });
+    }, { passive: true });
   }
 
   // ---------- услуги на телефоне: в «Что входит» две строки, остальные — под кнопкой (TASK-clarity.md, B11.2) ----------

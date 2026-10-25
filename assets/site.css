@@ -1193,3 +1193,29 @@ a[href],button,summary,label,select,[role="button"],[data-obj],.cx-i,.nb,.pt .cm
 .foot-sv span,.foot-sv i{font-size:14px;font-style:normal;color:#6F93A6}
 @media (max-width:1100px){.sv-paths.c2,.sv-mod.sv-inc{grid-template-columns:minmax(0,1fr)}.sv-mod.sv-inc .sv-rows + .sv-rows li:first-child{border-top:0}}
 @media (max-width:760px){.sv-art{min-height:0;padding:20px}.sv-art .glyph{max-width:240px}.sv-hpr b{font-size:22px}}
+/* «Что делаем» — панель услуг (TASK-nav): шеврон рядом с пунктом, панель как у списка каналов (.cm-pop), две колонки; в меню
+   телефона — список услуг под пунктом, раскрыт всегда */
+.nav-sv{position:relative;display:flex;align-items:flex-start;gap:2px}
+.pt .nav-ch{display:inline-flex;align-items:center;justify-content:center;width:22px;height:1.36em;margin-right:-6px;padding:0;border:0;border-radius:6px;background:none;color:inherit;cursor:pointer}
+.nav-ch svg{opacity:.7;transition:transform .25s ease}
+.nav-sv.is-open .nav-ch svg{transform:rotate(180deg)}
+.pt .nav-ch:focus-visible{outline:2px solid #8ED8F8;outline-offset:2px}
+.pt-on .sec .hero-hdr .nav-ch svg{transition:opacity .9s ease,transform .25s ease}
+.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .nav-ch svg{opacity:0}
+.sm-pop{position:absolute;left:-22px;top:calc(100% + 14px);z-index:55;width:560px;display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:20px;background:rgba(10,18,26,.94);border:1px solid rgba(188,211,222,.16);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 24px 60px -24px rgba(0,0,0,.7);animation:cm-in .2s ease;white-space:normal}
+.sm-pop::before{content:"";position:absolute;left:0;right:0;top:-16px;height:16px}
+.sm-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.sm-col{display:flex;flex-direction:column;gap:2px}
+.sm-col .mono.k{margin:6px 14px 6px}
+.pt .nav .sm-pop a{display:flex;flex-direction:column;justify-content:center;gap:3px;min-height:52px;padding:6px 14px;border-radius:14px;color:#BCD3DE;transition:background-color .2s ease,color .2s ease}
+.pt .nav .sm-pop a span{font:500 15px/1.25 Manrope,'Manrope fb',system-ui,sans-serif}
+.pt .nav .sm-pop a small{font:400 12px/1.2 'JetBrains Mono','JetBrains fb',monospace;color:#8FAEC0}
+.pt .nav .sm-pop a:is(:hover,:focus-visible),.pt .nav .sm-pop a[aria-current="page"]{color:#EEF3F6;background-color:rgba(142,216,248,.08);background-image:none;-webkit-text-fill-color:currentColor;animation:none}
+.pt .nav .sm-pop a.sm-all{min-height:44px;flex-direction:row;align-items:center;font:500 14px/1.2 Manrope,'Manrope fb',system-ui,sans-serif;color:#8ED8F8;border-top:1px solid rgba(188,211,222,.1);border-radius:0 0 12px 12px}
+.pt-lite .sm-pop{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(10,18,26,.98)}
+@media (prefers-reduced-motion:reduce){.sm-pop{animation:none}.nav-ch svg{transition:none}}
+.menu-sv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px;padding:6px 0 12px;border-bottom:1px solid rgba(188,211,222,.1)}
+.pt .menu-nav .menu-sv a{display:flex;align-items:center;min-height:40px;padding:0;border:0;font-size:15px;font-weight:400;line-height:1.25;letter-spacing:0;color:#8193A0}
+.pt .menu-nav .menu-sv a[aria-current="page"]{color:#EEF3F6}
+/* меню стало длиннее (список услуг) — пока открыта плашка cookie, низ меню можно докрутить над ней */
+html.ck-open .menu-in{padding-bottom:180px}

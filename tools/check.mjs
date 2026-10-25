@@ -749,7 +749,9 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
   for (const f of PAGES) {
     const navs = [...src[f].matchAll(/<nav class="(nav|menu-nav)" aria-label="Разделы">([\s\S]*?)<\/nav>/g)];
     if (navs.length !== 3) bad.push(`${f}: меню ${navs.length} из 3`);
-    for (const [, kind, body] of navs) {
+    for (const [, kind, body0] of navs) {
+      // панель услуг у «Что делаем» и список услуг в меню телефона (TASK-nav) — не пункты меню
+      const body = body0.replace(/<div class="sm-pop"[\s\S]*?class="sm-all">[^<]*<\/a><\/div>/, '').replace(/<div class="menu-sv">[\s\S]*?<\/div>/, '');
       const as = [...body.matchAll(/<a href="([^"]+)"([^>]*)>([^<]+)<\/a>/g)];
       const got = as.map((m) => m[1]).join(','), names = as.map((m) => m[3]).join(','), cur = as.findIndex((m) => /aria-current="page"/.test(m[2]));
       if (got !== MENU[f].join(',') || names !== 'Что делаем,Работы,Готовые решения,Как работаем') bad.push(`${f} ${kind}: ${names} → ${got}`);
@@ -770,7 +772,7 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
     await page.goto(BASE + f + lang); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(250);
     const r = await page.evaluate(() => [...document.querySelectorAll('.hero-hdr, .topbar-in')].map((h) => {
       const n = h.querySelector('.nav'), nr = n.getBoundingClientRect(), lt = h.querySelector('.logo-t').getBoundingClientRect(), ar = h.querySelector('.hdr-act').getBoundingClientRect();
-      const as = [...n.querySelectorAll('a')], tops = new Set(as.map((a) => Math.round(a.getBoundingClientRect().top))), hi = Math.max(...as.map((a) => a.getBoundingClientRect().height));
+      const as = [...n.querySelectorAll(':scope > a, :scope > .nav-sv > a')], tops = new Set(as.map((a) => Math.round(a.getBoundingClientRect().top))), hi = Math.max(...as.map((a) => a.getBoundingClientRect().height));
       const shown = getComputedStyle(n).display !== 'none', btn = getComputedStyle(h.querySelector('.menu-btn')).display !== 'none';
       if (!shown) return btn && innerWidth < 1200 ? 'ok' : 'меню скрыто, кнопки меню нет';
       return innerWidth >= 1200 && tops.size === 1 && hi < 30 && nr.left - lt.right >= 12 && ar.left - nr.right >= 12 ? 'ok' : `строк ${tops.size}, высота пункта ${Math.round(hi)}, зазоры ${Math.round(nr.left - lt.right)} / ${Math.round(ar.left - nr.right)}`;
@@ -2328,6 +2330,70 @@ console.log('\nстраницы услуг: /sites, /bitrix24, /ai');
   await page.close();
   if (bad.length) fail('страницы услуг: ' + bad.join('; '));
   else console.log('  ✓ title и description одиннадцати страниц по ТЗ (= og:*); /sites, /bitrix24, /ai, /apps, /servers, /care — Service, BreadcrumbList, FAQPage = вопросы страницы, вопросы не повторяются; крошки, canonical, hreflang; ссылки из услуг, главной, подвала и панелей кейсов');
+}
+
+// Панель услуг в меню (TASK-nav): у «Что делаем» — шеврон и панель [data-sm] (две колонки, семь услуг с ценами, «Все услуги и
+// цены →»), в меню телефона — список .menu-sv из тех же семи ссылок. Разметка одинаковая на всех страницах (кроме aria-current и
+// «/» у 404). В браузере на 1440, обе шапки: наведение (120 мс открыть, 200 мс закрыть, мостик до панели), шеврон, клик мимо, Enter /
+// Esc (фокус на шеврон), Tab за пределы; 390 и 320 — список в две колонки, 15 px, текущая страница отмечена; ссылки — 200, в EN — /en/
+console.log('\nпанель услуг в меню');
+{
+  const bad = [];
+  const norm = (h) => h.replace(/ aria-current="page"/g, '').replace(/href="\//g, 'href="');
+  const sm = (f) => [...src[f].matchAll(/<div class="nav-sv" data-sm>[\s\S]*?class="sm-all">[^<]*<\/a><\/div><\/div>/g)].map((m) => norm(m[0]).replace(/ id="sm-[ht]"| aria-controls="sm-[ht]"/g, ''));
+  const ml = (f) => (src[f].match(/<div class="menu-sv">[\s\S]*?<\/div>/) || [''])[0];
+  const s0 = sm('index.html')[0], m0 = norm(ml('index.html'));
+  const want = 'sites,sites#redesign,apps,servers,care,bitrix24,ai,services';
+  if (!s0 || [...s0.matchAll(/<a href="([^"]+)"/g)].slice(1).map((m) => m[1]).join(',') !== want) bad.push('панель: ссылки ' + s0);
+  for (const f of PAGES) {
+    const a = sm(f);
+    if (a.length !== 2 || a.some((x) => x !== s0)) bad.push(`${f}: панель услуг отличается`);
+    if (norm(ml(f)) !== m0 || (m0.match(/<a /g) || []).length !== 7) bad.push(`${f}: список услуг в меню`);
+    const page = f.replace(/\.html$/, ''), cur = [...src[f].matchAll(/<div class="sm-pop"[\s\S]*?class="sm-all">/g)].map((m) => [...m[0].matchAll(/<a href="\/?([^"]+)" aria-current="page"/g)].map((x) => x[1]).join());
+    if (cur.some((c) => c !== (/^(sites|apps|servers|care|bitrix24|ai)$/.test(page) ? page : ''))) bad.push(`${f}: текущая в панели ${cur}`);
+    if (!/data-pt-skip hidden><div class="sm-cols">/.test(src[f])) bad.push(`${f}: панель без data-pt-skip`);
+  }
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(BASE + 'apps?intro=instant'); await page.waitForTimeout(500);
+  await page.evaluate(() => document.querySelector('.ck')?.remove());
+  const st = (pid) => page.evaluate((pid) => { const p = document.getElementById(pid); return { open: !p.hidden, exp: p.closest('[data-sm]').querySelector('.nav-ch').getAttribute('aria-expanded'), ch: document.activeElement === p.closest('[data-sm]').querySelector('.nav-ch') }; }, pid);
+  for (const [hdr, pid] of [['.hero-hdr', 'sm-h'], ['.topbar', 'sm-t']]) {
+    if (hdr === '.topbar') { await page.evaluate(() => scrollTo({ top: 2400, behavior: 'instant' })); await page.waitForTimeout(200); await page.mouse.move(700, 500); await page.mouse.wheel(0, -200); await page.waitForTimeout(800); }
+    await page.mouse.move(5, 600); await page.locator(hdr + ' .nav-sv > a').hover(); await page.waitForTimeout(40);
+    const h0 = await st(pid); await page.waitForTimeout(250); const h1 = await st(pid);
+    const pr = await page.locator('#' + pid).boundingBox();
+    if (pr) { await page.mouse.move(pr.x + 40, pr.y + 40, { steps: 6 }); await page.waitForTimeout(300); }
+    const h2 = await st(pid);
+    await page.mouse.move(5, 650); await page.waitForTimeout(80); const h3 = await st(pid); await page.waitForTimeout(250); const h4 = await st(pid);
+    if (h0.open || !h1.open || !h2.open || !h3.open || h4.open) bad.push(`${hdr}: наведение ${[h0, h1, h2, h3, h4].map((x) => +x.open).join('')}`);
+    await page.click(hdr + ' .nav-ch'); await page.waitForTimeout(80); const c1 = await st(pid);
+    await page.mouse.click(700, 850); await page.waitForTimeout(80); const c2 = await st(pid);
+    if (!c1.open || c1.exp !== 'true' || c2.open) bad.push(`${hdr}: шеврон / клик мимо ${+c1.open}${+c2.open}`);
+    await page.focus(hdr + ' .nav-ch'); await page.keyboard.press('Enter'); await page.waitForTimeout(80); const k1 = await st(pid);
+    await page.keyboard.press('Escape'); await page.waitForTimeout(80); const k2 = await st(pid);
+    if (!k1.open || k2.open || !k2.ch) bad.push(`${hdr}: Enter / Esc ${JSON.stringify([k1, k2])}`);
+    await page.keyboard.press('Enter'); await page.waitForTimeout(60); for (let i = 0; i < 9; i++) await page.keyboard.press('Tab');
+    await page.waitForTimeout(60); if ((await st(pid)).open) bad.push(`${hdr}: Tab за пределы — панель открыта`);
+  }
+  await page.close();
+  for (const [w, h] of [[390, 700], [320, 640]]) {
+    const ctx = await browser.newContext({ viewport: { width: w, height: h }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    const pg = await ctx.newPage();
+    await pg.goto(BASE + 'care?intro=instant'); await pg.waitForTimeout(400);
+    await pg.click('.hero-hdr .menu-btn'); await pg.waitForTimeout(400);
+    const r = await pg.evaluate(() => { const as = [...document.querySelectorAll('[data-menu] .menu-sv a')]; return { n: as.length, cols: new Set(as.map((a) => Math.round(a.getBoundingClientRect().left))).size, fs: as[0] && getComputedStyle(as[0]).fontSize, cur: as.filter((a) => a.getAttribute('aria-current')).map((a) => a.textContent).join(), over: as.filter((a) => a.getBoundingClientRect().right > innerWidth).length }; });
+    if (r.n !== 7 || r.cols !== 2 || r.fs !== '15px' || r.cur !== 'Сопровождение сайта' || r.over) bad.push(`меню ${w}: ${JSON.stringify(r)}`);
+    await ctx.close();
+  }
+  const lp = await browser.newPage();
+  for (const p of ['', 'services', 'sites', 'care', 'en/', 'en/ai']) {
+    await lp.goto(BASE + p + '?intro=instant'); await lp.waitForTimeout(200);
+    const hs = await lp.evaluate(() => [...new Set([...document.querySelectorAll('#sm-h a, .menu-sv a')].map((a) => a.href))]);
+    for (const h of hs) { const u = new URL(h); if ((await lp.request.get(u.origin + u.pathname)).status() !== 200 || (p.startsWith('en/') && !u.pathname.startsWith('/en/'))) bad.push(`${p || '/'}: ${u.pathname}`); }
+  }
+  await lp.close();
+  if (bad.length) fail('панель услуг: ' + bad.join('; '));
+  else console.log('  ✓ «Что делаем» — шеврон и панель (7 услуг, «Все услуги и цены»), одинаковая на всех страницах, data-pt-skip; наведение 120 / 200 мс и мостик, шеврон, клик мимо, Enter / Esc → фокус на шеврон, Tab за пределы — в обеих шапках на 1440; меню 390 / 320 — список в две колонки, 15 px, текущая отмечена; ссылки — 200, в EN — /en/');
 }
 
 // Почта и IndexNow (TASK-mail-indexnow): hello@privatechouse.ru в политике (адрес оператора); файл ключа IndexNow — один в корне,
