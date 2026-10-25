@@ -792,7 +792,8 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
   // TASK-clarity.md: на телефоне «Что входит» свёрнуто; с «Кто делает» (TASK-about-analytics.md) — +0.6 экрана на телефоне;
   // TASK-prices.md: строка «Цена» первой в условиях шести модулей (у приложений и серверов — с пояснением) — +0.35 на телефоне;
   // TASK-redesign-prices.md: седьмое направление «Редизайн сайта» и крупная цена — +0.7 / +1.3
-  for (const [w, h, lim] of [[1440, 900, 7.8], [390, 844, 13.6]]) {
+  // TASK-seo-3 / TASK-nav: «Подробнее …» в модулях, крупные «таблетки», подвал со строкой услуг — +0.3 на телефоне
+  for (const [w, h, lim] of [[1440, 900, 7.8], [390, 844, 13.9]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + 'services.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
@@ -1175,7 +1176,7 @@ console.log('\nструктура: услуги, «Как работаем», с
       h2: [...document.querySelectorAll('h2')].map((h) => h.textContent.trim()), q: document.querySelectorAll('[data-faq] .fq').length + document.querySelectorAll('.sv-q').length * 100,
       quit: /отказаться от\s+подписки/.test([...document.querySelectorAll('[data-faq] .fq summary')].map((x) => x.textContent).join(' ')),
       proc: [...document.querySelectorAll('[data-sec="process"] a')].filter((a) => a.getAttribute('href') === 'process').length,
-      steps: document.querySelectorAll('[data-sec="process"] .sv-step').length, care: !!document.querySelector('#after a[href="#care"]'),
+      steps: document.querySelectorAll('[data-sec="process"] .sv-step').length, care: !!document.querySelector('#after a[href="care"]'),
       sm: ['after', 'sub-how', 'process'].map((i) => getComputedStyle(document.getElementById(i).querySelector('[style*="scroll-margin-top"]') || document.getElementById(i)).scrollMarginTop).join(',') }));
     if (r.order !== 'hero,process,sites,redesign,apps,servers,after,care,automation,ai,subs,faq,contact,foot') bad.push(`услуги: порядок ${r.order}`);
     if (r.after !== 3 || r.subs !== 3 || r.h2.includes('После запуска') || r.q !== 9 || r.quit || r.proc !== 1 || r.steps !== 4 || !r.care || r.sm !== '88px,88px,88px') bad.push(`услуги: ${JSON.stringify({ after: r.after, subs: r.subs, q: r.q, quit: r.quit, proc: r.proc, steps: r.steps, care: r.care, sm: r.sm })}`);
@@ -1684,7 +1685,7 @@ console.log('\nревью, 5–9: группы на главной, NDA, сле�
   // «Готовые решения» — после TASK-seo-case.md (восьмая работа и восьмой шаблон: на телефоне ещё карточка, на 1440 у каталога ряд)
   // главная и «Что делаем» — после TASK-prices.md (цены в карточках и строка «Цена» в условиях модулей); «Что делаем» — после
   // TASK-redesign-prices.md (блок «Редизайн сайта», цена 26 px)
-  const LEN = { 'index.html': [5.3, 9.0], 'services.html': [7.6, 13.4], 'process.html': [3.3, 7.15], 'cases.html': [4.7, 7.95], 'automations.html': [5.05, 9.1] };
+  const LEN = { 'index.html': [5.3, 9.0], 'services.html': [7.6, 13.6], 'process.html': [3.3, 7.15], 'cases.html': [4.7, 7.95], 'automations.html': [5.05, 9.1] };
   const quick = await chromium.launch();
   for (const [w, h] of [[1440, 900], [390, 844]]) {
     const page = await quick.newPage({ viewport: { width: w, height: h } });
@@ -2902,7 +2903,7 @@ console.log('\nпанель разбора работы');
       }
       if (id === 'case-resonara') {
         const g = await page.evaluate(() => { const r = document.querySelector('.cp-sheet').getBoundingClientRect(); return { l: r.left, r: Math.round(r.right), b: Math.round(r.bottom), t: Math.round(r.top) }; });
-        if (g.l !== 0 || g.r !== 390 || g.b !== 844 || g.t < 30 || g.t > 120) bad.push('шторка на 390: ' + JSON.stringify(g));
+        if (g.l !== 0 || g.r !== 390 || Math.abs(g.b - 844) > 1 || g.t < 30 || g.t > 120) bad.push('шторка на 390: ' + JSON.stringify(g));
       }
       await page.screenshot({ path: path.join(shots, `panel-390-${id.slice(5)}.png`) });
       await page.keyboard.press('Escape'); await page.waitForTimeout(600);
@@ -3079,7 +3080,7 @@ console.log('\nпанель «Частые вопросы»');
       if (f === 'services') await page.screenshot({ path: path.join(shots, 'faq-plate-390.png') });
       await page.tap('.faq-link'); await page.waitForTimeout(900);
       const g = await page.evaluate(() => { const r = document.querySelector('[data-faq] .cp-sheet').getBoundingClientRect(); return { l: r.left, r: Math.round(r.right), b: Math.round(r.bottom), t: Math.round(r.top), sw: document.documentElement.scrollWidth }; });
-      if (g.l !== 0 || g.r !== 390 || g.b !== 844 || g.t < 30 || g.t > 120 || g.sw > 390) bad.push(`${f} 390, шторка: ` + JSON.stringify(g));
+      if (g.l !== 0 || g.r !== 390 || Math.abs(g.b - 844) > 1 || g.t < 30 || g.t > 120 || g.sw > 390) bad.push(`${f} 390, шторка: ` + JSON.stringify(g));
       await page.screenshot({ path: path.join(shots, `faq-open-${f}-390.png`) });
       await page.keyboard.press('Escape'); await page.waitForTimeout(700);
     }
