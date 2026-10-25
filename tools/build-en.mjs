@@ -14,7 +14,7 @@ import { parseHTML } from 'linkedom';
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const root = path.resolve(here, '..');
 export const SITE = 'https://privatechouse.ru';
-export const PAGES = ['index', 'services', 'cases', 'automations', 'process', 'sites', 'bitrix24', 'ai'];
+export const PAGES = ['index', 'services', 'cases', 'automations', 'process', 'sites', 'bitrix24', 'ai', 'apps', 'servers', 'care'];
 export const ruPath = (name) => '/' + (name === 'index' ? '' : name);
 export const enPath = (name) => '/en/' + (name === 'index' ? '' : name);
 const ABS = /^(?:[a-z][a-z0-9+.-]*:|\/|#|\?)/i;

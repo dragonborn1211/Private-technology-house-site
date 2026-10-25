@@ -530,7 +530,7 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
       procLinks: all('a').filter((a) => a.textContent.trim() === 'Как работаем').map((a) => a.getAttribute('href')), contact: document.querySelector('#contact .mono.k').textContent.trim() };
   });
   const bad = [];
-  if (r.cards.length !== 6 || r.cards.some((h) => !(/^services#/.test(h) && ids.has(h.split('#')[1])) && !/^(sites|ai)$/.test(h))) bad.push(`карточки: ${r.cards.join(', ')}`);
+  if (r.cards.join(',') !== 'sites,apps,servers,care,automations,ai') bad.push(`карточки: ${r.cards.join(', ')}`);
   if (r.more.join() !== 'services') bad.push(`«Все услуги» → ${r.more.join()}`);
   if (r.h2 !== 'Делаем один раз. Держим всегда.') bad.push(`заголовок «${r.h2}»`);
   if (r.nums) bad.push(`номера 01–04 в блоке: ${r.nums}`);
@@ -544,7 +544,7 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
   if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 7 || /svc-ic/.test(sv) || (sv.match(/<a href="process"[^>]*>Как работаем<\/a>/g) || []).length !== 4) bad.push('страница услуг: семь мини-рисунков (шесть направлений и редизайн), нет иконок, «Как работаем» → process.html (три меню и подвал)');
   for (const f of readdirSync(path.join(root, 'assets')).filter((x) => x.endsWith('.js'))) if (/addEventListener\(\s*['"](before)?unload['"]/.test(readFileSync(path.join(root, 'assets', f), 'utf8'))) bad.push(`${f}: unload / beforeunload отключает кэш «Назад»`);
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8'), rb = readFileSync(path.join(root, 'robots.txt'), 'utf8');
-  if (['', 'services', 'cases', 'automations', 'process', 'sites', 'bitrix24', 'ai'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 16 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
+  if (['', 'services', 'cases', 'automations', 'process', 'sites', 'bitrix24', 'ai', 'apps', 'servers', 'care'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 22 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
   if (!/User-agent: \*/.test(rb) || !/Sitemap: https:\/\/privatechouse\.ru\/sitemap\.xml/.test(rb)) bad.push('robots.txt');
   await page.close();
   if (bad.length) fail('главная: ' + bad.join('; '));
@@ -721,7 +721,7 @@ console.log('\nавтоматизация: «Готовые автоматиза
 // Страницы (TASK-pages.md): новые страницы открываются через tools/serve.mjs — так же, как на хостинге (404.html — на
 // любой несуществующий адрес, пути от корня).
 console.log('\nстраницы: меню, подвал, «Поток»');
-const PAGES = ['index.html', 'services.html', 'cases.html', 'automations.html', 'process.html', 'sites.html', 'bitrix24.html', 'ai.html', '404.html'];
+const PAGES = ['index.html', 'services.html', 'cases.html', 'automations.html', 'process.html', 'sites.html', 'bitrix24.html', 'ai.html', 'apps.html', 'servers.html', 'care.html', '404.html'];
 const srv = spawn(process.execPath, [path.join(here, 'serve.mjs'), '8097'], { stdio: 'pipe' });
 await new Promise((r) => srv.stdout.once('data', r));
 const BASE = 'http://localhost:8097/';
@@ -741,8 +741,11 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
     'sites.html': ['services', 'cases', 'automations', 'process'],
     'bitrix24.html': ['services', 'cases', 'automations', 'process'],
     'ai.html': ['services', 'cases', 'automations', 'process'],
+    'apps.html': ['services', 'cases', 'automations', 'process'],
+    'servers.html': ['services', 'cases', 'automations', 'process'],
+    'care.html': ['services', 'cases', 'automations', 'process'],
     '404.html': ['/services', '/cases', '/automations', '/process'] };
-  const CUR = { 'services.html': 0, 'cases.html': 1, 'automations.html': 2, 'process.html': 3, 'sites.html': 0, 'bitrix24.html': 0, 'ai.html': 0 };
+  const CUR = { 'services.html': 0, 'cases.html': 1, 'automations.html': 2, 'process.html': 3, 'sites.html': 0, 'bitrix24.html': 0, 'ai.html': 0, 'apps.html': 0, 'servers.html': 0, 'care.html': 0 };
   for (const f of PAGES) {
     const navs = [...src[f].matchAll(/<nav class="(nav|menu-nav)" aria-label="Разделы">([\s\S]*?)<\/nav>/g)];
     if (navs.length !== 3) bad.push(`${f}: меню ${navs.length} из 3`);
@@ -760,7 +763,7 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
   const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|max\.ru|wa\.me|^tel:|^mailto:|^#top$|^#about$|^privacy$|^$/.test(h));
   const sid = idsOf('services.html');
   fl.forEach((h) => { const [p0, id] = h.split('#'), pg = p0 + '.html'; if (!PAGES.includes(pg) || (id && !(pg === 'services.html' ? sid : idsOf(pg)).has(id))) bad.push(`подвал: ссылка ${h} ведёт в никуда`); });
-  if (fl.join(',') !== 'services,cases,automations,process,services#faq,sites,bitrix24,ai' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
+  if (fl.join(',') !== 'services,cases,automations,process,services#faq,sites,apps,servers,care,bitrix24,ai' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
   // меню на 1024–1280 — одна строка и не наезжает на логотип и кнопки (RU и EN)
   for (const f of ['index.html', 'cases.html', 'process.html']) for (const lang of ['', '?lang=en']) for (const w of [1024, 1199, 1200, 1280]) {
     const page = await browser.newPage({ viewport: { width: w, height: 800 } });
@@ -1235,7 +1238,7 @@ console.log('\nструктура: услуги, «Как работаем», с
     await page.close();
   }
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
-  if (['', 'services', 'cases', 'automations', 'process', 'sites', 'bitrix24', 'ai'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 17 || (sm.match(/hreflang="en"/g) || []).length !== 16 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy(\.html)?<\/loc>\s*(<lastmod>[\d-]+<\/lastmod>\s*)?<\/url>/.test(sm)) bad.push('sitemap.xml: не пять страниц и пять английских с парами');
+  if (['', 'services', 'cases', 'automations', 'process', 'sites', 'bitrix24', 'ai', 'apps', 'servers', 'care'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 23 || (sm.match(/hreflang="en"/g) || []).length !== 22 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy(\.html)?<\/loc>\s*(<lastmod>[\d-]+<\/lastmod>\s*)?<\/url>/.test(sm)) bad.push('sitemap.xml: не пять страниц и пять английских с парами');
   if (bad.length) fail('структура: ' + bad.join('; '));
   else console.log(`  ✓ разлёта (data-pt-burst) нет нигде, у подвала — мягкий выдох; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — четыре секции по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — шесть адресов (политика — без EN)`);
 }
@@ -2282,13 +2285,16 @@ console.log('\nстраницы услуг: /sites, /bitrix24, /ai');
     'process.html': ['Как мы работаем: этапы разработки сайта, приложения и автоматизации — Private Technology House', 'Созвон и смета, концепция, прототип'],
     'sites.html': ['Сайт-презентация для бренда, ЖК и коттеджного посёлка — от 120 000 ₽ | Private Technology House', 'Сайт-презентация со своим визуальным стилем'],
     'bitrix24.html': ['Интеграция с Битрикс24: заявки с сайта, Telegram, задачи и звонки | Private Technology House', 'Заявки с сайта и из Telegram — сразу в Битрикс24'],
-    'ai.html': ['AI-ассистенты для бизнеса: база знаний, разбор звонков, ответы клиентам | Private Technology House', 'AI-помощник для каждого отдела'] };
+    'ai.html': ['AI-ассистенты для бизнеса: база знаний, разбор звонков, ответы клиентам | Private Technology House', 'AI-помощник для каждого отдела'],
+    'apps.html': ['Разработка приложений для Android, iOS и Telegram Mini App — от 150 000 ₽ | Private Technology House', 'Мобильное приложение для Android и iOS'],
+    'servers.html': ['Настройка серверов, установка n8n и LibreChat под ключ — от 5 000 ₽ | Private Technology House', 'Сервер под ключ: Docker'],
+    'care.html': ['Сопровождение сайта: хостинг, бэкапы, мониторинг и правки — от 10 000 ₽ в месяц | Private Technology House', 'Сайт на нашем хостинге'] };
   for (const [f, [t, d]] of Object.entries(TD)) {
     const h = src[f], tt = one((h.match(/<title>([^<]*)<\/title>/) || [])[1] || ''), dd = one((h.match(/<meta name="description" content="([^"]*)"/) || [])[1] || '');
     const ot = one((h.match(/<meta property="og:title" content="([^"]*)"/) || [])[1] || ''), od = one((h.match(/<meta property="og:description" content="([^"]*)"/) || [])[1] || '');
     if (tt !== t || !dd.startsWith(d) || ot !== tt || od !== dd) bad.push(`${f}: title / description`);
   }
-  const SV = { sites: ['Сайты-презентации', 120000, 6], bitrix24: ['Интеграции Битрикс24', 5000, 5], ai: ['AI-ассистенты', 5000, 5] };
+  const SV = { sites: ['Сайты-презентации', 120000, 6], bitrix24: ['Интеграции Битрикс24', 5000, 5], ai: ['AI-ассистенты', 5000, 5], apps: ['Приложения', 150000, 5], servers: ['Серверы', 5000, 5], care: ['Сопровождение сайта', 10000, 5] };
   const panelQ = new Set([...src['services.html'].matchAll(/<summary>([\s\S]*?)<i/g)].map((m) => one(m[1]))), seen = new Set();
   for (const [n, [crumb, min, nq]] of Object.entries(SV)) {
     const h = src[n + '.html'], lds = [...h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
@@ -2306,8 +2312,12 @@ console.log('\nстраницы услуг: /sites, /bitrix24, /ai');
   }
   if (!src['sites.html'].includes('id="redesign"')) bad.push('sites: нет #redesign');
   const sv = src['services.html'];
-  for (const [h, t] of [['sites', 'Подробнее о&nbsp;сайтах'], ['sites#redesign', 'Подробнее'], ['bitrix24', 'Интеграции с&nbsp;Битрикс24'], ['ai', 'Подробнее об&nbsp;AI']]) if (!sv.includes(`<a href="${h}" class="sv-go sv-dl">${t}<svg`)) bad.push(`услуги: ссылка ${h}`);
-  if (!src['index.html'].includes('<a href="sites" class="glass fr svc svc-xl"') || !src['index.html'].includes('<a href="ai" class="glass fr svc svc-iri"')) bad.push('главная: карточки на /sites и /ai');
+  for (const [h, t] of [['sites', 'Подробнее о&nbsp;сайтах'], ['sites#redesign', 'Подробнее'], ['apps', 'Подробнее о&nbsp;приложениях'], ['servers', 'Подробнее'], ['care', 'Подробнее о&nbsp;сопровождении'], ['bitrix24', 'Интеграции с&nbsp;Битрикс24'], ['ai', 'Подробнее об&nbsp;AI']]) if (!sv.includes(`<a href="${h}" class="sv-go sv-dl">${t}<svg`)) bad.push(`услуги: ссылка ${h}`);
+  // TASK-seo-3: на «Сопровождение» — только /care; панель вопросов на каждой странице услуг; /bitrix24 → /apps
+  for (const f of PAGES) if (/href="[^"]*services(\.html)?#care"/.test(src[f])) bad.push(`${f}: ссылка на services#care`);
+  for (const n of Object.keys(SV)) if (!/<a href="#faq" class="faq-link fr" data-faq-open>/.test(src[n + '.html']) || !/<div class="cp cp-faq-wrap" data-faq hidden>/.test(src[n + '.html']) || !/<script src="assets\/faq\.js/.test(src[n + '.html'])) bad.push(`${n}: вопросы не плашкой и панелью`);
+  if (!src['bitrix24.html'].includes('<a href="apps" class="sv-go">Приложения<svg')) bad.push('bitrix24: ссылка «Приложения →»');
+  if (!/<span>Услуги:<\/span><a href="sites"[^>]*>Сайты-презентации<\/a><i aria-hidden="true">·<\/i><a href="apps"[^>]*>Приложения<\/a><i aria-hidden="true">·<\/i><a href="servers"[^>]*>Серверы<\/a><i aria-hidden="true">·<\/i><a href="care"[^>]*>Сопровождение<\/a><i aria-hidden="true">·<\/i><a href="bitrix24"[^>]*>Интеграции Битрикс24<\/a><i aria-hidden="true">·<\/i><a href="ai"[^>]*>AI-ассистенты<\/a>/.test(src['index.html'])) bad.push('подвал: строка «Услуги»');
   const cs = src['cases.html'], CP = { resonara: 'sites', antares: 'sites', 'call-audit': 'bitrix24', 'tg-crm': 'bitrix24', agents: 'ai', catalog: 'ai', 'seo-report': 'ai', 'studio-os': 'ai' };
   for (const [k, v] of Object.entries(CP)) { const a = (cs.match(new RegExp(`data-case="case-${k}"[\\s\\S]*?</article>`)) || [''])[0]; if (!a.includes(`<p class="cp-svc"><a href="${v}" class="sv-go">Об&nbsp;услуге<svg`)) bad.push(`панель ${k}: «Об услуге» → ${v}`); }
   // в браузере: страница собирается, панель кейса по прямой ссылке открывается, «Об услуге» ведёт на страницу услуги
@@ -2317,7 +2327,7 @@ console.log('\nстраницы услуг: /sites, /bitrix24, /ai');
   if (!/\/ai$/.test(cp)) bad.push('панель case-agents по прямой ссылке: «Об услуге» ' + cp);
   await page.close();
   if (bad.length) fail('страницы услуг: ' + bad.join('; '));
-  else console.log('  ✓ title и description восьми страниц по ТЗ (= og:*); /sites, /bitrix24, /ai — Service, BreadcrumbList, FAQPage = вопросы страницы, вопросы не повторяются; крошки, canonical, hreflang; ссылки из услуг, главной, подвала и панелей кейсов');
+  else console.log('  ✓ title и description одиннадцати страниц по ТЗ (= og:*); /sites, /bitrix24, /ai, /apps, /servers, /care — Service, BreadcrumbList, FAQPage = вопросы страницы, вопросы не повторяются; крошки, canonical, hreflang; ссылки из услуг, главной, подвала и панелей кейсов');
 }
 
 // Почта и IndexNow (TASK-mail-indexnow): hello@privatechouse.ru в политике (адрес оператора); файл ключа IndexNow — один в корне,
@@ -3185,7 +3195,7 @@ console.log('\nцены');
   const W = { sites: 'от 120 000 ₽', redesign: 'от 85 000 ₽', apps: 'от 150 000 ₽', servers: 'от 5 000 ₽ за задачу', care: 'от 10 000 ₽ в месяц', automation: 'от 5 000 ₽ в месяц', ai: 'от 5 000 ₽ в месяц' };
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(BASE + 'index.html?intro=instant'); await page.waitForTimeout(400);
-  const home = await page.evaluate(() => [...document.querySelectorAll('a.svc')].map((a) => [a.getAttribute('href').split('#').pop(), (a.querySelector('.svc-pr') || {}).textContent || '']));
+  const home = await page.evaluate(() => [...document.querySelectorAll('a.svc')].map((a) => [a.getAttribute('href').split('#').pop().replace(/^automations$/, 'automation'), (a.querySelector('.svc-pr') || {}).textContent || '']));
   // TASK-redesign-prices.md: у «Сайтов-презентаций» ещё «· редизайн от 65 000 ₽»
   if (home.length !== 6 || home.some(([id, t]) => nb(t) !== W[id] + (id === 'sites' ? ' · редизайн от 85 000 ₽' : ''))) bad.push('главная: ' + JSON.stringify(home));
   await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(400);

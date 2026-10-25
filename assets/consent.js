@@ -110,8 +110,8 @@
     if (/automations(\.html)?([#?]|$)/.test(href || '')) return 'подписка';
     if (/cases(\.html)?([#?]|$)/.test(href || '')) return 'кейс';
     // страницы услуг (TASK-seo-2): ссылка на них или кнопка на них самих — формат направления
-    var sp = /(?:^|\/)(sites|bitrix24|ai)(?:\.html)?([#?]|$)/.exec(href || '') || /\/(sites|bitrix24|ai)(?:\.html)?$/.exec(location.pathname);
-    if (sp) return sp[1] === 'sites' ? 'разово' : 'подписка';
+    var sp = /(?:^|\/)(sites|apps|servers|care|bitrix24|ai)(?:\.html)?([#?]|$)/.exec(href || '') || /\/(sites|apps|servers|care|bitrix24|ai)(?:\.html)?$/.exec(location.pathname);
+    if (sp) return /^(sites|apps|servers)$/.test(sp[1]) ? 'разово' : 'подписка';
     return 'общий';
   }
   function nameOf(el) {
