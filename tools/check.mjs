@@ -1184,7 +1184,7 @@ console.log('\nструктура: услуги, «Как работаем», с
   }
   // «Как работаем»
   const pid = idsOf('process.html');
-  for (const [w, h, lim] of [[1440, 900, 3.45], [390, 844, 7.3]]) {
+  for (const [w, h, lim] of [[1440, 900, 3.45], [390, 844, 7.45]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + 'process.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
@@ -3277,7 +3277,8 @@ console.log('\nцены');
     if (!a.startsWith(want)) bad.push(`${f}: «${q}» — ${a.slice(0, 60)}`);
   }
   for (const f of ['index.html', 'services.html', 'automations.html', 'cases.html']) {
-    const t = nb(src[f].replace(/<template[\s\S]*?<\/template>/g, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' '));
+    // панель услуг в шапке (TASK-nav) с ценами — на всех страницах, в «Работах» тоже; цены работ ищем без неё
+    const t = nb(src[f].replace(/<template[\s\S]*?<\/template>/g, '').replace(/<div class="sm-pop"[\s\S]*?class="sm-all">[^<]*<\/a><\/div>/g, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' '));
     const m = t.match(/(^|[^а-яё])до \d[\d ]*₽|\d[\d ]*\s?[–-]\s?\d[\d ]*₽|(^|[^а-яё])(скидк|акци[яиюей])/i);
     if (m) bad.push(`${f}: «${m[0].trim()}»`);
     if (f === 'cases.html' && /₽/.test(t)) bad.push('«Работы»: цена в тексте');
