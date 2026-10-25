@@ -1,0 +1,67 @@
+# IndexNow для Яндекса (TASK-mail-indexnow): после того как GitHub Pages выложил сайт — сообщить Яндексу, какие страницы
+# изменились. Адреса — из sitemap.xml: те, чьи файлы поменялись с прошлой выкладки (git diff между ними); при первом запуске
+# этого workflow — все. Ключ — в файле /<ключ>.txt в корне сайта (check.mjs сверяет его с KEY ниже). Код ответа — в лог:
+# 200 — принято, 202 — принято, ключ ещё проверяется (так на первом запуске), остальное — ошибка.
+name: IndexNow
+
+on:
+  workflow_run:
+    workflows: ["pages-build-deployment"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  indexnow:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Отправить изменённые страницы в IndexNow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEY: SZMMTzNTaFaFA6jf6BbEUqPAsZq7Es9z
+          HOST: privatechouse.ru
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          SITE="https://$HOST"
+          # все адреса sitemap.xml
+          mapfile -t ALL < <(grep -o '<loc>[^<]*</loc>' sitemap.xml | sed -e 's/<loc>//' -e 's#</loc>##')
+          # первый запуск этого workflow — все адреса; иначе — файлы, изменённые с прошлой успешной выкладки Pages
+          done_runs=$(gh run list -R "$GITHUB_REPOSITORY" --workflow indexnow.yml --status success --limit 1 --json databaseId -q 'length' || echo 0)
+          prev=$(gh run list -R "$GITHUB_REPOSITORY" --workflow pages-build-deployment --status success --limit 20 --json headSha -q '.[].headSha' | grep -vx "$HEAD_SHA" | head -1 || true)
+          URLS=()
+          if [ "$done_runs" = "0" ] || [ -z "$prev" ] || ! git cat-file -e "$prev^{commit}" 2>/dev/null; then
+            echo "первый запуск (или нет прошлой выкладки) — все адреса sitemap.xml"
+            URLS=("${ALL[@]}")
+          else
+            echo "изменения $prev..$HEAD_SHA"
+            while IFS= read -r f; do
+              case "$f" in
+                index.html) u="$SITE/" ;;
+                en/index.html) u="$SITE/en/" ;;
+                en/*.html) u="$SITE/en/$(basename "$f" .html)" ;;
+                *.html) u="$SITE/$(basename "$f" .html)" ;;
+                *) continue ;;
+              esac
+              for a in "${ALL[@]}"; do [ "$a" = "$u" ] && URLS+=("$u"); done
+            done < <(git diff --name-only "$prev" "$HEAD_SHA")
+          fi
+          if [ ${#URLS[@]} -eq 0 ]; then echo "страницы не менялись — отправлять нечего"; exit 0; fi
+          printf 'адреса (%s):\n' "${#URLS[@]}"; printf '  %s\n' "${URLS[@]}"
+          body=$(printf '%s\n' "${URLS[@]}" | jq -R . | jq -s --arg host "$HOST" --arg key "$KEY" '{host: $host, key: $key, urlList: .}')
+          code=$(curl -sS -o resp.txt -w '%{http_code}' -X POST https://yandex.com/indexnow -H 'Content-Type: application/json; charset=utf-8' --data "$body")
+          echo "IndexNow: HTTP $code"; cat resp.txt || true; echo
+          case "$code" in
+            200) echo "принято" ;;
+            202) echo "принято, ключ ещё проверяется — на первом запуске это норма" ;;
+            *) echo "ошибка IndexNow"; exit 1 ;;
+          esac

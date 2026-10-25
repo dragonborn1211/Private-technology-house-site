@@ -1872,22 +1872,22 @@ console.log('\nсвязь: подвал, «Обсудить проект», ме
   for (const [f, h] of Object.entries({ ...src, 'privacy.html': pv })) {
     const ic = (/<p class="foot-ico">([\s\S]*?)<\/p>/.exec(h) || [])[1] || '';
     const a = [...ic.matchAll(/<a href="([^"]+)"[^>]*class="ico fr" aria-label="([^"]+)"[^>]*><(svg|img|span)/g)].map((m) => m[1]);
-    if (a.join(' ').replace(/max\.ru\/\S+/, 'max.ru/…') !== 'https://t.me/dragonborne0 https://max.ru/… https://wa.me/79090243995 tel:+79090243995' || /Telegram · @dragonborne0/.test(h)) bad.push(`${f}: подвал ${JSON.stringify(a)}`);
+    if (a.join(' ').replace(/max\.ru\/\S+/, 'max.ru/…') !== 'https://t.me/dragonborne0 https://max.ru/… https://wa.me/79090243995 tel:+79090243995 mailto:hello@privatechouse.ru' || /Telegram · @dragonborne0/.test(h)) bad.push(`${f}: подвал ${JSON.stringify(a)}`);
     const cms = [...h.matchAll(/<div class="cm" data-cm>[\s\S]*?<\/div>\n<\/div>/g)].map((m) => m[0]);
     if (cms.length !== 2 || cms.some((c) => !/data-tg="Хочу обсудить проект\."/.test(c) || !/href="https:\/\/max\.ru\//.test(c) || !/href="https:\/\/wa\.me\/79090243995" target="_blank" rel="noopener" data-wa=/.test(c) || !/href="tel:\+79090243995"/.test(c))) bad.push(`${f}: списков «Обсудить проект» ${cms.length} или в них не все каналы`);
     const alt = (/<p class="ct-alt foot-ico">([\s\S]*?)<\/p>/.exec(h) || [])[1];
     if ((h.match(/<img class="ic-max" src="\/?assets\/icons\/max\.svg"/g) || []).length !== (alt ? 5 : 4)) bad.push(`${f}: знак MAX не в ${alt ? 'пяти' : 'четырёх'} местах`);
     if (/class="ico( fr)?" aria-label="Написать в (Telegram|Max)"/.test(h.replace(/<p class="foot-ico">[\s\S]*?<\/p>/, '').replace(/<p class="ct-alt foot-ico">[\s\S]*?<\/p>/, ''))) bad.push(`${f}: в шапке остались отдельные иконки`);
-    // контакт: «Или:» — MAX, WhatsApp с черновиком, телефон; Telegram в строке нет (он — главная кнопка)
-    if (/data-sec="contact"/.test(h) && (!alt || [...alt.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1].replace(/max\.ru\/\S+/, 'max.ru/…')).join(' ') !== 'https://max.ru/… https://wa.me/79090243995 tel:+79090243995' || !/data-wa="Хочу обсудить проект\."/.test(alt))) bad.push(`${f}: строка «Или:» в контакте`);
+    // контакт: «Или:» — MAX, WhatsApp с черновиком, телефон, почта (TASK-mail-indexnow); Telegram в строке нет (он — главная кнопка)
+    if (/data-sec="contact"/.test(h) && (!alt || [...alt.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1].replace(/max\.ru\/\S+/, 'max.ru/…')).join(' ') !== 'https://max.ru/… https://wa.me/79090243995 tel:+79090243995 mailto:hello@privatechouse.ru' || !/data-wa="Хочу обсудить проект\."/.test(alt))) bad.push(`${f}: строка «Или:» в контакте`);
   }
   const quick = await chromium.launch();
   for (const [w, h, q] of [[1440, 900, ''], [390, 844, ''], [390, 844, '&lang=en']]) {
     const page = await quick.newPage({ viewport: { width: w, height: h } });
     await page.goto(BASE + 'index.html?intro=instant' + q); await page.waitForTimeout(500);
     const [ft, ca] = await page.evaluate(() => ['footer .foot-ico a', '#contact .ct-alt a'].map((sel) => [...document.querySelectorAll(sel)].map((a) => { const b = a.getBoundingClientRect(); return { l: a.getAttribute('aria-label'), w: Math.round(b.width), h: Math.round(b.height) }; })));
-    if (ft.length !== 4 || ft.some((x) => x.w < 44 || x.h < 44 || (q && /[А-Яа-яЁё]/.test(x.l)))) bad.push(`${w}${q}: подвал ${JSON.stringify(ft)}`);
-    if (ca.length !== 3 || ca.some((x) => x.w < 44 || x.h < 44 || (q && /[А-Яа-яЁё]/.test(x.l)))) bad.push(`${w}${q}: «Или:» в контакте ${JSON.stringify(ca)}`);
+    if (ft.length !== 5 || ft.some((x) => x.w < 44 || x.h < 44 || (q && /[А-Яа-яЁё]/.test(x.l)))) bad.push(`${w}${q}: подвал ${JSON.stringify(ft)}`);
+    if (ca.length !== 4 || ca.some((x) => x.w < 44 || x.h < 44 || (q && /[А-Яа-яЁё]/.test(x.l)))) bad.push(`${w}${q}: «Или:» в контакте ${JSON.stringify(ca)}`);
     const btn = '.hero-hdr .cm-btn';
     await page.click(btn); await page.waitForTimeout(250);
     const op = await page.evaluate(() => {
@@ -1904,7 +1904,7 @@ console.log('\nсвязь: подвал, «Обсудить проект», ме
   }
   await quick.close();
   if (bad.length) fail('связь: ' + bad.join('; '));
-  else console.log('  ✓ подвал — Telegram, MAX, WhatsApp, телефон (44 px); «Обсудить проект» в обеих шапках — список из четырёх каналов с черновиками, в окне, Esc закрывает; на телефоне — круглая кнопка; знак MAX — файл владельца в цветах сайта');
+  else console.log('  ✓ подвал — Telegram, MAX, WhatsApp, телефон, почта (44 px), «Или:» — MAX, WhatsApp, телефон, почта; «Обсудить проект» в обеих шапках — список из четырёх каналов с черновиками, в окне, Esc закрывает; на телефоне — круглая кнопка; знак MAX — файл владельца в цветах сайта');
 }
 // Ясность, B7 / B9: на «Что делаем» цвет направления — у условий, главной ссылки модуля и подписей карточек, «Проект» и
 // «Подписка» в лиде — цветами форматов; демо-сайтов пять, первым — тёмный «Северный юрист», фон чередуется тёмный / светлый.
@@ -2190,12 +2190,12 @@ console.log('\nанглийские страницы для поиска (TASK-s
   const ldo = (f) => lds(f).map((t) => JSON.parse(t));
   for (const [f, lang] of [['index.html', 'ru'], ['en/index.html', 'en']]) {
     const L = ldo(f), org = L.find((o) => o['@type'] === 'Organization'), ws = L.find((o) => o['@type'] === 'WebSite');
-    if (!org || org['@id'] !== SITE + '/#org' || org.url !== SITE + '/' || org.logo !== SITE + '/apple-touch-icon.png' || org.areaServed !== 'RU' || !(org.sameAs || []).some((u) => /^https:\/\/t\.me\//.test(u)) || !org.name) bad.push(f + ': Organization ' + JSON.stringify(org));
+    if (!org || org['@id'] !== SITE + '/#org' || org.url !== SITE + '/' || org.logo !== SITE + '/apple-touch-icon.png' || org.email !== 'hello@privatechouse.ru' || org.areaServed !== 'RU' || !(org.sameAs || []).some((u) => /^https:\/\/t\.me\//.test(u)) || !org.name) bad.push(f + ': Organization ' + JSON.stringify(org));
     if (!ws || !ws.name || ws.inLanguage !== lang || ws.url !== SITE + (lang === 'en' ? '/en/' : '/')) bad.push(f + ': WebSite ' + JSON.stringify(ws));
   }
   for (const f of ['services.html', 'en/services.html']) {
     const L = ldo(f), org = L.find((o) => o['@type'] === 'Organization'), faq = L.find((o) => o['@type'] === 'FAQPage');
-    if (!org || org['@id'] !== SITE + '/#org' || !org.hasOfferCatalog) bad.push(f + ': Organization');
+    if (!org || org['@id'] !== SITE + '/#org' || !org.hasOfferCatalog || org.email !== 'hello@privatechouse.ru') bad.push(f + ': Organization');
     if (!faq || (f.startsWith('en/') && /[А-Яа-яЁё]/.test(JSON.stringify(faq)))) bad.push(f + ': FAQPage');
   }
   if (!/^Clean-param: lang&hud&intro&pt-q&pt-scroll&pt-reset$/m.test(readFileSync(path.join(root, 'robots.txt'), 'utf8'))) bad.push('robots.txt: Clean-param');
@@ -2219,6 +2219,28 @@ console.log('\nанглийские страницы для поиска (TASK-s
   }
   if (bad.length) fail('английские страницы: ' + bad.join('; '));
   else console.log(`  ✓ en/*.html свежие, без кириллицы, lang="en", canonical и og:url на себя, латинские шрифты; hreflang взаимные, sitemap совпадает (${Object.keys(smUrls).length} адресов); JSON-LD разбирается (${nld}), главная — Organization и WebSite; ссылки на русские — только переключатель; /?lang=en → /en/, RU → EN на месте, EN → RU переходом`);
+}
+
+// Почта и IndexNow (TASK-mail-indexnow): hello@privatechouse.ru в политике (адрес оператора); файл ключа IndexNow — один в корне,
+// /<ключ>.txt (32 символа, латиница и цифры), внутри только ключ, тот же ключ — в .github/workflows/indexnow.yml
+console.log('\nпочта и IndexNow');
+{
+  const bad = [];
+  const pv = readFileSync(path.join(root, 'privacy.html'), 'utf8');
+  if ((pv.match(/<a href="mailto:hello@privatechouse\.ru">hello@privatechouse\.ru<\/a>/g) || []).length !== 2) bad.push('политика: почта оператора не в двух местах');
+  const keys = readdirSync(root).filter((f) => /^[A-Za-z0-9]{32}\.txt$/.test(f));
+  const wf = existsSync(path.join(root, '.github', 'workflows', 'indexnow.yml')) ? readFileSync(path.join(root, '.github', 'workflows', 'indexnow.yml'), 'utf8') : '';
+  const wk = (wf.match(/^\s*KEY:\s*([A-Za-z0-9]+)\s*$/m) || [])[1];
+  if (keys.length !== 1) bad.push('файлов ключа в корне: ' + keys.length);
+  else {
+    const k = keys[0].slice(0, -4), body = readFileSync(path.join(root, keys[0]), 'utf8');
+    if (body.trim() !== k || /\s/.test(body.replace(/\s+$/, ''))) bad.push('в файле ключа не только ключ');
+    if (wk !== k) bad.push(`ключ в workflow (${wk}) не совпадает с файлом (${k})`);
+    if (!/https:\/\/yandex\.com\/indexnow/.test(wf) || !/pages-build-deployment/.test(wf) || !/sitemap\.xml/.test(wf)) bad.push('workflow: нет адреса Яндекса, запуска после Pages или sitemap');
+    const r = await fetch(BASE + keys[0]); if (r.status !== 200 || (await r.text()).trim() !== k) bad.push('файл ключа не отдаётся с сайта');
+  }
+  if (bad.length) fail('почта и IndexNow: ' + bad.join('; '));
+  else console.log('  ✓ почта оператора в политике; ключ IndexNow — один файл в корне, совпадает с workflow, отдаётся с сайта');
 }
 
 // Чистка страницы услуг: чипы-дубли, ряд переходов, карточка форматов со ссылками, сроки и повторы в текстах; снимки.

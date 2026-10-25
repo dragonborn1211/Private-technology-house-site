@@ -119,7 +119,7 @@
     return (t.length > 60 ? t.slice(0, 59) + '…' : t) || el.tagName.toLowerCase();
   }
   function track(el, place) {
-    var href = el.getAttribute('href') || '', btn = nameOf(el), fmt = fmtOf(el, href), ch = /^tel:/.test(href) ? 'звонок' : /max\.ru/.test(href) ? 'MAX' : /wa\.me/.test(href) ? 'WhatsApp' : /t\.me\//.test(href) ? 'Telegram' : '';
+    var href = el.getAttribute('href') || '', btn = nameOf(el), fmt = fmtOf(el, href), ch = /^tel:/.test(href) ? 'звонок' : /^mailto:/.test(href) ? 'почта' : /max\.ru/.test(href) ? 'MAX' : /wa\.me/.test(href) ? 'WhatsApp' : /t\.me\//.test(href) ? 'Telegram' : '';
     var p1 = {}, p2 = {}, p3 = {};
     p3[btn] = place + ' · ' + PAGE; p2[fmt] = p3; p1['Нажатия'] = p2;
     goal('cta', p1);
@@ -134,12 +134,13 @@
     // любая кнопка и ссылка — цель cta, обращение — ещё и lead (track)
     var el = t.closest('a[href], button, summary, [role="button"]');
     if (el) { var s0 = el.closest('[data-sec]'); track(el, s0 ? s0.getAttribute('data-sec') : el.closest('[data-topbar]') ? 'topbar' : el.closest('[data-menu]') ? 'menu' : el.closest('[data-pult]') ? 'пульт' : el.closest('.ck') ? 'cookie' : PAGE); }
-    // обращения: Telegram, Max, WhatsApp, звонок; place — секция / липкая шапка / меню
-    var a = t.closest('a[href*="t.me/dragonborne0"], a[href*="max.ru/"], a[href*="wa.me/"], a[href^="tel:"]');
+    // обращения: Telegram, Max, WhatsApp, звонок, почта; place — секция / липкая шапка / меню
+    var a = t.closest('a[href*="t.me/dragonborne0"], a[href*="max.ru/"], a[href*="wa.me/"], a[href^="tel:"], a[href^="mailto:"]');
     if (a) {
       var sec = a.closest('[data-sec]'), place = sec ? sec.getAttribute('data-sec') : a.closest('[data-topbar]') ? 'topbar' : a.closest('[data-menu]') ? 'menu' : PAGE;
       var href = a.getAttribute('href');
       if (/^tel:/.test(href)) goal('phone', { place: place });
+      else if (/^mailto:/.test(href)) goal('mail', { place: place });
       else if (/max\.ru/.test(href)) goal('max', { place: place });
       else if (/wa\.me/.test(href)) goal('wa', { place: place });
       else goal('tg', { place: place, text: a.getAttribute('data-tg') || a.textContent.replace(/\s+/g, ' ').trim() });

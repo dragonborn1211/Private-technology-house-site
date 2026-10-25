@@ -403,23 +403,26 @@
   }
 
   // ---------- схемы: общий движок узлов, связей и импульсов ----------
-  // spec: { nodes: [{ id, name, role, x, y, turn, stack }], edges: [{ a, b, ev, k, grp, p }], src: [id], duplex, title }
+  // spec: { nodes: [{ id, name, role, x, y, turn, stack, join }], edges: [{ a, b, ev, k, grp, p }], src: [id], all, duplex, title }
   //   x, y — центр узла в долях окна (0..1). Имя с « · » переносится на вторую строку, длинное — по пробелам.
   //   k: 'f' — прямая связь (по умолчанию); 'r' — обратный поток: импульс идёт назад по пройденному пути;
   //      'q' — ответная ветка, берётся с вероятностью p один раз за путь импульса.
-  //   grp — из связей узла с одинаковым grp импульс выбирает одну; остальные связи на ветвлении раздваивают импульс.
+  //   grp — из связей узла с одинаковым grp импульс выбирает одну (маршрутизация: шлюз → одна модель); остальные связи на
+  //   ветвлении раздваивают импульс — он идёт по всем сразу (владелец 2026-10-25: «Битрикс24 и Telegram — одновременно»).
+  //   src — узлы, откуда стартует импульс: по одному случайному (заказ пришёл с одного из каналов); all — со всех сразу
+  //   (отчёт собирает данные отовсюду). join — узел ждёт импульсы по всем входящим связям и только потом отправляет дальше один.
   //   turn — узел разворачивает импульс обратно по пути. duplex — встречные импульсы сиреневые.
   var PS = { x: 0, y: 0 }, PT = { x: 0, y: 0 };
   function makeGraph(spec) {
     var G = { t: 0, first: 1.5, spawnAt: 1.5, fade: 1, dusting: false, W: 1, H: 1, compact: false, fs: 11, lh: 14, py: 6, title: spec.title || '' };
     var nodes = [], edges = [], pulses = [], labels = [], parts = [], byId = {};
     spec.nodes.forEach(function (n, i) {
-      var o = { id: n.id, name: tr(n.name), role: n.role || '', role2: '', fx: n.x, fy: n.y, mx: n.mx, my: n.my, tx: n.tx, ty: n.ty, turn: !!n.turn, stack: !!n.stack, i: i, x: 0, y: 0, w: 0, h: 0, lines: [], at: 0, shown: false, fl: 0, fc: ACC[0], out: [] };
+      var o = { id: n.id, name: tr(n.name), role: n.role || '', role2: '', fx: n.x, fy: n.y, mx: n.mx, my: n.my, tx: n.tx, ty: n.ty, turn: !!n.turn, stack: !!n.stack, join: !!n.join, nin: 0, jc: 0, i: i, x: 0, y: 0, w: 0, h: 0, lines: [], at: 0, shown: false, fl: 0, fc: ACC[0], out: [] };
       nodes.push(o); byId[n.id] = o;
     });
     spec.edges.forEach(function (e) {
       var o = { a: byId[e.a], b: byId[e.b], ev: tr(e.ev || ''), k: e.k || 'f', grp: e.grp || '', p: e.p == null ? 1 : e.p, side: 0, hor: true, c: null, pts: null, cum: null, len: 1, at: 0 };
-      edges.push(o); o.a.out.push(o);
+      edges.push(o); o.a.out.push(o); if (o.k !== 'r') o.b.nin++;
     });
     edges.forEach(function (e) {
       // встречные связи одной пары узлов расходятся: прямая выше (левее), обратная ниже (правее)
@@ -554,6 +557,8 @@
         else labels.push(L = { e: p.e, txt: p.e.ev, t: 0, w: 0, h: 15, x: 0, y: 0, fs: 0, key: '' });
         L.col = p.col;
       }
+      // сборщик: дальше — когда пришли импульсы по всем входящим связям
+      if (n.join && !p.ret) { if (++n.jc < n.nin) return; n.jc = 0; }
       route(n, p);
     }
     function puff(x, y, vx, vy, life, col) { if (parts.length < 900) parts.push({ x: x, y: y, vx: vx, vy: vy, l: life, m: life, c: col }); }
@@ -598,24 +603,74 @@
         n.x = clamp(fx * W, n.w / 2 + 6, W - n.w / 2 - 6); n.y = clamp(top + fy * (H - top), Math.max(n.h / 2 + 6, top + n.h / 2), H - n.h / 2 - 6);
       });
       g.restore();
+      spread(W, H, top);
       edges.forEach(curve);
     };
+    // Плашки не слипаются (владелец 2026-10-25: «карточки слиплись»): узлы стоят по долям окна, и на некоторых ширинах
+    // соседние сходились вплотную или наезжали — три источника SEO-отчёта друг на друга на 1024–1180 и 320, «Сайт · каталог»
+    // и «Telegram · отчёт» на 412. Пара ближе SEP px раздвигается по оси, где сдвиг меньше и есть место до края окна; места
+    // нет — по другой оси. Остальные узлы стоят где стояли
+    var SEP = 10;
+    function lim(n, k, W, H, top) { return k === 'x' ? [n.w / 2 + 6, W - n.w / 2 - 6] : [Math.max(n.h / 2 + 6, top + n.h / 2), H - n.h / 2 - 6]; }
+    function shove(n, k, v, W, H, top) { var L = lim(n, k, W, H, top), o = n[k]; n[k] = clamp(o + v, L[0], Math.max(L[0], L[1])); return n[k] - o; }
+    // второй проход — по другой оси: столбик из трёх плашек, которому не хватает высоты, расходится лесенкой вбок
+    // стало хуже (узкое окно: три плашки в ряд не помещаются, раздвигание выталкивает их в соседний ряд) — раскладка как была
+    function spread(W, H, top) {
+      var keep = nodes.map(function (n) { return [n.x, n.y]; }), b0 = tight();
+      spreadAx(W, H, top, false); spreadAx(W, H, top, true);
+      var b1 = tight();
+      if (b1[0] > b0[0] + 0.5 || (b1[0] >= b0[0] - 0.5 && b1[1] >= b0[1])) nodes.forEach(function (n, i) { n.x = keep[i][0]; n.y = keep[i][1]; });
+    }
+    // [площадь наложений, площадь «ближе SEP»]
+    function tight() {
+      var r = [0, 0];
+      for (var i = 0; i < nodes.length; i++) for (var j = i + 1; j < nodes.length; j++) {
+        var a = nodes[i], b = nodes[j], dx = Math.abs(a.x - b.x), dy = Math.abs(a.y - b.y), cw = (a.w + b.w) / 2, ch = (a.h + b.h) / 2;
+        r[0] += Math.max(0, cw - dx) * Math.max(0, ch - dy); r[1] += Math.max(0, cw + SEP - dx) * Math.max(0, ch + SEP - dy);
+      }
+      return r;
+    }
+    function spreadAx(W, H, top, swap) {
+      for (var it = 0; it < 60; it++) {
+        var moved = false;
+        for (var i = 0; i < nodes.length; i++) for (var j = i + 1; j < nodes.length; j++) {
+          var a = nodes[i], b = nodes[j];
+          var ox = (a.w + b.w) / 2 + SEP - Math.abs(a.x - b.x), oy = (a.h + b.h) / 2 + SEP - Math.abs(a.y - b.y);
+          if (ox <= 0.5 || oy <= 0.5) continue;
+          var ax = (ox < oy) !== swap ? ['x', 'y'] : ['y', 'x'];
+          for (var q = 0; q < 2; q++) {
+            var k = ax[q], d = k === 'x' ? ox : oy, dir = a[k] < b[k] || (a[k] === b[k] && i < j) ? 1 : -1;
+            var ma = shove(a, k, -dir * d / 2, W, H, top), mb = shove(b, k, dir * (d - Math.abs(ma)), W, H, top);
+            if (Math.abs(ma) + Math.abs(mb) < d - 0.5) ma += shove(a, k, -dir * (d - Math.abs(ma) - Math.abs(mb)), W, H, top);
+            if (Math.abs(ma) + Math.abs(mb) > 0.5) { moved = true; break; }
+          }
+        }
+        if (!moved) break;
+      }
+    }
     // instant — сразу готовая схема (статичный кадр, оверлей «Потока»)
     // прямоугольники узлов [x, y, w, h] — для проверки (check.mjs: подпись окна их не задевает)
     G.boxes = function () { return nodes.map(function (n) { return [n.x - n.w / 2, n.y - n.h / 2, n.w, n.h]; }); };
     G.build = function (instant) {
       G.t = 0; G.fade = 1; G.dusting = false; G.first = G.spawnAt = instant ? 0.3 : 1.5;
       pulses.length = 0; labels.length = 0; parts.length = 0;
+      nodes.forEach(function (n) { n.jc = 0; });
       // узлы появляются по одному слева направо (seq — в порядке процесса), связи прорисовываются вслед за ними
       var last = Math.max(1, nodes.length - 1);
       nodes.forEach(function (n) { n.at = instant ? -1 : spec.seq ? 0.12 + n.i / last * 1.1 : 0.12 + n.fx * 0.95 + n.fy * 0.15; n.shown = instant; n.fl = 0; });
       edges.forEach(function (e) { e.at = instant ? -1 : Math.max(e.a.at, e.b.at) + 0.12; });
     };
     G.fire = function () {
-      var ids = spec.src || [nodes[0].id], n = byId[ids[(Math.random() * ids.length) | 0]];
+      var ids = spec.src || [nodes[0].id];
+      if (spec.all) {
+        nodes.forEach(function (n) { n.jc = 0; });
+        ids.forEach(function (id) { var n = byId[id]; route(n, { step: -1, q: false, ret: false, path: [n] }); });
+        return;
+      }
+      var n = byId[ids[(Math.random() * ids.length) | 0]];
       route(n, { step: -1, q: false, ret: false, path: [n] });
     };
-    G.clear = function () { pulses.length = 0; labels.length = 0; };
+    G.clear = function () { pulses.length = 0; labels.length = 0; nodes.forEach(function (n) { n.jc = 0; }); };
     // рассыпаться пылью: плашки и связи превращаются в частицы и гаснут
     G.dust = function () {
       nodes.forEach(function (n) {
@@ -760,23 +815,25 @@
     ], edges: [
       { a: 'b24', b: 'n8n', ev: 'утро · 08:00' },
       { a: 'n8n', b: 'ai', ev: 'tasks[]' },
-      { a: 'ai', b: 'com', ev: 'task.comment', grp: 'out' },
-      { a: 'ai', b: 'tg', ev: 'sendMessage', grp: 'out' }
+      { a: 'ai', b: 'com', ev: 'task.comment' },
+      { a: 'ai', b: 'tg', ev: 'sendMessage' }
     ] },
     // кейс «SEO-отчёт сам приходит в Telegram» и шаблон «SEO-отчёт в Telegram» (TASK-seo-case.md): три источника → AI → две ветки
-    'seo-report': { src: ['ym', 'wm', 'ps'], nodes: [
-      { id: 'ym', name: 'Яндекс Метрика', role: 'trigger', x: 0.15, y: 0.2 },
-      { id: 'wm', name: 'Вебмастер · позиции', role: 'trigger', x: 0.15, y: 0.5 },
-      { id: 'ps', name: 'PageSpeed · CRM', role: 'trigger', x: 0.15, y: 0.8 },
-      { id: 'ai', name: 'AI · выводы и план', role: 'ai', x: 0.5, y: 0.5 },
-      { id: 'tg', name: 'Telegram · сводка', role: 'output', x: 0.84, y: 0.28 },
-      { id: 'html', name: 'Отчёт · страница', role: 'output', x: 0.84, y: 0.74 }
+    'seo-report': { src: ['ym', 'wm', 'ps'], all: true, nodes: [
+      // узкое и среднее окно (mx / my, tx / ty): столбик из трёх источников туда не помещался по высоте — источники рядом
+      // сверху, под ними AI, по бокам от него — Telegram и отчёт
+      { id: 'ym', name: 'Яндекс Метрика', role: 'trigger', x: 0.15, y: 0.2, mx: 0.17, my: 0.22, tx: 0.17, ty: 0.24 },
+      { id: 'wm', name: 'Вебмастер · позиции', role: 'trigger', x: 0.15, y: 0.5, mx: 0.5, my: 0.22, tx: 0.5, ty: 0.24 },
+      { id: 'ps', name: 'PageSpeed · CRM', role: 'trigger', x: 0.15, y: 0.8, mx: 0.83, my: 0.22, tx: 0.83, ty: 0.24 },
+      { id: 'ai', name: 'AI · выводы и план', role: 'ai', x: 0.5, y: 0.5, mx: 0.5, my: 0.8, tx: 0.5, ty: 0.78, join: true },
+      { id: 'tg', name: 'Telegram · сводка', role: 'output', x: 0.84, y: 0.28, mx: 0.17, my: 0.8, tx: 0.16, ty: 0.78 },
+      { id: 'html', name: 'Отчёт · страница', role: 'output', x: 0.84, y: 0.74, mx: 0.83, my: 0.8, tx: 0.84, ty: 0.78 }
     ], edges: [
       { a: 'ym', b: 'ai', ev: 'визиты · отказы' },
       { a: 'wm', b: 'ai', ev: 'индекс · топ-10' },
       { a: 'ps', b: 'ai', ev: 'LCP · заявки' },
-      { a: 'ai', b: 'tg', ev: 'пн 09:00', grp: 'out' },
-      { a: 'ai', b: 'html', ev: 'report.html', grp: 'out' }
+      { a: 'ai', b: 'tg', ev: 'пн 09:00' },
+      { a: 'ai', b: 'html', ev: 'report.html' }
     ] },
     // кейсы «Работ» (cases.html; call-audit — и в «Кейсах» главной): схемы по фактам, TASK-cases-panel.md, 2
     // mx — узкое окно (< 340 px, телефон 320–390): длинные слова («Мини-приложение», «SEO-описание») сводили соседние узлы
@@ -791,8 +848,8 @@
       { a: 'tel', b: 'rec', ev: 'call.end' },
       { a: 'rec', b: 'stt', ev: 'audio' },
       { a: 'stt', b: 'ai', ev: 'текст · без имён' },
-      { a: 'ai', b: 'crm', ev: 'разбор + балл', grp: 'out' },
-      { a: 'ai', b: 'tg', ev: 'итог дня', grp: 'out' }
+      { a: 'ai', b: 'crm', ev: 'разбор + балл' },
+      { a: 'ai', b: 'tg', ev: 'итог дня' }
     ] },
     'studio-os': { src: ['call'], seq: true, nodes: [
       { id: 'call', name: 'Созвон · запись', role: 'trigger', x: 0.16, y: 0.3 },
@@ -819,8 +876,8 @@
       { a: 'site', b: 'api', ev: 'order' },
       { a: 'tg', b: 'api', ev: 'order' },
       { a: 'app', b: 'api', ev: 'order' },
-      { a: 'api', b: 'crm', ev: 'лид + корзина.xlsx', grp: 'go' },
-      { a: 'api', b: 'mgr', ev: 'sendMessage', grp: 'go' }
+      { a: 'api', b: 'crm', ev: 'лид + корзина.xlsx' },
+      { a: 'api', b: 'mgr', ev: 'sendMessage' }
     ] },
     'ai-gateway': { src: ['site', 'crm', 'bot'], duplex: true, nodes: [
       { id: 'site', name: 'Сайт', role: 'trigger', x: 0.12, y: 0.2 },
@@ -940,8 +997,8 @@
       { a: 's', b: 'ag', ev: 'chat' },
       { a: 'b', b: 'ag', ev: 'chat' },
       { a: 'h', b: 'ag', ev: 'chat' },
-      { a: 'ag', b: 'kb', ev: 'search()', grp: 'go' },
-      { a: 'ag', b: 'gw', ev: 'POST /v1/chat', grp: 'go' },
+      { a: 'ag', b: 'kb', ev: 'search()' },
+      { a: 'ag', b: 'gw', ev: 'POST /v1/chat' },
       { a: 'kb', b: 'ag', ev: 'docs: 3', k: 'r' },
       { a: 'gw', b: 'ag', ev: '200 OK', k: 'r' },
       { a: 'ag', b: 's', ev: 'answer', k: 'r' },
