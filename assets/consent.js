@@ -98,7 +98,7 @@
   // формат услуги — по модулю / блоку (страница услуг, «Как работаем», главная) или по адресу ссылки
   var FMT = { sites: 'разово', apps: 'разово', servers: 'разово', projects: 'разово', 'p-sites': 'разово', 'p-servers': 'разово',
     care: 'подписка', automation: 'подписка', ai: 'подписка', subscription: 'подписка', subs: 'подписка', 'sub-how': 'подписка', 'p-care': 'подписка', 'p-automation': 'подписка', templates: 'подписка',
-    after: 'после запуска', objects: 'кейс', cases: 'кейс' };
+    after: 'после запуска', objects: 'кейс', cases: 'кейс', works: 'кейс' };
   function fmtOf(el, href) {
     for (var n = el; n && n !== document.body; n = n.parentElement) {
       var k = n.id && FMT[n.id] ? n.id : n.getAttribute && n.getAttribute('data-sec');
@@ -109,6 +109,9 @@
     if (FMT[id]) return FMT[id];
     if (/automations(\.html)?([#?]|$)/.test(href || '')) return 'подписка';
     if (/cases(\.html)?([#?]|$)/.test(href || '')) return 'кейс';
+    // страницы услуг (TASK-seo-2): ссылка на них или кнопка на них самих — формат направления
+    var sp = /(?:^|\/)(sites|bitrix24|ai)(?:\.html)?([#?]|$)/.exec(href || '') || /\/(sites|bitrix24|ai)(?:\.html)?$/.exec(location.pathname);
+    if (sp) return sp[1] === 'sites' ? 'разово' : 'подписка';
     return 'общий';
   }
   function nameOf(el) {

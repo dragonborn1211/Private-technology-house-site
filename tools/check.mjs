@@ -530,7 +530,7 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
       procLinks: all('a').filter((a) => a.textContent.trim() === 'Как работаем').map((a) => a.getAttribute('href')), contact: document.querySelector('#contact .mono.k').textContent.trim() };
   });
   const bad = [];
-  if (r.cards.length !== 6 || r.cards.some((h) => !/^services#/.test(h) || !ids.has(h.split('#')[1]))) bad.push(`карточки: ${r.cards.join(', ')}`);
+  if (r.cards.length !== 6 || r.cards.some((h) => !(/^services#/.test(h) && ids.has(h.split('#')[1])) && !/^(sites|ai)$/.test(h))) bad.push(`карточки: ${r.cards.join(', ')}`);
   if (r.more.join() !== 'services') bad.push(`«Все услуги» → ${r.more.join()}`);
   if (r.h2 !== 'Делаем один раз. Держим всегда.') bad.push(`заголовок «${r.h2}»`);
   if (r.nums) bad.push(`номера 01–04 в блоке: ${r.nums}`);
@@ -721,7 +721,7 @@ console.log('\nавтоматизация: «Готовые автоматиза
 // Страницы (TASK-pages.md): новые страницы открываются через tools/serve.mjs — так же, как на хостинге (404.html — на
 // любой несуществующий адрес, пути от корня).
 console.log('\nстраницы: меню, подвал, «Поток»');
-const PAGES = ['index.html', 'services.html', 'cases.html', 'automations.html', 'process.html', '404.html'];
+const PAGES = ['index.html', 'services.html', 'cases.html', 'automations.html', 'process.html', 'sites.html', 'bitrix24.html', 'ai.html', '404.html'];
 const srv = spawn(process.execPath, [path.join(here, 'serve.mjs'), '8097'], { stdio: 'pipe' });
 await new Promise((r) => srv.stdout.once('data', r));
 const BASE = 'http://localhost:8097/';
@@ -738,8 +738,11 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
     'cases.html': ['services', 'cases', 'automations', 'process'],
     'automations.html': ['services', 'cases', 'automations', 'process'],
     'process.html': ['services', 'cases', 'automations', 'process'],
+    'sites.html': ['services', 'cases', 'automations', 'process'],
+    'bitrix24.html': ['services', 'cases', 'automations', 'process'],
+    'ai.html': ['services', 'cases', 'automations', 'process'],
     '404.html': ['/services', '/cases', '/automations', '/process'] };
-  const CUR = { 'services.html': 0, 'cases.html': 1, 'automations.html': 2, 'process.html': 3 };
+  const CUR = { 'services.html': 0, 'cases.html': 1, 'automations.html': 2, 'process.html': 3, 'sites.html': 0, 'bitrix24.html': 0, 'ai.html': 0 };
   for (const f of PAGES) {
     const navs = [...src[f].matchAll(/<nav class="(nav|menu-nav)" aria-label="Разделы">([\s\S]*?)<\/nav>/g)];
     if (navs.length !== 3) bad.push(`${f}: меню ${navs.length} из 3`);
@@ -757,7 +760,7 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
   const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|max\.ru|wa\.me|^tel:|^#top$|^#about$|^privacy$|^$/.test(h));
   const sid = idsOf('services.html');
   fl.forEach((h) => { const [p0, id] = h.split('#'), pg = p0 + '.html'; if (!PAGES.includes(pg) || (id && !(pg === 'services.html' ? sid : idsOf(pg)).has(id))) bad.push(`подвал: ссылка ${h} ведёт в никуда`); });
-  if (fl.join(',') !== 'services,cases,automations,process,services#faq' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
+  if (fl.join(',') !== 'services,cases,automations,process,services#faq,sites,bitrix24,ai' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
   // меню на 1024–1280 — одна строка и не наезжает на логотип и кнопки (RU и EN)
   for (const f of ['index.html', 'cases.html', 'process.html']) for (const lang of ['', '?lang=en']) for (const w of [1024, 1199, 1200, 1280]) {
     const page = await browser.newPage({ viewport: { width: w, height: 800 } });
@@ -2221,6 +2224,58 @@ console.log('\nанглийские страницы для поиска (TASK-s
   else console.log(`  ✓ en/*.html свежие, без кириллицы, lang="en", canonical и og:url на себя, латинские шрифты; hreflang взаимные, sitemap совпадает (${Object.keys(smUrls).length} адресов); JSON-LD разбирается (${nld}), главная — Organization и WebSite; ссылки на русские — только переключатель; /?lang=en → /en/, RU → EN на месте, EN → RU переходом`);
 }
 
+// Страницы услуг (TASK-seo-2): /sites, /bitrix24, /ai — title и description по ТЗ (= og:*), крошки, активный пункт «Что делаем»,
+// JSON-LD Service / FAQPage / BreadcrumbList (вопросы = <details> страницы, не повторяют панель «Частые вопросы» и друг друга);
+// новые title главной и четырёх страниц; ссылки: модули «Что делаем», карточки главной, строка «Услуги» подвала, «Об услуге» в панелях
+console.log('\nстраницы услуг: /sites, /bitrix24, /ai');
+{
+  const bad = [], one = (t) => t.replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  const TD = {
+    'index.html': ['Сайты-презентации, интеграции Битрикс24 и AI для бизнеса — Private Technology House', 'Студия полного цикла: сайты-презентации от 120 000 ₽'],
+    'services.html': ['Услуги и цены: сайты, приложения, интеграции и AI-ассистенты — Private Technology House', 'Сайт-презентация от 120 000 ₽, редизайн от 85 000 ₽'],
+    'cases.html': ['Кейсы: AI-разбор звонков, интеграции Битрикс24 и сайты-презентации — Private Technology House', 'Что было, что сделали и как это устроено'],
+    'automations.html': ['Автоматизация бизнеса: готовые сценарии для Битрикс24, Telegram, Wildberries, Ozon и Авито', 'Заявки с сайта в Битрикс24, задачи голосом'],
+    'process.html': ['Как мы работаем: этапы разработки сайта, приложения и автоматизации — Private Technology House', 'Созвон и смета, концепция, прототип'],
+    'sites.html': ['Сайт-презентация для бренда, ЖК и коттеджного посёлка — от 120 000 ₽ | Private Technology House', 'Сайт-презентация со своим визуальным стилем'],
+    'bitrix24.html': ['Интеграция с Битрикс24: заявки с сайта, Telegram, задачи и звонки | Private Technology House', 'Заявки с сайта и из Telegram — сразу в Битрикс24'],
+    'ai.html': ['AI-ассистенты для бизнеса: база знаний, разбор звонков, ответы клиентам | Private Technology House', 'AI-помощник для каждого отдела'] };
+  for (const [f, [t, d]] of Object.entries(TD)) {
+    const h = src[f], tt = one((h.match(/<title>([^<]*)<\/title>/) || [])[1] || ''), dd = one((h.match(/<meta name="description" content="([^"]*)"/) || [])[1] || '');
+    const ot = one((h.match(/<meta property="og:title" content="([^"]*)"/) || [])[1] || ''), od = one((h.match(/<meta property="og:description" content="([^"]*)"/) || [])[1] || '');
+    if (tt !== t || !dd.startsWith(d) || ot !== tt || od !== dd) bad.push(`${f}: title / description`);
+  }
+  const SV = { sites: ['Сайты-презентации', 120000, 6], bitrix24: ['Интеграции Битрикс24', 5000, 5], ai: ['AI-ассистенты', 5000, 5] };
+  const panelQ = new Set([...src['services.html'].matchAll(/<summary>([\s\S]*?)<i/g)].map((m) => one(m[1]))), seen = new Set();
+  for (const [n, [crumb, min, nq]] of Object.entries(SV)) {
+    const h = src[n + '.html'], lds = [...h.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)].map((m) => JSON.parse(m[1]));
+    const by = (t) => lds.find((o) => o['@type'] === t) || {};
+    const svc = by('Service'), fq = by('FAQPage'), bc = by('BreadcrumbList');
+    const ps = (svc.offers || {}).priceSpecification || {};
+    if (svc.provider?.['@id'] !== 'https://privatechouse.ru/#org' || svc.areaServed !== 'RU' || ps.minPrice !== min || ps.priceCurrency !== 'RUB' || svc.url !== 'https://privatechouse.ru/' + n) bad.push(`${n}: Service`);
+    if ((bc.itemListElement || []).map((i) => i.name + '>' + i.item).join(' | ') !== `Главная>https://privatechouse.ru/ | Что делаем>https://privatechouse.ru/services | ${crumb}>https://privatechouse.ru/${n}`) bad.push(`${n}: BreadcrumbList`);
+    const q = [...h.matchAll(/<details class="fq"><summary>([\s\S]*?)<i aria-hidden="true"><\/i><\/summary><p>([\s\S]*?)<\/p><\/details>/g)].map((m) => [one(m[1]), one(m[2])]);
+    const lq = (fq.mainEntity || []).map((e) => [e.name, e.acceptedAnswer.text]);
+    if (q.length !== nq || JSON.stringify(q) !== JSON.stringify(lq)) bad.push(`${n}: вопросы ${q.length} ≠ FAQPage`);
+    q.forEach(([x]) => { if (panelQ.has(x) || seen.has(x)) bad.push(`${n}: вопрос «${x}» повторяется`); seen.add(x); });
+    if (!new RegExp(`<a href="services">Что делаем</a><i aria-hidden="true">/</i><span aria-current="page">${crumb}</span>`).test(h.replace(/&nbsp;/g, ' '))) bad.push(`${n}: крошки`);
+    if (!/<link rel="canonical" href="https:\/\/privatechouse\.ru\/[a-z0-9]+">/.test(h) || !h.includes(`<link rel="canonical" href="https://privatechouse.ru/${n}">`) || !h.includes(`hreflang="en" href="https://privatechouse.ru/en/${n}"`)) bad.push(`${n}: canonical / hreflang`);
+  }
+  if (!src['sites.html'].includes('id="redesign"')) bad.push('sites: нет #redesign');
+  const sv = src['services.html'];
+  for (const [h, t] of [['sites', 'Подробнее о&nbsp;сайтах'], ['sites#redesign', 'Подробнее'], ['bitrix24', 'Интеграции с&nbsp;Битрикс24'], ['ai', 'Подробнее об&nbsp;AI']]) if (!sv.includes(`<a href="${h}" class="sv-go sv-dl">${t}<svg`)) bad.push(`услуги: ссылка ${h}`);
+  if (!src['index.html'].includes('<a href="sites" class="glass fr svc svc-xl"') || !src['index.html'].includes('<a href="ai" class="glass fr svc svc-iri"')) bad.push('главная: карточки на /sites и /ai');
+  const cs = src['cases.html'], CP = { resonara: 'sites', antares: 'sites', 'call-audit': 'bitrix24', 'tg-crm': 'bitrix24', agents: 'ai', catalog: 'ai', 'seo-report': 'ai', 'studio-os': 'ai' };
+  for (const [k, v] of Object.entries(CP)) { const a = (cs.match(new RegExp(`data-case="case-${k}"[\\s\\S]*?</article>`)) || [''])[0]; if (!a.includes(`<p class="cp-svc"><a href="${v}" class="sv-go">Об&nbsp;услуге<svg`)) bad.push(`панель ${k}: «Об услуге» → ${v}`); }
+  // в браузере: страница собирается, панель кейса по прямой ссылке открывается, «Об услуге» ведёт на страницу услуги
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.goto(BASE + 'cases#case-agents'); await page.waitForFunction(() => document.querySelector('[data-cp]') && !document.querySelector('[data-cp]').hidden, null, { timeout: 12000 }).catch(() => {});
+  const cp = await page.evaluate(() => { const a = document.querySelector('.cp-art[data-case="case-agents"]'); return a && a.offsetParent ? a.querySelector('.cp-svc a').href : ''; });
+  if (!/\/ai$/.test(cp)) bad.push('панель case-agents по прямой ссылке: «Об услуге» ' + cp);
+  await page.close();
+  if (bad.length) fail('страницы услуг: ' + bad.join('; '));
+  else console.log('  ✓ title и description восьми страниц по ТЗ (= og:*); /sites, /bitrix24, /ai — Service, BreadcrumbList, FAQPage = вопросы страницы, вопросы не повторяются; крошки, canonical, hreflang; ссылки из услуг, главной, подвала и панелей кейсов');
+}
+
 // Почта и IndexNow (TASK-mail-indexnow): hello@privatechouse.ru в политике (адрес оператора); файл ключа IndexNow — один в корне,
 // /<ключ>.txt (32 символа, латиница и цифры), внутри только ключ, тот же ключ — в .github/workflows/indexnow.yml
 console.log('\nпочта и IndexNow');
@@ -3086,7 +3141,7 @@ console.log('\nцены');
   const W = { sites: 'от 120 000 ₽', redesign: 'от 85 000 ₽', apps: 'от 150 000 ₽', servers: 'от 5 000 ₽ за задачу', care: 'от 10 000 ₽ в месяц', automation: 'от 5 000 ₽ в месяц', ai: 'от 5 000 ₽ в месяц' };
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(BASE + 'index.html?intro=instant'); await page.waitForTimeout(400);
-  const home = await page.evaluate(() => [...document.querySelectorAll('a.svc')].map((a) => [a.getAttribute('href').split('#')[1], (a.querySelector('.svc-pr') || {}).textContent || '']));
+  const home = await page.evaluate(() => [...document.querySelectorAll('a.svc')].map((a) => [a.getAttribute('href').split('#').pop(), (a.querySelector('.svc-pr') || {}).textContent || '']));
   // TASK-redesign-prices.md: у «Сайтов-презентаций» ещё «· редизайн от 65 000 ₽»
   if (home.length !== 6 || home.some(([id, t]) => nb(t) !== W[id] + (id === 'sites' ? ' · редизайн от 85 000 ₽' : ''))) bad.push('главная: ' + JSON.stringify(home));
   await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(400);

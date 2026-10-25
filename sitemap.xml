@@ -71,6 +71,48 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/process"/>
   </url>
   <url>
+    <loc>https://privatechouse.ru/sites</loc>
+    <lastmod>2026-10-25</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/sites"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/sites"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/sites"/>
+  </url>
+  <url>
+    <loc>https://privatechouse.ru/en/sites</loc>
+    <lastmod>2026-10-25</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/sites"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/sites"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/sites"/>
+  </url>
+  <url>
+    <loc>https://privatechouse.ru/bitrix24</loc>
+    <lastmod>2026-10-25</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/bitrix24"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/bitrix24"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/bitrix24"/>
+  </url>
+  <url>
+    <loc>https://privatechouse.ru/en/bitrix24</loc>
+    <lastmod>2026-10-25</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/bitrix24"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/bitrix24"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/bitrix24"/>
+  </url>
+  <url>
+    <loc>https://privatechouse.ru/ai</loc>
+    <lastmod>2026-10-25</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/ai"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/ai"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/ai"/>
+  </url>
+  <url>
+    <loc>https://privatechouse.ru/en/ai</loc>
+    <lastmod>2026-10-25</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/ai"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/ai"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/ai"/>
+  </url>
+  <url>
     <loc>https://privatechouse.ru/privacy</loc>
     <lastmod>2026-10-25</lastmod>
   </url>
