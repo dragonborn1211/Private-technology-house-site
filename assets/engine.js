@@ -216,7 +216,9 @@
       // разряды — неразрывным пробелом, как toLocaleString('ru-RU'), но без него: первый вызов поднимает ICU (~0.1 с на
       // слабом телефоне, прямо на старте сборки)
       function fmtN() { return String(N).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0'); }
-      function parseColor(s) { var m = /rgba?\(([^)]+)\)/.exec(s || ''); if (!m) return COL.accent; var p = m[1].split(',').map(parseFloat); if (p.length > 3 && p[3] < 0.05) return COL.accent; return [p[0] | 0, p[1] | 0, p[2] | 0]; }
+      // цвет из color-mix() браузер отдаёт как color(srgb r g b), доли 0–1 (слова вкладок «Кодекса», владелец 2026-10-25)
+      function parseColor(s) { var k = /color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/.exec(s || ''); if (k) return [k[1] * 255 + 0.5 | 0, k[2] * 255 + 0.5 | 0, k[3] * 255 + 0.5 | 0];
+        var m = /rgba?\(([^)]+)\)/.exec(s || ''); if (!m) return COL.accent; var p = m[1].split(',').map(parseFloat); if (p.length > 3 && p[3] < 0.05) return COL.accent; return [p[0] | 0, p[1] | 0, p[2] | 0]; }
       function typeLabel(s) {
         if (!stepEl) return;
         clearInterval(typeT);

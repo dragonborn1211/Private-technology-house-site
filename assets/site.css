@@ -407,9 +407,9 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 /* вкладки набраны основным шрифтом сайта, как меню шапки; номеров нет (просьба владельца) — только слово, цвет принципа —
    у полоски. Приглушение неактивных — через цвет: opacity у текста занята сборкой (.ptx) */
 .cx-l{display:flex;align-items:baseline;justify-content:center;font:500 14px/1 Manrope,'Manrope fb',system-ui,sans-serif;letter-spacing:0;white-space:nowrap}
-.cx-w{color:#8193A0}
-.cx-i:hover .cx-w{color:#BCD3DE}
-.cx-i[aria-current="step"] .cx-w{color:#EEF3F6}
+.cx-w{color:color-mix(in srgb,var(--c) 75%,#0A121A)}
+.cx-i:hover .cx-w{color:color-mix(in srgb,var(--c) 88%,#0A121A)}
+.cx-i[aria-current="step"] .cx-w{color:var(--c)}
 .pt-on .sec .cx-w{transition:opacity .9s ease,color .3s ease}
 .obj-foot{position:absolute;left:24px;right:16px;bottom:16px;z-index:5;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;pointer-events:none}
 .obj-foot button{pointer-events:auto}
