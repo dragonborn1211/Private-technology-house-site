@@ -75,9 +75,9 @@
     if (foot.childNodes.length) foot.removeAttribute('aria-hidden'); else foot.setAttribute('aria-hidden', 'true');
     body.scrollTop = 0; cur = id;
     document.title = title(id) + ' — ' + t('Работы') + ' | Private Technology House';
-    // схема статьи — проснуться и собраться заново с первого узла: на открытии — когда панель почти выехала, при листании — сразу
+    // схема статьи — проснуться (в панели она сразу целая, scenes.js), на открытии — чуть погодя, при листании — сразу
     clearTimeout(wakeT);
-    wakeT = setTimeout(function () { if (cur !== id) return; ev('pt:wake', a); ev('pt:shown', [a]); }, rm ? 0 : first ? 200 : 60);
+    wakeT = setTimeout(function () { if (cur !== id) return; ev('pt:wake', a); ev('pt:shown', [a]); }, rm ? 0 : first ? 80 : 30);
     ev('pt:case', id.replace(/^case-/, ''));
   }
   function open(id, push, from) {

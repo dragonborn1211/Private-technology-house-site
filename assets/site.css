@@ -1210,7 +1210,11 @@ a[href],button,summary,label,select,[role="button"],[data-obj],.cx-i,.nb,.pt .cm
 .pt .nav .sm-pop a{display:flex;flex-direction:column;justify-content:center;gap:3px;min-height:52px;padding:6px 14px;border-radius:14px;color:#BCD3DE;transition:background-color .2s ease,color .2s ease}
 .pt .nav .sm-pop a span{font:500 15px/1.25 Manrope,'Manrope fb',system-ui,sans-serif}
 .pt .nav .sm-pop a small{font:400 12px/1.2 'JetBrains Mono','JetBrains fb',monospace;color:#8FAEC0}
-.pt .nav .sm-pop a:is(:hover,:focus-visible),.pt .nav .sm-pop a[aria-current="page"]{color:#EEF3F6;background-color:rgba(142,216,248,.08);background-image:none;-webkit-text-fill-color:currentColor;animation:none}
+.pt .nav .sm-pop a:not(.sm-all):is(:hover,:focus-visible),.pt .nav .sm-pop a[aria-current="page"]{color:#EEF3F6!important;background-color:rgba(142,216,248,.08);background-image:none;-webkit-text-fill-color:currentColor;animation:none}
+/* наведение — название переливается градиентом, как у остальных ссылок (владелец 2026-10-25); цена — своим цветом */
+.pt .nav .sm-pop a:not(.sm-all):is(:hover,:focus-visible) span{background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:pt-flow 2.4s linear infinite}
+.pt .nav .sm-pop a small{-webkit-text-fill-color:#8FAEC0}
+@media (prefers-reduced-motion:reduce){.pt .nav .sm-pop a span{animation:none!important}}
 .pt .nav .sm-pop a.sm-all{min-height:44px;flex-direction:row;align-items:center;font:500 14px/1.2 Manrope,'Manrope fb',system-ui,sans-serif;color:#8ED8F8;border-top:1px solid rgba(188,211,222,.1);border-radius:0 0 12px 12px}
 .pt-lite .sm-pop{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(10,18,26,.98)}
 @media (prefers-reduced-motion:reduce){.sm-pop{animation:none}.nav-ch svg{transition:none}}
@@ -1227,3 +1231,24 @@ html.ck-open .menu-in{padding-bottom:180px}
 .sv-tl{gap:10px}
 .sv-tl svg{width:16px;height:16px}
 @media (max-width:760px){.pt .sv-tl a{font-size:14px;padding:0 16px}}
+/* подвал (владелец 2026-10-25: «много пустого места»): на компьютере четыре колонки — бренд, разделы, услуги, справа связь и
+   язык; разделы и услуги — списками в две колонки (строки «Разделы» и «Услуги» — дети .foot-nav, он раскладку не задаёт) */
+.foot-nav{display:contents}
+.foot-nav > .foot-ln:not(.foot-sv){grid-area:nav}
+.foot-sv{grid-area:sv}
+@media (min-width:1280px){
+  .foot-in{grid-template-columns:minmax(220px,1fr) auto auto auto;grid-template-areas:"brand nav sv tel" "brand nav sv end";gap:10px clamp(28px,3.4vw,56px);align-items:start}
+  .foot-brand{padding-top:0}
+  .foot-nav > .foot-ln{display:grid;grid-template-columns:repeat(2,auto);gap:0 28px;align-content:start;justify-content:start}
+  .foot-sv{margin:0}
+  .foot-sv i{display:none}
+  .foot-sv > span{grid-column:1 / -1;display:flex;align-items:center;min-height:36px}
+  .foot-tel{justify-self:end}
+  .foot-tel .foot-ico{margin:0;justify-content:flex-end}
+  .foot-end{justify-self:end;align-self:end}
+}
+@media (max-width:1279px){.foot-in{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand end" "nav nav" "sv sv" "tel tel";row-gap:4px}.foot-brand{padding:0 0 12px}}
+@media (max-width:760px){.foot-in{grid-template-areas:"brand" "nav" "sv" "tel" "end"}}
+/* «Где работает» (/ai) — крупно, как «таблетки» готовых решений (владелец 2026-10-25) */
+.pt .sv-where li{display:inline-flex;align-items:center;min-height:46px;padding:0 20px;border-radius:999px;font-size:15px;font-weight:500;color:#EEF3F6;border-color:color-mix(in srgb,var(--c,#8ED8F8) 55%,rgba(188,211,222,.2));background-color:color-mix(in srgb,var(--c,#8ED8F8) 7%,transparent)}
+@media (max-width:760px){.pt .sv-where li{min-height:42px;padding:0 16px;font-size:14px}}

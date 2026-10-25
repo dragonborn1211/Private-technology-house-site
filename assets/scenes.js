@@ -1063,6 +1063,9 @@
     // схема панели разбора работы (cases.html, [data-cp]): облегчённый режим её не держит — пауза петель при прокрутке
     // страницы (env.hold) к прокрутке тела панели отношения не имеет (TASK-cases-panel.md, 4.6)
     var inPanel = !!cv.closest('[data-cp]');
+    // в панели схема появляется сразу целиком (узлы и связи), импульсы идут как обычно: сборка из пыли с первого узла давала
+    // 0.5–1 с пустого окна, и владелец видел «работа без изображения» (2026-10-25)
+    var whole = inPanel || env.rm;
     function compact() { return st.w < 340; }
     // низ подписи окна (.win-tag в левом верхнем углу) относительно холста + 8 px: выше узлы не ставим; карточка скрыта — 0
     function topPad() {
@@ -1089,7 +1092,7 @@
       prev = spec.title || '';
       if (first && ready && ready.k === readyKey()) { G = ready.G; gl = lang(); }
       else { G = makeGraph(spec); gl = lang(); G.layout(g, st.w, st.h, compact(), topPad()); }
-      ready = null; G.build(env.rm); ct = 0;
+      ready = null; G.build(whole); ct = 0;
       if (cfg.rand) label(env.rm ? 'ready' : 'build');
     }
     function draw() { g.setTransform(st.d, 0, 0, st.d, 0, 0); g.clearRect(0, 0, st.w, st.h); if (G) G.draw(g, 1, false); }
@@ -1097,7 +1100,7 @@
     function rebuild() {
       swapAt = 0;
       if (cfg.rand) { next(false); return; }
-      G = makeGraph(cfg); gl = lang(); G.layout(g, st.w, st.h, compact(), topPad()); G.build(env.rm);
+      G = makeGraph(cfg); gl = lang(); G.layout(g, st.w, st.h, compact(), topPad()); G.build(whole);
     }
     function tick(dt) {
       if (!on || env.rm || !G || asleep) return;
@@ -1124,7 +1127,7 @@
     var asleep = false;
     function wake() {
       asleep = false; held = false;
-      if (on) { if (!env.rm && G) { if (cfg.rand || gl !== lang()) rebuild(); else G.build(false); } return; }
+      if (on) { if (!env.rm && G) { if (cfg.rand || gl !== lang()) rebuild(); else G.build(inPanel); } return; }
       on = true; if (!g) g = cv.getContext('2d'); fitCanvas(cv, st, env); next(true);
       if (lab) lab.classList.add('on');
       if (env.rm) draw();

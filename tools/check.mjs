@@ -272,7 +272,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
       return { hash: as.filter((a) => a.getAttribute('href') === '#').length, tg: tg.length,
         tgBad: tg.filter((a) => !(a.hasAttribute('data-tg') ? /^https:\/\/t\.me\/dragonborne0\?text=\S+$/ : /^https:\/\/t\.me\/dragonborne0$/).test(a.getAttribute('href')) || a.target !== '_blank' || !/noopener/.test(a.rel)).length,
         h1: nb(document.querySelector('h1').textContent), trust: document.querySelectorAll('.trust .trust-i').length,
-        nav: [...document.querySelectorAll('[data-sec="hero"] .nav a')].map((a) => nb(a.textContent)).join(','), nbsp: /\u00a0/.test(document.querySelector('h1').textContent),
+        nav: [...document.querySelectorAll('[data-sec="hero"] .nav > a, [data-sec="hero"] .nav > .nav-sv > a')].map((a) => nb(a.textContent)).join(','), nbsp: /\u00a0/.test(document.querySelector('h1').textContent),
         name: document.querySelector('[data-captitle]').textContent, aria: document.querySelector('[data-obj]').getAttribute('aria-label') };
     });
     const bad = [];
@@ -372,7 +372,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
   else console.log(`  ✓ сцены (${p0.length}) стартуют после сборки и стоят на паузе вне экрана`);
   if (tag === 'd1440') {
     // липкая шапка: в первом экране скрыта; ниже — видна при прокрутке вверх, прячется при прокрутке вниз
-    const bar = () => page.evaluate(() => { const b = document.querySelector('[data-topbar]'); return { on: b.classList.contains('on') && getComputedStyle(b).visibility !== 'hidden', hrefs: [...b.querySelectorAll('.nav a')].map((a) => a.getAttribute('href')).join(',') }; });
+    const bar = () => page.evaluate(() => { const b = document.querySelector('[data-topbar]'); return { on: b.classList.contains('on') && getComputedStyle(b).visibility !== 'hidden', hrefs: [...b.querySelectorAll('.nav > a, .nav > .nav-sv > a')].map((a) => a.getAttribute('href')).join(',') }; });
     const go = async (y) => { await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), y); await page.waitForTimeout(80); await run(150); await page.waitForTimeout(120); await run(50); };
     await go(0); const b0 = await bar();
     const py = await page.evaluate(() => document.querySelector('#automation').getBoundingClientRect().top + window.scrollY);
@@ -400,7 +400,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     await page.click(opener); await run(400);
     await page.evaluate(() => document.addEventListener('click', (e) => { if (e.target.closest('[data-menu] .menu-nav a')) e.preventDefault(); }, { once: true }));
     await page.click('[data-menu] .menu-nav a[href="cases"]'); await run(400);
-    const m3 = await st(), mh = await page.evaluate(() => [...document.querySelectorAll('[data-menu] .menu-nav a')].map((a) => a.getAttribute('href')).join(','));
+    const m3 = await st(), mh = await page.evaluate(() => [...document.querySelectorAll('[data-menu] .menu-nav > a')].map((a) => a.getAttribute('href')).join(','));
     // страница осталась на первом экране (пункт меню ведёт на страницу, переход погашен) — липкой шапки нет, меню — из шапки
     await page.click(opener); await run(400);
     await page.click('[data-menu] [data-lang="en"]'); await run(4200);
@@ -1771,7 +1771,7 @@ console.log('\nреквизиты и политика конфиденциаль
     const page = await quick.newPage({ viewport: { width: w, height: h } });
     const errs = []; page.on('pageerror', (e) => errs.push(e.message));
     await page.goto(BASE + 'privacy.html'); await page.waitForTimeout(400);
-    const d = await page.evaluate(() => ({ w: document.querySelector('.doc-in').getBoundingClientRect().width, fs: getComputedStyle(document.querySelector('.doc-in p')).fontSize, lh: parseFloat(getComputedStyle(document.querySelector('.doc-in p')).lineHeight) / 16, h2: getComputedStyle(document.querySelector('.doc-in h2')).fontSize, over: document.documentElement.scrollWidth > innerWidth + 1, menu: document.querySelectorAll('.nav a, .menu-nav a').length }));
+    const d = await page.evaluate(() => ({ w: document.querySelector('.doc-in').getBoundingClientRect().width, fs: getComputedStyle(document.querySelector('.doc-in p')).fontSize, lh: parseFloat(getComputedStyle(document.querySelector('.doc-in p')).lineHeight) / 16, h2: getComputedStyle(document.querySelector('.doc-in h2')).fontSize, over: document.documentElement.scrollWidth > innerWidth + 1, menu: document.querySelectorAll('.nav > a, .nav > .nav-sv > a, .menu-nav > a').length }));
     if (d.w > 720.5 || d.fs !== '16px' || Math.abs(d.lh - 1.7) > 0.02 || d.h2 !== '22px' || d.over || d.menu !== 12) bad.push(`privacy.html ${w}: ${JSON.stringify(d)}`);
     if (errs.length) bad.push(`privacy.html ${w}: ${errs.join(' | ')}`);
     await page.close();
@@ -2259,7 +2259,7 @@ console.log('\nанглийские страницы для поиска (TASK-s
     if (u1 !== '/en/#contact') bad.push('/?lang=en#contact → ' + u1);
     await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(1000);
     await page.click('.hero-hdr [data-lang="en"]'); await page.waitForTimeout(3500);
-    const r = await page.evaluate(() => ({ u: location.pathname, lang: document.documentElement.lang, m: [...document.querySelectorAll('.hero-hdr nav a')].map((a) => a.getAttribute('href')).join(' '),
+    const r = await page.evaluate(() => ({ u: location.pathname, lang: document.documentElement.lang, m: [...document.querySelectorAll('.hero-hdr nav > a, .hero-hdr nav > .nav-sv > a')].map((a) => a.getAttribute('href')).join(' '),
       pv: [...document.querySelectorAll('footer a')].map((a) => a.getAttribute('href')).find((h) => /privacy$/.test(h)) }));
     if (r.u !== '/en/services' || r.lang !== 'en' || r.m !== '/en/services /en/cases /en/automations /en/process' || r.pv !== '/privacy') bad.push('RU → EN на месте: ' + JSON.stringify(r));
     await page.goto(BASE + 'en/services?intro=instant'); await page.waitForTimeout(1000);

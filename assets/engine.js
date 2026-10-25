@@ -1225,7 +1225,9 @@
         var el = e && e.detail; if (!el || !el.contains) return;
         scenes.forEach(function (sc) {
           if (!el.contains(sc.cv)) return;
-          var s = sceneSec(sc); if (s && s.state !== 'done') return;
+          // схема статьи панели разбора работы просыпается всегда: панель лежит вне сборки (data-pt-skip), а секция под ней могла ещё
+          // собираться — тогда схему не будил никто (секция её пропускает, панель ждала секцию), и окно в панели оставалось пустым
+          var s = sceneSec(sc); if (s && s.state !== 'done' && !sc.cv.closest('[data-cp]')) return;
           if (sc.resume) sc.resume(); else sc.wake();
         });
       }
