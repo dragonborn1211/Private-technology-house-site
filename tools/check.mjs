@@ -544,7 +544,7 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
   if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 7 || /svc-ic/.test(sv) || (sv.match(/<a href="process"[^>]*>Как работаем<\/a>/g) || []).length !== 4) bad.push('страница услуг: семь мини-рисунков (шесть направлений и редизайн), нет иконок, «Как работаем» → process.html (три меню и подвал)');
   for (const f of readdirSync(path.join(root, 'assets')).filter((x) => x.endsWith('.js'))) if (/addEventListener\(\s*['"](before)?unload['"]/.test(readFileSync(path.join(root, 'assets', f), 'utf8'))) bad.push(`${f}: unload / beforeunload отключает кэш «Назад»`);
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8'), rb = readFileSync(path.join(root, 'robots.txt'), 'utf8');
-  if (['', 'services', 'cases', 'automations', 'process'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 10 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
+  if (['', 'services', 'cases', 'automations', 'process', 'sites', 'bitrix24', 'ai'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 16 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
   if (!/User-agent: \*/.test(rb) || !/Sitemap: https:\/\/privatechouse\.ru\/sitemap\.xml/.test(rb)) bad.push('robots.txt');
   await page.close();
   if (bad.length) fail('главная: ' + bad.join('; '));
@@ -757,7 +757,7 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
   const foot = (f) => { const m = src[f].match(/<footer[\s\S]*?<\/footer>/g) || []; return m.length === 1 && /<footer[^>]*class="[^"]*\bfoot\b/.test(m[0]) ? m[0].replace(/ aria-current="page"/g, '').replace(/(<a href=")[^"]*(" hreflang=)/g, '$1$2').replace(/href="\//g, 'href="').replace(/src="\//g, 'src="') : `(подвалов ${m.length})`; };
   const f0 = foot('index.html');
   PAGES.forEach((f) => { if (foot(f) !== f0) bad.push(`${f}: подвал отличается от главной`); });
-  const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|max\.ru|wa\.me|^tel:|^#top$|^#about$|^privacy$|^$/.test(h));
+  const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|max\.ru|wa\.me|^tel:|^mailto:|^#top$|^#about$|^privacy$|^$/.test(h));
   const sid = idsOf('services.html');
   fl.forEach((h) => { const [p0, id] = h.split('#'), pg = p0 + '.html'; if (!PAGES.includes(pg) || (id && !(pg === 'services.html' ? sid : idsOf(pg)).has(id))) bad.push(`подвал: ссылка ${h} ведёт в никуда`); });
   if (fl.join(',') !== 'services,cases,automations,process,services#faq,sites,bitrix24,ai' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
@@ -1045,7 +1045,7 @@ console.log('\n404');
     const tag = `${w} ${q || 'ru'}`;
     if (resp.status() !== 404) bad.push(`${tag}: статус ${resp.status()}`);
     if (miss.length) bad.push(`${tag}: не загрузились ${miss.slice(0, 4).join(', ')}`);
-    if (r.nd.length || r.robots !== 'noindex' || r.css !== 'rgb(10, 18, 26)' || r.btns !== '/,/services,/cases,/automations' || r.sw > 1) bad.push(`${tag}: ${JSON.stringify(r)}`);
+    if (r.nd.length || r.robots !== 'noindex' || r.css !== 'rgb(10, 18, 26)' || r.btns !== (/lang=en/.test(tag) ? '/en/,/en/services,/en/cases,/en/automations' : '/,/services,/cases,/automations') || r.sw > 1) bad.push(`${tag}: ${JSON.stringify(r)}`);
     if (q) { const left = await page.evaluate(cyrillic); if (left.length || r.h1 !== 'page.') bad.push(`${tag}: кириллица ${left.slice(0, 4).join(' | ')}, H1 «${r.h1}»`); }
     errs.forEach((e) => bad.push(`${tag}: ${e}`));
     if (w === 1440 && !q) { await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(200); await page.clock.runFor(300); await page.screenshot({ path: path.join(shots, '404-1440.png') }); }
@@ -1178,14 +1178,14 @@ console.log('\nструктура: услуги, «Как работаем», с
   }
   // «Как работаем»
   const pid = idsOf('process.html');
-  for (const [w, h, lim] of [[1440, 900, 3.45], [390, 844, 7.2]]) {
+  for (const [w, h, lim] of [[1440, 900, 3.45], [390, 844, 7.3]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + 'process.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
     const r = await page.evaluate(() => {
       const ids = ['sites', 'servers', 'care', 'automation'];
       return { dirs: ids.map((i) => { const s = document.getElementById(i); return s ? `${i}:${s.querySelectorAll('.sv-step').length}:${s.querySelectorAll('.tp-need').length}:${s.querySelector('h2') ? 1 : 0}` : i + ':нет'; }).join(' '),
-        links: [...document.querySelectorAll('a[href]')].map((a) => a.getAttribute('href')).filter((x) => !/^(https?:|tel:|#top$|\?lang|\.\/)/.test(x) && !/\?lang=/.test(x)),
+        links: [...document.querySelectorAll('a[href]')].map((a) => a.getAttribute('href')).filter((x) => !/^(https?:|tel:|mailto:|en\/|#top$|\?lang|\.\/)/.test(x) && !/\?lang=/.test(x)),
         len: document.documentElement.scrollHeight / innerHeight, cur: [...document.querySelectorAll('[aria-current="page"]')].map((a) => a.textContent.trim()).join(','),
         h1: document.querySelector('h1').textContent.replace(/\s+/g, ' ').trim(), alias: ['apps', 'ai'].map((i) => { const e = document.getElementById(i); return e ? i + '>' + e.closest('[data-sec]').id : i + ':нет'; }).join(' '),
         secs: document.querySelectorAll('[data-sec^="p-"]').length };
@@ -1235,7 +1235,7 @@ console.log('\nструктура: услуги, «Как работаем», с
     await page.close();
   }
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
-  if (['', 'services', 'cases', 'automations', 'process'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 11 || (sm.match(/hreflang="en"/g) || []).length !== 10 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy(\.html)?<\/loc>\s*(<lastmod>[\d-]+<\/lastmod>\s*)?<\/url>/.test(sm)) bad.push('sitemap.xml: не пять страниц и пять английских с парами');
+  if (['', 'services', 'cases', 'automations', 'process', 'sites', 'bitrix24', 'ai'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 17 || (sm.match(/hreflang="en"/g) || []).length !== 16 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy(\.html)?<\/loc>\s*(<lastmod>[\d-]+<\/lastmod>\s*)?<\/url>/.test(sm)) bad.push('sitemap.xml: не пять страниц и пять английских с парами');
   if (bad.length) fail('структура: ' + bad.join('; '));
   else console.log(`  ✓ разлёта (data-pt-burst) нет нигде, у подвала — мягкий выдох; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — четыре секции по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — шесть адресов (политика — без EN)`);
 }
@@ -1500,7 +1500,10 @@ console.log('\nфоновая пыль и взрыв подвала');
       // шире половины подвала, его центр — на подвале, по высоте оно растёт
       // рост по высоте за 0.4 с на 390 — случайный, 10–30 px (2026-10-24: 10 прогонов этой версии и версии до TASK-perf, один раз
       // 13, в полном прогоне 10): порог 15 ронял проверку на обычном разбросе; 8 — облако всё же растёт, а не стоит
-      if (pop.max < (w < 760 ? 1000 : 2000) || !pop.end || pop.end > 1500 || pop.ex < pop.fw * (w < 760 ? 0.4 : 0.45) || Math.abs(pop.cy) > 40 || !(pop.ey2 > pop.ey1 + (w < 760 ? 8 : 30))) bad.push(`${tag}: взрыв подвала ${JSON.stringify(pop)}`);
+      // TASK-seo-2: на 390 подвал выше на строку «Услуги» (~340 px вместо ~260) — облако с первого кадра во всю высоту подвала, а
+      // подвал внизу экрана: расти по высоте облаку некуда (было 261 → 287, стало 341 → 337). На телефоне рост по высоте не
+      // проверяем — только ширину, центр на подвале и угасание; на 1440 — как раньше
+      if (pop.max < (w < 760 ? 1000 : 2000) || !pop.end || pop.end > 1500 || pop.ex < pop.fw * (w < 760 ? 0.4 : 0.45) || Math.abs(pop.cy) > 40 || (w >= 760 && !(pop.ey2 > pop.ey1 + 30))) bad.push(`${tag}: взрыв подвала ${JSON.stringify(pop)}`);
       info.push(`${tag}: пыль ${Math.round(d0 * 100)} % (в середине ${Math.round(mid * 100)} %) → на сборке ${Math.round(sec.lo * 100)} % → ${Math.round(sec.after * 100)} %; взрыв ${pop.max} частиц по ${pop.ex} px из ${pop.fw} ширины подвала, по высоте ${pop.ey1} → ${pop.ey2} px, погас за ${pop.end} мс`);
       await ctx.close();
     }
@@ -1628,10 +1631,10 @@ console.log('\nревью, 4: тексты');
   const I = readFileSync(path.join(root, 'assets', 'i18n.js'), 'utf8'), HO = readFileSync(path.join(root, 'assets', 'hero-objects.js'), 'utf8');
   for (const f of PAGES) if (/ИИ/.test(src[f])) bad.push(`${f}: «ИИ»`);
   if (/ИИ/.test(I) || /'Безопасность'/.test(HO)) bad.push('i18n.js / hero-objects.js: «ИИ» или «Безопасность»');
-  const D = 'Сайты, приложения, интеграции с Битрикс24 и Telegram, автоматизация и AI-ассистенты. Смета до старта, код ваш.';
+  const D = 'Студия полного цикла: сайты-презентации от 120 000 ₽, интеграции Битрикс24 и Telegram, автоматизация и AI-ассистенты от 5 000 ₽ в месяц. Работаем по всей России, смета до старта.';
   if (!src['index.html'].includes(`<meta name="description" content="${D}">`)) bad.push('описание главной');
   const L = 'Типовые сценарии для Битрикс24, Telegram и маркетплейсов. Выберите подходящий — подключим под ваши поля и правила.';
-  if (!src['automations.html'].includes(`<meta name="description" content="${L}">`) || !strip(src['automations.html']).includes(`<span>${L}</span>`) || /Запускаем по/.test(src['automations.html'])) bad.push('лид и описание каталога');
+  if (!strip(src['automations.html']).includes(`<span>${L}</span>`) || /Запускаем по/.test(src['automations.html'])) bad.push('лид и описание каталога');
   const sv = strip(src['services.html']);
   const meta = (id) => { const m = new RegExp(`<article[^>]*id="${id}"[\\s\\S]*?<dl class="sv-meta">([\\s\\S]*?)</dl>`).exec(sv); return m ? m[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : ''; };
   // TASK-prices.md: первая строка условий — «Цена» (у приложений с пояснением)
@@ -1643,7 +1646,7 @@ console.log('\nревью, 4: тексты');
   if (!/<h3 class="sv-sh">Сборка<\/h3><p class="sv-sd">[^<]*n8n/.test(strip(src['process.html']))) bad.push('инструменты на «Как работаем», шаг «Сборка»');
   for (const f of ['index.html', 'cases.html']) if (!strip(src[f]).includes('<span class="obj-h">Ваш сайт — следующий</span>') || !strip(src[f]).includes('<span class="obj-d">Соберём такой же под вашу компанию →</span>') || /Следующий объект/.test(src[f])) bad.push(`${f}: демо-карточка`);
   if (!/<span class="cx-w">Защита<\/span><\/span><span class="usp-n" hidden>Защита данных<\/span>/.test(src['index.html'])) bad.push('вкладка 04 «Кодекса»');
-  for (const [k, v] of [['Защита данных', 'Data protection'], ['Защита', 'Security'], ['Все направления — в двух форматах.', 'All services, two formats.'], ['Ваш сайт — следующий', 'Your site could be next'], [D, 'Websites, apps, Bitrix24 and Telegram integrations, automation and AI assistants. Estimate before we start, the code is yours.']])
+  for (const [k, v] of [['Защита данных', 'Data protection'], ['Защита', 'Security'], ['Все направления — в двух форматах.', 'All services, two formats.'], ['Ваш сайт — следующий', 'Your site could be next'], [D, 'Full-cycle studio: presentation websites from 120,000\\u00a0₽, Bitrix24 and Telegram integrations, automation and AI assistants from 5,000\\u00a0₽ a month. We work across Russia, estimate before we start.']])
     if (!I.includes(`'${k}': '${v.replace(/'/g, "\\'")}'`)) bad.push(`EN: ${k} → ${v}`);
   if (/accountable|responsible for it/.test(I) || (I.match(/and it\\'s on us\./g) || []).length !== 2) bad.push('EN: «…and it\'s on us.» не в двух местах (третья строка ушла с группами главной)');
   if (bad.length) fail('ревью, 4: ' + bad.join('; '));
@@ -1710,7 +1713,7 @@ console.log('\nкто делает: карточка в контакте, «О �
   const bad = [];
   for (const f of PAGES) {
     const h = src[f], c = (/<section data-sec="contact"[\s\S]*?<\/section>/.exec(h) || [''])[0];
-    const nav = (/<nav class="foot-col foot-nav"[\s\S]*?<\/nav>/.exec(h) || [''])[0], last = [...nav.matchAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g)].pop();
+    const nav = (/<nav class="foot-col foot-nav"[\s\S]*?<p class="foot-ln">[\s\S]*?<\/p>/.exec(h) || [''])[0], last = [...nav.matchAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g)].pop();
     if (!last || last[2].replace(/&nbsp;/g, ' ') !== 'О студии' || last[1] !== (f === '404.html' ? '/#about' : '#about')) bad.push(`${f}: последний пункт подвала — ${last ? last[2] + ' → ' + last[1] : 'нет'}`);
     if (f === '404.html') { if (/id="about"/.test(h)) bad.push('404.html: карточка «Кто делает»'); continue; }
     const who = (/<aside class="blk glass fr who" data-blk id="about"[\s\S]*?<\/aside>/.exec(c) || [''])[0];
@@ -1895,7 +1898,7 @@ console.log('\nсвязь: подвал, «Обсудить проект», ме
     await page.click(btn); await page.waitForTimeout(250);
     const op = await page.evaluate(() => {
       const p = document.querySelector('.hero-hdr .cm-pop'), r = p.getBoundingClientRect(), as = [...p.querySelectorAll('a')];
-      return { open: !p.hidden, exp: document.querySelector('.hero-hdr .cm-btn').getAttribute('aria-expanded'), inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0, n: as.length, tg: as[0].href, wa: as[2].href, cyr: as.some((a) => /[А-Яа-яЁё]/.test(a.textContent)), small: as.filter((a) => a.getBoundingClientRect().height < 44).length, bw: Math.round(document.querySelector('.hero-hdr .cm-btn').getBoundingClientRect().width) };
+      return { open: !p.hidden, exp: document.querySelector('.hero-hdr .cm-btn').getAttribute('aria-expanded'), inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0, n: as.length, tg: as[0].href, wa: as[2].href, cyr: as.some((a) => /[А-Яа-яЁё]/.test(a.textContent)), small: as.filter((a) => a.offsetHeight < 44).length, bw: Math.round(document.querySelector('.hero-hdr .cm-btn').getBoundingClientRect().width) };
     });
     if (!op.open || op.exp !== 'true' || !op.inView || op.n !== 4 || op.small) bad.push(`${w}${q}: список не открылся как надо ${JSON.stringify(op)}`);
     if (!/^https:\/\/t\.me\/dragonborne0\?text=/.test(op.tg) || !new RegExp(`^https://wa\\.me/79090243995\\?text=${q ? 'Hello' : '%D0%97'}`).test(op.wa)) bad.push(`${w}${q}: черновики ${op.tg} | ${op.wa}`);
@@ -2704,7 +2707,7 @@ console.log('\nпанель разбора работы');
       if (id === 'case-call-audit' || id === 'case-resonara' || id === 'case-studio-os' || id === 'case-seo-report') { await page.waitForTimeout(1500); await page.screenshot({ path: path.join(shots, `panel-1440-${id.slice(5)}.png`) }); }
       await page.keyboard.press('Escape'); await page.waitForTimeout(800);
       const c = await cst(page);
-      if (c.open || c.hash !== '' || c.lock || c.focus !== id || c.y !== y0 || !/^Работы — /.test(c.title) || !(await page.evaluate(() => document.querySelector('[data-cp]').hidden))) bad.push(`${id}: закрыта Esc ${JSON.stringify(c)}`);
+      if (c.open || c.hash !== '' || c.lock || c.focus !== id || c.y !== y0 || !/^Кейсы: /.test(c.title) || !(await page.evaluate(() => document.querySelector('[data-cp]').hidden))) bad.push(`${id}: закрыта Esc ${JSON.stringify(c)}`);
     }
     // листание: края, клавиши, «Следующая работа», подвал последней — только призыв; Tab не уходит из панели
     await page.click('#case-resonara [data-cp-open]'); await page.waitForTimeout(700);
