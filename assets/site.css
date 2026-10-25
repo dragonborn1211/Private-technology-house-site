@@ -1225,7 +1225,7 @@ a[href],button,summary,label,select,[role="button"],[data-obj],.cx-i,.nb,.pt .cm
 html.ck-open .menu-in{padding-bottom:180px}
 /* владелец 2026-10-25: подпись «ios · android · tg» в крупном рисунке /apps ложилась на телефон; «таблетки» готовых решений —
    крупнее и видны без наведения (кромка и лёгкая заливка цветом блока) */
-.sv-art [data-glyph="apps"] .lb{display:none}
+.sv-art .glyph[data-glyph="apps-xl"]{max-width:540px}
 .pt .sv-tl a{min-height:46px;padding:0 20px;gap:10px;font-size:15px;color:#EEF3F6;border-color:color-mix(in srgb,var(--c,#8ED8F8) 55%,rgba(188,211,222,.2));background-color:color-mix(in srgb,var(--c,#8ED8F8) 7%,transparent)}
 .pt .sv-tl a:hover{background-color:color-mix(in srgb,var(--c,#8ED8F8) 14%,transparent)}
 .sv-tl{gap:10px}
