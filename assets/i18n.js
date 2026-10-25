@@ -76,7 +76,7 @@
     'Все сервисы компании обращаются к нейросетям через один шлюз: ключи, лимиты и журнал в одном месте.': 'Every company service reaches AI models through one gateway: keys, limits and logs in one place.',
 
     // 03 — процесс
-    'Сопровождение': 'Support',
+    'Сопровождение': 'Website care',
 
     // 04 — стоимость
     'Сайт': 'Website',
@@ -206,9 +206,6 @@
     'Запуск на домене': 'Launch on your domain',
     'от 2 недель': 'from 2 weeks',
     'Обсудить сайт': 'Discuss a website',
-    'Сайт-презентация бренда': 'Brand presentation website',
-    'Презентация объекта': 'Property or product showcase',
-    'Коттеджный посёлок, жилой комплекс, отель или новый продукт: подача, которая продаёт до первого звонка.': 'A residential village, an apartment complex, a hotel or a new product: a presentation that sells before the first call.',
     'Каталог и магазин': 'Catalog and store',
     'Премиальная витрина: карточки товаров, заказы сразу в CRM и Telegram.': 'A premium storefront: product pages, orders straight to CRM and Telegram.',
     'Второй язык': 'Second language',
@@ -232,7 +229,6 @@
     'Переезд': 'Migration',
     'Переносим сайт или сервис на новый сервер без потери данных.': 'We move a site or service to a new server without losing data.',
     'Защита и скорость': 'Protection and speed',
-    'Cloudflare: фильтрация атак, кэш и ускорение загрузки.': 'Cloudflare: attack filtering, caching and faster loading.',
     // группа «По подписке»
     // сопровождение
     'ежемесячно': 'monthly',
@@ -291,11 +287,9 @@
     // главная: «02 / Кейсы», «03 / Готовые автоматизации»
     '[ ваш процесс ]': '[ your process ]',
     // услуги: тонкие заголовки групп, «Готовые шаблоны», ссылки на кейсы
-    'Заявки с сайта → CRM': 'Website leads → CRM',
     'Утренний разбор задач': 'Morning task review',
     'Мониторинг цен': 'Price monitoring',
     'Голосовое → задача': 'Voice message → task',
-    'Ответы на отзывы WB и Ozon': 'Replies to WB and Ozon reviews',
     // кейсы (cases.html)
     'Сделано': 'Built',
     'и работает.': 'and running.',
@@ -367,7 +361,6 @@
     'подписке': 'FAQ',
     'Проект сдаём целиком, код ваш. Потом его можно забрать или оставить у нас на сопровождении.': 'We hand the project over in full, and the code is yours. Then you can take it in-house or leave it with us for ongoing care.',
     'Для компаний, которым важно, как их видят. Свой визуальный стиль, 3D и анимация.': 'For companies that care how they are seen. Your own visual style, 3D and animation.',
-    'Android, iOS и Telegram mini-app: от интерфейса до публикации.': 'Android, iOS and Telegram mini-apps: from interface to publishing.',
     'Связываем Битрикс24, Telegram и любые сервисы с API.': 'We connect Bitrix24, Telegram and any service with an API.',
     'Сайты, автоматизации и AI, которые уже работают у клиентов.': 'Websites, automations and AI already running for our clients.',
     'Сайт · AI': 'Website · AI',
@@ -380,7 +373,6 @@
     'Предложим решение, сроки и смету после первого созвона.': 'We will propose a solution, timeline and estimate after the first call.',
     'Точную смету называем после разбора задачи. Здесь ориентиры.': 'We give an exact estimate once we have looked into the task. These are guidelines.',
     // услуги
-    'Компания, продукт и команда в одной сильной подаче.': 'The company, product and team in one strong presentation.',
     'Английская версия с переключением на лету, как на этом сайте.': 'An English version with on-the-fly switching, like on this site.',
     'Android, iOS и Telegram: от интерфейса до публикации в магазинах. Связываем с сайтом и CRM.': 'Android, iOS and Telegram: from interface to store publishing. We connect the app to your website and CRM.',
     'Каталог, запись или заказ прямо в Telegram, без установки.': 'A catalog, booking or order right in Telegram, with nothing to install.',
@@ -392,7 +384,6 @@
     'Тексты, фото, цены: пишете в Telegram, мы меняем. Объём правок указан в тарифе.': 'Texts, photos, prices: you write in Telegram, we change them. The amount of edits is set in the plan.',
     'Политика, согласия в формах и cookie-баннер по 152-ФЗ.': 'Privacy policy, form consents and a cookie banner under Russian law 152-FZ.',
     'Связываем всё, где есть API: сайт, приложение, CRM, мессенджеры, маркетплейсы. Сценарии работают на нашем сервере, мы за ними следим.': 'We connect anything with an API: website, app, CRM, messengers, marketplaces. The workflows run on our server, and we look after them.',
-    'Заявки с сайта, из приложения, форм и мини-аппа попадают в Битрикс24 и Telegram.': 'Requests from the website, app, forms and mini-app go to Bitrix24 and Telegram.',
     'Если у сервиса есть API или вебхук, соединим его, в том числе в обе стороны.': 'If a service has an API or a webhook, we connect it, both ways if needed.',
     'Агенты отвечают клиентам, ищут по документам компании и разбирают звонки.': 'Agents answer customers, search company documents and review calls.',
     'Свой агент для отдела: знает регламенты и помогает с рутиной.': 'An agent for each department: it knows the procedures and helps with routine work.',
@@ -869,6 +860,8 @@
     'Типовые сценарии для Битрикс24, Telegram и маркетплейсов. Выберите подходящий — подключим под ваши поля и правила.': 'Standard workflows for Bitrix24, Telegram and marketplaces. Pick one and we\'ll fit it to your fields and rules.',
     // TASK-seo-2: страницы услуг /sites, /bitrix24, /ai; новые title и description
     'Ответы на отзывы': 'Review replies',
+    'Android, iOS и Telegram Mini App: от интерфейса до публикации.': 'Android, iOS and Telegram Mini Apps: from interface to publishing.',
+    'Заявки с сайта, из приложения, форм и мини-приложения попадают в Битрикс24 и Telegram.': 'Requests from the website, app, forms and mini app go to Bitrix24 and Telegram.',
     // TASK-nav: панель услуг в шапке
     'от 5 000 ₽': 'from\u00a05,000\u00a0₽',
     'от 10 000 ₽/мес': 'from\u00a010,000\u00a0₽/mo',
@@ -909,8 +902,8 @@
     'Сервер под ключ: Docker, домены и SSL, бэкапы и мониторинг, переезд без потери данных, разбор аварий, защита и ускорение. n8n или LibreChat под ключ — от 15 000 ₽. Задачи — от 5 000 ₽.': 'A turnkey server: Docker, domains and SSL, backups and monitoring, migration without data loss, incident analysis, protection and speed-up. n8n or LibreChat turnkey from 15,000\u00a0₽. Tasks from 5,000\u00a0₽.',
     'Настройка серверов, n8n и LibreChat': 'Server, n8n and LibreChat setup',
     'Серверы · по задаче': 'Servers · per task',
-    'Серверы и сервисы': 'Servers and services',
-    'под ключ': 'turnkey',
+    'Серверы и сервисы': 'Turnkey',
+    'под ключ': 'servers and services',
     'Настраиваем серверы компании, ставим бэкапы и мониторинг. Если что-то упало, находим причину и чиним. В конце отдаём описание: что, где и как настроено. Доступы остаются у вас.': 'We set up company servers and add backups and monitoring. If something goes down, we find the cause and fix it. At the end we hand over a description of what is set up, where and how. The access stays with you.',
     '· n8n или LibreChat под ключ — от 15 000 ₽': '· n8n or LibreChat turnkey from\u00a015,000\u00a0₽',
     'Есть задача по серверу.': 'I have a server task.',
@@ -1021,10 +1014,8 @@
     '· запуск + ежемесячно': '· launch + monthly',
     'Хочу интеграцию с Битрикс24.': 'I’d like a Bitrix24 integration.',
     'Заявка с сайта, из формы или приложения сразу становится лидом в Битрикс24, а менеджер получает сообщение в Telegram.': 'A request from the website, a form or an app instantly becomes a lead in Bitrix24, and the manager gets a message in Telegram.',
-    'Задача голосом': 'Task by voice',
     'По утрам в Telegram приходит сводка по задачам с выводами, а в каждой задаче — комментарий: что ускорить и что сделать лучше.': 'Every morning a task summary with conclusions arrives in Telegram, and each task gets a comment: what to speed up and what to do better.',
     'Каждый разговор переводится в текст, нейросеть оценивает его по правилам хорошего звонка, и разбор появляется прямо в карточке клиента.': 'Every conversation is turned into text, a neural network rates it against the rules of a good call, and the review appears right in the client card.',
-    'Заказы из Telegram и приложения': 'Orders from Telegram and apps',
     'Каталог и корзина в мини-приложении Telegram или в приложении: каждый заказ сам создаёт клиента и заявку в Битрикс24 с составом корзины.': 'A catalog and cart in a Telegram mini app or a mobile app: each order creates the client and a request in Bitrix24 with the cart contents.',
     'Любая связка': 'Any connection',
     'Если у сервиса есть официальный доступ для программ, соединим его с Битрикс24, в том числе в обе стороны: Wildberries, Ozon, Авито, WhatsApp, таблицы.': 'If a service offers official access for software, we’ll connect it with Bitrix24, both ways if needed: Wildberries, Ozon, Avito, WhatsApp, spreadsheets.',
@@ -1050,7 +1041,6 @@
     'Агенты отвечают клиентам, ищут по документам компании и разбирают звонки. Работают в Telegram, в чате на сайте и с Битрикс24.': 'Agents answer customers, search company documents and review calls. They work in Telegram, in your website chat and with Bitrix24.',
     'Обсудить задачу →': 'Discuss your task\u00a0→',
     'Хочу AI-ассистента.': 'I’d like an AI assistant.',
-    'Помощник для каждого отдела': 'An assistant for every department',
     'У продаж, бухгалтерии и поддержки — свой помощник и своя база знаний. Отвечает по документам компании, а не «из интернета». Базу пополняют сами сотрудники.': 'Sales, accounting and support each get their own assistant and knowledge base. It answers from company documents, not “from the internet”. Employees add to the base themselves.',
     'Нейросеть разбирает каждый разговор и подсказывает менеджеру, что сделать лучше. Руководитель больше не тратит часы на прослушку.': 'A neural network reviews every conversation and tells the manager what to do better. The head of sales no longer spends hours listening to recordings.',
     'Нейросеть пишет ответ на новый отзыв на Wildberries и Ozon, вы одобряете его в Telegram одной кнопкой.': 'A neural network drafts a reply to each new review on Wildberries and Ozon; you approve it in Telegram with one tap.',
@@ -1077,7 +1067,7 @@
     'Сайты-презентации, интеграции Битрикс24 и AI для бизнеса — Private Technology House': 'Presentation websites, Bitrix24 integrations and AI for business — Private Technology House',
     'Студия полного цикла: сайты-презентации от 120 000 ₽, интеграции Битрикс24 и Telegram, автоматизация и AI-ассистенты от 5 000 ₽ в месяц. Работаем по всей России, смета до старта.': 'Full-cycle studio: presentation websites from 120,000\u00a0₽, Bitrix24 and Telegram integrations, automation and AI assistants from 5,000\u00a0₽ a month. We work across Russia, estimate before we start.',
     'Услуги и цены: сайты, приложения, интеграции и AI-ассистенты — Private Technology House': 'Services and prices: websites, apps, integrations and AI assistants — Private Technology House',
-    'Сайт-презентация от 120 000 ₽, редизайн от 85 000 ₽, приложение от 150 000 ₽, серверы от 5 000 ₽ за задачу. Сопровождение от 10 000 ₽, автоматизация и AI от 5 000 ₽ в месяц.': 'Presentation website from 120,000\u00a0₽, redesign from 85,000\u00a0₽, app from 150,000\u00a0₽, servers from 5,000\u00a0₽ per task. Maintenance from 10,000\u00a0₽, automation and AI from 5,000\u00a0₽ a month.',
+    'Сайт-презентация от 120 000 ₽, редизайн от 85 000 ₽, приложение от 150 000 ₽, серверы от 5 000 ₽ за задачу. Сопровождение от 10 000 ₽, автоматизация и AI от 5 000 ₽ в месяц.': 'Presentation website from 120,000\u00a0₽, redesign from 85,000\u00a0₽, app from 150,000\u00a0₽, servers from 5,000\u00a0₽ per task. Website care from 10,000\u00a0₽ a month, automation and AI from 5,000\u00a0₽ a month.',
     'Кейсы: AI-разбор звонков, интеграции Битрикс24 и сайты-презентации — Private Technology House': 'Case studies: AI call review, Bitrix24 integrations and presentation websites — Private Technology House',
     'Что было, что сделали и как это устроено: разбор каждого звонка в CRM, SEO-отчёт в Telegram, каталог из прайса, AI-помощник для отделов, заказы сразу в Битрикс24. И сайты, которые мы сделали.': 'What it was like, what we did and how it works: a review of every call in the CRM, an SEO report in Telegram, a catalog from a price list, an AI assistant for departments, orders straight into Bitrix24. And the websites we built.',
     'Автоматизация бизнеса: готовые сценарии для Битрикс24, Telegram, Wildberries, Ozon и Авито': 'Business automation: ready-made scenarios for Bitrix24, Telegram, Wildberries, Ozon and Avito',

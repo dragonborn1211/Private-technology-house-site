@@ -1225,7 +1225,7 @@ a[href],button,summary,label,select,[role="button"],[data-obj],.cx-i,.nb,.pt .cm
 html.ck-open .menu-in{padding-bottom:180px}
 /* владелец 2026-10-25: подпись «ios · android · tg» в крупном рисунке /apps ложилась на телефон; «таблетки» готовых решений —
    крупнее и видны без наведения (кромка и лёгкая заливка цветом блока) */
-.sv-art .glyph[data-glyph="apps-xl"]{max-width:540px}
+.sv-art .glyph{max-width:540px}
 .pt .sv-tl a{min-height:46px;padding:0 20px;gap:10px;font-size:15px;color:#EEF3F6;border-color:color-mix(in srgb,var(--c,#8ED8F8) 55%,rgba(188,211,222,.2));background-color:color-mix(in srgb,var(--c,#8ED8F8) 7%,transparent)}
 .pt .sv-tl a:hover{background-color:color-mix(in srgb,var(--c,#8ED8F8) 14%,transparent)}
 .sv-tl{gap:10px}
@@ -1252,3 +1252,9 @@ html.ck-open .menu-in{padding-bottom:180px}
 /* «Где работает» (/ai) — крупно, как «таблетки» готовых решений (владелец 2026-10-25) */
 .pt .sv-where li{display:inline-flex;align-items:center;min-height:46px;padding:0 20px;border-radius:999px;font-size:15px;font-weight:500;color:#EEF3F6;border-color:color-mix(in srgb,var(--c,#8ED8F8) 55%,rgba(188,211,222,.2));background-color:color-mix(in srgb,var(--c,#8ED8F8) 7%,transparent)}
 @media (max-width:760px){.pt .sv-where li{min-height:42px;padding:0 16px;font-size:14px}}
+/* рисунки направлений, подробная версия (владелец 2026-10-26, TASK-final 1): viewBox 360×224 (svg.gx), один чертёж на услугу во
+   всех местах; в карточках главной и мини-рисунках мелких деталей (.dt) и подписей нет, линия толще — читается в маленьком размере */
+:is(.glyph-mini,.svc-pic,.glyph-xl) :is(.dt,.lb){display:none}
+.glyph-mini svg.gx{stroke-width:3.4}
+.svc-pic svg.gx,.glyph-xl svg.gx{stroke-width:1.6}
+@media (max-width:760px){.svc-pic svg.gx,.glyph-xl svg.gx{stroke-width:3.6}}

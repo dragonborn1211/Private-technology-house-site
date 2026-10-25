@@ -530,7 +530,7 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
       procLinks: all('a').filter((a) => a.textContent.trim() === 'Как работаем').map((a) => a.getAttribute('href')), contact: document.querySelector('#contact .mono.k').textContent.trim() };
   });
   const bad = [];
-  if (r.cards.join(',') !== 'sites,apps,servers,care,automations,ai') bad.push(`карточки: ${r.cards.join(', ')}`);
+  if (r.cards.join(',') !== 'sites,apps,servers,care,bitrix24,ai') bad.push(`карточки: ${r.cards.join(', ')}`);
   if (r.more.join() !== 'services') bad.push(`«Все услуги» → ${r.more.join()}`);
   if (r.h2 !== 'Делаем один раз. Держим всегда.') bad.push(`заголовок «${r.h2}»`);
   if (r.nums) bad.push(`номера 01–04 в блоке: ${r.nums}`);
@@ -1906,7 +1906,7 @@ console.log('\nсвязь: подвал, «Обсудить проект», ме
       const p = document.querySelector('.hero-hdr .cm-pop'), r = p.getBoundingClientRect(), as = [...p.querySelectorAll('a')];
       return { open: !p.hidden, exp: document.querySelector('.hero-hdr .cm-btn').getAttribute('aria-expanded'), inView: r.left >= 0 && r.right <= innerWidth && r.top >= 0, n: as.length, tg: as[0].href, wa: as[2].href, cyr: as.some((a) => /[А-Яа-яЁё]/.test(a.textContent)), small: as.filter((a) => a.offsetHeight < 44).length, bw: Math.round(document.querySelector('.hero-hdr .cm-btn').getBoundingClientRect().width) };
     });
-    if (!op.open || op.exp !== 'true' || !op.inView || op.n !== 4 || op.small) bad.push(`${w}${q}: список не открылся как надо ${JSON.stringify(op)}`);
+    if (!op.open || op.exp !== 'true' || !op.inView || op.n !== 5 || op.small) bad.push(`${w}${q}: список не открылся как надо ${JSON.stringify(op)}`);
     if (!/^https:\/\/t\.me\/dragonborne0\?text=/.test(op.tg) || !new RegExp(`^https://wa\\.me/79090243995\\?text=${q ? 'Hello' : '%D0%97'}`).test(op.wa)) bad.push(`${w}${q}: черновики ${op.tg} | ${op.wa}`);
     if (w < 760 && op.bw !== 44) bad.push(`${w}: на телефоне кнопка «Обсудить проект» не круглая (${op.bw} px)`);
     await page.keyboard.press('Escape'); await page.waitForTimeout(150);
@@ -2320,7 +2320,7 @@ console.log('\nстраницы услуг: /sites, /bitrix24, /ai');
   for (const f of PAGES) if (/href="[^"]*services(\.html)?#care"/.test(src[f])) bad.push(`${f}: ссылка на services#care`);
   for (const n of Object.keys(SV)) if (!/<a href="#faq" class="faq-link fr" data-faq-open>/.test(src[n + '.html']) || !/<div class="cp cp-faq-wrap" data-faq hidden>/.test(src[n + '.html']) || !/<script src="assets\/faq\.js/.test(src[n + '.html'])) bad.push(`${n}: вопросы не плашкой и панелью`);
   if (!src['bitrix24.html'].includes('<a href="apps" class="sv-go">Приложения<svg')) bad.push('bitrix24: ссылка «Приложения →»');
-  if (!/<span>Услуги:<\/span><a href="sites"[^>]*>Сайты-презентации<\/a><i aria-hidden="true">·<\/i><a href="apps"[^>]*>Приложения<\/a><i aria-hidden="true">·<\/i><a href="servers"[^>]*>Серверы<\/a><i aria-hidden="true">·<\/i><a href="care"[^>]*>Сопровождение<\/a><i aria-hidden="true">·<\/i><a href="bitrix24"[^>]*>Интеграции<\/a><i aria-hidden="true">·<\/i><a href="ai"[^>]*>AI-ассистенты<\/a>/.test(src['index.html'])) bad.push('подвал: строка «Услуги»');
+  if (!/<span>Услуги:<\/span><a href="sites"[^>]*>Сайты-презентации<\/a><i aria-hidden="true">·<\/i><a href="apps"[^>]*>Приложения<\/a><i aria-hidden="true">·<\/i><a href="servers"[^>]*>Серверы<\/a><i aria-hidden="true">·<\/i><a href="care"[^>]*>Сопровождение сайта<\/a><i aria-hidden="true">·<\/i><a href="bitrix24"[^>]*>Интеграции<\/a><i aria-hidden="true">·<\/i><a href="ai"[^>]*>AI-ассистенты<\/a>/.test(src['index.html'])) bad.push('подвал: строка «Услуги»');
   const cs = src['cases.html'], CP = { resonara: 'sites', antares: 'sites', 'call-audit': 'bitrix24', 'tg-crm': 'bitrix24', agents: 'ai', catalog: 'ai', 'seo-report': 'ai', 'studio-os': 'ai' };
   for (const [k, v] of Object.entries(CP)) { const a = (cs.match(new RegExp(`data-case="case-${k}"[\\s\\S]*?</article>`)) || [''])[0]; if (!a.includes(`<p class="cp-svc"><a href="${v}" class="sv-go">Об&nbsp;услуге<svg`)) bad.push(`панель ${k}: «Об услуге» → ${v}`); }
   // в браузере: страница собирается, панель кейса по прямой ссылке открывается, «Об услуге» ведёт на страницу услуги
@@ -2494,7 +2494,7 @@ console.log('\nрисунки направлений');
   await page.evaluate(() => window.scrollTo({ top: document.querySelector('#directions').getBoundingClientRect().top + scrollY + 280, behavior: 'instant' }));
   await page.waitForTimeout(150); await run(3200); await page.waitForTimeout(3300);   // CSS-прорисовка идёт в реальном времени
   const g = await page.evaluate(() => [...document.querySelectorAll('#directions .glyph')].map((el) => {
-    const ds = [...el.querySelectorAll('.d')].filter((d) => !d.closest('.type')), undrawn = ds.filter((d) => parseFloat(getComputedStyle(d).strokeDashoffset) > 0.02).length, r = el.getBoundingClientRect();
+    const ds = [...el.querySelectorAll('.d')].filter((d) => !d.closest('.type') && d.getClientRects().length), undrawn = ds.filter((d) => parseFloat(getComputedStyle(d).strokeDashoffset) > 0.02).length, r = el.getBoundingClientRect();
     return { k: el.dataset.glyph, on: el.classList.contains('is-on'), vis: el.classList.contains('is-vis'), undrawn, n: ds.length, box: [r.left, r.top, r.width, r.height] };
   }));
   for (const x of g.filter((y) => y.box[1] + y.box[3] > 0 && y.box[1] < 900)) {
@@ -3262,7 +3262,7 @@ console.log('\nцены');
   const W = { sites: 'от 120 000 ₽', redesign: 'от 85 000 ₽', apps: 'от 150 000 ₽', servers: 'от 5 000 ₽ за задачу', care: 'от 10 000 ₽ в месяц', automation: 'от 5 000 ₽ в месяц', ai: 'от 5 000 ₽ в месяц' };
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(BASE + 'index.html?intro=instant'); await page.waitForTimeout(400);
-  const home = await page.evaluate(() => [...document.querySelectorAll('a.svc')].map((a) => [a.getAttribute('href').split('#').pop().replace(/^automations$/, 'automation'), (a.querySelector('.svc-pr') || {}).textContent || '']));
+  const home = await page.evaluate(() => [...document.querySelectorAll('a.svc')].map((a) => [a.getAttribute('href').split('#').pop().replace(/^(automations|bitrix24)$/, 'automation'), (a.querySelector('.svc-pr') || {}).textContent || '']));
   // TASK-redesign-prices.md: у «Сайтов-презентаций» ещё «· редизайн от 65 000 ₽»
   if (home.length !== 6 || home.some(([id, t]) => nb(t) !== W[id] + (id === 'sites' ? ' · редизайн от 85 000 ₽' : ''))) bad.push('главная: ' + JSON.stringify(home));
   await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(400);
