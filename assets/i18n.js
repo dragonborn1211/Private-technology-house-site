@@ -869,6 +869,11 @@
     'Типовые сценарии для Битрикс24, Telegram и маркетплейсов. Выберите подходящий — подключим под ваши поля и правила.': 'Standard workflows for Bitrix24, Telegram and marketplaces. Pick one and we\'ll fit it to your fields and rules.',
     // TASK-seo-2: страницы услуг /sites, /bitrix24, /ai; новые title и description
     'Ответы на отзывы': 'Review replies',
+    'Частые вопросы · 6': 'Frequently asked questions · 6',
+    'Цена, сроки, правки и поиск': 'Price, timelines, edits and search',
+    'Частые вопросы · 5': 'Frequently asked questions · 5',
+    'Цена, подключение и разбор звонков': 'Price, setup and call review',
+    'Цена, база знаний и личные данные': 'Price, knowledge base and personal data',
     'Когда сайт': 'When the site is',
     'готов': 'ready',
     'Сайт-презентация для бренда, ЖК и коттеджного посёлка — от 120 000 ₽ | Private Technology House': 'Presentation website for a brand, residential complex or country estate — from 120,000\u00a0₽ | Private Technology House',

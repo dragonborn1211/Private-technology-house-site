@@ -1186,7 +1186,6 @@ a[href],button,summary,label,select,[role="button"],[data-obj],.cx-i,.nb,.pt .cm
 .sv-hpr b{font-weight:400;font-size:26px;letter-spacing:-.02em;color:var(--c)}
 .sv-paths.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .sv-mod.sv-inc{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 48px}
-.sv-fqs{max-width:880px}
 .sv-where{gap:10px}
 .pt .sv-info a.sv-go.sv-dl{color:#BCD3DE}
 .cp-svc{margin:28px 0 0}
