@@ -456,7 +456,6 @@
     'Работы: сайты': 'Work: websites',
     'Работы: автоматизация': 'Work: automation',
     'Работы: AI': 'Work: AI',
-    'Фильтр работ': 'Filter work',
     'Смотреть работы': 'View our work',
     'Автоматизации по шаблону. Вы даёте ключ или вебхук, мы подключаем на своём сервере и следим. Оплата помесячно.': 'Automations from a template. You give us a key or a webhook, we connect it on our server and keep an eye on it. Billed monthly.',
     // услуги: «Как работаем», «Когда сайт готов», «Как устроена подписка»
@@ -997,6 +996,9 @@
     'А если сайт уже есть?': 'What if we already have a site?',
     'Сделаем редизайн, от 85 000 ₽. Адреса страниц и позиции в поиске сохраняем, старый сайт работает, пока мы делаем новый.': 'We’ll do a redesign, from 85,000\u00a0₽. We keep page addresses and search positions, and the old site keeps working while we build the new one.',
     'Работы:': 'Work:',
+    'и AI': 'and AI',
+    'Все работы': 'All work',
+    'Готовое решение': 'Ready-made solution',
     'сайты': 'websites',
     'Кому': 'Who it’s',
     'подходит': 'for',

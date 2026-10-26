@@ -98,7 +98,7 @@
   // формат услуги — по модулю / блоку (страница услуг, «Как работаем», главная) или по адресу ссылки
   var FMT = { sites: 'разово', apps: 'разово', servers: 'разово', projects: 'разово', 'p-sites': 'разово', 'p-servers': 'разово',
     care: 'подписка', automation: 'подписка', ai: 'подписка', subscription: 'подписка', subs: 'подписка', 'sub-how': 'подписка', 'p-care': 'подписка', 'p-automation': 'подписка', templates: 'подписка',
-    after: 'после запуска', objects: 'кейс', cases: 'кейс', works: 'кейс' };
+    after: 'после запуска', objects: 'кейс', cases: 'кейс', 'cases-auto': 'кейс', works: 'кейс' };
   function fmtOf(el, href) {
     for (var n = el; n && n !== document.body; n = n.parentElement) {
       var k = n.id && FMT[n.id] ? n.id : n.getAttribute && n.getAttribute('data-sec');

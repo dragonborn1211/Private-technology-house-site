@@ -788,7 +788,7 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
 console.log('\nуслуги без кейсов, главная: «Кейсы» и «Готовые автоматизации»');
 {
   const bad = [], aid = idsOf('automations.html'), cid = idsOf('cases.html');
-  const filtersC = new Set([...src['cases.html'].matchAll(/data-filter="([a-z]+)"/g)].map((m) => m[1]));
+  const filtersC = idsOf('cases.html'); // группы «Работ» — пустые метки #sites, #automation, #ai (TASK-works)
   // TASK-clarity.md: на телефоне «Что входит» свёрнуто; с «Кто делает» (TASK-about-analytics.md) — +0.6 экрана на телефоне;
   // TASK-prices.md: строка «Цена» первой в условиях шести модулей (у приложений и серверов — с пояснением) — +0.35 на телефоне;
   // TASK-redesign-prices.md: седьмое направление «Редизайн сайта» и крупная цена — +0.7 / +1.3
@@ -806,7 +806,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
     if (r.len > lim) bad.push(`услуги ${w}: ${r.len.toFixed(2)} экрана (не больше ${lim})`);
     // «Стоимость» до цен владельца нет нигде (TASK-review.md 4.3: «фиксированная» ничего не сообщала)
     if (r.cost) bad.push(`услуги: «Стоимость» — ${r.cost}`);
-    if (r.cases !== 'sites,automation,ai' || r.cases.split(',').some((c) => !filtersC.has(c))) bad.push(`услуги: «Кейсы: …» → ${r.cases}`);
+    if (r.cases !== 'sites,automation,automation' || r.cases.split(',').some((c) => !filtersC.has(c))) bad.push(`услуги: «Кейсы: …» → ${r.cases}`);
     const tp = r.tpl.split(',').map((x) => x.split('#')[1]);
     if (tp.join(',') !== 'site-leads,b24-report,seo-report,price-monitor,voice-task,reviews,avito-bot' || tp.some((x) => !aid.has(x)) || r.all !== 2) bad.push(`услуги: «Готовые решения» ${r.tpl}, «Все готовые решения» ${r.all}`);
     if (r.rows !== 2) bad.push('услуги: заголовки групп #projects / #subscription — не тонкие строки с отступом 88 px');
@@ -833,15 +833,15 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
     });
     lens[w] = m.len;
     if (w === 1440) {
-      if (m.h2 !== 'Наши работы' || m.cards.map((c) => c.k).join(' | ') !== 'Сайт игры · интерактив | AI · Битрикс24 | Демо · ваш проект' || m.cards.slice(0, 2).map((c) => c.t).join(' | ') !== 'Resonara: Soulstrings | Разбор каждого звонка' || !m.cards[2].mini || m.more !== 'cases Все работы →') bad.push(`главная «Работы»: ${m.h2}; ${m.cards.map((c) => c.k + ' ' + c.t + (c.mini ? ' (демо)' : '')).join(' | ')}; ${m.more}`);
-      m.cards.slice(0, 2).forEach((c) => { if (!src['cases.html'].replace(/&nbsp;/g, ' ').includes('>' + c.t + '<')) bad.push(`главная: кейса «${c.t}» нет на cases.html`); });
+      if (m.h2 !== 'Наши работы' || m.cards.map((c) => c.k).join(' | ') !== 'Сайт игры · интерактив | Сайт обсерватории · бронь | AI · Битрикс24' || m.cards.map((c) => c.t).join(' | ') !== 'Resonara: Soulstrings | Antares | Разбор каждого звонка' || m.cards.some((c) => c.mini) || m.more !== 'cases Все работы →') bad.push(`главная «Работы»: ${m.h2}; ${m.cards.map((c) => c.k + ' ' + c.t + (c.mini ? ' (демо)' : '')).join(' | ')}; ${m.more}`);
+      m.cards.forEach((c) => { if (!src['cases.html'].replace(/&nbsp;/g, ' ').includes('>' + c.t + '<')) bad.push(`главная: кейса «${c.t}» нет на cases.html`); });
       if (m.ah2 !== 'Готовые решения' || m.aobj || m.titles !== 'automations#site-leads,automations#voice-task' || m.amore !== 'automations Все решения →' || m.dmore !== 'services Все направления →' || m.dk !== 'Что делаем') bad.push(`главная «Готовые решения» и «Что делаем»: ${m.dk}, ${m.dmore}, «${m.ah2}», «Объект №» ${m.aobj}, заголовки ${m.titles}, ${m.amore}`);
       m.titles.split(',').forEach((x) => { if (!aid.has(x.split('#')[1])) bad.push(`главная: ${x} — нет такой карточки`); });
       if (m.btn !== 'Смотреть работы → #objects') bad.push(`кнопка первого экрана: ${m.btn}`);
       if (m.contact !== 'Контакт / Расскажите о задаче' || m.price !== 'Цены') bad.push(`контакт «${m.contact}», «Цены» «${m.price}»`);
     }
-    // TASK-prices.md: цена в шести карточках «Что делаем» — +0.16 экрана на телефоне
-    if (m.len > (w === 1440 ? 5.4 : 9.2)) bad.push(`главная ${w}: ${m.len.toFixed(2)} экрана (не больше ${w === 1440 ? 5.4 : 9.2})`);
+    // TASK-prices.md: цена в шести карточках «Что делаем» — +0.16 экрана на телефоне; TASK-works: вместо демо — Antares (+0.06)
+    if (m.len > (w === 1440 ? 5.4 : 9.3)) bad.push(`главная ${w}: ${m.len.toFixed(2)} экрана (не больше ${w === 1440 ? 5.4 : 9.3})`);
     // снимки: главная целиком и «Кейсы»
     await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
     await page.evaluate(() => document.querySelectorAll('img[loading="lazy"]').forEach((i) => { i.loading = 'eager'; })); await page.waitForTimeout(300);
@@ -853,7 +853,7 @@ console.log('\nуслуги без кейсов, главная: «Кейсы» 
   [...src['index.html'].matchAll(/href="cases#([^"]+)"/g)].forEach((mm) => { if (!cid.has(mm[1])) bad.push(`главная: cases.html#${mm[1]} — нет такого кейса`); });
   console.log(`  · главная: ${lens[1440].toFixed(2)} экрана на 1440, ${lens[390].toFixed(2)} на 390`);
   if (bad.length) fail(bad.join('; '));
-  else console.log('  ✓ услуги: без кейсов, снимков, NDA и схем, «Стоимости» нет, «Кейсы: …» и «Готовые шаблоны» — на существующие якоря; главная: «Наши работы» — Resonara и «Разбор каждого звонка» (как на cases.html, ссылки на панели кейсов) и демо-сайты, «Все работы →»; «Готовые автоматизации» — две карточки, «Все шаблоны →»; ≤ 5,2 / 8,5 экрана');
+  else console.log('  ✓ услуги: без кейсов, снимков, NDA и схем, «Стоимости» нет, «Кейсы: …» и «Готовые шаблоны» — на существующие якоря; главная: «Наши работы» — Resonara, Antares и «Разбор каждого звонка» (как на cases.html, ссылки на панели кейсов), без демо, «Все работы →»; «Готовые автоматизации» — две карточки, «Все шаблоны →»; ≤ 5,2 / 8,5 экрана');
 }
 
 // кейсы: фильтр кликом и по хешу, схемы после смены фильтра в правильном размере, NDA всегда видна, без JS — все
@@ -879,8 +879,8 @@ console.log('\nкейсы и готовые автоматизации');
     btns: [...document.querySelectorAll('[data-filter]')].filter((b) => !b.hidden).map((b) => b.dataset.filter || 'all').join(','),
     always: [...document.querySelectorAll('.obj[id]:not([data-cat])')].filter((c) => c.getBoundingClientRect().height > 0).map((c) => c.id).join(','), hash: location.hash }));
   // схемы видимых карточек: каждая нарисована, холст — по размеру окна (после показа из hidden он был нулевым)
-  const flowsOk = async (page) => {
-    const ids = await page.evaluate(() => [...document.querySelectorAll('[data-cat]')].filter((c) => !c.hidden && c.querySelector('canvas[data-flow]')).map((c) => c.id));
+  const flowsOk = async (page, sel = '[data-cat]') => {
+    const ids = await page.evaluate((sel) => [...document.querySelectorAll(sel)].filter((c) => !c.hidden && c.querySelector('canvas[data-flow]')).map((c) => c.id), sel);
     const out = [];
     for (const id of ids) {
       await page.evaluate((i) => { const e = document.getElementById(i); window.scrollTo({ top: e.getBoundingClientRect().top + scrollY - 120, behavior: 'instant' }); }, id);
@@ -890,55 +890,37 @@ console.log('\nкейсы и готовые автоматизации');
     }
     return out;
   };
-  // --- cases.html
-  let page = await open('cases.html');
+  // --- cases.html (TASK-works): две группы — «Сайты» (два сайта и демо последней) и «Автоматизация и AI»; фильтра и NDA нет
+  let page = await open('cases.html'), st;
   await page.clock.runFor(4000);
-  let st = await state(page);
-  const caseIds = st.vis;
-  if (caseIds.join(',') !== 'case-resonara,case-antares,case-call-audit,case-studio-os,case-seo-report,case-catalog,case-agents,case-tg-crm' || st.always !== 'case-nda,case-demo' || st.pressed !== '' || st.btns !== 'all,sites,automation,ai,integrations') bad.push(`кейсы: ${JSON.stringify(st)}`);
+  const grp = await page.evaluate(() => [...document.querySelectorAll('[data-sec^="cases"]')].map((g) => g.dataset.sec + ':' + g.querySelector('h2').textContent.replace(/\s+/g, ' ').trim() + ':' + [...g.querySelectorAll('.obj-grid > .obj')].map((c) => c.id).join(',')));
+  const G = ['cases:Сайты:case-resonara,case-antares,case-demo', 'cases-auto:Автоматизация и AI:case-call-audit,case-tg-crm,case-catalog,case-agents,case-seo-report,case-studio-os'];
+  if (grp.join(' | ') !== G.join(' | ')) bad.push(`кейсы, группы: ${grp.join(' | ')}`);
+  const caseIds = G.map((g) => g.split(':')[2]).join(',').split(',').filter((x) => x !== 'case-demo');
+  const old = await page.evaluate(() => ({ f: document.querySelectorAll('[data-filter], [data-filters], [data-cat], #case-nda').length, js: !!document.querySelector('script[src*="filter.js"]'), g3: document.querySelectorAll('[data-sec^="cases"] .obj-grid-3').length }));
+  if (old.f || old.js || old.g3 !== 2) bad.push(`кейсы: остатки фильтра / NDA ${old.f}, filter.js ${old.js}, сеток в 3 колонки ${old.g3}`);
   const tpl = await page.evaluate(() => { const t = document.querySelector('template[data-hidden-cases]'); return t ? [...t.content.querySelectorAll('.obj')].map((c) => c.querySelector('canvas').dataset.flow + ':' + c.querySelector('.win-tag').textContent.trim()).join(',') : ''; });
-  if (tpl !== 'ai-gateway:Инфраструктура · Cloudflare') bad.push(`скрытые кейсы: ${tpl}`);
-  const clash = await page.evaluate(() => ['sites', 'automation', 'ai', 'integrations'].filter((i) => document.getElementById(i)));
-  if (clash.length) bad.push(`на cases.html есть id, совпадающие с фильтром: ${clash.join(', ')}`);
-  await page.click('[data-filter="ai"]'); await page.clock.runFor(800);
-  st = await state(page);
-  if (st.vis.join(',') !== 'case-call-audit,case-studio-os,case-seo-report,case-agents' || st.always !== 'case-nda,case-demo' || st.pressed !== 'ai' || st.hash !== '#ai') bad.push(`кейсы, фильтр «AI»: ${JSON.stringify(st)}`);
-  bad.push(...(await flowsOk(page)).map((x) => 'после «AI» ' + x));
-  await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' })); await page.waitForTimeout(100); await page.clock.runFor(300);
-  await page.screenshot({ path: path.join(shots, 'cases-ai-1440.png'), fullPage: true });
-  await page.click('[data-filter=""]'); await page.clock.runFor(800);
-  st = await state(page);
-  if (st.vis.length !== 8 || st.hash !== '') bad.push(`кейсы, «Все»: ${JSON.stringify(st)}`);
-  await page.click('[data-filter="integrations"]'); await page.clock.runFor(800);
-  st = await state(page);
-  if (st.vis.join(',') !== 'case-tg-crm' || st.hash !== '#integrations') bad.push(`кейсы, «Интеграции»: ${JSON.stringify(st)}`);
-  await page.click('[data-filter=""]'); await page.clock.runFor(800);
+  const tplIn = await page.evaluate(() => (document.querySelector('template[data-hidden-cases]') || {}).closest?.('[data-sec]')?.dataset.sec);
+  if (tpl !== 'ai-gateway:Инфраструктура · Cloudflare' || tplIn !== 'cases-auto') bad.push(`скрытые кейсы: ${tpl} в ${tplIn}`);
+  bad.push(...(await flowsOk(page, '[data-sec="cases-auto"] .obj[id]')).map((x) => 'кейсы ' + x));
   page.errs.forEach((e) => bad.push('cases.html: ' + e));
   await page.close();
-  // по хешу: схемы автоматизации скрыты с самого начала (нулевой размер), потом фильтр «Автоматизация» — нарисованы в размер
-  page = await open('cases.html#ai');
-  await page.clock.runFor(4000);
-  st = await state(page);
-  if (st.vis.join(',') !== 'case-call-audit,case-studio-os,case-seo-report,case-agents' || st.pressed !== 'ai') bad.push(`cases.html#ai: ${JSON.stringify(st)}`);
-  await page.click('[data-filter="automation"]'); await page.clock.runFor(800);
-  st = await state(page);
-  if (st.vis.join(',') !== 'case-studio-os,case-seo-report,case-catalog' || st.hash !== '#automation') bad.push(`cases.html#ai → «Автоматизация»: ${JSON.stringify(st)}`);
-  bad.push(...(await flowsOk(page)).map((x) => 'cases.html#ai → «Автоматизация» ' + x));
-  page.errs.forEach((e) => bad.push('cases.html#ai: ' + e));
-  await page.close();
-  page = await open('cases.html#automation');
-  await page.clock.runFor(1500);
-  st = await state(page);
-  if (st.vis.join(',') !== 'case-studio-os,case-seo-report,case-catalog' || st.always !== 'case-nda,case-demo' || st.pressed !== 'automation') bad.push(`cases.html#automation: ${JSON.stringify(st)}`);
-  await page.close();
-  // без JS: все карточки видны, фильтра нет
+  // адреса групп: #sites, #automation и старый #ai — заголовок группы у верха окна, группа собрана
+  for (const [h, sec] of [['sites', 'cases'], ['automation', 'cases-auto'], ['ai', 'cases-auto']]) {
+    page = await open('cases.html#' + h);
+    await page.clock.runFor(3500); await page.waitForTimeout(100);
+    const r = await page.evaluate((q) => { const g = document.querySelector(`[data-sec="${q}"]`); return { top: Math.round(g.querySelector('h2').getBoundingClientRect().top), done: g.classList.contains('s-done') }; }, sec);
+    if (!r.done || r.top < 40 || r.top > 320) bad.push(`cases.html#${h}: группа ${r.done ? 'собрана' : 'не собрана'}, заголовок на ${r.top}px`);
+    page.errs.forEach((e) => bad.push(`cases.html#${h}: ` + e));
+    await page.close();
+  }
+  // без JS: видны все карточки обеих групп
   {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, javaScriptEnabled: false });
     const pg = await ctx.newPage();
     await pg.goto(BASE + 'cases.html');
-    const r = await pg.locator('[data-cat]').evaluateAll((els) => els.filter((e) => !e.hidden && getComputedStyle(e).display !== 'none').length);
-    const fh = await pg.locator('[data-filters]').evaluate((e) => e.hidden);
-    if (r !== 8 || !fh) bad.push(`без JS: видно кейсов ${r}, фильтр скрыт ${fh}`);
+    const r = await pg.locator('[data-sec^="cases"] .obj-grid > .obj').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length);
+    if (r !== 9) bad.push(`без JS: видно карточек ${r} (нужно 9)`);
     await ctx.close();
   }
   // --- automations.html
@@ -998,7 +980,7 @@ console.log('\nкейсы и готовые автоматизации');
     await ctx.close();
   }
   if (bad.length) fail('кейсы и каталог: ' + bad.join('; '));
-  else console.log('  ✓ кейсы: восемь, «Под NDA» и демо-сайты, фильтр кликом и по хешу (#ai, #automation, «Интеграции»), схемы после смены фильтра нарисованы в размер, без JS видны все, AI-шлюз в <template>; каталог: восемь шаблонов и «Под ваш процесс», «Нужно от вас», «Подключить», «Работает у клиента» → существующие кейсы, фильтр «Отчёты» (#f-reports), якоря с главной и услуг — на карточки не под шапкой, вопросы = JSON-LD; JSON-LD в EN без кириллицы');
+  else console.log('  ✓ кейсы: две группы — «Сайты» (Resonara, Antares, демо последней) и «Автоматизация и AI» (шесть работ), фильтра и NDA нет, #sites / #automation / #ai — к заголовку группы, схемы нарисованы в размер, без JS видны все, AI-шлюз в <template> группы «Автоматизация и AI»; каталог: восемь шаблонов и «Под ваш процесс», «Нужно от вас», «Подключить», «Работает у клиента» → существующие кейсы, фильтр «Отчёты» (#f-reports), якоря с главной и услуг — на карточки не под шапкой, вопросы = JSON-LD; JSON-LD в EN без кириллицы');
 }
 
 // новые страницы, как страница услуг: секции собираются на трёх ширинах RU и двух EN, ошибок нет, кириллицы в EN нет
@@ -1117,8 +1099,8 @@ console.log('\nтексты и типографика (TASK-polish.md)');
     if (!lang) stat.anRu = r.an;
     await ctx.close();
   }
-  // демо-сайты: за 30 с подпись [data-mini-label] показывает три разных сайта — на главной и на cases.html
-  for (const [url, sel] of [['index.html', '#objects canvas[data-mini]'], ['cases.html', '#case-demo canvas[data-mini]']]) {
+  // демо-сайты: за 30 с подпись [data-mini-label] показывает три разных сайта — на cases.html и на /sites (TASK-works: с главной убраны)
+  for (const [url, sel] of [['cases.html', '#case-demo canvas[data-mini]'], ['sites.html', '[data-sec="works"] canvas[data-mini]']]) {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
     await page.clock.pauseAt(new Date('2026-01-01T12:00:01Z'));
@@ -1131,20 +1113,24 @@ console.log('\nтексты и типографика (TASK-polish.md)');
     else stat.push(`${url.replace('.html', '')}: демо ${[...names].slice(0, 3).join(', ')}`);
     await page.close();
   }
-  // cases.html: при каждом фильтре число видимых карточек чётное, «Под NDA» и демо видны всегда; снимки последнего ряда
+  // TASK-works: «Ваш сайт — следующий» — только на /sites и в группе «Сайты» на cases, последней среди сайтов; снимок группы
+  for (const f of Object.keys(src).filter((k) => k.endsWith('.html'))) {
+    const n = (src[f].replace(/<!--[\s\S]*?-->/g, '').replace(/&nbsp;/g, ' ').match(/Ваш сайт — следующий/g) || []).length;
+    if (n !== (f === 'cases.html' || f === 'sites.html' ? 1 : 0)) bad.push(`${f}: «Ваш сайт — следующий» ${n} раз`);
+  }
   for (const w of [1440, 390]) {
-    const page = await browser.newPage({ viewport: { width: w, height: 900 } });
-    await page.goto(BASE + 'cases.html?intro=instant'); await page.waitForTimeout(500);
-    for (const f of await page.evaluate(() => [...document.querySelectorAll('[data-filter]')].filter((b) => !b.hidden).map((b) => b.dataset.filter))) {
-      await page.click(`[data-filter="${f}"]`); await page.waitForTimeout(250); await filterIdle(page);
-      const r = await page.evaluate(() => { const v = [...document.querySelectorAll('.obj-grid .obj')].filter((c) => c.getBoundingClientRect().height > 0); return { n: v.length, ids: v.map((c) => c.id), wide: document.getElementById('case-demo').getBoundingClientRect().width > document.getElementById('case-nda').getBoundingClientRect().width * 1.5 }; });
-      if ((w > 900 && r.n % 2 && !r.wide) || !r.ids.includes('case-nda') || !r.ids.includes('case-demo')) bad.push(`cases ${w}, фильтр «${f || 'Все'}»: карточек ${r.n}, демо на всю ширину ${r.wide} (${r.ids.join(', ')})`);
+    for (const [f, sel] of [['cases.html', '[data-sec="cases"]'], ['sites.html', '[data-sec="works"]']]) {
+      const page = await browser.newPage({ viewport: { width: w, height: 900 } });
+      await page.goto(BASE + f + '?intro=instant'); await page.waitForTimeout(500);
+      const last = await page.evaluate((q) => { const c = [...document.querySelectorAll(q + ' .obj-grid > .obj')]; return c.length + ':' + !!c[c.length - 1].querySelector('canvas[data-mini]'); }, sel);
+      if (last !== '3:true') bad.push(`${f} ${w}: «Сайты» — ${last} (нужно три карточки, демо последней)`);
+      if (f === 'cases.html') {
+        await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
+        const b = await page.evaluate((q) => { const e = document.querySelector(q + ' .obj-grid').getBoundingClientRect(); return { y: e.top + scrollY - 16, h: e.height + 32 }; }, sel);
+        await page.screenshot({ path: path.join(shots, `cases-sites-${w}.png`), fullPage: true, clip: { x: 0, y: Math.round(b.y), width: w, height: Math.round(b.h) } });
+      }
+      await page.close();
     }
-    await page.click('[data-filter=""]'); await page.waitForTimeout(250); await filterIdle(page);
-    await page.addStyleTag({ content: '[data-pt-canvas],[data-pt-smoke]{display:none!important}' });
-    const b = await page.evaluate(() => { const a = document.getElementById('case-nda').getBoundingClientRect(), d = document.getElementById('case-demo').getBoundingClientRect(); return { y: Math.min(a.top, d.top) + scrollY - 16, h: Math.max(a.bottom, d.bottom) - Math.min(a.top, d.top) + 32 }; });
-    await page.screenshot({ path: path.join(shots, `cases-last-${w}.png`), fullPage: true, clip: { x: 0, y: Math.round(b.y), width: w, height: Math.round(b.h) } });
-    await page.close();
   }
   // карточка шаблона со схемой и русскими ролями (1440)
   {
@@ -1155,7 +1141,7 @@ console.log('\nтексты и типографика (TASK-polish.md)');
     await page.close();
   }
   if (bad.length) fail('тексты и типографика: ' + bad.join('; '));
-  else console.log(`  ✓ заголовки без служебных подписей, .an / .wf — в атрибутах и aria-hidden (в EN не переводятся), курсив только в h1, кикеров с номером нет, штампов нет; ${stat.join('; ')}; на cases.html рядов из одной карточки нет`);
+  else console.log(`  ✓ заголовки без служебных подписей, .an / .wf — в атрибутах и aria-hidden (в EN не переводятся), курсив только в h1, кикеров с номером нет, штампов нет; ${stat.join('; ')}; «Ваш сайт — следующий» — только на /sites и в «Сайтах» на cases, последней`);
 }
 // Структура (TASK-structure.md): data-pt-burst нет ни в одном HTML (конец сборки — тихий); услуги — новый порядок секций,
 // «Когда сайт готов» и «Как устроена подписка» по три карточки, раздела «После запуска» нет, вопросов пять; process.html —
@@ -1345,10 +1331,12 @@ console.log('\nясность, B1–B3: фильтры и якоря с аним
   {
     const ctx = await quick.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
-    await page.goto(BASE + 'cases.html'); await page.waitForTimeout(400);
+    // TASK-works: на «Работах» фильтра нет — проверяем фильтр «Готовых решений»
+    await page.goto(BASE + 'automations.html'); await page.waitForTimeout(400);
     await page.evaluate(() => { window.__rz = 0; window.addEventListener('resize', () => window.__rz++); document.querySelector('[data-filter="ai"]').click(); });
-    const r = await page.evaluate(() => ({ rz: window.__rz, an: document.querySelector('.obj-grid').getAnimations({ subtree: true }).filter((a) => a.constructor.name === 'Animation').length, vis: [...document.querySelectorAll('.obj-grid .obj')].filter((c) => !c.hidden).length }));
-    if (r.rz !== 1 || r.an || r.vis !== 6) bad.push(`кейсы, reduced motion: ${JSON.stringify(r)}`);
+    const r = await page.evaluate(() => ({ rz: window.__rz, an: document.querySelector('.obj-grid').getAnimations({ subtree: true }).filter((a) => a.constructor.name === 'Animation').length, vis: [...document.querySelectorAll('.obj-grid .obj')].filter((c) => !c.hidden).length,
+      want: [...document.querySelectorAll('.obj-grid .obj')].filter((c) => !c.dataset.cat || c.dataset.cat.split(' ').includes('ai')).length }));
+    if (r.rz !== 1 || r.an || r.vis !== r.want) bad.push(`каталог, reduced motion: ${JSON.stringify(r)}`);
     await ctx.close();
   }
   // якорь на этой же странице: доезжает быстрее секунды и цель откликается; с другой страницы — отклик после сборки цели
@@ -1378,13 +1366,13 @@ console.log('\nясность, B1–B3: фильтры и якоря с аним
     await p2.close();
   }
   // подписи карточек — в окне
-  for (const f of ['index.html', 'cases.html', 'automations.html']) {
+  for (const f of ['index.html', 'cases.html', 'automations.html', 'apps.html']) {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await page.goto(BASE + f + '?intro=instant'); await page.waitForTimeout(300);
     const r = await page.evaluate(() => {
       const objs = [...document.querySelectorAll('.obj')].concat(...[...document.querySelectorAll('template')].map((t) => [...t.content.querySelectorAll('.obj')]));
       const win = (c) => c.querySelector('.flow-win, .site, canvas[data-mini]');
-      return { no: objs.filter((c) => win(c) && c.id !== 'your-process' && c.id !== 'case-nda' && !c.querySelector('.win-tag')).map((c) => c.id || (c.querySelector('.obj-h, .card-link') || {}).textContent),
+      return { no: objs.filter((c) => win(c) && c.id !== 'your-process' && !c.querySelector('.nda-win') && !c.querySelector('.win-tag')).map((c) => c.id || (c.querySelector('.obj-h, .card-link') || {}).textContent),
         mono: objs.filter((c) => c.querySelector('.obj-tx .mono')).length, outside: [...document.querySelectorAll('.win-tag')].filter((t) => !t.parentElement.matches('.flow-win, .site, .fr')).length,
         tpl: [...document.querySelectorAll(/\/automations(\.html)?$/.test(location.pathname) ? '.win-tag' : '#automation .win-tag')].map((t) => t.textContent).filter((x) => /Шаблон/.test(x)) };
     });
@@ -1669,7 +1657,7 @@ console.log('\nревью, 5–9: группы на главной, NDA, сле�
   const dir = (/data-sec="directions"[\s\S]*?<\/section>/.exec(strip(src['index.html'])) || [''])[0];
   const gw = [...dir.matchAll(/<h3 class="gh"><span class="gh-w">([^<]+)<\/span> <span class="gh-m">([^<]+)<\/span><\/h3>\n<p class="row-t">([^<]+)<\/p>/g)].map((m) => m.slice(1).join('/'));
   if (gw.join(' | ') !== 'Разово/проекты/Смета и сроки до старта. Код ваш. | Ежемесячно/подписка/Работает на наших серверах, мы за это отвечаем.') bad.push(`группы на главной: ${gw.join(' | ') || 'нет'}`);
-  const nda = (/<article class="glass fr obj" id="case-nda">[\s\S]*?<\/article>/.exec(src['cases.html']) || [''])[0];
+  const nda = (/<article class="glass fr obj">\n<span class="flow-win next nda-win[\s\S]*?<\/article>/.exec(src['apps.html']) || [''])[0]; // TASK-works: с «Работ» — на /apps
   if (/win-tag/.test(nda) || (nda.match(/<i>/g) || []).length !== 3 || !/class="nda-ph" aria-hidden="true"/.test(nda) || !/\[ под NDA \]/.test(nda)) bad.push('карточка «Под NDA»');
   for (const [f, href, t] of [['services.html', 'automations', 'Готовые решения →'], ['process.html', 'services', 'Что делаем →'], ['cases.html', 'services', 'Что делаем →'], ['automations.html', 'cases', 'Работы →']]) {
     // стрелка — через &nbsp; (TASK-qa.md: «→» не уходит на строку одна)
@@ -1685,7 +1673,8 @@ console.log('\nревью, 5–9: группы на главной, NDA, сле�
   // «Готовые решения» — после TASK-seo-case.md (восьмая работа и восьмой шаблон: на телефоне ещё карточка, на 1440 у каталога ряд)
   // главная и «Что делаем» — после TASK-prices.md (цены в карточках и строка «Цена» в условиях модулей); «Что делаем» — после
   // TASK-redesign-prices.md (блок «Редизайн сайта», цена 26 px)
-  const LEN = { 'index.html': [5.3, 9.0], 'services.html': [7.6, 13.6], 'process.html': [3.3, 7.15], 'cases.html': [4.7, 7.95], 'automations.html': [5.05, 9.1] };
+  // главная — после TASK-works (вместо демо-сайтов карточка Antares: +0.06 на телефоне)
+  const LEN = { 'index.html': [5.3, 9.1], 'services.html': [7.6, 13.6], 'process.html': [3.3, 7.15], 'cases.html': [4.7, 7.95], 'automations.html': [5.05, 9.1] };
   const quick = await chromium.launch();
   for (const [w, h] of [[1440, 900], [390, 844]]) {
     const page = await quick.newPage({ viewport: { width: w, height: h } });
@@ -1929,7 +1918,8 @@ console.log('\nясность, B7 / B9: цвет на «Что делаем», �
     return { name: m[1], dark: lum < 128 };
   });
   if (tpl.length !== 5 || tpl[0].name !== 'Северный юрист' || tpl.some((t, i) => t.dark !== (i % 2 === 0)) || !tpl.some((t) => t.name === 'Посёлок «Сосны»')) bad.push(`демо-сайты: ${tpl.map((t) => t.name + (t.dark ? ' (тёмный)' : ' (светлый)')).join(', ')}`);
-  for (const f of ['index.html', 'cases.html']) {
+  // демо-сайты — на /sites и «Работах» (TASK-works: с главной убраны)
+  for (const f of ['sites.html', 'cases.html']) {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await page.clock.install({ time: new Date('2026-01-01T12:00:00Z') });
     await page.goto(BASE + f + '?intro=instant'); await page.clock.runFor(1500);
@@ -2795,7 +2785,7 @@ console.log('\nпанель разбора работы');
       CanvasRenderingContext2D.prototype.clearRect = function () { cnt.set(this.canvas, (cnt.get(this.canvas) || 0) + 1); return orig.apply(this, arguments); };
       window.__cr = (sel) => [...document.querySelectorAll(sel)].reduce((a, c) => a + (cnt.get(c) || 0), 0);
       window.__ev = [];
-      addEventListener('pt:secdone', (e) => { if (e.detail && e.detail.dataset && e.detail.dataset.sec === 'cases') window.__ev.push('secdone'); });
+      addEventListener('pt:secdone', (e) => { if (e.detail && e.detail.dataset && /^cases/.test(e.detail.dataset.sec || '')) window.__ev.push('secdone:' + e.detail.dataset.sec); });
       addEventListener('pt:case', (e) => window.__ev.push('open:' + e.detail));
     }, opts);
     const page = await ctx.newPage(); page.errs = [];
@@ -2809,12 +2799,12 @@ console.log('\nпанель разбора работы');
       prev: cp.querySelector('[data-cp-prev]').disabled, next: cp.querySelector('[data-cp-next]').disabled, lock: document.documentElement.classList.contains('cp-lock'), y: Math.round(scrollY),
       focus: ae === cp.querySelector('.cp-sheet') ? 'sheet' : (ae.closest('[id^="case-"]') || {}).id || ae.tagName, title: document.title, label: cp.querySelector('.cp-sheet').getAttribute('aria-labelledby') };
   });
-  const IDS = ['case-resonara', 'case-antares', 'case-call-audit', 'case-studio-os', 'case-seo-report', 'case-catalog', 'case-agents', 'case-tg-crm'];
+  const IDS = ['case-resonara', 'case-antares', 'case-call-audit', 'case-tg-crm', 'case-catalog', 'case-agents', 'case-seo-report', 'case-studio-os'];
   // 1440: открыть каждую, закрыть Esc
   {
     const { ctx, page } = await mkp({ width: 1440, height: 900 });
     await page.goto(BASE + 'cases.html?intro=instant'); await page.waitForTimeout(1500);
-    const ids = await page.evaluate(() => [...document.querySelectorAll('.obj-grid-2 > .obj [data-cp-open]')].map((a) => a.closest('.obj').id));
+    const ids = await page.evaluate(() => [...document.querySelectorAll('.obj-grid > .obj [data-cp-open]')].map((a) => a.closest('.obj').id));
     if (ids.join(',') !== IDS.join(',')) bad.push('карточки с панелью: ' + ids.join(','));
     for (const [i, id] of IDS.entries()) {
       await page.evaluate((id) => document.getElementById(id).scrollIntoView({ block: 'center', behavior: 'instant' }), id); await page.waitForTimeout(250);
@@ -2837,15 +2827,15 @@ console.log('\nпанель разбора работы');
     for (let k = 0; k < 6; k++) await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(200); s = await cst(page);
     const foot = await page.evaluate(() => [...document.querySelectorAll('.cp-foot > *')].map((x) => x.className).join(','));
-    if (s.art !== 'case-tg-crm' || s.n !== '08/08' || !s.next || foot !== 'cp-cta') bad.push(`последняя: ${JSON.stringify(s)}, подвал ${foot}`);
+    if (s.art !== 'case-studio-os' || s.n !== '08/08' || !s.next || foot !== 'cp-cta') bad.push(`последняя: ${JSON.stringify(s)}, подвал ${foot}`);
     let out = 0;
     for (let k = 0; k < 14; k++) { await page.keyboard.press('Tab'); if (!(await page.evaluate(() => !!document.activeElement.closest('[data-cp]')))) out++; }
     if (out) bad.push(`Tab ушёл из панели ${out} раз`);
     // пока открыта: схемы сетки не рисуют, схема статьи рисует; колесо крутит тело, страница стоит
     await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(1200);
-    const g1 = await page.evaluate(() => __cr('.obj-grid-2 canvas')), a1 = await page.evaluate(() => __cr('.cp canvas'));
+    const g1 = await page.evaluate(() => __cr('[data-sec^="cases"] .obj-grid canvas')), a1 = await page.evaluate(() => __cr('.cp canvas'));
     await page.waitForTimeout(1000);
-    const g2 = await page.evaluate(() => __cr('.obj-grid-2 canvas')), a2 = await page.evaluate(() => __cr('.cp canvas'));
+    const g2 = await page.evaluate(() => __cr('[data-sec^="cases"] .obj-grid canvas')), a2 = await page.evaluate(() => __cr('.cp canvas'));
     if (g2 !== g1 || a2 <= a1) bad.push(`под открытой панелью: кадров сетки ${g2 - g1} (нужно 0), схемы статьи ${a2 - a1}`);
     const w0 = await page.evaluate(() => [scrollY, document.querySelector('[data-cp-body]').scrollTop]);
     await page.mouse.move(1100, 500); await page.mouse.wheel(0, 600); await page.waitForTimeout(500);
@@ -2853,7 +2843,7 @@ console.log('\nпанель разбора работы');
     if (w1[0] !== w0[0] || w1[1] < w0[1] + 100) bad.push(`колесо над панелью: страница ${w0[0]} → ${w1[0]}, тело ${w0[1]} → ${w1[1]}`);
     await page.click('.cp-x'); await page.waitForTimeout(800);
     s = await cst(page); if (s.open || s.focus !== 'case-resonara') bad.push('× : ' + JSON.stringify(s));
-    const g3 = await page.evaluate(() => __cr('.obj-grid-2 canvas')); await page.waitForTimeout(800); const g4 = await page.evaluate(() => __cr('.obj-grid-2 canvas'));
+    const g3 = await page.evaluate(() => __cr('[data-sec^="cases"] .obj-grid canvas')); await page.waitForTimeout(800); const g4 = await page.evaluate(() => __cr('[data-sec^="cases"] .obj-grid canvas'));
     if (g4 <= g3) bad.push('после закрытия схемы сетки не проснулись');
     // «Назад» браузера закрывает; клик по подложке закрывает
     await page.click('#case-catalog [data-cp-open]'); await page.waitForTimeout(700); await page.goBack(); await page.waitForTimeout(700);
@@ -2863,18 +2853,17 @@ console.log('\nпанель разбора работы');
     page.errs.forEach((e) => bad.push('1440: ' + e));
     await ctx.close();
   }
-  // фильтр «AI»: три кейса, счётчик / 03, после закрытия хеш фильтра на месте
+  // группа по адресу (#automation): панель листает все восемь, после закрытия хеш группы на месте (TASK-works)
   {
     const { ctx, page } = await mkp({ width: 1440, height: 900 });
-    await page.goto(BASE + 'cases.html?intro=instant#ai'); await page.waitForTimeout(1500);
+    await page.goto(BASE + 'cases.html?intro=instant#automation'); await page.waitForTimeout(1500);
     await page.click('#case-call-audit [data-cp-open]'); await page.waitForTimeout(700);
     let s = await cst(page); const n0 = s.n;
-    for (let k = 0; k < 3; k++) await page.keyboard.press('ArrowRight');
+    for (let k = 0; k < 5; k++) await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(200); s = await cst(page);
     const n1 = s.n, art = s.art, nx = s.next;
     await page.keyboard.press('Escape'); await page.waitForTimeout(700); s = await cst(page);
-    const fl = await page.evaluate(() => document.querySelector('.fl-b[aria-pressed="true"]').dataset.filter);
-    if (n0 !== '01/04' || n1 !== '04/04' || art !== 'case-agents' || !nx || s.hash !== '#ai' || fl !== 'ai') bad.push(`фильтр «AI»: ${n0} → ${n1} ${art}, закрыта: ${s.hash} ${fl}`);
+    if (n0 !== '03/08' || n1 !== '08/08' || art !== 'case-studio-os' || !nx || s.hash !== '#automation') bad.push(`#automation: ${n0} → ${n1} ${art}, закрыта: ${s.hash}`);
     await ctx.close();
   }
   // прямая ссылка: панель — после сборки секции cases
@@ -2882,7 +2871,8 @@ console.log('\nпанель разбора работы');
     const { ctx, page } = await mkp({ width: 1440, height: 900 });
     await page.goto(BASE + 'cases.html#case-studio-os'); await page.waitForTimeout(5500);
     const ev = await page.evaluate(() => __ev.join(' → ')), s = await cst(page);
-    if (ev !== 'secdone → open:studio-os' || !s.open) bad.push(`cases.html#case-studio-os: ${ev}, ${JSON.stringify(s)}`);
+    // панель — после сборки секции своей карточки (studio-os — в группе «Автоматизация и AI»)
+    if (ev.indexOf('secdone:cases-auto') < 0 || !ev.endsWith('secdone:cases-auto → open:studio-os') && !/secdone:cases-auto → (secdone:cases → )?open:studio-os$/.test(ev) || !s.open) bad.push(`cases.html#case-studio-os: ${ev}, ${JSON.stringify(s)}`);
     page.errs.forEach((e) => bad.push('прямая ссылка: ' + e));
     await ctx.close();
   }

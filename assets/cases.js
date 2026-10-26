@@ -10,7 +10,8 @@
 //   панель засыпает. Схемы панели секция не будит — только панель, когда показывает статью;
 // - scroll.js: клик по карточке перехватываем раньше него (window, фаза захвата) — он повёл бы #якорь плавной прокруткой;
 //   html.cp-lock — страница стоит, колесо крутит тело панели (pt-lock меню не подходит: он прячет страницу под стеклом);
-// - filter.js: #case-* фильтр не трогает; листаем только видимые при фильтре карточки; после закрытия хеш фильтра на месте;
+// - группы «Сайты» и «Автоматизация и AI» (TASK-works) — две секции, фильтра нет: листаем все работы подряд, в порядке карточек;
+//   хеш группы (#sites, #automation) после закрытия на месте;
 // - consent.js: pt:case → цель Метрики case_open (только после «Принять»), призыв в панели — обычная цель tg;
 // - i18n.js: что пишет модуль («Следующая работа», заголовок вкладки) — через PTI18N.t; статьи переводит словарь.
 // Подключается после engine.js: заход по ссылке cases#case-… открывает панель, когда секция cases собрана (pt:secdone).
@@ -21,7 +22,7 @@
   var sheet = cp.querySelector('.cp-sheet'), body = cp.querySelector('[data-cp-body]'), foot = cp.querySelector('[data-cp-foot]'), bar = cp.querySelector('.cp-bar');
   var nEl = cp.querySelector('[data-cp-n]'), tEl = cp.querySelector('[data-cp-total]');
   var prevB = cp.querySelector('[data-cp-prev]'), nextB = cp.querySelector('[data-cp-next]');
-  var grid = document.querySelector('.obj-grid-2'), sec = cp.closest('[data-sec]');
+  var grids = Array.prototype.slice.call(document.querySelectorAll('.obj-grid')).filter(function (g) { return !cp.contains(g); });
   var arts = Array.prototype.slice.call(body.querySelectorAll('.cp-art'));
   var rm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var cur = '', opener = null, pushed = false, prevHash = '', title0 = '', hideT = 0, wakeT = 0, inert = [];
@@ -29,12 +30,12 @@
   function t(s) { return window.PTI18N ? window.PTI18N.t(s) : s; }
   function ev(name, detail) { try { window.dispatchEvent(new CustomEvent(name, { detail: detail })); } catch (e) { /* старый браузер */ } }
   function art(id) { return body.querySelector('.cp-art[data-case="' + id + '"]'); }
-  // порядок — как карточки в сетке, только видимые при текущем фильтре (кейс по прямой ссылке скрыт фильтром — все)
-  function order(id) {
-    var all = Array.prototype.filter.call(document.querySelectorAll('.obj-grid-2 > .obj[id^="case-"]'), function (c) { return !!art(c.id); });
-    var vis = all.filter(function (c) { return !c.hidden; }).map(function (c) { return c.id; });
-    return vis.indexOf(id) >= 0 ? vis : all.map(function (c) { return c.id; });
+  // порядок — как карточки в сетках групп, сверху вниз (демо и скрытый кейс статьи не имеют)
+  function order() {
+    return Array.prototype.filter.call(document.querySelectorAll('.obj-grid > .obj[id^="case-"]'), function (c) { return !cp.contains(c) && !!art(c.id); })
+      .map(function (c) { return c.id; });
   }
+  function evAll(name) { grids.forEach(function (g) { ev(name, g); }); }
   function title(id) { var h = art(id).querySelector('.cp-h'); return h ? h.textContent.replace(/\s+/g, ' ').trim() : ''; }
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   // остальная страница, пока панель открыта, — inert (как меню): соседи панели на всём пути вверх до <body>. Плашка cookie —
@@ -88,7 +89,7 @@
     opener = from || (c && c.querySelector('[data-cp-open]'));
     prevHash = /^#case-/.test(location.hash) ? '' : location.hash; title0 = document.title;
     cp.hidden = false; de.classList.add('cp-lock'); setInert(true);
-    ev('pt:sleep', grid);
+    evAll('pt:sleep');
     fill(id, true);
     void cp.offsetWidth;
     requestAnimationFrame(function () { cp.classList.add('is-open'); sheet.focus({ preventScroll: true }); });
@@ -104,7 +105,7 @@
     if (!cur) return;
     cp.classList.remove('is-open'); cur = ''; clearTimeout(wakeT);
     de.classList.remove('cp-lock'); setInert(false);
-    ev('pt:sleep', cp); ev('pt:wake', grid);
+    ev('pt:sleep', cp); evAll('pt:wake');
     document.title = title0;
     hideT = setTimeout(function () { cp.hidden = true; foot.innerHTML = ''; foot.setAttribute('aria-hidden', 'true'); }, rm ? 0 : 460);
     // адрес: открывали кликом — назад по истории; зашли по ссылке или «вперёд» — адрес без кейса (с хешем фильтра, если был)
@@ -174,9 +175,9 @@
   }
   bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
   // заход по ссылке cases#case-…: страница собирается как обычно (движок сам ставит карточку в вид — переход по якорю),
-  // панель — когда секция cases собрана; «сразу» и reduced motion собирают её до этого модуля — тогда сразу
-  var h0 = location.hash.slice(1);
-  if (/^case-/.test(h0) && art(h0)) {
+  // панель — когда собрана секция этой карточки; «сразу» и reduced motion собирают её до этого модуля — тогда сразу
+  var h0 = location.hash.slice(1), card0 = /^case-/.test(h0) && document.getElementById(h0), sec = card0 && card0.closest('[data-sec]');
+  if (card0 && art(h0)) {
     var done = false, go0 = function () { if (done) return; done = true; if (location.hash.slice(1) === h0) open(h0, false); };
     if (sec && sec.classList.contains('s-done')) setTimeout(go0, rm ? 0 : 250);
     else {

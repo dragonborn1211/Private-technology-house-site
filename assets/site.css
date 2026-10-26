@@ -1185,6 +1185,9 @@ a[href],button,summary,label,select,[role="button"],[data-obj],.cx-i,.nb,.pt .cm
 .sv-hpr{margin:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;font-size:15px;line-height:1.5;color:#9DB0BC}
 .sv-hpr b{font-weight:400;font-size:26px;letter-spacing:-.02em;color:var(--c)}
 .sv-paths.c2{grid-template-columns:repeat(2,minmax(0,1fr))}
+/* одна карточка на всю ширину (/bitrix24, «Любая связка»; TASK-works): на телефоне — не лентой */
+.sv-paths.c1{grid-template-columns:minmax(0,1fr)}
+@media (max-width:760px){.sv-paths.c1 .sv-path{flex:1 1 auto}}
 .sv-mod.sv-inc{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 48px}
 .sv-where{gap:10px}
 .pt .sv-info a.sv-go.sv-dl{color:#BCD3DE}

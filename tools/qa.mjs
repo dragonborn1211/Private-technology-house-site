@@ -55,9 +55,9 @@ async function links() {
     return status[u];
   }
   const ids = (h) => new Set([...h.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]));
-  // хеши фильтров: на работах — категории, в каталоге — #f-<категория>
-  const FILTER = { 'cases.html': /^(sites|automation|ai|integrations)$/, 'automations.html': /^f-[a-z]+$/ };
-  const EXT = [/^https:\/\/t\.me\/dragonborne0(\?text=.+)?$/, /^https:\/\/wa\.me\/79090243995(\?text=.+)?$/, /^https:\/\/max\.ru\/u\/[A-Za-z0-9_-]{20,}$/, /^tel:\+79090243995$/, /^https:\/\/resonara\.ru\/$/, /^https:\/\/useantares\.com\/$/];
+  // хеши фильтров: в каталоге — #f-<категория> (на работах фильтра нет, TASK-works: #sites / #automation / #ai — метки групп)
+  const FILTER = { 'automations.html': /^f-[a-z]+$/ };
+  const EXT = [/^https:\/\/t\.me\/dragonborne0(\?text=.+)?$/, /^https:\/\/wa\.me\/79090243995(\?text=.+)?$/, /^https:\/\/max\.ru\/u\/[A-Za-z0-9_-]{20,}$/, /^tel:\+79090243995$/, /^mailto:hello@privatechouse\.ru$/, /^https:\/\/resonara\.ru\/$/, /^https:\/\/useantares\.com\/$/];
   const bad = [], seen = new Set();
   let n = 0;
   for (const pg of ALL_PAGES) for (const lang of (pg === 'privacy.html' ? ['ru'] : ['ru', 'en'])) {
@@ -632,10 +632,10 @@ const SCEN = {
     bad.push(...errs); await ctx.close();
     return bad;
   },
-  // фильтры: хеш, прямой заход, быстрые клики подряд — карточки не налезают, видимых чётное число
+  // фильтр каталога: хеш, прямой заход, быстрые клики подряд — карточки не налезают (на работах фильтра нет, TASK-works)
   async filters(b, w) {
     const bad = [];
-    for (const [pg, direct, want] of [['cases.html', '#ai', 'ai'], ['automations.html', '#f-reports', 'reports']]) {
+    for (const [pg, direct, want] of [['automations.html', '#f-reports', 'reports']]) {
       const { ctx, page, errs } = await open(b, pg + direct + (direct ? '' : ''), { w });
       await page.waitForTimeout(4500);
       let pressed = await page.evaluate(() => (document.querySelector('.fl-b[aria-pressed="true"]') || {}).dataset?.filter);
