@@ -1213,7 +1213,7 @@ a[href],button,summary,label,select,[role="button"],[data-obj],.cx-i,.nb,.pt .cm
 .pt .nav .sm-pop a{display:flex;flex-direction:column;justify-content:center;gap:3px;min-height:52px;padding:6px 14px;border-radius:14px;color:#BCD3DE;transition:background-color .2s ease,color .2s ease}
 .pt .nav .sm-pop a span{font:500 15px/1.25 Manrope,'Manrope fb',system-ui,sans-serif}
 .pt .nav .sm-pop a small{font:400 12px/1.2 'JetBrains Mono','JetBrains fb',monospace;color:#8FAEC0}
-.pt .nav .sm-pop a:not(.sm-all):is(:hover,:focus-visible),.pt .nav .sm-pop a[aria-current="page"]{color:#EEF3F6!important;background-color:rgba(142,216,248,.08);background-image:none;-webkit-text-fill-color:currentColor;animation:none}
+.pt .nav .sm-pop a:not(.sm-all):is(:hover,:focus-visible),.pt .nav .sm-pop a[aria-current="page"]{color:#EEF3F6!important;background-color:rgba(142,216,248,.08);background-image:none;-webkit-background-clip:border-box;background-clip:border-box;-webkit-text-fill-color:currentColor;animation:none}
 /* наведение — название переливается градиентом, как у остальных ссылок (владелец 2026-10-25); цена — своим цветом */
 .pt .nav .sm-pop a:not(.sm-all):is(:hover,:focus-visible) span{background-image:var(--pt-grad);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:pt-flow 2.4s linear infinite}
 .pt .nav .sm-pop a small{-webkit-text-fill-color:#8FAEC0}
