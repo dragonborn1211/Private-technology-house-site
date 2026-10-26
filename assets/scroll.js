@@ -16,6 +16,7 @@
   var de = document.documentElement;
   var rm = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   var LERP = 0.08;
+  var TAIL = 3; // наименьший шаг в конце, px за кадр при 60 к/с
   // ?pt-scroll=native (TASK-perf.md, 0.2): колесо — нативное, без мягкой прокрутки, — только на странице с этим флагом в адресе.
   // Раньше флаг держался до конца вкладки, и после замеров владелец видел нативную прокрутку дальше (2026-10-24: «скролл
   // неприятный, поставь плавный»); память флага стирается. Якоря (to()) и свой скроллбар — как всегда. Меню и панели держат
@@ -41,7 +42,7 @@
   // страницу сами (put) — следующее чтение заново
   var fy = 0, fyT = -1;
   function frameY(now) { if (now == null || now !== fyT) { fyT = now == null ? -1 : now; fy = window.scrollY || 0; } return fy; }
-  function put(y) { ours = y; window.scrollTo({ top: y, behavior: 'instant' }); fyT = -1; }
+  function put(y) { y = Math.round(y); ours = y; window.scrollTo({ top: y, behavior: 'instant' }); fyT = -1; }
   function ease(p) { return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2; }
   function sync(y) { run = false; tw = null; cur = tgt = y == null ? window.scrollY : y; }
 
@@ -81,8 +82,14 @@
       cur = tgt = tw.from + (tw.to - tw.from) * ease(p);
       if (p >= 1) { var fin = tw.fin; tw = null; run = false; if (fin) fin(); }
     } else {
-      cur += (tgt - cur) * (1 - Math.pow(1 - LERP, dt * 60));
-      if (Math.abs(tgt - cur) < 0.5) { cur = tgt; run = false; }
+      // хвост: когда сглаживание даёт меньше TAIL px за кадр, дальше — ровно TAIL px за кадр до цели. Иначе страница ~0.6 с
+      // доползала по пикселю за кадр, и при масштабе экрана 125–150 % шаг выходил то 1, то 2 пикселя экрана — на остановке
+      // дрожал весь текст (владелец 2026-10-26). Позиция — целые пиксели страницы: дробную браузер округлял бы сам, неровно
+      // шаг хвоста — целый (3 px при 60 Гц, 1 px при 120–144 Гц): дробный давал неровные 2 / 3
+      var d = tgt - cur, s = d * (1 - Math.pow(1 - LERP, dt * 60)), m = Math.max(1, Math.round(TAIL * dt * 60));
+      if (Math.abs(s) < m) { cur = Math.round(cur); d = tgt - cur; s = Math.abs(d) <= m ? d : (d > 0 ? m : -m); }
+      cur = Math.abs(d - s) < 0.5 ? tgt : cur + s;
+      if (cur === tgt) run = false;
     }
     put(cur);
   }
