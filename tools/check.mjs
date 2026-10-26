@@ -2809,7 +2809,8 @@ console.log('\nпанель разбора работы');
     for (const [i, id] of IDS.entries()) {
       await page.evaluate((id) => document.getElementById(id).scrollIntoView({ block: 'center', behavior: 'instant' }), id); await page.waitForTimeout(250);
       const y0 = await page.evaluate(() => Math.round(scrollY));
-      await page.click(`#${id} [data-cp-open]`); await page.waitForTimeout(900);
+      // открытие — в следующем кадре; под SwiftShader кадр с шестью схемами группы на экране бывает дольше 0.9 с — ждём сам класс
+      await page.click(`#${id} [data-cp-open]`); await page.waitForFunction(() => document.querySelector('[data-cp]').classList.contains('is-open'), null, { timeout: 5000 }).catch(() => {}); await page.waitForTimeout(400);
       const s = await cst(page);
       if (!s.open || s.art !== id || s.hash !== '#' + id || s.n !== `0${i + 1}/08` || !s.lock || s.focus !== 'sheet' || s.y !== y0 || s.label !== 'cp-t-' + id.slice(5) || !/ — Работы \| Private Technology House$/.test(s.title)) bad.push(`${id}: открыта ${JSON.stringify(s)}`);
       if (id === 'case-call-audit' || id === 'case-resonara' || id === 'case-studio-os' || id === 'case-seo-report') { await page.waitForTimeout(1500); await page.screenshot({ path: path.join(shots, `panel-1440-${id.slice(5)}.png`) }); }
@@ -2846,9 +2847,9 @@ console.log('\nпанель разбора работы');
     const g3 = await page.evaluate(() => __cr('[data-sec^="cases"] .obj-grid canvas')); await page.waitForTimeout(800); const g4 = await page.evaluate(() => __cr('[data-sec^="cases"] .obj-grid canvas'));
     if (g4 <= g3) bad.push('после закрытия схемы сетки не проснулись');
     // «Назад» браузера закрывает; клик по подложке закрывает
-    await page.click('#case-catalog [data-cp-open]'); await page.waitForTimeout(700); await page.goBack(); await page.waitForTimeout(700);
+    await page.click('#case-catalog [data-cp-open]'); await page.waitForFunction(() => document.querySelector('[data-cp]').classList.contains('is-open'), null, { timeout: 5000 }).catch(() => {}); await page.waitForTimeout(300); await page.goBack(); await page.waitForTimeout(700);
     s = await cst(page); if (s.open || s.hash !== '') bad.push('«Назад»: ' + JSON.stringify(s));
-    await page.click('#case-catalog [data-cp-open]'); await page.waitForTimeout(700); await page.mouse.click(200, 450); await page.waitForTimeout(700);
+    await page.click('#case-catalog [data-cp-open]'); await page.waitForFunction(() => document.querySelector('[data-cp]').classList.contains('is-open'), null, { timeout: 5000 }).catch(() => {}); await page.waitForTimeout(300); await page.mouse.click(200, 450); await page.waitForTimeout(700);
     if ((await cst(page)).open) bad.push('клик по подложке не закрыл');
     page.errs.forEach((e) => bad.push('1440: ' + e));
     await ctx.close();

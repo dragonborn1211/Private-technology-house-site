@@ -250,9 +250,10 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 .cp-feat p{margin:0;font-size:15px;line-height:1.6;color:#9DB0BC}
 .cp-chips{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:8px}
 .cp-chips li{padding:8px 13px;border-radius:999px;border:1px solid rgba(188,211,222,.18);font-size:13px;color:#DCE7EE}
-/* призыв: в разметке — в конце кейса (без JS виден там); с JS его копия живёт в липком подвале панели */
+/* призыв: в разметке — в конце кейса (без JS виден там); с JS главная кнопка живёт в липком подвале панели, а вторая (шаблон,
+   у «Каталога» и «Заказов в CRM») остаётся в конце статьи: в подвале длинное название шаблона сжимало «Следующую работу» до «Кат…» */
 .cp-cta{display:flex;flex-wrap:wrap;gap:12px;margin:40px 0 0}
-.cp.js .cp-art .cp-cta{display:none}
+.cp.js .cp-art .cp-cta .btn-p,.cp.js .cp-art .cp-cta:not(:has(.btn-g)),.cp-foot .cp-cta .btn-g{display:none}
 /* «Частые вопросы» (TASK-faq-panel.md): на странице — плашка-ссылка .faq-link вместо блока вопросов; клик открывает панель
    [data-faq] (стили .cp-* панели кейсов, assets/faq.js). Ответы — <details>, плюс в круге становится минусом */
 .faq-link{display:grid;grid-template-columns:minmax(max-content,1fr) minmax(0,auto) minmax(max-content,1fr);align-items:center;gap:18px 32px;padding:28px 32px;border-radius:22px;background-color:rgba(18,30,41,.62);border:1px solid rgba(188,211,222,.14);color:#EEF3F6;text-decoration:none}
@@ -288,7 +289,7 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 .cp-foot .cp-cta{margin:0;flex-wrap:nowrap}
 .cp-nx{min-width:0;margin-right:auto;display:flex;flex-direction:column;gap:4px;color:#EEF3F6;cursor:pointer;background:none;border:0;padding:0;text-align:left;font:inherit}
 .cp-nx small{font:500 10.5px/1.2 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:#6F93A6}
-.cp-nx span{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-nx span{font-size:15px;font-weight:500;line-height:1.3;text-wrap:balance}
 .cp-nx:hover span{color:var(--cp-tc,#8ED8F8)}
 /* появление содержимого: блоки по очереди снизу (40 мс шаг) */
 .cp-art.is-in > *{animation:cpIn .5s cubic-bezier(.2,.8,.2,1) both}
@@ -1191,7 +1192,10 @@ a[href],button,summary,label,select,[role="button"],[data-obj],.cx-i,.nb,.pt .cm
 .sv-mod.sv-inc{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 48px}
 .sv-where{gap:10px}
 .pt .sv-info a.sv-go.sv-dl{color:#BCD3DE}
-.cp-svc{margin:28px 0 0}
+.cp-svc{margin:28px 0 0;display:flex;flex-wrap:wrap;gap:8px 28px}
+/* кнопка шаблона в конце статьи — длинное название переносится, а не уходит за край шторки (390) */
+.cp-art .cp-cta .btn{max-width:100%}.cp-art .cp-cta .btn span{white-space:normal;text-align:center}
+@media (max-width:760px){.cp-art .cp-cta .btn{height:auto;min-height:52px;padding-block:12px}}
 .foot-sv{align-items:center;gap:0 10px;margin-top:2px}
 .foot-sv span,.foot-sv i{font-size:14px;font-style:normal;color:#6F93A6}
 @media (max-width:1100px){.sv-paths.c2,.sv-mod.sv-inc{grid-template-columns:minmax(0,1fr)}.sv-mod.sv-inc .sv-rows + .sv-rows li:first-child{border-top:0}}

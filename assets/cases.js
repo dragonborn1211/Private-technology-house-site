@@ -62,7 +62,7 @@
     if (document.activeElement && document.activeElement.disabled && cp.contains(document.activeElement)) sheet.focus({ preventScroll: true });
     sheet.style.setProperty('--cp-tc', a.style.getPropertyValue('--tc'));
     sheet.setAttribute('aria-labelledby', a.querySelector('.cp-h').id);
-    // липкий подвал: «Следующая работа» и копия призыва кейса (сама .cp-cta в статье при JS скрыта)
+    // липкий подвал: «Следующая работа» и копия призыва кейса — главная кнопка (вторая, шаблон, — в конце статьи; site.css)
     foot.innerHTML = '';
     var nx = list[i + 1];
     if (nx) {
