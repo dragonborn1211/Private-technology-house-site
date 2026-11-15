@@ -13,6 +13,7 @@
 // Новый русский текст в разметке — сразу добавь сюда перевод: node tools/check.mjs ловит кириллицу в EN-версии.
 (function () {
   var EN = {
+    "Открыть портрет": "Open portrait",
     "Экраны приложения": "App screens",
     "Главный экран Истока с поиском и категориями": "Istok home screen with search and categories",
     "Пустая форма создания карточки в Истоке": "Blank form for creating an entry in Istok",

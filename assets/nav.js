@@ -254,3 +254,31 @@
   // первое обновление — в кадре, а не при выполнении скрипта (посреди разбора страницы)
   onScroll();
 })();
+
+/* Founder portrait. The link also works when dialog support is unavailable. */
+document.addEventListener('click', function (event) {
+  const link = event.target.closest('.who-photo');
+  if (!link || event.defaultPrevented || event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  const dialog = document.createElement('dialog');
+  if (typeof dialog.showModal !== 'function') return;
+  event.preventDefault();
+  dialog.className = 'who-view';
+  dialog.setAttribute('aria-label', document.querySelector('#who-n').textContent.trim());
+  const frame = document.createElement('div');
+  frame.className = 'who-frame';
+  const portrait = document.createElement('img');
+  portrait.src = link.href;
+  portrait.alt = dialog.getAttribute('aria-label');
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'who-close';
+  close.textContent = '×';
+  close.setAttribute('aria-label', document.documentElement.lang === 'en' ? 'Close' : 'Закрыть');
+  close.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
+  dialog.addEventListener('close', () => { dialog.remove(); link.focus({ preventScroll: true }); });
+  frame.append(portrait, close);
+  dialog.append(frame);
+  document.body.append(dialog);
+  dialog.showModal();
+});
