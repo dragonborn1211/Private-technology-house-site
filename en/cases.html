@@ -359,8 +359,12 @@
 </article>
 
 <article class="cp-art" data-case="case-istok" style="--tc: #8ED8F8" aria-labelledby="cp-t-istok">
-<p class="cp-k mono">Android · Offline catalog</p><h2 class="cp-h" id="cp-t-istok">Istok · Android app</h2>
-<p class="cp-lead">We recovered the catalog and moved it into an app that works offline.</p>
+<p class="cp-k mono">Android · App recovery</p><h2 class="cp-h" id="cp-t-istok">Istok — restoring an app left on a single phone</h2>
+<p class="cp-lead">We restored a working app that was left on one phone and recovered its catalog, photos and descriptions for offline use.</p>
+<div class="cp-story">
+<section class="cp-st"><h3 class="cp-lab mono">Before</h3><p>The client relied on Istok every day at work. The app only opened with the internet turned off. After it disappeared from Google Play, the working copy was left on a single phone.</p><p>We regained access to the server and found that the domain registration had expired and the database had been deleted. A ransom note was left on the server. Some photos and descriptions survived only in the phone cache and would have been unavailable after a standard reinstall.</p></section>
+<section class="cp-st is-now"><h3 class="cp-lab mono">What we built</h3><p>We archived everything left on the server and recovered photos and descriptions from the Android app cache. Using the parts of the installation package, we reconstructed the familiar workflows, updated the interface and moved the catalog into an app that works offline.</p><p>We added photo zoom, home screen customization, and the ability to create and edit catalog entries and link them to client records. Backups can be stored on the phone or in Yandex Disk and restored on another device.</p></section>
+</div>
 <section class="cp-sec">
 <h3 class="cp-lab mono">App screens</h3>
 <div class="istok-screens">
@@ -368,12 +372,8 @@
 <figure><img src="/assets/cases/istok-editor.webp" alt="Blank form for creating an entry in Istok" width="720" height="1440" loading="lazy"><figcaption>Creating an entry</figcaption></figure>
 </div>
 </section>
-<div class="cp-story">
-<section class="cp-st"><h3 class="cp-lab mono">Before</h3><p>The original app depended on a server. The catalog, descriptions, and images had to be recovered from archived data.</p></section>
-<section class="cp-st is-now"><h3 class="cp-lab mono">What we built</h3><p>We built a native Android app with a local catalog, search, and galleries. We added editing for entries and categories, client records, and backups.</p></section>
-</div>
-<section class="cp-sec"><h3 class="cp-lab mono">What changed</h3><p>The catalog, search, and editing work without an account or server connection.</p></section>
-<p class="cp-cta"><a href="https://t.me/dragonborne0" target="_blank" rel="noopener" data-tg="I would like to discuss an Android app." class="btn btn-p"><span>Discuss an app&#160;→</span></a></p>
+<section class="cp-sec"><h3 class="cp-lab mono">What changed</h3><p>We delivered the signed APK, source code and signing key. The client can install the app on another Android phone, restore data from a backup and release updates. Retiring the old server saves the client 400 ₽ per month.</p><p><strong>The client was very happy with the result.</strong> The client no longer worries about losing the app and catalog with the phone and uses Istok confidently in their daily work.</p></section>
+<p class="cp-cta"><a href="https://t.me/dragonborne0" target="_blank" rel="noopener" data-tg="I would like to discuss app recovery." class="btn btn-p"><span>Обсудить восстановление приложения →</span></a></p>
 <p class="cp-svc"><a href="/en/apps" class="sv-go">About the service<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15" /><path d="M14 6.5 19.5 12 14 17.5" /></svg></a></p>
 </article>
 
@@ -395,7 +395,7 @@
 <article class="glass fr obj" id="case-istok">
 <span class="flow-win fr istok-cover"><img src="/assets/cases/istok.webp" alt="" loading="lazy"><span class="win-tag" data-pt-skip="" style="--tc: #8ED8F8">Android · Offline catalog</span></span>
 <span class="obj-tx"><a href="#case-istok" class="card-link obj-h" data-cp-open="">Istok · Android app</a>
-<span class="obj-d">We recovered the catalog and moved it into an app that works offline.</span><span class="obj-more" aria-hidden="true">How it works<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15" /><path d="M14 6.5 19.5 12 14 17.5" /></svg></span></span>
+<span class="obj-d">We restored a working app that was left on one phone and recovered its catalog, photos and descriptions for offline use.</span><span class="obj-more" aria-hidden="true">How it works<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15" /><path d="M14 6.5 19.5 12 14 17.5" /></svg></span></span>
 </article>
 </div>
 </div>
@@ -616,7 +616,7 @@
 <div class="lang-beam" data-lang-beam="" aria-hidden="true"></div>
 <div class="scan-beam" data-scan-beam="" aria-hidden="true"></div>
 </div>
-<script src="/assets/i18n.js?v=f3ac7660"></script>
+<script src="/assets/i18n.js?v=d6ca8ed7"></script>
 <script src="/assets/scroll.js?v=f93b589f"></script>
 <script src="/assets/nav.js?v=64795f99"></script>
 <script src="/assets/scenes.js?v=06375778"></script>

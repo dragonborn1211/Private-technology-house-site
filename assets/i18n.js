@@ -13,6 +13,19 @@
 // Новый русский текст в разметке — сразу добавь сюда перевод: node tools/check.mjs ловит кириллицу в EN-версии.
 (function () {
   var EN = {
+    "«Исток» — восстановили приложение, которое осталось на одном телефоне": "Istok — restoring an app left on a single phone",
+    "Клиент каждый день пользовался «Истоком» в работе. Приложение открывалось только при выключенном интернете, а после исчезновения из Google Play рабочая копия осталась на одном телефоне.": "The client relied on Istok every day at work. The app only opened with the internet turned off. After it disappeared from Google Play, the working copy was left on a single phone.",
+    "Мы восстановили доступ к серверу и выяснили, что срок регистрации домена истёк, а база данных была удалена. На сервере осталась записка с требованием выкупа. Часть фотографий и описаний сохранилась только в кэше телефона, поэтому при обычной переустановке эти материалы были бы недоступны.": "We regained access to the server and found that the domain registration had expired and the database had been deleted. A ransom note was left on the server. Some photos and descriptions survived only in the phone cache and would have been unavailable after a standard reinstall.",
+    "Сохранили в архив всё, что осталось на сервере, и извлекли фотографии и описания из кэша Android-приложения. По частям установочного пакета восстановили привычную логику работы, обновили дизайн и перенесли каталог в приложение, которое работает без интернета.": "We archived everything left on the server and recovered photos and descriptions from the Android app cache. Using the parts of the installation package, we reconstructed the familiar workflows, updated the interface and moved the catalog into an app that works offline.",
+    "Добавили масштабирование фотографий, настройку разделов на главном экране, создание и редактирование карточек и их связь с клиентской картотекой. Резервную копию можно сохранить на телефоне или на Яндекс Диске, а затем восстановить данные на другом устройстве.": "We added photo zoom, home screen customization, and the ability to create and edit catalog entries and link them to client records. Backups can be stored on the phone or in Yandex Disk and restored on another device.",
+    "Передали клиенту подписанный APK, исходный код и ключ подписи. Теперь приложение можно установить на другой Android-телефон, восстановить данные из резервной копии и выпускать обновления. Старый сервер больше не нужен, и клиент экономит 400 ₽ в месяц.": "We delivered the signed APK, source code and signing key. The client can install the app on another Android phone, restore data from a backup and release updates. Retiring the old server saves the client 400 ₽ per month.",
+    "Клиент остался очень доволен результатом.": "The client was very happy with the result.",
+    "Переживания, что приложение и каталог могут пропасть вместе с телефоном, ушли. Теперь он спокойно пользуется «Истоком» каждый день в работе.": "The client no longer worries about losing the app and catalog with the phone and uses Istok confidently in their daily work.",
+    "Обсудить восстановление приложения": "Discuss app recovery",
+    "Хочу обсудить восстановление приложения.": "I would like to discuss app recovery.",
+    "Восстановили рабочее приложение, которое осталось на одном телефоне. Вернули каталог с фотографиями и описаниями и сделали его доступным без интернета.": "We restored a working app that was left on one phone and recovered its catalog, photos and descriptions for offline use.",
+    "Android · Восстановление приложения": "Android · App recovery",
+
     "Открыть портрет": "Open portrait",
     "Экраны приложения": "App screens",
     "Главный экран Истока с поиском и категориями": "Istok home screen with search and categories",
