@@ -894,11 +894,11 @@ console.log('\nкейсы и готовые автоматизации');
   let page = await open('cases.html'), st;
   await page.clock.runFor(4000);
   const grp = await page.evaluate(() => [...document.querySelectorAll('[data-sec^="cases"]')].map((g) => g.dataset.sec + ':' + g.querySelector('h2').textContent.replace(/\s+/g, ' ').trim() + ':' + [...g.querySelectorAll('.obj-grid > .obj')].map((c) => c.id).join(',')));
-  const G = ['cases:Сайты:case-resonara,case-antares,case-demo', 'cases-auto:Автоматизация и AI:case-call-audit,case-tg-crm,case-catalog,case-agents,case-seo-report,case-studio-os'];
+  const G = ['cases:Сайты:case-resonara,case-antares,case-demo', 'cases-auto:Автоматизация и AI:case-call-audit,case-tg-crm,case-catalog,case-agents,case-seo-report,case-studio-os', 'cases-app:Приложения:case-istok'];
   if (grp.join(' | ') !== G.join(' | ')) bad.push(`кейсы, группы: ${grp.join(' | ')}`);
   const caseIds = G.map((g) => g.split(':')[2]).join(',').split(',').filter((x) => x !== 'case-demo');
   const old = await page.evaluate(() => ({ f: document.querySelectorAll('[data-filter], [data-filters], [data-cat], #case-nda').length, js: !!document.querySelector('script[src*="filter.js"]'), g3: document.querySelectorAll('[data-sec^="cases"] .obj-grid-3').length }));
-  if (old.f || old.js || old.g3 !== 2) bad.push(`кейсы: остатки фильтра / NDA ${old.f}, filter.js ${old.js}, сеток в 3 колонки ${old.g3}`);
+  if (old.f || old.js || old.g3 !== 3) bad.push(`кейсы: остатки фильтра / NDA ${old.f}, filter.js ${old.js}, сеток в 3 колонки ${old.g3}`);
   const tpl = await page.evaluate(() => { const t = document.querySelector('template[data-hidden-cases]'); return t ? [...t.content.querySelectorAll('.obj')].map((c) => c.querySelector('canvas').dataset.flow + ':' + c.querySelector('.win-tag').textContent.trim()).join(',') : ''; });
   const tplIn = await page.evaluate(() => (document.querySelector('template[data-hidden-cases]') || {}).closest?.('[data-sec]')?.dataset.sec);
   if (tpl !== 'ai-gateway:Инфраструктура · Cloudflare' || tplIn !== 'cases-auto') bad.push(`скрытые кейсы: ${tpl} в ${tplIn}`);
@@ -920,7 +920,7 @@ console.log('\nкейсы и готовые автоматизации');
     const pg = await ctx.newPage();
     await pg.goto(BASE + 'cases.html');
     const r = await pg.locator('[data-sec^="cases"] .obj-grid > .obj').evaluateAll((els) => els.filter((e) => getComputedStyle(e).display !== 'none').length);
-    if (r !== 9) bad.push(`без JS: видно карточек ${r} (нужно 9)`);
+    if (r !== 10) bad.push(`без JS: видно карточек ${r} (нужно 10)`);
     await ctx.close();
   }
   // --- automations.html
@@ -1713,7 +1713,7 @@ console.log('\nкто делает: карточка в контакте, «О �
     if (f === '404.html') { if (/id="about"/.test(h)) bad.push('404.html: карточка «Кто делает»'); continue; }
     const who = (/<aside class="blk glass fr who" data-blk id="about"[\s\S]*?<\/aside>/.exec(c) || [''])[0];
     if (!who || !/<div class="ct-grid">/.test(c)) { bad.push(`${f}: нет карточки #about в #contact`); continue; }
-    if ((who.match(/<li>/g) || []).length !== 3 || !/<p class="who-n" id="who-n">Даниил (<span class="hx" data-grad="[^"]+">)?Давыдовский(<\/span>)?<\/p>/.test(who) || !/class="who-ph mono"[^>]*><b>Д<\/b>/.test(who) || /\[|ЗАПОЛНИТЬ|Каждый проект/.test(who)) bad.push(`${f}: карточка основателя — ${who.slice(0, 80)}`);
+    if ((who.match(/<li>/g) || []).length !== 3 || !/<p class="who-n" id="who-n">Даниил (<span class="hx" data-grad="[^"]+">)?Давыдовский(<\/span>)?<\/p>/.test(who) || !/<img class="who-ph" src="assets\/founder\.webp"/.test(who) || /\[|ЗАПОЛНИТЬ|Каждый проект/.test(who)) bad.push(`${f}: карточка основателя — ${who.slice(0, 80)}`);
     // TASK-founder.md: не «работаю один» — основатель студии, голос «мы»
     if (!/<p class="who-k mono">Основатель студии<\/p>/.test(who) || /веду сам|держу сам|Без(&nbsp;| )менеджеров|Мой налог|Кто делает/.test(h)) bad.push(`${f}: карточка говорит «работаю один»`);
   }
@@ -1723,11 +1723,11 @@ console.log('\nкто делает: карточка в контакте, «О �
     await page.goto(BASE + 'cases.html?intro=instant' + q); await page.waitForTimeout(500);
     const r = await page.evaluate(() => {
       const a = document.getElementById('about').getBoundingClientRect(), b = document.querySelector('#contact .ct-grid > .blk:not(.who)').getBoundingClientRect(), btn = document.querySelector('#contact .btn-p').getBoundingClientRect();
-      return { right: a.left > b.left + b.width * 0.5, below: a.top >= btn.bottom, w: Math.round(a.width), n: document.getElementById('who-n').textContent, k: document.querySelector('.who-k').textContent, mono: document.querySelector('.who-ph b').textContent };
+      return { right: a.left > b.left + b.width * 0.5, below: a.top >= btn.bottom, w: Math.round(a.width), n: document.getElementById('who-n').textContent, k: document.querySelector('.who-k').textContent, photo: document.querySelector('.who-ph').getAttribute('src') };
     });
     if (w === 1440 && (!r.right || r.w > 521)) bad.push(`1440${q}: карточка не справа (${JSON.stringify(r)})`);
     if (w === 390 && !r.below) bad.push(`390: карточка не под кнопкой (${JSON.stringify(r)})`);
-    if (q && (r.n !== 'Daniil Davydovsky' || r.k !== 'Founder' || r.mono !== 'D')) bad.push(`EN: ${JSON.stringify(r)}`);
+    if (q && (r.n !== 'Daniil Davydovsky' || r.k !== 'Founder' || !r.photo.endsWith('/assets/founder.webp'))) bad.push(`EN: ${JSON.stringify(r)}`);
     await page.close();
   }
   await quick.close();
@@ -2799,7 +2799,7 @@ console.log('\nпанель разбора работы');
       prev: cp.querySelector('[data-cp-prev]').disabled, next: cp.querySelector('[data-cp-next]').disabled, lock: document.documentElement.classList.contains('cp-lock'), y: Math.round(scrollY),
       focus: ae === cp.querySelector('.cp-sheet') ? 'sheet' : (ae.closest('[id^="case-"]') || {}).id || ae.tagName, title: document.title, label: cp.querySelector('.cp-sheet').getAttribute('aria-labelledby') };
   });
-  const IDS = ['case-resonara', 'case-antares', 'case-call-audit', 'case-tg-crm', 'case-catalog', 'case-agents', 'case-seo-report', 'case-studio-os'];
+  const IDS = ['case-resonara', 'case-antares', 'case-call-audit', 'case-tg-crm', 'case-catalog', 'case-agents', 'case-seo-report', 'case-studio-os', 'case-istok'];
   // 1440: открыть каждую, закрыть Esc
   {
     const { ctx, page } = await mkp({ width: 1440, height: 900 });
@@ -2812,7 +2812,7 @@ console.log('\nпанель разбора работы');
       // открытие — в следующем кадре; под SwiftShader кадр с шестью схемами группы на экране бывает дольше 0.9 с — ждём сам класс
       await page.click(`#${id} [data-cp-open]`); await page.waitForFunction(() => document.querySelector('[data-cp]').classList.contains('is-open'), null, { timeout: 5000 }).catch(() => {}); await page.waitForTimeout(400);
       const s = await cst(page);
-      if (!s.open || s.art !== id || s.hash !== '#' + id || s.n !== `0${i + 1}/08` || !s.lock || s.focus !== 'sheet' || s.y !== y0 || s.label !== 'cp-t-' + id.slice(5) || !/ — Работы \| Private Technology House$/.test(s.title)) bad.push(`${id}: открыта ${JSON.stringify(s)}`);
+      if (!s.open || s.art !== id || s.hash !== '#' + id || s.n !== `0${i + 1}/09` || !s.lock || s.focus !== 'sheet' || s.y !== y0 || s.label !== 'cp-t-' + id.slice(5) || !/ — Работы \| Private Technology House$/.test(s.title)) bad.push(`${id}: открыта ${JSON.stringify(s)}`);
       if (id === 'case-call-audit' || id === 'case-resonara' || id === 'case-studio-os' || id === 'case-seo-report') { await page.waitForTimeout(1500); await page.screenshot({ path: path.join(shots, `panel-1440-${id.slice(5)}.png`) }); }
       await page.keyboard.press('Escape'); await page.waitForTimeout(800);
       const c = await cst(page);
@@ -2822,13 +2822,13 @@ console.log('\nпанель разбора работы');
     await page.click('#case-resonara [data-cp-open]'); await page.waitForTimeout(700);
     let s = await cst(page); if (!s.prev || s.next) bad.push('первая: ← должна быть неактивна');
     await page.keyboard.press('ArrowRight'); await page.waitForTimeout(200); s = await cst(page);
-    if (s.art !== 'case-antares' || s.n !== '02/08' || s.hash !== '#case-antares') bad.push('→: ' + JSON.stringify(s));
+    if (s.art !== 'case-antares' || s.n !== '02/09' || s.hash !== '#case-antares') bad.push('→: ' + JSON.stringify(s));
     await page.click('.cp-nx'); await page.waitForTimeout(200); s = await cst(page);
     if (s.art !== 'case-call-audit') bad.push('«Следующая работа»: ' + s.art);
     for (let k = 0; k < 6; k++) await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(200); s = await cst(page);
     const foot = await page.evaluate(() => [...document.querySelectorAll('.cp-foot > *')].map((x) => x.className).join(','));
-    if (s.art !== 'case-studio-os' || s.n !== '08/08' || !s.next || foot !== 'cp-cta') bad.push(`последняя: ${JSON.stringify(s)}, подвал ${foot}`);
+    if (s.art !== 'case-istok' || s.n !== '09/09' || !s.next || foot !== 'cp-cta') bad.push(`последняя: ${JSON.stringify(s)}, подвал ${foot}`);
     let out = 0;
     for (let k = 0; k < 14; k++) { await page.keyboard.press('Tab'); if (!(await page.evaluate(() => !!document.activeElement.closest('[data-cp]')))) out++; }
     if (out) bad.push(`Tab ушёл из панели ${out} раз`);
@@ -2864,7 +2864,7 @@ console.log('\nпанель разбора работы');
     await page.waitForTimeout(200); s = await cst(page);
     const n1 = s.n, art = s.art, nx = s.next;
     await page.keyboard.press('Escape'); await page.waitForTimeout(700); s = await cst(page);
-    if (n0 !== '03/08' || n1 !== '08/08' || art !== 'case-studio-os' || !nx || s.hash !== '#automation') bad.push(`#automation: ${n0} → ${n1} ${art}, закрыта: ${s.hash}`);
+    if (n0 !== '03/09' || n1 !== '08/09' || art !== 'case-studio-os' || nx || s.hash !== '#automation') bad.push(`#automation: ${n0} → ${n1} ${art}, закрыта: ${s.hash}`);
     await ctx.close();
   }
   // прямая ссылка: панель — после сборки секции cases

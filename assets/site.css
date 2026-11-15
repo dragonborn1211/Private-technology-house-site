@@ -1265,3 +1265,9 @@ html.ck-open .menu-in{padding-bottom:180px}
 .glyph-mini svg.gx{stroke-width:3.4}
 .svc-pic svg.gx,.glyph-xl svg.gx{stroke-width:1.6}
 @media (max-width:760px){.svc-pic svg.gx,.glyph-xl svg.gx{stroke-width:3.6}}
+
+/* Обложка приложения в карточке и в панели разбора. */
+.istok-cover{display:grid;place-items:center;background:radial-gradient(ellipse at center,#1a3345,#0a121a 76%)}
+.istok-cover img{display:block;width:clamp(76px,29%,160px);height:auto}
+.pt-on .sec:not(.s-done) .istok-cover.fr img{opacity:0}
+.pt-on .sec .istok-cover.fr img{transition:opacity .9s ease}

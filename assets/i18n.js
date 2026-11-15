@@ -13,6 +13,15 @@
 // Новый русский текст в разметке — сразу добавь сюда перевод: node tools/check.mjs ловит кириллицу в EN-версии.
 (function () {
   var EN = {
+    "Исток · Android-приложение": "Istok · Android app",
+    "Восстановили каталог и перенесли его в приложение, которое работает без интернета.": "We recovered the catalog and moved it into an app that works offline.",
+    "Android · Офлайн-каталог": "Android · Offline catalog",
+    "Исходное приложение зависело от сервера. Каталог, описания и изображения нужно было собрать из сохранившихся данных.": "The original app depended on a server. The catalog, descriptions, and images had to be recovered from archived data.",
+    "Собрали нативное Android-приложение с локальным каталогом, поиском и галереями. Добавили редактирование карточек и категорий, клиентскую картотеку и резервное копирование.": "We built a native Android app with a local catalog, search, and galleries. We added editing for entries and categories, client records, and backups.",
+    "Каталог, поиск и редактирование доступны без входа и подключения к серверу.": "The catalog, search, and editing work without an account or server connection.",
+    "Хочу обсудить Android-приложение.": "I would like to discuss an Android app.",
+    "Обсудить приложение": "Discuss an app",
+
     // вкладка и описание
 
     // первый экран
