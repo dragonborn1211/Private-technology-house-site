@@ -1033,7 +1033,7 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .pt-on .sec .who::before,.pt-on .sec .who::after{transition:opacity .9s ease}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .who::before,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .who::after{opacity:0}
 .who-top{display:flex;gap:18px;align-items:center}
-.who-ph{flex:none;width:96px;height:120px;border-radius:18px;object-fit:cover;border:1px solid rgba(188,211,222,.18);background:linear-gradient(160deg,#1A2A36,#0E1720);filter:grayscale(.3) contrast(1.05)}
+.who-ph{flex:none;width:96px;height:120px;border-radius:18px;object-fit:cover;border:1px solid rgba(188,211,222,.18);background:linear-gradient(160deg,#1A2A36,#0E1720);object-position:center top}
 .who-ph.mono{position:relative;display:flex;align-items:center;justify-content:center;filter:none;border:1px solid transparent;background:linear-gradient(160deg,#1A2A36,#0E1720) padding-box,conic-gradient(from 200deg,#8ED8F8,#7FA8FF,#B7A6F2,#9FE5D1,#8ED8F8) border-box;box-shadow:0 0 34px -12px rgba(142,216,248,.55),inset 0 1px 0 rgba(246,248,250,.06)}
 .who-ph.mono b{font:300 44px/1 Manrope,'Manrope fb',system-ui,sans-serif;background:linear-gradient(120deg,#8ED8F8,#7FA8FF 45%,#B7A6F2 75%,#9FE5D1);-webkit-background-clip:text;background-clip:text;color:transparent}
 .who-ph.mono::before{content:"";position:absolute;inset:14px;border:1px solid;border-image:linear-gradient(135deg,rgba(142,216,248,.75),rgba(183,166,242,.55)) 1;transform:rotate(45deg) scale(.72)}
@@ -1268,6 +1268,11 @@ html.ck-open .menu-in{padding-bottom:180px}
 
 /* Обложка приложения в карточке и в панели разбора. */
 .istok-cover{display:grid;place-items:center;background:radial-gradient(ellipse at center,#1a3345,#0a121a 76%)}
-.istok-cover img{display:block;width:clamp(76px,29%,160px);height:auto}
+.istok-cover img{display:block;width:clamp(76px,29%,160px);height:auto;filter:brightness(0) invert(1)}
 .pt-on .sec:not(.s-done) .istok-cover.fr img{opacity:0}
 .pt-on .sec .istok-cover.fr img{transition:opacity .9s ease}
+
+.istok-screens{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(10px,3vw,24px)}
+.istok-screens figure{margin:0;min-width:0}
+.istok-screens img{display:block;width:100%;height:auto;border-radius:14px;border:1px solid rgba(188,211,222,.18)}
+.istok-screens figcaption{margin-top:8px;font-size:13px;color:#9DB0BC}

@@ -13,6 +13,12 @@
 // Новый русский текст в разметке — сразу добавь сюда перевод: node tools/check.mjs ловит кириллицу в EN-версии.
 (function () {
   var EN = {
+    "Экраны приложения": "App screens",
+    "Главный экран Истока с поиском и категориями": "Istok home screen with search and categories",
+    "Пустая форма создания карточки в Истоке": "Blank form for creating an entry in Istok",
+    "Каталог и поиск": "Catalog and search",
+    "Создание карточки": "Creating an entry",
+
     "Исток · Android-приложение": "Istok · Android app",
     "Восстановили каталог и перенесли его в приложение, которое работает без интернета.": "We recovered the catalog and moved it into an app that works offline.",
     "Android · Офлайн-каталог": "Android · Offline catalog",

@@ -894,7 +894,7 @@ console.log('\nкейсы и готовые автоматизации');
   let page = await open('cases.html'), st;
   await page.clock.runFor(4000);
   const grp = await page.evaluate(() => [...document.querySelectorAll('[data-sec^="cases"]')].map((g) => g.dataset.sec + ':' + g.querySelector('h2').textContent.replace(/\s+/g, ' ').trim() + ':' + [...g.querySelectorAll('.obj-grid > .obj')].map((c) => c.id).join(',')));
-  const G = ['cases:Сайты:case-resonara,case-antares,case-demo', 'cases-auto:Автоматизация и AI:case-call-audit,case-tg-crm,case-catalog,case-agents,case-seo-report,case-studio-os', 'cases-app:Приложения:case-istok'];
+  const G = ['cases:Сайты:case-resonara,case-antares,case-demo', 'cases-app:Приложения:case-istok', 'cases-auto:Автоматизация и AI:case-call-audit,case-tg-crm,case-catalog,case-agents,case-seo-report,case-studio-os'];
   if (grp.join(' | ') !== G.join(' | ')) bad.push(`кейсы, группы: ${grp.join(' | ')}`);
   const caseIds = G.map((g) => g.split(':')[2]).join(',').split(',').filter((x) => x !== 'case-demo');
   const old = await page.evaluate(() => ({ f: document.querySelectorAll('[data-filter], [data-filters], [data-cat], #case-nda').length, js: !!document.querySelector('script[src*="filter.js"]'), g3: document.querySelectorAll('[data-sec^="cases"] .obj-grid-3').length }));
@@ -2799,7 +2799,7 @@ console.log('\nпанель разбора работы');
       prev: cp.querySelector('[data-cp-prev]').disabled, next: cp.querySelector('[data-cp-next]').disabled, lock: document.documentElement.classList.contains('cp-lock'), y: Math.round(scrollY),
       focus: ae === cp.querySelector('.cp-sheet') ? 'sheet' : (ae.closest('[id^="case-"]') || {}).id || ae.tagName, title: document.title, label: cp.querySelector('.cp-sheet').getAttribute('aria-labelledby') };
   });
-  const IDS = ['case-resonara', 'case-antares', 'case-call-audit', 'case-tg-crm', 'case-catalog', 'case-agents', 'case-seo-report', 'case-studio-os', 'case-istok'];
+  const IDS = ['case-resonara', 'case-antares', 'case-istok', 'case-call-audit', 'case-tg-crm', 'case-catalog', 'case-agents', 'case-seo-report', 'case-studio-os'];
   // 1440: открыть каждую, закрыть Esc
   {
     const { ctx, page } = await mkp({ width: 1440, height: 900 });
@@ -2824,11 +2824,11 @@ console.log('\nпанель разбора работы');
     await page.keyboard.press('ArrowRight'); await page.waitForTimeout(200); s = await cst(page);
     if (s.art !== 'case-antares' || s.n !== '02/09' || s.hash !== '#case-antares') bad.push('→: ' + JSON.stringify(s));
     await page.click('.cp-nx'); await page.waitForTimeout(200); s = await cst(page);
-    if (s.art !== 'case-call-audit') bad.push('«Следующая работа»: ' + s.art);
+    if (s.art !== 'case-istok') bad.push('«Следующая работа»: ' + s.art);
     for (let k = 0; k < 6; k++) await page.keyboard.press('ArrowRight');
     await page.waitForTimeout(200); s = await cst(page);
     const foot = await page.evaluate(() => [...document.querySelectorAll('.cp-foot > *')].map((x) => x.className).join(','));
-    if (s.art !== 'case-istok' || s.n !== '09/09' || !s.next || foot !== 'cp-cta') bad.push(`последняя: ${JSON.stringify(s)}, подвал ${foot}`);
+    if (s.art !== 'case-studio-os' || s.n !== '09/09' || !s.next || foot !== 'cp-cta') bad.push(`последняя: ${JSON.stringify(s)}, подвал ${foot}`);
     let out = 0;
     for (let k = 0; k < 14; k++) { await page.keyboard.press('Tab'); if (!(await page.evaluate(() => !!document.activeElement.closest('[data-cp]')))) out++; }
     if (out) bad.push(`Tab ушёл из панели ${out} раз`);
@@ -2864,7 +2864,7 @@ console.log('\nпанель разбора работы');
     await page.waitForTimeout(200); s = await cst(page);
     const n1 = s.n, art = s.art, nx = s.next;
     await page.keyboard.press('Escape'); await page.waitForTimeout(700); s = await cst(page);
-    if (n0 !== '03/09' || n1 !== '08/09' || art !== 'case-studio-os' || nx || s.hash !== '#automation') bad.push(`#automation: ${n0} → ${n1} ${art}, закрыта: ${s.hash}`);
+    if (n0 !== '04/09' || n1 !== '09/09' || art !== 'case-studio-os' || !nx || s.hash !== '#automation') bad.push(`#automation: ${n0} → ${n1} ${art}, закрыта: ${s.hash}`);
     await ctx.close();
   }
   // прямая ссылка: панель — после сборки секции cases
