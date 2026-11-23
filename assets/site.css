@@ -880,14 +880,16 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 /* «Нет нужного шаблона?» — акцентная карточка: мятная рамка со свечением и настоящая кнопка (TASK-clarity.md, B3).
    Видимых карточек нечётное число — последняя [data-fill] на всю ширину (.is-wide ставит filter.js; без JS — обычная) */
 .obj-own{border-color:rgba(159,229,209,.4);box-shadow:inset 0 1px 0 rgba(159,229,209,.25),0 0 80px -40px #9FE5D1}
+.obj-own .obj-copy{display:flex;flex-direction:column;gap:10px}
 .obj-cta{display:inline-flex;align-items:center;align-self:flex-start;height:48px;padding:0 22px;margin-top:18px;border-radius:999px;background:#EEF3F6;color:#0A121A;font:600 15px Manrope,'Manrope fb',system-ui,sans-serif;box-shadow:0 0 40px -8px rgba(142,216,248,.55)}
 @media (min-width:901px){
   .obj.is-wide{grid-column:1 / -1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:16px 40px;padding:16px}
   .obj.is-wide .flow-win{aspect-ratio:2 / 1}
   .obj.is-wide .obj-tx{padding:0 24px 0 0;gap:14px}
   .obj-own.is-wide .flow-win{align-self:end}
-  .obj-own.is-wide .obj-tx{align-self:stretch}
-  .obj-own.is-wide .obj-cta{margin-top:auto}
+  .obj-own.is-wide .obj-tx{align-self:stretch;display:grid;grid-template-rows:minmax(0,1fr) auto minmax(62px,1fr);gap:0}
+  .obj-own.is-wide .obj-copy{grid-row:2;gap:14px}
+  .obj-own.is-wide .obj-cta{grid-row:3;align-self:end;justify-self:start;margin-top:0}
   .obj.is-wide .obj-h{font-size:clamp(28px,2.6vw,40px);font-weight:300;letter-spacing:-.03em}
 }
 /* окна-сайты в сетке в две колонки — тоже 16:10 (кейсы) */
