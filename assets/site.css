@@ -888,7 +888,7 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
   .obj.is-wide .obj-tx{padding:0 24px 0 0;gap:14px}
   .obj-own.is-wide .flow-win{align-self:end}
   .obj-own.is-wide .obj-tx{align-self:stretch;display:grid;grid-template-rows:minmax(0,1fr) auto minmax(62px,1fr);gap:0}
-  .obj-own.is-wide .obj-copy{grid-row:2;gap:14px}
+  .obj-own.is-wide .obj-copy{grid-row:2;gap:14px;position:relative;top:-12px}
   .obj-own.is-wide .obj-cta{grid-row:3;align-self:end;justify-self:start;margin-top:0}
   .obj.is-wide .obj-h{font-size:clamp(28px,2.6vw,40px);font-weight:300;letter-spacing:-.03em}
 }
