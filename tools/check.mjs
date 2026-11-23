@@ -530,7 +530,7 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
       procLinks: all('a').filter((a) => a.textContent.trim() === 'Как работаем').map((a) => a.getAttribute('href')), contact: document.querySelector('#contact .mono.k').textContent.trim() };
   });
   const bad = [];
-  if (r.cards.join(',') !== 'sites,apps,servers,care,bitrix24,ai') bad.push(`карточки: ${r.cards.join(', ')}`);
+  if (r.cards.join(',') !== 'sites,apps,servers,care,automation,bitrix24,ai') bad.push(`карточки: ${r.cards.join(', ')}`);
   if (r.more.join() !== 'services') bad.push(`«Все услуги» → ${r.more.join()}`);
   if (r.h2 !== 'Делаем один раз. Держим всегда.') bad.push(`заголовок «${r.h2}»`);
   if (r.nums) bad.push(`номера 01–04 в блоке: ${r.nums}`);
@@ -538,7 +538,7 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
   if (r.pricing || !r.tpl || r.pricingLinks) bad.push(`«Цены»: секция на странице ${r.pricing}, в <template> ${r.tpl}, ссылок #pricing ${r.pricingLinks}`);
   if (r.dead) bad.push(`ссылок на objects.html: ${r.dead}`);
   if (r.canonical !== 'https://privatechouse.ru/') bad.push(`canonical «${r.canonical}»`);
-  if (r.glyphs !== 6 || r.icons) bad.push(`рисунков в карточках ${r.glyphs}, иконок в квадратах ${r.icons}`);
+  if (r.glyphs !== 7 || r.icons) bad.push(`рисунков в карточках ${r.glyphs}, иконок в квадратах ${r.icons}`);
   if (r.process || r.procLinks.length !== 4 || r.procLinks.some((h) => h !== 'process') || r.contact !== 'Контакт') bad.push(`«Как работаем»: секция ${r.process}, ссылки ${r.procLinks.join(', ')}, контакт «${r.contact}»`);
   const sv = readFileSync(path.join(root, 'services.html'), 'utf8');
   if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 7 || /svc-ic/.test(sv) || (sv.match(/<a href="process"[^>]*>Как работаем<\/a>/g) || []).length !== 4) bad.push('страница услуг: семь мини-рисунков (шесть направлений и редизайн), нет иконок, «Как работаем» → process.html (три меню и подвал)');
@@ -766,7 +766,7 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
   const fl = [...f0.matchAll(/<a href="([^"]+)"/g)].map((m) => m[1]).filter((h) => !/t\.me|max\.ru|wa\.me|^tel:|^mailto:|^#top$|^#about$|^privacy$|^$/.test(h));
   const sid = idsOf('services.html');
   fl.forEach((h) => { const [p0, id] = h.split('#'), pg = p0 + '.html'; if (!PAGES.includes(pg) || (id && !(pg === 'services.html' ? sid : idsOf(pg)).has(id))) bad.push(`подвал: ссылка ${h} ведёт в никуда`); });
-  if (fl.join(',') !== 'services,cases,automations,process,services#faq,sites,apps,servers,care,bitrix24,ai' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
+  if (fl.join(',') !== 'services,cases,automations,process,services#faq,sites,apps,servers,care,automation,bitrix24,ai' || !/t\.me\/dragonborne0/.test(f0)) bad.push(`подвал: разделы ${fl.join(', ')}`);
   // меню на 1024–1280 — одна строка и не наезжает на логотип и кнопки (RU и EN)
   for (const f of ['index.html', 'cases.html', 'process.html']) for (const lang of ['', '?lang=en']) for (const w of [1024, 1199, 1200, 1280]) {
     const page = await browser.newPage({ viewport: { width: w, height: 800 } });
@@ -1165,7 +1165,7 @@ console.log('\nструктура: услуги, «Как работаем», с
       proc: [...document.querySelectorAll('[data-sec="process"] a')].filter((a) => a.getAttribute('href') === 'process').length,
       steps: document.querySelectorAll('[data-sec="process"] .sv-step').length, care: !!document.querySelector('#after a[href="care"]'),
       sm: ['after', 'sub-how', 'process'].map((i) => getComputedStyle(document.getElementById(i).querySelector('[style*="scroll-margin-top"]') || document.getElementById(i)).scrollMarginTop).join(',') }));
-    if (r.order !== 'hero,process,sites,redesign,apps,servers,after,care,automation,ai,subs,faq,contact,foot') bad.push(`услуги: порядок ${r.order}`);
+    if (r.order !== 'hero,process,sites,redesign,apps,servers,after,care,integrations,automation,ai,subs,faq,contact,foot') bad.push(`услуги: порядок ${r.order}`);
     if (r.after !== 3 || r.subs !== 3 || r.h2.includes('После запуска') || r.q !== 9 || r.quit || r.proc !== 1 || r.steps !== 4 || !r.care || r.sm !== '88px,88px,88px') bad.push(`услуги: ${JSON.stringify({ after: r.after, subs: r.subs, q: r.q, quit: r.quit, proc: r.proc, steps: r.steps, care: r.care, sm: r.sm })}`);
     await page.close();
   }
@@ -2492,7 +2492,7 @@ console.log('\nрисунки направлений');
     const png = (await page.screenshot({ clip: { x: x.box[0], y: Math.max(0, x.box[1]), width: x.box[2], height: Math.min(x.box[3], 900 - Math.max(0, x.box[1])) } })).toString('base64');
     x.px = await page.evaluate(async (b64) => { const im = new Image(); im.src = 'data:image/png;base64,' + b64; await im.decode(); const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const q = c.getContext('2d'); q.drawImage(im, 0, 0); const d = q.getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 300) n++; return n; }, png);
   }
-  if (g.length !== 6 || g.some((x) => !x.on || x.undrawn)) bad.push(`после сборки: ${g.map((x) => `${x.k} ${x.on ? 'on' : 'off'} недорисовано ${x.undrawn}/${x.n}`).join(', ')}`);
+  if (g.length !== 7 || g.some((x) => !x.on || x.undrawn)) bad.push(`после сборки: ${g.map((x) => `${x.k} ${x.on ? 'on' : 'off'} недорисовано ${x.undrawn}/${x.n}`).join(', ')}`);
   if (g.some((x) => x.px != null && x.px < 40)) bad.push(`пустые рисунки на экране: ${g.filter((x) => x.px != null && x.px < 40).map((x) => x.k).join(', ')}`);
   await page.screenshot({ path: path.join(shots, 'd1440-glyphs.png') });
   // вне экрана — на паузе
@@ -2506,7 +2506,7 @@ console.log('\nрисунки направлений');
   await page.waitForTimeout(200); await run(3000);
   await page.locator('[data-pt-replay]:visible').first().click(); await run(9000);
   const rp = await page.evaluate(() => ({ off: window.__glOff, on: [...document.querySelectorAll('#directions .glyph')].filter((el) => el.classList.contains('is-on')).length }));
-  if (!rp.off || rp.on !== 6) bad.push(`после ↻: гасли ${rp.off} раз, прорисованы ${rp.on} из 6`);
+  if (!rp.off || rp.on !== 7) bad.push(`после ↻: гасли ${rp.off} раз, прорисованы ${rp.on} из 7`);
   errs.forEach((e) => bad.push(e));
   await page.close();
   // страница услуг: семь мини-рисунков у подписей модулей (шесть направлений и «Редизайн сайта»)
@@ -2514,7 +2514,7 @@ console.log('\nрисунки направлений');
     const pg = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await pg.goto('file://' + path.join(root, 'services.html') + '?intro=instant'); await pg.waitForTimeout(300);
     const m = await pg.evaluate(() => ({ n: document.querySelectorAll('.sv-lab .glyph-mini').length, on: document.querySelectorAll('.sv-lab .glyph-mini.is-on.is-now').length, icons: document.querySelectorAll('.svc-ic').length, dots: document.querySelectorAll('.sv-fmt .sv-fl .sv-dot').length }));
-    if (m.n !== 7 || m.on !== 7 || m.icons || m.dots !== 7) bad.push(`страница услуг: мини ${m.n}, на месте ${m.on}, иконок ${m.icons}, точек в карточке форматов ${m.dots}`);
+    if (m.n !== 8 || m.on !== 8 || m.icons || m.dots !== 8) bad.push(`страница услуг: мини ${m.n}, на месте ${m.on}, иконок ${m.icons}, точек в карточке форматов ${m.dots}`);
     await pg.evaluate(() => { const e = document.getElementById('sites'); window.scrollTo({ top: e.getBoundingClientRect().top + scrollY - 20, behavior: 'instant' }); }); await pg.waitForTimeout(300);
     await pg.screenshot({ path: path.join(shots, 's1440-sites.png') });
     await pg.close();
@@ -2525,7 +2525,7 @@ console.log('\nрисунки направлений');
     const pg = await ctx.newPage();
     await pg.goto('file://' + file); await pg.waitForTimeout(300);
     const r = await pg.evaluate(() => ({ now: document.querySelectorAll('.glyph.is-now').length, off: [...document.querySelectorAll('.glyph .d')].filter((d) => parseFloat(getComputedStyle(d).strokeDashoffset) > 0.01).length, pulses: [...document.querySelectorAll('.glyph .pulse')].filter((p) => getComputedStyle(p).display !== 'none').length }));
-    if (r.now !== 6 || r.off || r.pulses) bad.push(`reduced motion: на месте ${r.now}, не прорисовано ${r.off}, импульсов видно ${r.pulses}`);
+    if (r.now !== 7 || r.off || r.pulses) bad.push(`reduced motion: на месте ${r.now}, не прорисовано ${r.off}, импульсов видно ${r.pulses}`);
     await ctx.close();
   }
   if (bad.length) fail('рисунки: ' + bad.join('; '));
@@ -3251,16 +3251,16 @@ function woff2Cmap(file) {
 console.log('\nцены');
 {
   const bad = [], nb = (t) => t.replace(/\s+/g, ' ').trim();
-  const W = { sites: 'от 120 000 ₽', redesign: 'от 85 000 ₽', apps: 'от 150 000 ₽', servers: 'от 5 000 ₽ за задачу', care: 'от 10 000 ₽ в месяц', automation: 'от 5 000 ₽ в месяц', ai: 'от 5 000 ₽ в месяц' };
+  const W = { sites: 'от 120 000 ₽', redesign: 'от 85 000 ₽', apps: 'от 150 000 ₽', servers: 'от 5 000 ₽ за задачу', care: 'от 10 000 ₽ в месяц', automation: 'от 5 000 ₽ в месяц', integrations: 'от 5 000 ₽ в месяц', ai: 'от 5 000 ₽ в месяц' };
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(BASE + 'index.html?intro=instant'); await page.waitForTimeout(400);
   const home = await page.evaluate(() => [...document.querySelectorAll('a.svc')].map((a) => [a.getAttribute('href').split('#').pop().replace(/^(automations|bitrix24)$/, 'automation'), (a.querySelector('.svc-pr') || {}).textContent || '']));
   // TASK-redesign-prices.md: у «Сайтов-презентаций» ещё «· редизайн от 65 000 ₽»
-  if (home.length !== 6 || home.some(([id, t]) => nb(t) !== W[id] + (id === 'sites' ? ' · редизайн от 85 000 ₽' : ''))) bad.push('главная: ' + JSON.stringify(home));
+  if (home.length !== 7 || home.some(([id, t]) => nb(t) !== W[id] + (id === 'sites' ? ' · редизайн от 85 000 ₽' : ''))) bad.push('главная: ' + JSON.stringify(home));
   await page.goto(BASE + 'services.html?intro=instant'); await page.waitForTimeout(400);
   const sv = await page.evaluate(() => [...document.querySelectorAll('article.sv-mod')].map((m) => { const f = m.querySelector('.sv-meta > div'); return { id: m.id, cls: f.className, dt: f.querySelector('dt').textContent, dd: f.querySelector('dd').firstChild.textContent, small: (f.querySelector('dd small') || {}).textContent || '' }; }));
   const smallW = { apps: 'вторая платформа +50 000 ₽, десктоп +100 000 ₽', servers: 'n8n или LibreChat под ключ — от 15 000 ₽' };
-  if (sv.length !== 7 || sv.some((m) => m.cls !== 'sv-pr' || m.dt !== 'Цена' || nb(m.dd) !== W[m.id] || nb(m.small) !== (smallW[m.id] || ''))) bad.push('услуги, «Цена»: ' + JSON.stringify(sv));
+  if (sv.length !== 8 || sv.some((m) => m.cls !== 'sv-pr' || m.dt !== 'Цена' || nb(m.dd) !== W[m.id] || nb(m.small) !== (smallW[m.id] || ''))) bad.push('услуги, «Цена»: ' + JSON.stringify(sv));
   const pf = await page.evaluate(() => [...document.querySelectorAll('#after .sv-pf')].map((e) => (e.firstChild.textContent + ' / ' + e.querySelector('small').textContent).replace(/\s+/g, ' ').trim()).join(' | '));
   if (pf !== 'Без доплат / всё входит в цену сайта | +30 000 ₽ / разово, к цене сайта | от 10 000 ₽ / в месяц') bad.push('«Когда сайт готов»: ' + pf);
   for (const [f, q, want] of [['services.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, редизайн — от 85 000 ₽, приложение — от 150 000 ₽'], ['automations.html', 'Сколько это стоит?', 'Сайт — от 120 000 ₽, редизайн — от 85 000 ₽, приложение — от 150 000 ₽']]) {

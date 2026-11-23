@@ -1293,3 +1293,16 @@ html.ck-open .menu-in{padding-bottom:180px}
 
 /* Кнопка внутри кликабельной демо-карточки */
 .demo-cta{align-self:flex-start;margin-top:8px}
+
+/* Подписка на главной: два широких направления и две компактные карточки. */
+@media (min-width:1101px){
+  .svc-monthly .svc{grid-column:span 5}
+  .svc-monthly .svc-monthly-wide{grid-column:span 7}
+  .svc-monthly .svc-monthly-wide .glyph{max-width:330px}
+  .pr-sub-steps{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .pr-sub-steps .sv-step{grid-column:span 2}
+  .pr-sub-steps .sv-step:nth-child(n+4){grid-column:span 3}
+}
+@media (min-width:901px) and (max-width:1100px){
+  .svc-monthly .svc{grid-column:span 6}
+}
