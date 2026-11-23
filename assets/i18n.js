@@ -13,6 +13,8 @@
 // Новый русский текст в разметке — сразу добавь сюда перевод: node tools/check.mjs ловит кириллицу в EN-версии.
 (function () {
   var EN = {
+    "автоматизируем": "we automate",
+    "Свяжем сайт, CRM, таблицы, маркетплейсы и другие сервисы, у которых есть официальный API. Настроим сценарий под ваши правила: какие данные брать, когда запускать обработку и куда отправлять результат.": "We connect your website, CRM, spreadsheets, marketplaces and other services with an official API. We configure the workflow around your rules: which data to use, when to run it and where to send the results.",
     "Подтверждённый заказ автоматически превращается в счёт, который отправляется клиенту по почте.": "A confirmed order automatically generates an invoice and sends it to the customer by email.",
     "Счёт": "Invoice",
     "Письмо": "Email",
