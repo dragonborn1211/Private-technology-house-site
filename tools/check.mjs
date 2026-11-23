@@ -371,7 +371,7 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
   if (moving) fail(`${moving} сцен(ы) анимируются вне экрана`);
   else console.log(`  ✓ сцены (${p0.length}) стартуют после сборки и стоят на паузе вне экрана`);
   if (tag === 'd1440') {
-    // липкая шапка: в первом экране скрыта; ниже — видна при прокрутке вверх, прячется при прокрутке вниз
+    // липкая шапка: у верхнего края скрыта; после ухода обычной шапки видна в обе стороны
     const bar = () => page.evaluate(() => { const b = document.querySelector('[data-topbar]'); return { on: b.classList.contains('on') && getComputedStyle(b).visibility !== 'hidden', hrefs: [...b.querySelectorAll('.nav > a, .nav > .nav-sv > a')].map((a) => a.getAttribute('href')).join(',') }; });
     const go = async (y) => { await page.evaluate((v) => window.scrollTo({ top: v, behavior: 'instant' }), y); await page.waitForTimeout(80); await run(150); await page.waitForTimeout(120); await run(50); };
     await go(0); const b0 = await bar();
@@ -379,9 +379,9 @@ for (const [w, h, tag, lang, rm] of [[1440, 900, 'd1440', 'ru'], [1280, 720, 'd1
     await go(py + 300); const b1 = await bar();
     await go(py + 100); const b2 = await bar();
     await go(py + 400); const b3 = await bar();
-    if (b0.on || b1.on || !b2.on || b3.on) fail(`липкая шапка: в первом экране ${b0.on}, вниз ${b1.on}, вверх ${b2.on}, снова вниз ${b3.on}`);
+    if (b0.on || !b1.on || !b2.on || !b3.on) fail(`липкая шапка: в первом экране ${b0.on}, вниз ${b1.on}, вверх ${b2.on}, снова вниз ${b3.on}`);
     else if (b2.hrefs !== 'services,cases,automations,process') fail(`липкая шапка: пункты меню ведут на ${b2.hrefs}`);
-    else console.log('  ✓ липкая шапка: скрыта в первом экране, вверх — видна, вниз — прячется; пункты меню — на страницы');
+    else console.log('  ✓ липкая шапка: скрыта вверху, при прокрутке видна в обе стороны; пункты меню — на страницы');
   }
   if (tag === 'm390') {
     // меню на телефоне: «Обсудить проект» (каналы связи) и кнопка меню в шапке, Esc, фокус, пункт меню, язык

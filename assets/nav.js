@@ -4,8 +4,9 @@
   var root = document.getElementById('pt-site');
   if (!root) return;
   var de = document.documentElement, bar = root.querySelector('[data-topbar]'), menu = root.querySelector('[data-menu]');
-  // граница липкой шапки — первый экран; на странице без движка (privacy.html) — блок шапки [data-top]
+  // Первый экран нужен пульту, а липкая шапка подменяет обычную сразу после её ухода за верхний край.
   var hero = root.querySelector('[data-sec="hero"], [data-top]'), pult = root.querySelector('[data-pult]');
+  var header = root.querySelector('.hero-hdr') || hero;
 
   // ---------- панель замеров ?hud (TASK-perf.md, 0.1) ----------
   // Только по ?hud (дальше держится до конца вкладки) — без флага файл не грузится вовсе; ?hud=0 и ?pt-reset — выключить.
@@ -23,45 +24,31 @@
   } catch (e) { /* хранилище запрещено — без панели */ }
 
   // ---------- липкая шапка ----------
-  // Пока первый экран в кадре — скрыта. Ниже: прокрутка вверх показывает, вниз прячет. После перехода по якорю
-  // (меню, кнопки) остаётся видимой, пока человек сам не начнёт прокручивать.
-  // прошлая позиция — с первого обновления, а не при загрузке: чтение scrollY здесь раскладывало всю страницу посреди разбора
-  // HTML, а сразу за этим движок снимает .pt-boot — и раскладка считалась заново (~75 мс при CPU ×4 на телефоне)
-  var lastY = null, shown = false, pinned = false, raf = 0;
-  // первый экран в кадре — по IntersectionObserver, а не getBoundingClientRect в каждом кадре прокрутки (TASK-perf.md, 3.3)
-  var heroIn = true;
-  if (hero && 'IntersectionObserver' in window) new IntersectionObserver(function (es) { heroIn = es[es.length - 1].isIntersecting; onScroll(); }, { threshold: 0 }).observe(hero);
+  // Направление прокрутки не влияет на видимость. Наблюдатели не читают раскладку в обработчике прокрутки.
+  var shown = false, raf = 0, heroIn = true, headerPassed = false;
+  var canObserve = 'IntersectionObserver' in window;
+  if (hero && canObserve) new IntersectionObserver(function (es) { heroIn = es[es.length - 1].isIntersecting; onScroll(); }).observe(hero);
+  if (header && canObserve) new IntersectionObserver(function (es) {
+    headerPassed = es[es.length - 1].boundingClientRect.bottom <= 0;
+    onScroll();
+  }).observe(header);
   function show(v) {
     if (!bar || v === shown) return;
     shown = v; bar.classList.toggle('on', v);
     if (v) bar.removeAttribute('inert'); else bar.setAttribute('inert', '');
   }
-  // позиция кадра — одна на всех (PTScroll.y, TASK-weak-phone, 4); без scroll.js — scrollY
-  // Пока первый экран в кадре, позиция не нужна: шапка скрыта, а чтение scrollY заставляло браузер разложить страницу (при
-  // запуске — 125 мс при CPU ×8, ещё до раскладки движка; TASK-weak-phone-3, 1). Первый экран ушёл — с первого кадра dy = 0
-  function update(now) {
+  function update() {
     raf = 0;
-    // закрепление после якоря снимает только сам человек (колесо, палец, клавиши): в начале поездки к секции первый
-    // экран ещё в кадре, и сброс здесь гасил шапку
-    if (hero && heroIn) { show(false); lastY = null; guardPult(); return; }
-    var y = window.PTScroll && window.PTScroll.y ? window.PTScroll.y(now) : window.scrollY, dy = lastY === null ? 0 : y - lastY; lastY = y;
-    if (pinned || dy < -1) show(true);
-    else if (dy > 1) show(false);
+    if (!canObserve) {
+      if (header) headerPassed = header.getBoundingClientRect().bottom <= 0;
+      if (hero) heroIn = hero.getBoundingClientRect().bottom > 0;
+    }
+    show(headerPassed);
     guardPult();
   }
   function onScroll() { if (!raf) raf = requestAnimationFrame(update); }
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', function () { gDoc = null; pBox = null; onScroll(); });
-  root.addEventListener('click', function (e) {
-    var a = e.target.closest && e.target.closest('a[href^="#"]');
-    if (a && a.getAttribute('href').length > 1) pinned = true;
-  });
-  function unpin() { pinned = false; }
-  window.addEventListener('wheel', unpin, { passive: true });
-  window.addEventListener('touchmove', unpin, { passive: true });
-  // нажатие (в том числе на свой скроллбар) тоже снимает закрепление; клик по якорю после него закрепит снова
-  window.addEventListener('pointerdown', unpin, { passive: true });
-  window.addEventListener('keydown', function (e) { if (/^(Arrow(Up|Down)|Page(Up|Down)|Home|End| )$/.test(e.key)) unpin(); });
 
   // ---------- меню на телефоне, планшете и узком ноутбуке (до 1199 px) ----------
   // Открывается кнопкой [data-menu-open] (в шапке первого экрана и в липкой). Фокус уходит в меню и не выходит из него;
@@ -96,7 +83,7 @@
   openers.forEach(function (b) { b.addEventListener('click', function () { open(b); }); });
   if (closer) closer.addEventListener('click', function () { close(); });
   // пункт меню: закрыть до того, как scroll.js поведёт страницу к секции (его обработчик — на document, он позже)
-  if (menu) Array.prototype.forEach.call(menu.querySelectorAll('[data-menu-link]'), function (a) { a.addEventListener('click', function () { pinned = true; close(); }); });
+  if (menu) Array.prototype.forEach.call(menu.querySelectorAll('[data-menu-link]'), function (a) { a.addEventListener('click', function () { close(); }); });
   if (window.matchMedia) {
     var wide = window.matchMedia('(min-width: 1200px)'), onWide = function (e) { if (e.matches) close(false); };
     if (wide.addEventListener) wide.addEventListener('change', onWide); else if (wide.addListener) wide.addListener(onWide);

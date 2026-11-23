@@ -517,7 +517,7 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 .trust-s{margin:0 .2em 0 .6em;color:#6F93A6}
 /* низкие экраны (ноутбук 1280×720): панель и колонка текста целиком в первом экране */
 @media (max-height:820px){.hero-hdr{padding:14px 0}.hero-row{padding:2px 0 22px;gap:28px 56px}.hero-col{gap:16px}.hero-obj{min-height:clamp(400px,60vh,600px)}.hero-col .lead{font-size:16px}}
-/* ---------- липкая шапка [data-topbar]: ниже первого экрана, появляется при прокрутке вверх (assets/nav.js) ---------- */
+/* ---------- липкая шапка [data-topbar]: подменяет обычную после прокрутки (assets/nav.js) ---------- */
 .topbar{position:fixed;top:0;left:0;right:0;z-index:45;height:64px;background:rgba(10,18,26,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid rgba(188,211,222,.12);transform:translateY(-101%);visibility:hidden;transition:transform .25s ease,visibility 0s linear .25s}
 .topbar.on{transform:none;visibility:visible;transition:transform .25s ease}
 .topbar-in{height:100%;display:flex;align-items:center;justify-content:space-between;gap:20px}
