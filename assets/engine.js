@@ -1356,7 +1356,7 @@
           atRun((2.65 + o) * K, function () {
             prepGate(s, 'gl', function () {
               // главная кнопка — с текстом: её заливка проявляется по той же линии (site.css, TASK-review.md 1.4)
-              lineDelays('.ptx, .obj-ct, .obj-cap, a.btn-p.fr', 'y', LD); heroSweep = { axis: 'y', spread: LD }; line(beamH, LD);
+              lineDelays('.ptx, .obj-ct, .obj-cap, :is(a,button).btn-p.fr', 'y', LD); heroSweep = { axis: 'y', spread: LD }; line(beamH, LD);
               setStage(s, 'text'); phText(s, BLD, false); heroSweep = null; log(s, '03 · type.crystallize()');
             });
           });

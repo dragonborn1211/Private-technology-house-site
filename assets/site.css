@@ -127,7 +127,7 @@ html:not(.cp-lock) .pt-on .sec.pt-wait > *{clip-path:inset(50%)}
 .lead{margin:0;max-width:520px;font-size:17px;line-height:1.6;color:#9DB0BC}
 .glass{background-color:rgba(228,237,242,.035);border:1px solid rgba(188,211,222,.14);box-shadow:inset 0 1px 0 rgba(246,248,250,.06),0 30px 60px -30px rgba(0,0,0,.55);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
 .btn{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:0 26px;border-radius:999px;font-size:15px;font-weight:600;white-space:nowrap}
-.pt a.btn-p{background-color:#EEF3F6;border:1px solid #EEF3F6;color:#0A121A;box-shadow:0 0 44px -6px rgba(142,216,248,.35)}
+.pt a.btn-p,.pt .hero-project .btn-p{background-color:#EEF3F6;border:1px solid #EEF3F6;color:#0A121A;box-shadow:0 0 44px -6px rgba(142,216,248,.35)}
 .pt :is(a,button).btn-g,.pt .demo-cta{background-color:rgba(228,237,242,.03);border:1px solid rgba(188,211,222,.24);color:#EEF3F6}
 .pt a.lnk{display:inline-flex;align-items:center;min-height:44px;font-size:15px;font-weight:600;color:#BCD3DE}
 .ln{border-top:1px solid rgba(188,211,222,.16)}
@@ -381,9 +381,9 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 .pt-lines .sec[data-sec="hero"].s-text .ptx,.pt-lines .sec[data-sec="hero"].s-text .obj-ct,.pt-lines .sec[data-sec="hero"].s-text .obj-cap{opacity:1;transition:opacity .4s ease var(--ld,0s)}
 /* главная кнопка первого экрана: контур — с рамками, а заливка и свечение — с текстом, по горизонтальной линии (--ld по y,
    как .ptx), за то же время (TASK-review.md 1.4: заливка проявлялась позже заголовка). В быстрой сборке — как текст */
-.pt-lines .sec[data-sec="hero"].s-skel a.btn-p.fr{background-color:transparent!important;box-shadow:none!important}
-.pt-lines .sec[data-sec="hero"].s-text a.btn-p.fr{transition:background-color .4s ease var(--ld,0s),border-color .9s ease,box-shadow .6s ease var(--ld,0s)}
-.pt-sweep .sec[data-sec="hero"] a.btn-p.fr{transition-duration:.35s!important}
+.pt-lines .sec[data-sec="hero"].s-skel :is(a,button).btn-p.fr{background-color:transparent!important;box-shadow:none!important}
+.pt-lines .sec[data-sec="hero"].s-text :is(a,button).btn-p.fr{transition:background-color .4s ease var(--ld,0s),border-color .9s ease,box-shadow .6s ease var(--ld,0s)}
+.pt-sweep .sec[data-sec="hero"] :is(a,button).btn-p.fr{transition-duration:.35s!important}
 /* на время подмены текста браузер не подкручивает прокрутку сам: якорь держит движок */
 .pt.no-anchor{overflow-anchor:none}
 @media (max-width:760px){.pt-edge{display:none}}
@@ -1314,3 +1314,12 @@ html.ck-open .menu-in{padding-bottom:180px}
   [data-sec="subs"] .sv-paths{display:grid;grid-template-columns:minmax(0,1fr);overflow:visible;margin:0;padding:0!important}
   [data-sec="subs"] .sv-pf{min-height:0}
 }
+
+/* Выбор канала связи из основной кнопки на первом экране. */
+.pt .hero-project .cm-btn{width:auto;height:auto;min-height:52px;padding:0 26px;border-radius:999px}
+.hero-project .cm-ch{display:block}
+.pt-on .sec:not(.s-text):not(.s-done) .hero-project .cm-ch{opacity:0}
+.hero-project .cm-pop{left:0;right:auto;max-height:var(--cm-room,none);overflow-y:auto}
+.hero-project.cm-up .cm-pop{top:auto;bottom:calc(100% + 10px)}
+.hero-project-fallback{display:none!important}
+.sv-price-example{margin:0;font-size:15px;line-height:1.5;color:#9DB0BC}

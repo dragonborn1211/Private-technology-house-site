@@ -1522,7 +1522,7 @@ console.log('\nревью, 1: первые секунды');
   await page.addInitScript(() => {
     window.__r = []; let t0 = 0;
     const f = () => {
-      const p = document.querySelector('[data-pult]'), r = document.getElementById('pt-site'), hs = document.querySelector('[data-sec="hero"]'), b = hs && hs.querySelector('.hero-act a.btn-p'), sp = b && b.querySelector('span'), gl = hs && hs.querySelector('canvas[data-gl]');
+      const p = document.querySelector('[data-pult]'), r = document.getElementById('pt-site'), hs = document.querySelector('[data-sec="hero"]'), b = hs && hs.querySelector('.hero-project button.btn-p'), sp = b && b.querySelector('span'), gl = hs && hs.querySelector('canvas[data-gl]');
       if (p && r) {
         const bg = b ? getComputedStyle(b).backgroundColor : '', a = /rgba\([^)]*?,\s*([\d.]+)\)$/.exec(bg);
         if (!t0 && r.classList.contains('pt-on')) t0 = performance.now();

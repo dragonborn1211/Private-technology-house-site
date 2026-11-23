@@ -125,7 +125,18 @@
     if (v && sms) smClose();
     p.hidden = !v; b.setAttribute('aria-expanded', v ? 'true' : 'false'); cm.classList.toggle('is-open', v);
     // список прижат правым краем к кнопке; на узком экране (320 px) он уходил за левый край — сдвигаем в пределы окна
-    if (v) { p.style.setProperty('--cm-dx', '0px'); var r = p.getBoundingClientRect(), W = document.documentElement.clientWidth; p.style.setProperty('--cm-dx', Math.round(r.left < 12 ? 12 - r.left : (r.right > W - 12 ? W - 12 - r.right : 0)) + 'px'); }
+    if (v) {
+      if (cm.classList.contains('hero-project')) {
+        p.style.removeProperty('--cm-room');
+        var anchor = b.getBoundingClientRect(), above = anchor.top - 22, below = innerHeight - anchor.bottom - 22;
+        var up = below < p.offsetHeight && above > below;
+        cm.classList.toggle('cm-up', up);
+        p.style.setProperty('--cm-room', Math.max(0, Math.floor(up ? above : below)) + 'px');
+      }
+      p.style.setProperty('--cm-dx', '0px');
+      var r = p.getBoundingClientRect(), W = document.documentElement.clientWidth;
+      p.style.setProperty('--cm-dx', Math.round(r.left < 12 ? 12 - r.left : (r.right > W - 12 ? W - 12 - r.right : 0)) + 'px');
+    }
   }
   function cmClose(keep) { cms.forEach(function (cm) { if (cm !== keep) cmSet(cm, false); }); }
   cms.forEach(function (cm) {
