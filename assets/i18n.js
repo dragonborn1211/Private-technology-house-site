@@ -13,6 +13,24 @@
 // Новый русский текст в разметке — сразу добавь сюда перевод: node tools/check.mjs ловит кириллицу в EN-версии.
 (function () {
   var EN = {
+    "Интеграции CRM, сайта и сервисов по подписке | Private Technology House": "CRM, website and service integrations by subscription | Private Technology House",
+    "Связываем CRM, сайт, Telegram и другие сервисы. Запускаем сценарии на нашей инфраструктуре и сопровождаем, от 5 000 ₽ в месяц.": "We connect your CRM, website, Telegram and other services. We run and maintain workflows on our infrastructure, from RUB 5,000 per month.",
+    "Автоматизация бизнеса по подписке | Private Technology House": "Business automation by subscription | Private Technology House",
+    "Автоматизируем заявки, документы и отчёты, внедряем AI-агентов. Разработка, размещение и сопровождение на нашей инфраструктуре, от 5 000 ₽ в месяц.": "We automate leads, documents and reports and implement AI agents. Development, hosting and maintenance on our infrastructure, from RUB 5,000 per month.",
+
+    "Интеграции —": "Integrations —",
+    "Интеграции · подписка": "Integrations · subscription",
+    "Автоматизация —": "Automation —",
+    "Автоматизация · подписка": "Automation · subscription",
+    "по подписке": "as a subscription",
+    "Связываем CRM, сайт, Telegram, телефонию и другие сервисы. Заявки не теряются, задачи ставятся голосом, звонки разбираются сами. Сценарии работают на нашем сервере, мы за ними следим.": "We connect your CRM, website, Telegram, telephony and other services. Leads are captured, tasks are created by voice and calls are analysed automatically. Scenarios run on our server, and we keep them running.",
+    "Вы описываете задачу — мы разрабатываем решение, запускаем на нашей инфраструктуре и сопровождаем. Заявки, документы, отчёты и AI-агенты работают без ежедневной рутины. Вы платите за работающую автоматизацию.": "You describe the task — we develop a solution, run it on our infrastructure and maintain it. Leads, documents, reports and AI agents work without daily routine. You pay for automation that works.",
+    "описание задачи и доступ к сервисам, с которыми работаем.": "a description of the task and access to the services we work with.",
+    "сценарии": "scenarios",
+    "Выберите подходящий — настроим под ваши процессы.": "Choose a suitable scenario — we will adapt it to your processes.",
+    "Хочу настроить интеграцию.": "I would like to set up an integration.",
+    "Хочу автоматизировать процесс.": "I would like to automate a process.",
+
     "Кейсы автоматизации": "Automation case studies",
     "«Исток» — восстановили приложение, которое осталось на одном телефоне": "Istok — restoring an app left on a single phone",
     "Клиент обратился с необычной проблемой: рабочее приложение открывалось только при выключенном интернете. «Исток» был нужен ему каждый день, а после исчезновения приложения из Google Play единственная рабочая копия осталась на одном телефоне.": "A client came to us with an unusual problem: their work app only opened with the internet turned off. They relied on Istok every day, and after it disappeared from Google Play, the only working copy was on one phone.",
