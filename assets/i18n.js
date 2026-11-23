@@ -666,6 +666,7 @@
     // TASK-clarity.md, B10: «Как работаем» — четыре секции
     'Сайты и приложения': 'Websites and apps',
     'Автоматизация и AI': 'Automation and AI',
+    'Автоматизация, интеграция и AI': 'Automation, integration and AI',
     'Разбираем задачу и примеры, которые вам нравятся. Состав, сроки и цену называем до старта.': 'We go through the task and examples you like. Scope, timeline and price are named before we start.',
     'Показываем идею: первый экран сайта или ключевые экраны приложения. Согласуем до сборки.': 'We show the idea: the first screen of the site or the key screens of the app. Agreed before the build.',
     'Прототип': 'Prototype',
