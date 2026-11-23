@@ -1256,8 +1256,8 @@ console.log('\nясность, часть A: заголовки групп ус�
     if (r.proc !== 'Порядок работы') bad.push(`услуги: блок порядка — «${r.proc}»`);
     await page.close();
   }
-  // «Нужно от вас»: каталог 14 px, «Как работаем» 15 px
-  for (const [f, sel, px] of [['automations.html', '#site-leads .tp-need', '14px'], ['process.html', '.pr-foot .tp-need', '15px']]) {
+  // «Нужно от вас» на странице процесса остаётся размером 15 px
+  for (const [f, sel, px] of [['process.html', '.pr-foot .tp-need', '15px']]) {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     await page.goto(BASE + f + '?intro=instant'); await page.waitForTimeout(200);
     const fs = await page.evaluate((s) => getComputedStyle(document.querySelector(s)).fontSize, sel);

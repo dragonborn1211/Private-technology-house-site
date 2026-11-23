@@ -940,6 +940,9 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
 .tp-need{font:400 14px/1.55 Manrope,'Manrope fb',system-ui,sans-serif;color:#9DB0BC}
 .tp-need b{font-weight:500;color:#BCD3DE}
 .tp-act{display:flex;flex-wrap:wrap;gap:0 24px;margin:-2px 0 -10px}
+/* Одинаковая высота кнопок в ряду карточек каталога. */
+[data-sec="templates"] article.obj .obj-tx{flex:1}
+[data-sec="templates"] article.obj .tp-act{margin-top:auto}
 .pt a.tp-go{display:inline-flex;align-items:center;min-height:44px;font-size:15px;font-weight:600;color:#BCD3DE;transition:color .3s ease}
 .pt a.tp-go:hover{color:#8ED8F8}
 /* шаги подключения под первым экраном каталога — три вместо пяти */
