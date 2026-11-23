@@ -930,11 +930,8 @@ console.log('\nкейсы и готовые автоматизации');
   st = await state(page);
   const T = ['site-leads', 'voice-task', 'reviews', 'b24-report', 'seo-report', 'catalog', 'avito-bot', 'price-monitor'];
   if (st.vis.join(',') !== T.join(',') || st.always !== 'your-process' || st.btns !== 'all,leads,tasks,goods,reports,ai') bad.push(`каталог: ${JSON.stringify(st)}`);
-  const cards = await page.evaluate(() => [...document.querySelectorAll('[data-cat]')].map((c) => ({ id: c.id, flow: c.querySelector('canvas[data-flow]').dataset.flow, need: /^Нужно от\s+вас: \S/.test(c.querySelector('.tp-need').textContent), go: !!c.querySelector('a.tp-go[data-tg^="Хочу подключить «"]'), cases: [...c.querySelectorAll('a[href^="cases#"], a[href^="cases.html#"]')].map((a) => a.getAttribute('href').split('#')[1]), obj: /Объект №/.test(c.textContent) })));
-  const cid = idsOf('cases.html');
-  cards.forEach((c) => { if (!c.need || !c.go || c.obj || c.cases.some((x) => !cid.has(x))) bad.push(`шаблон ${c.id}: «Нужно от вас» ${c.need}, «Подключить» ${c.go}, «Объект №» ${c.obj}, кейсы ${c.cases.join(',')}`); });
-  const links = cards.filter((c) => c.cases.length).map((c) => c.id + '→' + c.cases.join('')).join(',');
-  if (links !== 'site-leads→case-tg-crm,seo-report→case-seo-report,catalog→case-catalog') bad.push(`«Работает у клиента»: ${links}`);
+  const cards = await page.evaluate(() => [...document.querySelectorAll('[data-cat]')].map((c) => ({ id: c.id, flow: c.querySelector('canvas[data-flow]').dataset.flow, need: !!c.querySelector('.tp-need'), go: !!c.querySelector('a.tp-go[data-tg^="Хочу подключить «"]'), cases: [...c.querySelectorAll('a[href^="cases#"], a[href^="cases.html#"]')].map((a) => a.getAttribute('href').split('#')[1]), obj: /Объект №/.test(c.textContent) })));
+  cards.forEach((c) => { if (c.need || !c.go || c.obj || c.cases.length) bad.push(`шаблон ${c.id}: «Нужно от вас» ${c.need}, «Подключить» ${c.go}, «Объект №» ${c.obj}, кейсы ${c.cases.join(',')}`); });
   if (cards.map((c) => c.flow).join(',') !== 'site-leads,voice-task,reviews,b24-digest,seo-report,catalog,avito-bot,price-monitor') bad.push(`схемы шаблонов: ${cards.map((c) => c.flow).join(',')}`);
   await page.click('[data-filter="reports"]'); await page.clock.runFor(800);
   st = await state(page);
@@ -981,7 +978,7 @@ console.log('\nкейсы и готовые автоматизации');
     await ctx.close();
   }
   if (bad.length) fail('кейсы и каталог: ' + bad.join('; '));
-  else console.log('  ✓ кейсы: две группы — «Сайты» (Resonara, Antares, демо последней) и «Автоматизация и AI» (шесть работ), фильтра и NDA нет, #sites / #automation / #ai — к заголовку группы, схемы нарисованы в размер, без JS видны все, AI-шлюз в <template> группы «Автоматизация и AI»; каталог: восемь шаблонов и «Под ваш процесс», «Нужно от вас», «Подключить», «Работает у клиента» → существующие кейсы, фильтр «Отчёты» (#f-reports), якоря с главной и услуг — на карточки не под шапкой, вопросы = JSON-LD; JSON-LD в EN без кириллицы');
+  else console.log('  ✓ кейсы: две группы — «Сайты» (Resonara, Antares, демо последней) и «Автоматизация и AI» (шесть работ), фильтра и NDA нет, #sites / #automation / #ai — к заголовку группы, схемы нарисованы в размер, без JS видны все, AI-шлюз в <template> группы «Автоматизация и AI»; каталог: восемь шаблонов и «Под ваш процесс», кнопки «Подключить», фильтр «Отчёты» (#f-reports), якоря с главной и услуг — на карточки не под шапкой, вопросы = JSON-LD; JSON-LD в EN без кириллицы');
 }
 
 // новые страницы, как страница услуг: секции собираются на трёх ширинах RU и двух EN, ошибок нет, кириллицы в EN нет
