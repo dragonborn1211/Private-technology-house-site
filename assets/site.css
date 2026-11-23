@@ -885,6 +885,9 @@ html.pt-lock .sec,html.pt-lock .topbar,html.pt-lock .pult{visibility:hidden;tran
   .obj.is-wide{grid-column:1 / -1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:16px 40px;padding:16px}
   .obj.is-wide .flow-win{aspect-ratio:2 / 1}
   .obj.is-wide .obj-tx{padding:0 24px 0 0;gap:14px}
+  .obj-own.is-wide .flow-win{align-self:end}
+  .obj-own.is-wide .obj-tx{align-self:stretch}
+  .obj-own.is-wide .obj-cta{margin-top:auto}
   .obj.is-wide .obj-h{font-size:clamp(28px,2.6vw,40px);font-weight:300;letter-spacing:-.03em}
 }
 /* окна-сайты в сетке в две колонки — тоже 16:10 (кейсы) */
