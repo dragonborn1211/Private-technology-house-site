@@ -2334,14 +2334,14 @@ console.log('\nпанель услуг в меню');
   const sm = (f) => [...src[f].matchAll(/<div class="nav-sv" data-sm>[\s\S]*?class="sm-all">[^<]*<\/a><\/div><\/div>/g)].map((m) => norm(m[0]).replace(/ id="sm-[ht]"| aria-controls="sm-[ht]"/g, ''));
   const ml = (f) => (src[f].match(/<div class="menu-sv">[\s\S]*?<\/div>/) || [''])[0];
   const s0 = sm('index.html')[0], m0 = norm(ml('index.html'));
-  const want = 'sites,sites#redesign,apps,servers,care,bitrix24,ai,services';
+  const want = 'sites,sites#redesign,apps,servers,care,bitrix24,automations,cases#automation,ai,services';
   if (!s0 || [...s0.matchAll(/<a href="([^"]+)"/g)].slice(1).map((m) => m[1]).join(',') !== want) bad.push('панель: ссылки ' + s0);
   for (const f of PAGES) {
     const a = sm(f);
     if (a.length !== 2 || a.some((x) => x !== s0)) bad.push(`${f}: панель услуг отличается`);
-    if (norm(ml(f)) !== m0 || (m0.match(/<a /g) || []).length !== 7) bad.push(`${f}: список услуг в меню`);
+    if (norm(ml(f)) !== m0 || (m0.match(/<a /g) || []).length !== 9) bad.push(`${f}: список услуг в меню`);
     const page = f.replace(/\.html$/, ''), cur = [...src[f].matchAll(/<div class="sm-pop"[\s\S]*?class="sm-all">/g)].map((m) => [...m[0].matchAll(/<a href="\/?([^"]+)" aria-current="page"/g)].map((x) => x[1]).join());
-    if (cur.some((c) => c !== (/^(sites|apps|servers|care|bitrix24|ai)$/.test(page) ? page : ''))) bad.push(`${f}: текущая в панели ${cur}`);
+    if (cur.some((c) => c !== (/^(sites|apps|servers|care|bitrix24|automations|ai)$/.test(page) ? page : ''))) bad.push(`${f}: текущая в панели ${cur}`);
     if (!/data-pt-skip hidden><div class="sm-cols">/.test(src[f])) bad.push(`${f}: панель без data-pt-skip`);
   }
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -2363,7 +2363,7 @@ console.log('\nпанель услуг в меню');
     await page.focus(hdr + ' .nav-ch'); await page.keyboard.press('Enter'); await page.waitForTimeout(80); const k1 = await st(pid);
     await page.keyboard.press('Escape'); await page.waitForTimeout(80); const k2 = await st(pid);
     if (!k1.open || k2.open || !k2.ch) bad.push(`${hdr}: Enter / Esc ${JSON.stringify([k1, k2])}`);
-    await page.keyboard.press('Enter'); await page.waitForTimeout(60); for (let i = 0; i < 9; i++) await page.keyboard.press('Tab');
+    await page.keyboard.press('Enter'); await page.waitForTimeout(60); for (let i = 0; i < 11; i++) await page.keyboard.press('Tab');
     await page.waitForTimeout(60); if ((await st(pid)).open) bad.push(`${hdr}: Tab за пределы — панель открыта`);
   }
   await page.close();
@@ -2373,7 +2373,7 @@ console.log('\nпанель услуг в меню');
     await pg.goto(BASE + 'care?intro=instant'); await pg.waitForTimeout(400);
     await pg.click('.hero-hdr .menu-btn'); await pg.waitForTimeout(400);
     const r = await pg.evaluate(() => { const as = [...document.querySelectorAll('[data-menu] .menu-sv a')]; return { n: as.length, cols: new Set(as.map((a) => Math.round(a.getBoundingClientRect().left))).size, fs: as[0] && getComputedStyle(as[0]).fontSize, cur: as.filter((a) => a.getAttribute('aria-current')).map((a) => a.textContent).join(), over: as.filter((a) => a.getBoundingClientRect().right > innerWidth).length }; });
-    if (r.n !== 7 || r.cols !== 2 || r.fs !== '15px' || r.cur !== 'Сопровождение сайта' || r.over) bad.push(`меню ${w}: ${JSON.stringify(r)}`);
+    if (r.n !== 9 || r.cols !== 2 || r.fs !== '15px' || r.cur !== 'Сопровождение сайта' || r.over) bad.push(`меню ${w}: ${JSON.stringify(r)}`);
     await ctx.close();
   }
   const lp = await browser.newPage();
