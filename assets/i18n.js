@@ -13,6 +13,23 @@
 // Новый русский текст в разметке — сразу добавь сюда перевод: node tools/check.mjs ловит кириллицу в EN-версии.
 (function () {
   var EN = {
+    "Для сайта готовим хостинг, для интеграций подключаем нужные сервисы, для AI-помощника собираем базу знаний. Проверяем работу перед запуском.": "We prepare hosting for websites, connect the required services for integrations, and build a knowledge base for AI assistants. We check everything before launch.",
+    "Следим за доступностью сайта, обменом данными или работой помощника. Устраняем сбои и вносим согласованные правки.": "We monitor website availability, data exchange, or assistant performance. We fix failures and make agreed changes.",
+    "Передаём сайт с кодом или отключаем автоматизацию и помощника на нашем сервере. По запросу выгружаем ваши данные.": "We hand over your website and code or turn off automation and assistants on our server. Data exports are available on request.",
+    "Поддержка по подписке": "Subscription support",
+    "Завершение подписки": "Ending the subscription",
+    "Подключаем ваши документы и проверяем ответы помощника на типовых вопросах. После проверки запускаем его на нашем сервере.": "We connect your documents, test the assistant’s answers to common questions and launch it on our server.",
+    "Проверяем, что помощник доступен и отвечает. Устраняем сбои и обновляем базу знаний, когда меняются ваши материалы.": "We check that the assistant responds, fix failures and update its knowledge base as your materials change.",
+    "Отключаем помощника на нашем сервере. По запросу выгружаем ваши данные.": "We turn off the assistant on our server and export your data on request.",
+    "Переносим сайт на наш хостинг и проверяем, что страницы, формы и домен работают после переезда.": "We migrate your site and check its pages, forms and domain after the move.",
+    "Следим за доступностью сайта, делаем резервные копии, вовремя продлеваем хостинг и вносим согласованные правки.": "We monitor availability, back up the site, renew hosting and apply agreed changes.",
+    "Передаём сайт с исходным кодом и данными, чтобы его можно было перенести на другой хостинг.": "We hand over the site, source code and data so it can move to another host.",
+    "Подключаем CRM к нужным сервисам и проверяем, что заявки, статусы и уведомления доходят до получателей.": "We connect your CRM and check that leads, status updates and notifications reach their recipients.",
+    "Проверяем обмен данными. Если связь прерывается или сервис меняет правила подключения, устраняем сбой.": "We monitor data exchange and fix failures when connections drop or services change their interfaces.",
+    "Отключаем обмен данными. Записи, уже переданные в вашу CRM, остаются у вас. Данные с нашего сервера выгружаем по запросу.": "We stop data exchange. Existing CRM records stay with you. We offer exports from our server on request.",
+    "Разбираем ваш процесс, настраиваем правила обработки и проверяем результат на примерах. Затем запускаем автоматизацию на нашей инфраструктуре.": "We configure the rules, test the results with examples and launch the automation on our infrastructure.",
+    "Проверяем выполнение задач, устраняем сбои и вносим небольшие правки в согласованном объёме.": "We monitor jobs, fix failures and make small adjustments within the agreed scope.",
+    "Останавливаем автоматические задачи на нашей инфраструктуре. По запросу выгружаем данные, которые там хранятся.": "We stop automated jobs on our infrastructure and export the data stored there on request.",
     "автоматизируем": "we automate",
     "Свяжем сайт, CRM, таблицы, маркетплейсы и другие сервисы, у которых есть официальный API. Настроим сценарий под ваши правила: какие данные брать, когда запускать обработку и куда отправлять результат.": "We connect your website, CRM, spreadsheets, marketplaces and other services with an official API. We configure the workflow around your rules: which data to use, when to run it and where to send the results.",
     "Подтверждённый заказ автоматически превращается в счёт, который отправляется клиенту по почте.": "A confirmed order automatically generates an invoice and sends it to the customer by email.",
@@ -622,7 +639,7 @@
     'Вебхук Битрикс24, бот в Telegram, ключи API. Для агента — регламенты, прайсы, частые вопросы.': 'A Bitrix24 webhook, a Telegram bot, API keys. For an agent: policies, price lists, frequent questions.',
     'Собираем сценарий или агента на нашем сервере: n8n, Cloudflare Workers или свой код.': 'We build the workflow or the agent on our server: n8n, Cloudflare Workers or our own code.',
     'Прогоняем на реальных данных и вопросах, показываем результат и правим.': 'We run it on real data and questions, show the result and fix what is needed.',
-    'Следим за работой, правим при смене API, обновляем базу знаний.': 'We watch it work, fix it when an API changes and update the knowledge base.',
+    'Проверяем, что данные доходят, устраняем сбои подключения и обновляем базу знаний помощника.': 'We check data delivery, fix connection failures and update the assistant’s knowledge base.',
     'доступы к сервисам; для агента — документы и примеры вопросов.': 'access to the services; for an agent, documents and sample questions.',
     'Описать задачу': 'Describe your task',
     // B11: кнопки сразу в Telegram — черновики сообщений; «Что входит» на телефоне; «Готовые решения.»
