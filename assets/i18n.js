@@ -13,6 +13,14 @@
 // Новый русский текст в разметке — сразу добавь сюда перевод: node tools/check.mjs ловит кириллицу в EN-версии.
 (function () {
   var EN = {
+    "Пример автоматизации": "Automation example",
+    "От заказа до счёта": "From order to invoice",
+    "Событие": "Trigger",
+    "Заказ подтверждён": "Order is confirmed",
+    "Действие": "Action",
+    "Счёт заполняется данными заказа": "Invoice is generated from order details",
+    "Результат": "Result",
+    "Клиент получает счёт на почту": "Customer receives the invoice by email",
     "Интеграции CRM, сайта и сервисов по подписке | Private Technology House": "CRM, website and service integrations by subscription | Private Technology House",
     "Связываем CRM, сайт, Telegram и другие сервисы. Запускаем сценарии на нашей инфраструктуре и сопровождаем, от 5 000 ₽ в месяц.": "We connect your CRM, website, Telegram and other services. We run and maintain workflows on our infrastructure, from RUB 5,000 per month.",
     "Автоматизация бизнеса по подписке | Private Technology House": "Business automation by subscription | Private Technology House",
@@ -31,7 +39,6 @@
     "Хочу настроить интеграцию.": "I would like to set up an integration.",
     "Хочу автоматизировать процесс.": "I would like to automate a process.",
 
-    "Кейсы автоматизации": "Automation case studies",
     "«Исток» — восстановили приложение, которое осталось на одном телефоне": "Istok — restoring an app left on a single phone",
     "Клиент обратился с необычной проблемой: рабочее приложение открывалось только при выключенном интернете. «Исток» был нужен ему каждый день, а после исчезновения приложения из Google Play единственная рабочая копия осталась на одном телефоне.": "A client came to us with an unusual problem: their work app only opened with the internet turned off. They relied on Istok every day, and after it disappeared from Google Play, the only working copy was on one phone.",
     "Мы восстановили доступ к серверу и выяснили, почему приложение перестало с ним связываться: срок регистрации домена истёк. На сервере обнаружилась другая проблема. База данных MySQL была доступна из интернета через открытый порт. На месте удалённых данных осталась записка с требованием выкупа. Вероятно, через этот порт проник бот-вымогатель. Полной копии каталога с фотографиями и описаниями на сервере уже не было.": "We regained access to the server and found why the app could no longer reach it: the domain registration had expired. On the server, we found another problem. The MySQL database was reachable from the internet through an open port. A ransom note was left in place of the deleted data. An extortion bot likely gained access through that port. The server no longer held a complete copy of the catalog with its photos and descriptions.",
