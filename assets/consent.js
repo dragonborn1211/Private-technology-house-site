@@ -107,7 +107,7 @@
     var m = /(?:^|\/)(services|process)(?:\.html)?#([\w-]+)/.exec(href || '') || /^#([\w-]+)/.exec(href || '');
     var id = m ? m[m.length - 1] : '';
     if (FMT[id]) return FMT[id];
-    if (/automations(\.html)?([#?]|$)/.test(href || '')) return 'подписка';
+    if (/automations?(\.html)?([#?]|$)/.test(href || '')) return 'подписка';
     if (/cases(\.html)?([#?]|$)/.test(href || '')) return 'кейс';
     // страницы услуг (TASK-seo-2): ссылка на них или кнопка на них самих — формат направления
     var sp = /(?:^|\/)(sites|apps|servers|care|bitrix24|ai)(?:\.html)?([#?]|$)/.exec(href || '') || /\/(sites|apps|servers|care|bitrix24|ai)(?:\.html)?$/.exec(location.pathname);

@@ -544,7 +544,7 @@ console.log('\nглавная: блок «Услуги», скрытые «Це�
   if ((sv.match(/class="glyph glyph-mini"/g) || []).length !== 7 || /svc-ic/.test(sv) || (sv.match(/<a href="process"[^>]*>Как работаем<\/a>/g) || []).length !== 4) bad.push('страница услуг: семь мини-рисунков (шесть направлений и редизайн), нет иконок, «Как работаем» → process.html (три меню и подвал)');
   for (const f of readdirSync(path.join(root, 'assets')).filter((x) => x.endsWith('.js'))) if (/addEventListener\(\s*['"](before)?unload['"]/.test(readFileSync(path.join(root, 'assets', f), 'utf8'))) bad.push(`${f}: unload / beforeunload отключает кэш «Назад»`);
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8'), rb = readFileSync(path.join(root, 'robots.txt'), 'utf8');
-  if (['', 'services', 'cases', 'automations', 'process', 'sites', 'bitrix24', 'ai', 'apps', 'servers', 'care'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 22 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
+  if (['', 'services', 'cases', 'automations', 'automation', 'process', 'sites', 'bitrix24', 'ai', 'apps', 'servers', 'care'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/hreflang="en"/g) || []).length !== 22 || /404/.test(sm)) bad.push('sitemap.xml: нет страницы или EN-версии (или есть 404)');
   if (!/User-agent: \*/.test(rb) || !/Sitemap: https:\/\/privatechouse\.ru\/sitemap\.xml/.test(rb)) bad.push('robots.txt');
   await page.close();
   if (bad.length) fail('главная: ' + bad.join('; '));
@@ -721,7 +721,7 @@ console.log('\nавтоматизация: «Готовые автоматиза
 // Страницы (TASK-pages.md): новые страницы открываются через tools/serve.mjs — так же, как на хостинге (404.html — на
 // любой несуществующий адрес, пути от корня).
 console.log('\nстраницы: меню, подвал, «Поток»');
-const PAGES = ['index.html', 'services.html', 'cases.html', 'automations.html', 'process.html', 'sites.html', 'bitrix24.html', 'ai.html', 'apps.html', 'servers.html', 'care.html', '404.html'];
+const PAGES = ['index.html', 'services.html', 'cases.html', 'automations.html', 'automation.html', 'process.html', 'sites.html', 'bitrix24.html', 'ai.html', 'apps.html', 'servers.html', 'care.html', '404.html'];
 const srv = spawn(process.execPath, [path.join(here, 'serve.mjs'), '8097'], { stdio: 'pipe' });
 await new Promise((r) => srv.stdout.once('data', r));
 const BASE = 'http://localhost:8097/';
@@ -737,6 +737,7 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
     'services.html': ['services', 'cases', 'automations', 'process'],
     'cases.html': ['services', 'cases', 'automations', 'process'],
     'automations.html': ['services', 'cases', 'automations', 'process'],
+    'automation.html': ['services', 'cases', 'automations', 'process'],
     'process.html': ['services', 'cases', 'automations', 'process'],
     'sites.html': ['services', 'cases', 'automations', 'process'],
     'bitrix24.html': ['services', 'cases', 'automations', 'process'],
@@ -745,7 +746,7 @@ const idsOf = (f) => new Set([...src[f].matchAll(/\sid="([^"]+)"/g)].map((m) => 
     'servers.html': ['services', 'cases', 'automations', 'process'],
     'care.html': ['services', 'cases', 'automations', 'process'],
     '404.html': ['/services', '/cases', '/automations', '/process'] };
-  const CUR = { 'services.html': 0, 'cases.html': 1, 'automations.html': 2, 'process.html': 3, 'sites.html': 0, 'bitrix24.html': 0, 'ai.html': 0, 'apps.html': 0, 'servers.html': 0, 'care.html': 0 };
+  const CUR = { 'services.html': 0, 'cases.html': 1, 'automations.html': 2, 'automation.html': 0, 'process.html': 3, 'sites.html': 0, 'bitrix24.html': 0, 'ai.html': 0, 'apps.html': 0, 'servers.html': 0, 'care.html': 0 };
   for (const f of PAGES) {
     const navs = [...src[f].matchAll(/<nav class="(nav|menu-nav)" aria-label="Разделы">([\s\S]*?)<\/nav>/g)];
     if (navs.length !== 3) bad.push(`${f}: меню ${navs.length} из 3`);
@@ -1170,12 +1171,12 @@ console.log('\nструктура: услуги, «Как работаем», с
   }
   // «Как работаем»
   const pid = idsOf('process.html');
-  for (const [w, h, lim] of [[1440, 900, 3.45], [390, 844, 7.45]]) {
+  for (const [w, h, lim] of [[1440, 900, 4.2], [390, 844, 9.1]]) {
     const ctx = await browser.newContext({ viewport: { width: w, height: h }, reducedMotion: 'reduce' });
     const page = await ctx.newPage();
     await page.goto(BASE + 'process.html'); await page.evaluate(() => document.fonts.ready); await page.waitForTimeout(300);
     const r = await page.evaluate(() => {
-      const ids = ['sites', 'servers', 'care', 'automation'];
+      const ids = ['sites', 'servers', 'care', 'integrations', 'automation'];
       return { dirs: ids.map((i) => { const s = document.getElementById(i); return s ? `${i}:${s.querySelectorAll('.sv-step').length}:${s.querySelectorAll('.tp-need').length}:${s.querySelector('h2') ? 1 : 0}` : i + ':нет'; }).join(' '),
         links: [...document.querySelectorAll('a[href]')].map((a) => a.getAttribute('href')).filter((x) => !/^(https?:|tel:|mailto:|en\/|#top$|\?lang|\.\/)/.test(x) && !/\?lang=/.test(x)),
         len: document.documentElement.scrollHeight / innerHeight, cur: [...document.querySelectorAll('[aria-current="page"]')].map((a) => a.textContent.trim()).join(','),
@@ -1183,7 +1184,7 @@ console.log('\nструктура: услуги, «Как работаем», с
         secs: document.querySelectorAll('[data-sec^="p-"]').length };
     });
     if (w === 1440) {
-      if (r.dirs !== 'sites:5:1:1 servers:5:1:1 care:5:1:1 automation:5:1:1' || r.secs !== 4 || r.alias !== 'apps>sites ai>automation') bad.push(`process.html: направления ${r.dirs}, секций ${r.secs}, якоря ${r.alias}`);
+      if (r.dirs !== 'sites:5:1:1 servers:5:1:1 care:5:1:1 integrations:5:1:1 automation:5:1:1' || r.secs !== 5 || r.alias !== 'apps>sites ai>automation') bad.push(`process.html: направления ${r.dirs}, секций ${r.secs}, якоря ${r.alias}`);
       if (r.h1 !== 'Как мы работаем.' || !/Как работаем/.test(r.cur)) bad.push(`process.html: H1 «${r.h1}», текущий пункт ${r.cur}`);
       r.links.forEach((x) => {
         const [p0, id] = x.split('#'), pg = p0 && !/\.html$/.test(p0) ? p0 + '.html' : p0;
@@ -1227,7 +1228,7 @@ console.log('\nструктура: услуги, «Как работаем», с
     await page.close();
   }
   const sm = readFileSync(path.join(root, 'sitemap.xml'), 'utf8');
-  if (['', 'services', 'cases', 'automations', 'process', 'sites', 'bitrix24', 'ai', 'apps', 'servers', 'care'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 23 || (sm.match(/hreflang="en"/g) || []).length !== 22 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy(\.html)?<\/loc>\s*(<lastmod>[\d-]+<\/lastmod>\s*)?<\/url>/.test(sm)) bad.push('sitemap.xml: не пять страниц и пять английских с парами');
+  if (['', 'services', 'cases', 'automations', 'automation', 'process', 'sites', 'bitrix24', 'ai', 'apps', 'servers', 'care'].some((u) => !sm.includes(`<loc>https://privatechouse.ru/${u}</loc>`)) || (sm.match(/<url>/g) || []).length !== 25 || (sm.match(/hreflang="en"/g) || []).length !== 24 || !/<url>\s*<loc>https:\/\/privatechouse\.ru\/privacy(\.html)?<\/loc>\s*(<lastmod>[\d-]+<\/lastmod>\s*)?<\/url>/.test(sm)) bad.push('sitemap.xml: не пять страниц и пять английских с парами');
   if (bad.length) fail('структура: ' + bad.join('; '));
   else console.log(`  ✓ разлёта (data-pt-burst) нет нигде, у подвала — мягкий выдох; услуги — новый порядок, «Когда сайт готов» и «Как устроена подписка» по три карточки, вопросов пять; «Как работаем» — четыре секции по пять шагов, ссылки на существующие якоря (${info.join(', ')} экрана); подпись карточки — плашка Manrope 13/500 в окне; повторный переход — data-repeat (кроме первой страницы и ?intro=); sitemap — шесть адресов (политика — без EN)`);
 }
@@ -2334,14 +2335,14 @@ console.log('\nпанель услуг в меню');
   const sm = (f) => [...src[f].matchAll(/<div class="nav-sv" data-sm>[\s\S]*?class="sm-all">[^<]*<\/a><\/div><\/div>/g)].map((m) => norm(m[0]).replace(/ id="sm-[ht]"| aria-controls="sm-[ht]"/g, ''));
   const ml = (f) => (src[f].match(/<div class="menu-sv">[\s\S]*?<\/div>/) || [''])[0];
   const s0 = sm('index.html')[0], m0 = norm(ml('index.html'));
-  const want = 'sites,sites#redesign,apps,servers,care,bitrix24,automations,ai,services';
+  const want = 'sites,sites#redesign,apps,servers,care,bitrix24,automation,ai,services';
   if (!s0 || [...s0.matchAll(/<a href="([^"]+)"/g)].slice(1).map((m) => m[1]).join(',') !== want) bad.push('панель: ссылки ' + s0);
   for (const f of PAGES) {
     const a = sm(f);
     if (a.length !== 2 || a.some((x) => x !== s0)) bad.push(`${f}: панель услуг отличается`);
     if (norm(ml(f)) !== m0 || (m0.match(/<a /g) || []).length !== 8) bad.push(`${f}: список услуг в меню`);
     const page = f.replace(/\.html$/, ''), cur = [...src[f].matchAll(/<div class="sm-pop"[\s\S]*?class="sm-all">/g)].map((m) => [...m[0].matchAll(/<a href="\/?([^"]+)" aria-current="page"/g)].map((x) => x[1]).join());
-    if (cur.some((c) => c !== (/^(sites|apps|servers|care|bitrix24|automations|ai)$/.test(page) ? page : ''))) bad.push(`${f}: текущая в панели ${cur}`);
+    if (cur.some((c) => c !== (/^(sites|apps|servers|care|bitrix24|automation|ai)$/.test(page) ? page : ''))) bad.push(`${f}: текущая в панели ${cur}`);
     if (!/data-pt-skip hidden><div class="sm-cols">/.test(src[f])) bad.push(`${f}: панель без data-pt-skip`);
   }
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });

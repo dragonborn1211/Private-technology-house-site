@@ -57,6 +57,20 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/automations"/>
   </url>
   <url>
+    <loc>https://privatechouse.ru/automation</loc>
+    <lastmod>2026-11-24</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/automation"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/automation"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/automation"/>
+  </url>
+  <url>
+    <loc>https://privatechouse.ru/en/automation</loc>
+    <lastmod>2026-11-24</lastmod>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/automation"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://privatechouse.ru/en/automation"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://privatechouse.ru/automation"/>
+  </url>
+  <url>
     <loc>https://privatechouse.ru/process</loc>
     <lastmod>2026-11-24</lastmod>
     <xhtml:link rel="alternate" hreflang="ru" href="https://privatechouse.ru/process"/>

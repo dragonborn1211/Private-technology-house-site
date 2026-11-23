@@ -13,6 +13,13 @@
 // Новый русский текст в разметке — сразу добавь сюда перевод: node tools/check.mjs ловит кириллицу в EN-версии.
 (function () {
   var EN = {
+    "Здесь собраны готовые шаблоны автоматизации. Сайты, приложения и другие услуги смотрите в разделе «Что делаем».": "This catalogue contains ready-to-use automation templates. For websites, apps, and other services, see What we do.",
+    "Определяем, какие сервисы нужно связать и какие данные должны передаваться.": "We identify the services to connect and the data they need to exchange.",
+    "Проверяем, как подключиться к каждому сервису и какие права нужны.": "We check how each service can be connected and which permissions it needs.",
+    "Настраиваем передачу данных между сервисами и сопоставляем поля.": "We set up data exchange and map fields between services.",
+    "Проверяем на тестовых заявках, что данные попадают в нужные поля и уведомления доходят.": "We use test leads to check that data lands in the right fields and notifications arrive.",
+    "Следим за обменом данными и устраняем сбои подключения.": "We monitor data exchange and fix connection failures.",
+    "список сервисов и примеры данных.": "the list of services and sample data.",
     "Для сайта готовим хостинг, для интеграций подключаем нужные сервисы, для AI-помощника собираем базу знаний. Проверяем работу перед запуском.": "We prepare hosting for websites, connect the required services for integrations, and build a knowledge base for AI assistants. We check everything before launch.",
     "Следим за доступностью сайта, обменом данными или работой помощника. Устраняем сбои и вносим согласованные правки.": "We monitor website availability, data exchange, or assistant performance. We fix failures and make agreed changes.",
     "Передаём сайт с кодом или отключаем автоматизацию и помощника на нашем сервере. По запросу выгружаем ваши данные.": "We hand over your website and code or turn off automation and assistants on our server. Data exports are available on request.",
@@ -1148,7 +1155,7 @@
   };
   var ATTRS = ['aria-label', 'title', 'alt'];
   // страницы с английской версией; адрес английской — <база>en/<страница> (главная — <база>en/)
-  var PAGES = ['index', 'services', 'cases', 'automations', 'process', 'sites', 'bitrix24', 'ai', 'apps', 'servers', 'care'];
+  var PAGES = ['index', 'services', 'cases', 'automations', 'automation', 'process', 'sites', 'bitrix24', 'ai', 'apps', 'servers', 'care'];
   // своя страница по адресу: имя, база (папка сайта), английская ли; чужое (другой сайт, файл, политика) — null. С диска
   // (file://, проверки) — всегда null: там язык, как раньше, — ?lang=en и перевод на месте
   function pageOf(u) {

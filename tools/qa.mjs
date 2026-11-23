@@ -29,7 +29,7 @@ const OUT = path.join(root, 'tools', 'ref', 'qa');
 mkdirSync(OUT, { recursive: true });
 const PARTS = process.argv.slice(2).filter((a) => !a.startsWith('-'));
 const want = (p) => !PARTS.length || PARTS.includes(p);
-const ENGINE_PAGES = ['index.html', 'services.html', 'process.html', 'cases.html', 'automations.html'];
+const ENGINE_PAGES = ['index.html', 'services.html', 'process.html', 'cases.html', 'automations.html', 'automation.html'];
 const ALL_PAGES = (process.env.QA_PAGES ? process.env.QA_PAGES.split(',') : [...ENGINE_PAGES, 'privacy.html', '404']);
 const BUDGET = {
   introLongTasksDesktop: 3, introLongTasksX4: 8, h1Desktop: 2500, h1X4: 3500, cls: 0.05,
