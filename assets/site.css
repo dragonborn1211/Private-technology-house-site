@@ -1306,3 +1306,11 @@ html.ck-open .menu-in{padding-bottom:180px}
 @media (min-width:901px) and (max-width:1100px){
   .svc-monthly .svc{grid-column:span 6}
 }
+
+/* Быстрый переход к условиям рядом с ценой. На телефоне условия видны без свайпа. */
+.pt a.sv-sub-jump{display:inline-flex;align-items:center;gap:8px;min-height:44px;color:#8ED8F8;font-size:15px}
+.sv-sub-jump:hover{text-decoration:underline}
+@media (max-width:760px){
+  [data-sec="subs"] .sv-paths{display:grid;grid-template-columns:minmax(0,1fr);overflow:visible;margin:0;padding:0!important}
+  [data-sec="subs"] .sv-pf{min-height:0}
+}
