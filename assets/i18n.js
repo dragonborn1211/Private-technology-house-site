@@ -13,14 +13,9 @@
 // Новый русский текст в разметке — сразу добавь сюда перевод: node tools/check.mjs ловит кириллицу в EN-версии.
 (function () {
   var EN = {
-    "Пример автоматизации": "Automation example",
-    "От заказа до счёта": "From order to invoice",
-    "Событие": "Trigger",
-    "Заказ подтверждён": "Order is confirmed",
-    "Действие": "Action",
-    "Счёт заполняется данными заказа": "Invoice is generated from order details",
-    "Результат": "Result",
-    "Клиент получает счёт на почту": "Customer receives the invoice by email",
+    "Подтверждённый заказ автоматически превращается в счёт, который отправляется клиенту по почте.": "A confirmed order automatically generates an invoice and sends it to the customer by email.",
+    "Счёт": "Invoice",
+    "Письмо": "Email",
     "Интеграции CRM, сайта и сервисов по подписке | Private Technology House": "CRM, website and service integrations by subscription | Private Technology House",
     "Связываем CRM, сайт, Telegram и другие сервисы. Запускаем сценарии на нашей инфраструктуре и сопровождаем, от 5 000 ₽ в месяц.": "We connect your CRM, website, Telegram and other services. We run and maintain workflows on our infrastructure, from RUB 5,000 per month.",
     "Автоматизация бизнеса по подписке | Private Technology House": "Business automation by subscription | Private Technology House",
