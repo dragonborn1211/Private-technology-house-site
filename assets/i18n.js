@@ -556,7 +556,7 @@
     'нет.': 'page.',
     'Возможно, адрес изменился или в ссылке опечатка.': 'The address may have changed, or the link has a typo.',
     // TASK-polish.md: тексты без штампов, заголовки — названия разделов
-    'Делаем сайты, связываем CRM, Битрикс24 и Telegram, автоматизируем заявки и отчёты. Всё под вашу задачу: от первого экрана до сервера.': 'We build websites, connect CRM, Bitrix24 and Telegram, and automate leads and reports. Everything is built for your task, from the first screen to the server.',
+    'Разрабатываем сайты и приложения, подключаем нужные вам сервисы и автоматизируем рабочие процессы. Берёмся за весь проект, от интерфейса до серверной части.': 'We build websites and apps, connect the services you use, and automate workflows. We handle the whole project, from the interface to the backend.',
     'Смета и сроки до старта': 'Estimate and timeline before we start',
     'Сначала смета и план работ, потом код. Риски называем до старта.': 'Estimate and work plan first, code second. We name the risks before we start.',
     'Что согласовали, то и делаем. Макет, поля в CRM и сумма совпадают со сметой.': 'We build what we agreed. The layout, the CRM fields and the total match the estimate.',
