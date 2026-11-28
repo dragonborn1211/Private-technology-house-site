@@ -1294,6 +1294,11 @@ html.ck-open .menu-in{padding-bottom:180px}
 .who-view::backdrop{background:rgba(5,10,16,.86)}
 .who-frame{position:relative;padding:3px;border-radius:22px;background:linear-gradient(120deg,#8ED8F8,#7FA8FF,#B7A6F2,#9FE5D1,#8ED8F8);background-size:300% 300%;animation:who-shimmer 6s ease infinite;box-shadow:0 0 36px rgba(142,216,248,.28)}
 .who-frame img{display:block;width:auto;height:auto;max-width:min(576px,calc(100vw - 38px));max-height:calc(100dvh - 38px);border-radius:19px;background:linear-gradient(160deg,#1A2A36,#0E1720)}
+.case-photo{cursor:zoom-in}
+.case-photo:focus-visible{outline:2px solid #8ED8F8;outline-offset:-3px}
+.obj :is(.site,.istok-cover):has(.case-photo){z-index:1;pointer-events:none}
+.obj .case-photo{pointer-events:auto}
+.case-photo-view .who-frame img{max-width:min(1280px,calc(100vw - 38px));object-fit:contain}
 .who-close{position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:50%;border:1px solid #8ED8F8;background:#0A121A;color:#EEF3F6;font-size:26px;cursor:pointer}
 @keyframes who-shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 @media(prefers-reduced-motion:reduce){.who-frame{animation:none}}

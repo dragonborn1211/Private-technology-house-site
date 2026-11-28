@@ -253,20 +253,17 @@
   onScroll();
 })();
 
-/* Founder portrait. The link also works when dialog support is unavailable. */
-document.addEventListener('click', function (event) {
-  const link = event.target.closest('.who-photo');
-  if (!link || event.defaultPrevented || event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+/* Shared image viewer. The portrait link has a native fallback. */
+function showPhoto(opener, src, label, isCase) {
   const dialog = document.createElement('dialog');
   if (typeof dialog.showModal !== 'function') return;
-  event.preventDefault();
-  dialog.className = 'who-view';
-  dialog.setAttribute('aria-label', document.querySelector('#who-n').textContent.trim());
+  dialog.className = isCase ? 'who-view case-photo-view' : 'who-view';
+  dialog.setAttribute('aria-label', label);
   const frame = document.createElement('div');
   frame.className = 'who-frame';
   const portrait = document.createElement('img');
-  portrait.src = link.href;
-  portrait.alt = dialog.getAttribute('aria-label');
+  portrait.src = src;
+  portrait.alt = label;
   const close = document.createElement('button');
   close.type = 'button';
   close.className = 'who-close';
@@ -274,9 +271,48 @@ document.addEventListener('click', function (event) {
   close.setAttribute('aria-label', document.documentElement.lang === 'en' ? 'Close' : 'Закрыть');
   close.addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', (e) => { if (e.target === dialog) dialog.close(); });
-  dialog.addEventListener('close', () => { dialog.remove(); link.focus({ preventScroll: true }); });
+  dialog.addEventListener('close', () => { dialog.remove(); opener.focus({ preventScroll: true }); });
   frame.append(portrait, close);
   dialog.append(frame);
   document.body.append(dialog);
   dialog.showModal();
+  return true;
+}
+
+if (typeof document.createElement('dialog').showModal === 'function') {
+  const isEnglish = document.documentElement.lang === 'en';
+  const openLabel = isEnglish ? 'Enlarge image' : 'Увеличить изображение';
+  document.querySelectorAll('img[src*="assets/cases/"], .obj img.site-shot').forEach((img) => {
+    img.classList.add('case-photo');
+    img.tabIndex = 0;
+    img.setAttribute('role', 'button');
+    img.setAttribute('aria-label', img.alt ? openLabel + ': ' + img.alt : openLabel);
+    function open() {
+      const source = img.closest('picture')?.querySelector('source[srcset]');
+      const candidates = (source?.srcset || img.srcset).split(',').map((candidate) => {
+        const [url, width] = candidate.trim().split(/\s+/);
+        return { url, width: parseInt(width, 10) || 0 };
+      });
+      candidates.sort((a, b) => b.width - a.width);
+      showPhoto(img, candidates[0]?.url || img.src, img.alt || openLabel, true);
+    }
+    img.addEventListener('click', (event) => {
+      if (event.defaultPrevented || event.button) return;
+      event.preventDefault();
+      event.stopPropagation();
+      open();
+    });
+    img.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      event.preventDefault();
+      event.stopPropagation();
+      open();
+    });
+  });
+}
+
+document.addEventListener('click', function (event) {
+  const link = event.target.closest('.who-photo');
+  if (!link || event.defaultPrevented || event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+  if (showPhoto(link, link.href, document.querySelector('#who-n').textContent.trim(), false)) event.preventDefault();
 });

@@ -133,7 +133,7 @@
   // вверх/вниз, PageUp/PageDown, пробел, Home/End крутят её тело (сама панель не прокручивается, страница стоит)
   var KEYS = { ArrowDown: 56, ArrowUp: -56, PageDown: 0.9, PageUp: -0.9, ' ': 0.9 };
   document.addEventListener('keydown', function (e) {
-    if (!cur) return;
+    if (!cur || document.querySelector('.who-view[open]')) return;
     if (e.key === 'Escape') { e.preventDefault(); close(); return; }
     var field = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName);
     if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !field) { e.preventDefault(); step(e.key === 'ArrowRight' ? 1 : -1); return; }
