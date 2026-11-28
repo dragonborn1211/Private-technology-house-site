@@ -152,7 +152,7 @@
     "Актуальная база знаний": "An up-to-date knowledge base",
     "Следим, чтобы помощник был доступен, устраняем сбои и обновляем базу знаний по вашим материалам.": "We monitor availability, fix issues and update the knowledge base using your materials.",
     "Настраиваем обмен данными между сервисами, которыми вы пользуетесь: сайтом, CRM, таблицами и другими системами.": "We connect the services you use, from your website and CRM to spreadsheets and other systems.",
-    "Автоматизируем повторяющиеся задачи: обработку заявок, подготовку документов и сбор отчётов.": "We automate recurring tasks such as processing leads, preparing documents and compiling reports.",
+    "Автоматизируем повторяющиеся операции по вашим правилам.": "We automate recurring operations according to your rules.",
     "Здесь собраны готовые шаблоны автоматизации. Сайты, приложения и другие услуги смотрите в разделе «Что делаем».": "This catalogue contains ready-to-use automation templates. For websites, apps, and other services, see What we do.",
     "Определяем, какие сервисы нужно связать и какие данные должны передаваться.": "We identify the services to connect and the data they need to exchange.",
     "Проверяем, как подключиться к каждому сервису и какие права нужны.": "We check how each service can be connected and which permissions it needs.",
@@ -396,7 +396,7 @@
     'Хостинг, мониторинг, бэкапы и правки каждый месяц.': 'Hosting, monitoring, backups and edits every month.',
     'Автоматизация и интеграции': 'Automation and integrations',
     'AI-ассистенты': 'AI assistants',
-    'Агенты для отделов, базы знаний, разбор звонков, бот для Авито.': 'Agents for every department, knowledge bases, call reviews, an Avito sales bot.',
+    'Внедряем AI в рабочие процессы и настраиваем помощников под задачи команды.': 'We bring AI into workflows and tailor assistants to the team’s needs.',
 
     // ---------- страница услуг services.html ----------
     'Навигационная цепочка': 'Breadcrumb',
@@ -535,7 +535,7 @@
     'Схема: сообщение в чате Авито → n8n на сервере → AI отвечает по каталогу → ответ в чат Авито; сложный вопрос — менеджеру в Telegram': 'Diagram: a message in an Avito chat → n8n on our server → AI answers from the catalog → a reply in the Avito chat; a hard question goes to a manager in Telegram',
     'Схема: каждое утро в 08:00 → n8n на сервере → цены конкурентов → строка в таблице → сводка в Telegram': 'Diagram: every morning at 08:00 → n8n on our server → competitor prices → a row in the spreadsheet → a summary in Telegram',
     'Что нужно от нас, чтобы подключить?': 'What do you need from us to connect?',
-    'Доступ к сервисам, которые связываем: вебхук Битрикс24, бот в Telegram, ключ кабинета маркетплейса. Остальное настраиваем сами.': 'Access to the services we connect: a Bitrix24 webhook, a Telegram bot, a marketplace seller API key. We set up the rest ourselves.',
+    'Согласуем с вами, какой доступ нужен к каждому сервису. Подключение настраиваем сами.': 'We agree with you on the access each service requires and set up the connection ourselves.',
     'Где это работает?': 'Where does it run?',
     'На нашем сервере в России. Мы следим, чтобы сценарий работал, и правим его, если у сервиса поменялся API.': 'On our server in Russia. We make sure the workflow keeps running and fix it if a service changes its API.',
     'Можно доработать шаблон под нас?': 'Can the template be adapted to us?',
@@ -593,7 +593,7 @@
     'Android, iOS и Telegram: от интерфейса до публикации в магазинах. Связываем с сайтом и CRM.': 'Android, iOS and Telegram: from interface to store publishing. We connect the app to your website and CRM.',
     'Каталог, запись или заказ прямо в Telegram, без установки.': 'A catalog, booking or order right in Telegram, with nothing to install.',
     'Из сайта в приложение': 'From website to app',
-    'Заявки и заказы из приложения сразу попадают в Битрикс24 и Telegram.': 'Requests and orders from the app go straight to Bitrix24 and Telegram.',
+    'Передаём заявки и заказы из приложения в системы, где работает ваша команда.': 'We send requests and orders from the app to the systems your team uses.',
     'Настраиваем серверы компании, ставим бэкапы и мониторинг. Если что-то упало, находим причину и чиним.': 'We set up company servers, backups and monitoring. If something goes down, we find the cause and fix it.',
     'Сайт работает на нашем хостинге. Вы пишете в Telegram, что поменять, мы меняем. Следим, чтобы сайт открывался, и обновляем его.': 'The site runs on our hosting. You tell us in Telegram what to change, and we change it. We keep the site up and updated.',
     'Серверы в России, SSL-сертификат и продление домена без вашего участия.': 'Servers in Russia, an SSL certificate and domain renewal without your involvement.',
@@ -773,6 +773,12 @@
     // TASK-clarity.md, B10: «Как работаем» — четыре секции
     'Сайты и приложения': 'Websites and apps',
     'Автоматизация и AI': 'Automation and AI',
+    'Автоматизация, интеграции и AI': 'Automation, integrations and AI',
+    'Разовая разработка': 'One-time development',
+    'Оплата за задачу': 'Pay per task',
+    'Оплата каждый месяц': 'Monthly billing',
+    'Связываем нужные сервисы и настраиваем правила: когда запускать процесс, какие действия выполнять и когда подключать человека.': 'We connect the required services and set the rules for when a process starts, which actions it takes, and when to involve a person.',
+    'Запуск входит в стоимость. Для подключения согласуем, какие доступы и материалы понадобятся.': 'Setup is included. We agree on the access and materials needed to connect your services.',
     'Автоматизация, интеграция и AI': 'Automation, integration and AI',
     'Разбираем задачу и примеры, которые вам нравятся. Состав, сроки и цену называем до старта.': 'We go through the task and examples you like. Scope, timeline and price are named before we start.',
     'Показываем идею: первый экран сайта или ключевые экраны приложения. Согласуем до сборки.': 'We show the idea: the first screen of the site or the key screens of the app. Agreed before the build.',
@@ -823,6 +829,7 @@
     'Разбор каждого звонка': 'Review every call',
     'AI разбирает каждый звонок отдела продаж. Менеджер видит, что исправить, прямо в карточке CRM.': 'AI reviews every sales call. The manager sees what to fix right in the CRM card.',
     'AI · Telegram-бот': 'AI · Telegram bot',
+
     // Resonara OS
     'Экраны Resonara OS': 'Resonara OS screens',
     'Kanban · доска задач': 'Kanban · task board',
@@ -1095,7 +1102,7 @@
     // TASK-seo-2: страницы услуг /sites, /bitrix24, /ai; новые title и description
     'Ответы на отзывы': 'Review replies',
     'Android, iOS и Telegram Mini App: от интерфейса до публикации.': 'Android, iOS and Telegram Mini Apps: from interface to publishing.',
-    'Заявки с сайта, из приложения, форм и мини-приложения попадают в Битрикс24 и Telegram.': 'Requests from the website, app, forms and mini app go to Bitrix24 and Telegram.',
+    'Собираем заявки из разных источников и направляем их в нужную систему.': 'We collect requests from different sources and route them to the right system.',
     // TASK-nav: панель услуг в шапке
     'от 5 000 ₽': 'from\u00a05,000\u00a0₽',
     'от 10 000 ₽/мес': 'from\u00a010,000\u00a0₽/mo',
