@@ -33,7 +33,6 @@
     if (!bar || v === shown) return;
     shown = v;
     bar.classList.toggle('on', v);
-    root.classList.toggle('pt-sticky-nav', v);
     if (v) bar.removeAttribute('inert'); else bar.setAttribute('inert', '');
   }
   function update() {
