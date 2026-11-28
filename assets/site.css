@@ -474,6 +474,12 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 .hero-hdr > .wf .wf-l{top:calc(100% + 6px);left:auto;right:0}
 .pt-on .sec .hero-hdr .logo-d,.pt-on .sec .hero-hdr .ico svg,.pt-on .sec .hero-hdr .cm-btn :is(svg,.ic),.pt-on .sec .hero-hdr .burger{transition:opacity .9s ease}
 .pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .logo-d,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .ico svg,.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .cm-btn :is(svg,.ic),.pt-on .sec:not(.s-skel):not(.s-text):not(.s-done) .hero-hdr .burger{opacity:0}
+/* Шапка проявляется целиком, чтобы надписи, рамки и индикатор языка не запаздывали друг за другом. */
+.pt-on .sec[data-sec="hero"] .hero-hdr{opacity:0;visibility:hidden;transition:opacity .4s ease}
+.pt-on .sec[data-sec="hero"]:is(.s-text,.s-done) .hero-hdr{opacity:1;visibility:visible}
+.pt-on .sec[data-sec="hero"] .hero-hdr :is(.ptx,.lang-thumb,.logo-d,.burger,.nav-ch svg,.cm-btn svg,.cm-btn .ic){opacity:1!important;transition-delay:0s!important}
+.pt-on .sec[data-sec="hero"] .hero-hdr .fr{transition:none}
+@media(prefers-reduced-motion:reduce){.pt-on .sec[data-sec="hero"] .hero-hdr{transition:none}}
 .hdr-act{display:flex;flex:none;align-items:center;gap:12px}
 .pt .hdr-cta{min-height:44px;padding:0 20px;font-size:14px}
 /* «Обсудить проект» в шапках — список каналов связи (просьба владельца: иконки — «в „Обсудить проект“»): Telegram, MAX,
@@ -521,7 +527,7 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 /* ---------- липкая шапка [data-topbar]: подменяет обычную после прокрутки (assets/nav.js) ---------- */
 .topbar{position:fixed;top:0;left:0;right:0;z-index:45;height:64px;background:rgba(10,18,26,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid rgba(188,211,222,.12);transform:translateY(-101%);visibility:hidden}
 .topbar.on{transform:none;visibility:visible}
-.pt-sticky-nav .hero-hdr{visibility:hidden}
+.pt-sticky-nav .hero-hdr{visibility:hidden!important}
 .topbar-in{height:100%;display:flex;align-items:center;justify-content:space-between;gap:20px}
 /* ---------- меню на телефоне [data-menu]: полноэкранный слой поверх сайта ---------- */
 .menu{position:fixed;inset:0;z-index:60;overflow-y:auto;overscroll-behavior:contain;background-color:rgba(10,18,26,.9);border:0;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);opacity:0;visibility:hidden;transform:translateY(-10px);transition:opacity .22s ease,transform .22s ease,visibility 0s linear .22s}
