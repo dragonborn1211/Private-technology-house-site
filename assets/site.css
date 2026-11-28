@@ -79,6 +79,7 @@ body{margin:0;background:#0A121A}
 @keyframes ptScan{0%{top:0;opacity:0}10%{opacity:1}90%{opacity:1}100%{top:100%;opacity:0}}
 .mono{font-family:'JetBrains Mono','JetBrains fb',monospace;font-size:13px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:#8FAEC0}
 .mono.k{color:#8ED8F8}
+.sec p.mono.k:not(.sm-col *){font-size:15px;color:#B7A6F2}
 .it{background-image:linear-gradient(90deg,#8ED8F8 0%,#7FA8FF 20%,#B7A6F2 40%,#F6F8FA 55%,#9FE5D1 75%,#8ED8F8 100%);background-size:200% 100%;background-repeat:repeat-x;-webkit-background-clip:text;background-clip:text;color:transparent;animation:ptShim 4s linear infinite}
 @keyframes ptShim{from{background-position:0% 50%}to{background-position:200% 50%}}
 /* перелив стартует, когда секция собралась; на первом экране он постоянный, в остальных секциях — два прохода,

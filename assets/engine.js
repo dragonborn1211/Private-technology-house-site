@@ -297,7 +297,7 @@
           while ((n = tw.nextNode())) {
             if (!n.nodeValue.trim()) continue;
             var pe = n.parentElement;
-            if (!pe || pe.closest('[data-pt-skip]')) continue;
+            if (!pe || pe.closest('[data-pt-skip], .hero-hdr')) continue;
             pe.classList.add('ptx');
           }
         });
@@ -316,7 +316,7 @@
       // узлам, целиком (collectWords) — тем же кодом
       function wordsOf(n, m) {
         var v = n.nodeValue; if (!v.trim()) return;
-        var pe = n.parentElement; if (!pe || pe.closest('[data-pt-skip]')) return;
+        var pe = n.parentElement; if (!pe || pe.closest('[data-pt-skip], .hero-hdr')) return;
         var st = m.cache.get(pe);
         if (!st) {
           var cs = window.getComputedStyle(pe);
