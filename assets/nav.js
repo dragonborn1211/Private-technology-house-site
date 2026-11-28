@@ -24,26 +24,22 @@
   } catch (e) { /* хранилище запрещено — без панели */ }
 
   // ---------- липкая шапка ----------
-  // Направление прокрутки не влияет на видимость. Наблюдатели не читают раскладку в обработчике прокрутки.
-  var shown = false, raf = 0, heroIn = true, headerPassed = false;
+  // Обе шапки переключаются в одном кадре, в том числе при прокрутке обратно к началу.
+  var shown = false, raf = 0, heroIn = true;
   var canObserve = 'IntersectionObserver' in window;
   if (hero && canObserve) new IntersectionObserver(function (es) { heroIn = es[es.length - 1].isIntersecting; onScroll(); }).observe(hero);
-  if (header && canObserve) new IntersectionObserver(function (es) {
-    headerPassed = es[es.length - 1].boundingClientRect.bottom <= 0;
-    onScroll();
-  }).observe(header);
+  if (header && canObserve) new IntersectionObserver(onScroll).observe(header);
   function show(v) {
     if (!bar || v === shown) return;
-    shown = v; bar.classList.toggle('on', v);
+    shown = v;
+    bar.classList.toggle('on', v);
+    root.classList.toggle('pt-sticky-nav', v);
     if (v) bar.removeAttribute('inert'); else bar.setAttribute('inert', '');
   }
   function update() {
     raf = 0;
-    if (!canObserve) {
-      if (header) headerPassed = header.getBoundingClientRect().bottom <= 0;
-      if (hero) heroIn = hero.getBoundingClientRect().bottom > 0;
-    }
-    show(headerPassed);
+    if (hero && !canObserve) heroIn = hero.getBoundingClientRect().bottom > 0;
+    show(Boolean(header && header.getBoundingClientRect().bottom <= 0));
     guardPult();
   }
   function onScroll() { if (!raf) raf = requestAnimationFrame(update); }

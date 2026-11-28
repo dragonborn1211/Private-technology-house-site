@@ -520,7 +520,8 @@ html.cp-lock,html.cp-lock body{overflow:hidden}
 @media (max-height:820px){.hero-hdr{padding:14px 0}.hero-row{padding:2px 0 22px;gap:28px 56px}.hero-col{gap:16px}.hero-obj{min-height:clamp(400px,60vh,600px)}.hero-col .lead{font-size:16px}}
 /* ---------- липкая шапка [data-topbar]: подменяет обычную после прокрутки (assets/nav.js) ---------- */
 .topbar{position:fixed;top:0;left:0;right:0;z-index:45;height:64px;background:rgba(10,18,26,.72);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-bottom:1px solid rgba(188,211,222,.12);transform:translateY(-101%);visibility:hidden}
-.topbar.on{transform:none;visibility:visible;transition:transform .25s ease}
+.topbar.on{transform:none;visibility:visible}
+.pt-sticky-nav .hero-hdr{visibility:hidden}
 .topbar-in{height:100%;display:flex;align-items:center;justify-content:space-between;gap:20px}
 /* ---------- меню на телефоне [data-menu]: полноэкранный слой поверх сайта ---------- */
 .menu{position:fixed;inset:0;z-index:60;overflow-y:auto;overscroll-behavior:contain;background-color:rgba(10,18,26,.9);border:0;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);opacity:0;visibility:hidden;transform:translateY(-10px);transition:opacity .22s ease,transform .22s ease,visibility 0s linear .22s}
